@@ -3,7 +3,6 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthError } from "@supabase/supabase-js";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Auth = () => {
@@ -22,19 +21,8 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const getErrorMessage = (error: AuthError) => {
-    switch (error.message) {
-      case "Invalid login credentials":
-        return "Invalid email or password. Please try again.";
-      case "Email not confirmed":
-        return "Please verify your email address before signing in.";
-      default:
-        return error.message;
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-[#1A1F2C] to-black">
       <div className="glass-card w-full max-w-md p-8">
         <h2 className="text-2xl font-bold text-center mb-8 gradient-text">
           Welcome to Blockward
@@ -56,9 +44,18 @@ const Auth = () => {
                 },
               },
             },
+            style: {
+              button: {
+                background: "rgb(139, 92, 246)",
+                borderRadius: "8px",
+              },
+              input: {
+                borderRadius: "8px",
+              },
+            },
           }}
           providers={["google"]}
-          redirectTo={window.location.origin}
+          redirectTo={`${window.location.origin}/dashboard`}
         />
       </div>
     </div>
