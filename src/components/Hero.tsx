@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 export const Hero = () => {
   return (
@@ -18,9 +19,11 @@ export const Hero = () => {
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto">
             The future of classroom management powered by blockchain technology
           </p>
-          <Button size="lg" className="bg-primary hover:bg-primary/90">
-            Get Started
-          </Button>
+          <Link to="/auth">
+            <Button size="lg" className="bg-primary hover:bg-primary/90">
+              Get Started
+            </Button>
+          </Link>
         </motion.div>
       </div>
     </div>
