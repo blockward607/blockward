@@ -54,8 +54,9 @@ const Auth = () => {
               },
             },
           }}
-          providers={["google"]}
+          providers={[]}
           redirectTo={`${window.location.origin}/dashboard`}
+          view="sign_in"
         />
       </div>
     </div>
