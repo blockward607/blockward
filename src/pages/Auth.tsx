@@ -17,8 +17,8 @@ const Auth = () => {
           navigate("/dashboard");
         }
         // Handle specific auth events and errors
-        if (event === "USER_DELETED") {
-          setErrorMessage("Account deleted successfully");
+        if (event === "SIGNED_OUT") {
+          setErrorMessage("You have been signed out");
         }
       }
     );
