@@ -22,42 +22,71 @@ const Auth = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-[#1A1F2C] to-black">
-      <div className="glass-card w-full max-w-md p-8">
-        <h2 className="text-2xl font-bold text-center mb-8 gradient-text">
-          Welcome to Blockward
-        </h2>
-        {errorMessage && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{errorMessage}</AlertDescription>
-          </Alert>
-        )}
-        <SupabaseAuth
-          supabaseClient={supabase}
-          appearance={{
-            theme: ThemeSupa,
-            variables: {
-              default: {
-                colors: {
-                  brand: "rgb(139, 92, 246)",
-                  brandAccent: "rgb(124, 58, 237)",
+    <div className="min-h-screen flex">
+      {/* Left side - Auth Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center px-4 bg-gradient-to-b from-[#1A1F2C] to-black">
+        <div className="glass-card w-full max-w-md p-8">
+          <h2 className="text-2xl font-bold text-center mb-8 gradient-text">
+            Welcome to Blockward
+          </h2>
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          <SupabaseAuth
+            supabaseClient={supabase}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: "rgb(139, 92, 246)",
+                    brandAccent: "rgb(124, 58, 237)",
+                  },
                 },
               },
-            },
-            style: {
-              button: {
-                background: "rgb(139, 92, 246)",
-                borderRadius: "8px",
+              style: {
+                button: {
+                  background: "rgb(139, 92, 246)",
+                  borderRadius: "8px",
+                  width: "100%",
+                },
+                input: {
+                  borderRadius: "8px",
+                },
+                anchor: {
+                  color: "rgb(139, 92, 246)",
+                },
+                message: {
+                  color: "rgb(139, 92, 246)",
+                },
               },
-              input: {
-                borderRadius: "8px",
-              },
-            },
-          }}
-          providers={[]}
-          redirectTo={`${window.location.origin}/dashboard`}
-          view="sign_in"
+            }}
+            providers={[]}
+            redirectTo={`${window.location.origin}/dashboard`}
+            view="sign_in"
+          />
+        </div>
+      </div>
+
+      {/* Right side - Image */}
+      <div className="hidden md:block md:w-1/2 relative">
+        <img
+          src="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
+          alt="Code background"
+          className="absolute inset-0 w-full h-full object-cover"
         />
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm">
+          <div className="flex flex-col justify-center items-center h-full text-white px-8">
+            <h1 className="text-4xl font-bold mb-4 text-center">
+              Manage Your Classroom Seating
+            </h1>
+            <p className="text-lg text-center text-gray-200 max-w-md">
+              A simple and efficient way to organize and track classroom seating arrangements
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
