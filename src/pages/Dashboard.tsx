@@ -129,7 +129,7 @@ const Dashboard = () => {
         </div>
 
         <Card className="p-6 glass-card">
-          <h2 className="text-2xl font-semibold mb-6 gradient-text">Seating Plan</h2>
+          <h2 className="text-2xl font-semibold mb-6 gradient-text">Classroom Seating Plan</h2>
           {loading ? (
             <p className="text-center">Loading seating plan...</p>
           ) : (
