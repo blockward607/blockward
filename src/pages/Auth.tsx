@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -15,10 +16,43 @@ const Auth = () => {
         if (event === "SIGNED_IN" && session) {
           navigate("/dashboard");
         }
+        // Handle specific auth events and errors
+        if (event === "USER_DELETED") {
+          setErrorMessage("Account deleted successfully");
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
+    // Listen for auth errors
+    const handleAuthError = (error: any) => {
+      if (error?.message?.includes("User already registered")) {
+        toast({
+          variant: "destructive",
+          title: "Account exists",
+          description: "This email is already registered. Please sign in instead.",
+        });
+      } else if (error?.message?.includes("Invalid login credentials")) {
+        toast({
+          variant: "destructive",
+          title: "Invalid credentials",
+          description: "Please check your email and password and try again.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error?.message || "An error occurred during authentication.",
+        });
+      }
+    };
+
+    // Add error listener
+    window.addEventListener("supabase.error", handleAuthError);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("supabase.error", handleAuthError);
+    };
   }, [navigate]);
 
   return (
