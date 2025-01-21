@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      seats: {
+        Row: {
+          id: string
+          row: number
+          column: number
+          student: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          row: number
+          column: number
+          student?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          row?: number
+          column?: number
+          student?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       behavior_records: {
         Row: {
           created_at: string | null
@@ -41,7 +65,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       nfts: {
