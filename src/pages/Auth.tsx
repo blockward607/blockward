@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { Diamond, Eye, EyeOff, ArrowLeft, GraduationCap } from "lucide-react";
+import { ArrowLeft, GraduationCap } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -30,10 +29,9 @@ const Auth = () => {
     };
   }, [navigate]);
 
-  // Function to inject password visibility toggle
   useEffect(() => {
     const injectPasswordToggle = () => {
-      const passwordInput = document.querySelector('input[type="password"]');
+      const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
       if (passwordInput) {
         const container = passwordInput.parentElement;
         if (container && !container.querySelector('.password-toggle')) {
