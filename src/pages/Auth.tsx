@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Diamond, Eye, EyeOff } from "lucide-react";
+import { Diamond, Eye, EyeOff, ArrowLeft, GraduationCap } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -52,7 +53,6 @@ const Auth = () => {
       }
     };
 
-    // Add observer to handle dynamic content
     const observer = new MutationObserver(() => {
       injectPasswordToggle();
     });
@@ -67,52 +67,79 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex">
-      <div className="w-full flex items-center justify-center px-4 bg-gradient-to-b from-[#1A1F2C] to-black">
+      <div className="w-full flex flex-col items-center justify-center px-4 bg-gradient-to-b from-[#1A1F2C] to-black">
+        <Button
+          variant="ghost"
+          className="absolute top-4 left-4 text-white hover:text-purple-400"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
+        
         <div className="glass-card w-full max-w-md p-8">
           <div className="flex flex-col items-center mb-8">
-            <Diamond className="w-12 h-12 text-purple-500 mb-4" />
-            <h2 className="text-2xl font-bold text-center gradient-text">
+            <div className="flex items-center justify-center w-16 h-16 bg-purple-600 rounded-full mb-4">
+              <GraduationCap className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-center gradient-text mb-2">
               Welcome to Blockward
             </h2>
+            <p className="text-gray-400 text-center text-sm">
+              Your Digital Education Wallet
+            </p>
           </div>
+
           {errorMessage && (
             <Alert variant="destructive" className="mb-4">
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           )}
-          <SupabaseAuth
-            supabaseClient={supabase}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: "rgb(139, 92, 246)",
-                    brandAccent: "rgb(124, 58, 237)",
+
+          <div className="space-y-4">
+            <div className="p-4 bg-purple-900/20 rounded-lg mb-4">
+              <h3 className="text-sm font-medium text-purple-300 mb-2">
+                🎯 For Educators
+              </h3>
+              <p className="text-xs text-gray-400">
+                Create and manage digital rewards, track student progress, and distribute achievements securely.
+              </p>
+            </div>
+
+            <SupabaseAuth
+              supabaseClient={supabase}
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: "rgb(139, 92, 246)",
+                      brandAccent: "rgb(124, 58, 237)",
+                    },
                   },
                 },
-              },
-              style: {
-                button: {
-                  background: "rgb(139, 92, 246)",
-                  borderRadius: "8px",
-                  width: "100%",
+                style: {
+                  button: {
+                    background: "rgb(139, 92, 246)",
+                    borderRadius: "8px",
+                    width: "100%",
+                  },
+                  input: {
+                    borderRadius: "8px",
+                  },
+                  anchor: {
+                    color: "rgb(139, 92, 246)",
+                  },
+                  message: {
+                    color: "rgb(139, 92, 246)",
+                  },
                 },
-                input: {
-                  borderRadius: "8px",
-                },
-                anchor: {
-                  color: "rgb(139, 92, 246)",
-                },
-                message: {
-                  color: "rgb(139, 92, 246)",
-                },
-              },
-            }}
-            providers={[]}
-            redirectTo={`${window.location.origin}/dashboard`}
-            view="sign_in"
-          />
+              }}
+              providers={[]}
+              redirectTo={`${window.location.origin}/dashboard`}
+              view="sign_in"
+            />
+          </div>
         </div>
       </div>
     </div>

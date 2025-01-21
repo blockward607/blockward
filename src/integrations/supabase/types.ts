@@ -44,6 +44,57 @@ export type Database = {
           },
         ]
       }
+      nfts: {
+        Row: {
+          contract_address: string
+          created_at: string | null
+          creator_wallet_id: string | null
+          id: string
+          metadata: Json
+          network: string
+          owner_wallet_id: string | null
+          token_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          contract_address: string
+          created_at?: string | null
+          creator_wallet_id?: string | null
+          id?: string
+          metadata: Json
+          network: string
+          owner_wallet_id?: string | null
+          token_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          contract_address?: string
+          created_at?: string | null
+          creator_wallet_id?: string | null
+          id?: string
+          metadata?: Json
+          network?: string
+          owner_wallet_id?: string | null
+          token_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfts_creator_wallet_id_fkey"
+            columns: ["creator_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfts_owner_wallet_id_fkey"
+            columns: ["owner_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           created_at: string | null
@@ -98,6 +149,82 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          created_at: string | null
+          from_wallet_id: string | null
+          id: string
+          nft_id: string | null
+          status: string
+          to_wallet_id: string | null
+          transaction_hash: string
+        }
+        Insert: {
+          created_at?: string | null
+          from_wallet_id?: string | null
+          id?: string
+          nft_id?: string | null
+          status: string
+          to_wallet_id?: string | null
+          transaction_hash: string
+        }
+        Update: {
+          created_at?: string | null
+          from_wallet_id?: string | null
+          id?: string
+          nft_id?: string | null
+          status?: string
+          to_wallet_id?: string | null
+          transaction_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_from_wallet_id_fkey"
+            columns: ["from_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_nft_id_fkey"
+            columns: ["nft_id"]
+            isOneToOne: false
+            referencedRelation: "nfts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_to_wallet_id_fkey"
+            columns: ["to_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          address: string
+          created_at: string | null
+          id: string
+          type: Database["public"]["Enums"]["wallet_type"]
+          user_id: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          id?: string
+          type: Database["public"]["Enums"]["wallet_type"]
+          user_id?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          id?: string
+          type?: Database["public"]["Enums"]["wallet_type"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -106,7 +233,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      wallet_type: "user" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
