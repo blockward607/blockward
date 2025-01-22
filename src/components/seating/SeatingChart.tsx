@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 
+type Json = Database['public']['Tables']['seating_arrangements']['Row']['layout'];
+
 interface Seat {
   id: number;
   row: number;
@@ -47,7 +49,7 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
       if (error) throw error;
 
       if (data) {
-        const layout = data.layout as SeatingLayout;
+        const layout = (data.layout as unknown) as SeatingLayout;
         setSeats(layout.seats || []);
         setRows(layout.rows || 5);
         setCols(layout.columns || 6);
