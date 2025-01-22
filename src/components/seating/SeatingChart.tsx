@@ -49,7 +49,8 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
       if (error) throw error;
 
       if (data) {
-        const layout = (data.layout as unknown) as SeatingLayout;
+        // First cast to unknown, then to SeatingLayout to avoid type errors
+        const layout = data.layout as unknown as SeatingLayout;
         setSeats(layout.seats || []);
         setRows(layout.rows || 5);
         setCols(layout.columns || 6);
