@@ -44,6 +44,80 @@ export type Database = {
           },
         ]
       }
+      classroom_students: {
+        Row: {
+          classroom_id: string | null
+          created_at: string | null
+          id: string
+          seat_number: number | null
+          student_id: string | null
+        }
+        Insert: {
+          classroom_id?: string | null
+          created_at?: string | null
+          id?: string
+          seat_number?: number | null
+          student_id?: string | null
+        }
+        Update: {
+          classroom_id?: string | null
+          created_at?: string | null
+          id?: string
+          seat_number?: number | null
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_students_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classroom_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classrooms: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          teacher_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          teacher_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          teacher_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classrooms_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nfts: {
         Row: {
           contract_address: string
@@ -91,6 +165,41 @@ export type Database = {
             columns: ["owner_wallet_id"]
             isOneToOne: false
             referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seating_arrangements: {
+        Row: {
+          active: boolean | null
+          classroom_id: string | null
+          created_at: string | null
+          id: string
+          layout: Json
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          classroom_id?: string | null
+          created_at?: string | null
+          id?: string
+          layout?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          classroom_id?: string | null
+          created_at?: string | null
+          id?: string
+          layout?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seating_arrangements_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
             referencedColumns: ["id"]
           },
         ]

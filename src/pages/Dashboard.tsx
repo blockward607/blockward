@@ -2,36 +2,42 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import { ClassroomGrid } from "@/components/classroom/ClassroomGrid";
+import { WalletPanel } from "@/components/wallet/WalletPanel";
+import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
+import { AchievementSystem } from "@/components/achievements/AchievementSystem";
+import { Plus, Users, Award, Wallet } from "lucide-react";
 
-type Student = Database['public']['Tables']['students']['Row'];
+type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
 const Dashboard = () => {
   const { toast } = useToast();
-  const [students, setStudents] = useState<Student[]>([]);
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStudents();
+    fetchClassrooms();
   }, []);
 
-  const fetchStudents = async () => {
+  const fetchClassrooms = async () => {
     try {
       const { data, error } = await supabase
-        .from('students')
+        .from('classrooms')
         .select('*')
-        .order('name');
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setStudents(data || []);
+      setClassrooms(data || []);
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error('Error fetching classrooms:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load students"
+        description: "Failed to load classrooms"
       });
     } finally {
       setLoading(false);
@@ -42,30 +48,71 @@ const Dashboard = () => {
     <div className="min-h-screen p-8 bg-gradient-to-b from-[#1A1F2C] to-black text-white">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold gradient-text">Dashboard</h1>
+          <h1 className="text-4xl font-bold gradient-text">Blockward Dashboard</h1>
+          <WalletPanel />
         </div>
 
-        <Card className="p-6 glass-card">
-          <h2 className="text-2xl font-semibold mb-6 gradient-text">Student List</h2>
-          {loading ? (
-            <p className="text-center">Loading students...</p>
-          ) : (
-            <div className="grid gap-4">
-              {students.length === 0 ? (
-                <p className="text-center text-gray-400">No students found</p>
+        <Tabs defaultValue="classrooms" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4 gap-4">
+            <TabsTrigger value="classrooms" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Classrooms
+            </TabsTrigger>
+            <TabsTrigger value="behavior" className="flex items-center gap-2">
+              <Award className="w-4 h-4" />
+              Behavior
+            </TabsTrigger>
+            <TabsTrigger value="achievements" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              Achievements
+            </TabsTrigger>
+            <TabsTrigger value="wallet" className="flex items-center gap-2">
+              <Wallet className="w-4 h-4" />
+              NFT Wallet
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="classrooms">
+            <Card className="p-6 glass-card">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold gradient-text">My Classrooms</h2>
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="w-4 h-4 mr-2" /> New Classroom
+                </Button>
+              </div>
+              
+              {loading ? (
+                <p className="text-center">Loading classrooms...</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {students.map((student) => (
-                    <Card key={student.id} className="p-4 glass-card">
-                      <h3 className="text-lg font-semibold">{student.name}</h3>
-                      <p className="text-sm text-gray-400">Points: {student.points || 0}</p>
-                    </Card>
-                  ))}
+                <div className="grid gap-4">
+                  {classrooms.length === 0 ? (
+                    <p className="text-center text-gray-400">No classrooms found. Create your first classroom to get started!</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {classrooms.map((classroom) => (
+                        <ClassroomGrid key={classroom.id} classroom={classroom} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-        </Card>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="behavior">
+            <BehaviorTracker />
+          </TabsContent>
+
+          <TabsContent value="achievements">
+            <AchievementSystem />
+          </TabsContent>
+
+          <TabsContent value="wallet">
+            <Card className="p-6 glass-card">
+              <WalletPanel expanded={true} />
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
