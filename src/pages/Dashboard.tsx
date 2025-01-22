@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,9 +40,19 @@ const Dashboard = () => {
 
   const fetchClassrooms = async () => {
     try {
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .single();
+
+      if (!teacherProfile) {
+        throw new Error('Teacher profile not found');
+      }
+
       const { data, error } = await supabase
         .from('classrooms')
         .select('*')
+        .eq('teacher_id', teacherProfile.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -61,11 +72,22 @@ const Dashboard = () => {
 
   const createClassroom = async () => {
     try {
+      // First get the teacher's profile id
+      const { data: teacherProfile, error: profileError } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .single();
+
+      if (profileError) throw profileError;
+      if (!teacherProfile) throw new Error('Teacher profile not found');
+
+      // Then create the classroom with the teacher_id
       const { data, error } = await supabase
         .from('classrooms')
         .insert([{
           name: newClassroom.name,
           description: newClassroom.description,
+          teacher_id: teacherProfile.id
         }])
         .select()
         .single();
@@ -198,6 +220,7 @@ const Dashboard = () => {
       </div>
     </div>
   );
+
 };
 
 export default Dashboard;
