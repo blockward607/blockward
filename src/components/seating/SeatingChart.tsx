@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Grid, Save, Edit, Plus, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
 
 interface Seat {
   id: number;
@@ -11,6 +12,12 @@ interface Seat {
   col: number;
   studentId?: string;
   occupied: boolean;
+}
+
+interface SeatingLayout {
+  rows: number;
+  columns: number;
+  seats: Seat[];
 }
 
 interface SeatingChartProps {
@@ -40,9 +47,10 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
       if (error) throw error;
 
       if (data) {
-        setSeats(data.layout.seats || []);
-        setRows(data.layout.rows || 5);
-        setCols(data.layout.columns || 6);
+        const layout = data.layout as SeatingLayout;
+        setSeats(layout.seats || []);
+        setRows(layout.rows || 5);
+        setCols(layout.columns || 6);
       }
     } catch (error) {
       console.error('Error fetching seating arrangement:', error);
@@ -72,15 +80,17 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
 
   const saveSeatingArrangement = async () => {
     try {
+      const layout: SeatingLayout = {
+        rows,
+        columns: cols,
+        seats
+      };
+
       const { error } = await supabase
         .from('seating_arrangements')
         .upsert({
           classroom_id: classroomId,
-          layout: {
-            rows,
-            columns: cols,
-            seats
-          },
+          layout: layout as unknown as Json,
           active: true
         });
 
