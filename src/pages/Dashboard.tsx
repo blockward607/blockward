@@ -35,18 +35,43 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
+    checkAuth();
     fetchClassrooms();
   }, []);
 
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        variant: "destructive",
+        title: "Not authenticated",
+        description: "Please log in to access the dashboard"
+      });
+      navigate('/auth');
+      return;
+    }
+  };
+
   const fetchClassrooms = async () => {
     try {
-      const { data: teacherProfile } = await supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
         .select('id')
-        .single();
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
+      if (profileError) throw profileError;
+      
       if (!teacherProfile) {
-        throw new Error('Teacher profile not found');
+        toast({
+          variant: "destructive",
+          title: "Profile not found",
+          description: "Teacher profile not found. Please contact support."
+        });
+        return;
       }
 
       const { data, error } = await supabase
@@ -72,16 +97,33 @@ const Dashboard = () => {
 
   const createClassroom = async () => {
     try {
-      // First get the teacher's profile id
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Not authenticated",
+          description: "Please log in to create a classroom"
+        });
+        return;
+      }
+
       const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
         .select('id')
-        .single();
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
       if (profileError) throw profileError;
-      if (!teacherProfile) throw new Error('Teacher profile not found');
+      
+      if (!teacherProfile) {
+        toast({
+          variant: "destructive",
+          title: "Profile not found",
+          description: "Teacher profile not found. Please contact support."
+        });
+        return;
+      }
 
-      // Then create the classroom with the teacher_id
       const { data, error } = await supabase
         .from('classrooms')
         .insert([{
