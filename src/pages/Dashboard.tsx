@@ -9,7 +9,7 @@ import { ClassroomGrid } from "@/components/classroom/ClassroomGrid";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
 import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
 import { AchievementSystem } from "@/components/achievements/AchievementSystem";
-import { Plus, Users, Award, Wallet } from "lucide-react";
+import { Plus, Users, Award, Wallet, Trophy } from "lucide-react";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
