@@ -72,12 +72,12 @@ export const Hero = () => {
             transition={{ delay: 0.6 }}
             className="flex gap-4 justify-center"
           >
-            <Link to="/dashboard">
+            <Link to="/auth">
               <Button 
                 size="lg" 
                 className="bg-purple-600 hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
               >
-                Preview Dashboard <ArrowRight className="w-4 h-4" />
+                Get Started <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Button 
