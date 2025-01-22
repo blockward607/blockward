@@ -9,6 +9,95 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      assignments: {
+        Row: {
+          classroom_id: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          points_possible: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          classroom_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          points_possible?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          classroom_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          points_possible?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance: {
+        Row: {
+          classroom_id: string | null
+          created_at: string | null
+          date: string | null
+          id: string
+          notes: string | null
+          status: string | null
+          student_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          classroom_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          student_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          classroom_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          student_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       behavior_records: {
         Row: {
           created_at: string | null
@@ -118,6 +207,95 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          classroom_id: string | null
+          created_at: string | null
+          description: string | null
+          end_time: string | null
+          event_type: string | null
+          id: string
+          start_time: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          classroom_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          id?: string
+          start_time: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          classroom_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          id?: string
+          start_time?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grades: {
+        Row: {
+          assignment_id: string | null
+          created_at: string | null
+          feedback: string | null
+          id: string
+          points_earned: number | null
+          student_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          points_earned?: number | null
+          student_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          points_earned?: number | null
+          student_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grades_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grades_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nfts: {
         Row: {
           contract_address: string
@@ -165,6 +343,240 @@ export type Database = {
             columns: ["owner_wallet_id"]
             isOneToOne: false
             referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      parent_student_relationships: {
+        Row: {
+          created_at: string | null
+          id: string
+          parent_id: string | null
+          relationship_type: string | null
+          student_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          parent_id?: string | null
+          relationship_type?: string | null
+          student_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          parent_id?: string | null
+          relationship_type?: string | null
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_student_relationships_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parent_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_student_relationships_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions: {
+        Row: {
+          correct_answer: string | null
+          created_at: string | null
+          id: string
+          options: Json | null
+          points: number | null
+          question: string
+          question_type: string | null
+          quiz_id: string | null
+        }
+        Insert: {
+          correct_answer?: string | null
+          created_at?: string | null
+          id?: string
+          options?: Json | null
+          points?: number | null
+          question: string
+          question_type?: string | null
+          quiz_id?: string | null
+        }
+        Update: {
+          correct_answer?: string | null
+          created_at?: string | null
+          id?: string
+          options?: Json | null
+          points?: number | null
+          question?: string
+          question_type?: string | null
+          quiz_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_submissions: {
+        Row: {
+          answers: Json | null
+          id: string
+          quiz_id: string | null
+          score: number | null
+          student_id: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          id?: string
+          quiz_id?: string | null
+          score?: number | null
+          student_id?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          id?: string
+          quiz_id?: string | null
+          score?: number | null
+          student_id?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_submissions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quizzes: {
+        Row: {
+          classroom_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          points_possible: number | null
+          time_limit: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          classroom_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          points_possible?: number | null
+          time_limit?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          classroom_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          points_possible?: number | null
+          time_limit?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resources: {
+        Row: {
+          classroom_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          title: string
+          type: string | null
+          updated_at: string | null
+          url: string | null
+        }
+        Insert: {
+          classroom_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          title: string
+          type?: string | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          classroom_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          title?: string
+          type?: string | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
             referencedColumns: ["id"]
           },
         ]
