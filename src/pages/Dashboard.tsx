@@ -9,14 +9,29 @@ import { ClassroomGrid } from "@/components/classroom/ClassroomGrid";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
 import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
 import { AchievementSystem } from "@/components/achievements/AchievementSystem";
-import { Plus, Users, Award, Wallet, Trophy } from "lucide-react";
+import { Plus, Users, Award, Wallet, Trophy, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
 const Dashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newClassroom, setNewClassroom] = useState({
+    name: "",
+    description: "",
+  });
 
   useEffect(() => {
     fetchClassrooms();
@@ -44,11 +59,50 @@ const Dashboard = () => {
     }
   };
 
+  const createClassroom = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('classrooms')
+        .insert([{
+          name: newClassroom.name,
+          description: newClassroom.description,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setClassrooms([data, ...classrooms]);
+      setNewClassroom({ name: "", description: "" });
+      toast({
+        title: "Success",
+        description: "Classroom created successfully"
+      });
+    } catch (error) {
+      console.error('Error creating classroom:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create classroom"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen p-8 bg-gradient-to-b from-[#1A1F2C] to-black text-white">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold gradient-text">Blockward Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate('/')}
+              className="hover:bg-purple-900/20"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-4xl font-bold gradient-text">Blockward Dashboard</h1>
+          </div>
           <WalletPanel />
         </div>
 
@@ -76,9 +130,37 @@ const Dashboard = () => {
             <Card className="p-6 glass-card">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold gradient-text">My Classrooms</h2>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Plus className="w-4 h-4 mr-2" /> New Classroom
-                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="bg-purple-600 hover:bg-purple-700">
+                      <Plus className="w-4 h-4 mr-2" /> New Classroom
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Create New Classroom</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Input
+                          placeholder="Classroom name"
+                          value={newClassroom.name}
+                          onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Textarea
+                          placeholder="Description"
+                          value={newClassroom.description}
+                          onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <Button onClick={createClassroom} className="w-full bg-purple-600 hover:bg-purple-700">
+                      Create Classroom
+                    </Button>
+                  </DialogContent>
+                </Dialog>
               </div>
               
               {loading ? (
