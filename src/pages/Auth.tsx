@@ -139,6 +139,11 @@ const Auth = () => {
                     colors: {
                       brand: "rgb(139, 92, 246)",
                       brandAccent: "rgb(124, 58, 237)",
+                      inputText: "white",
+                      inputBackground: "rgba(255, 255, 255, 0.1)",
+                      inputBorder: "rgba(255, 255, 255, 0.2)",
+                      inputLabelText: "rgb(209, 213, 219)",
+                      inputPlaceholder: "rgba(255, 255, 255, 0.5)",
                     },
                   },
                 },
@@ -146,13 +151,39 @@ const Auth = () => {
                   button: {
                     background: "rgb(139, 92, 246)",
                     borderRadius: "8px",
+                    color: "white",
                     width: "100%",
+                    padding: "10px",
+                    fontWeight: "500",
+                    textTransform: "none",
+                    "&:hover": {
+                      background: "rgb(124, 58, 237)",
+                    },
                   },
                   input: {
                     borderRadius: "8px",
+                    padding: "10px",
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    color: "white",
+                    "&::placeholder": {
+                      color: "rgba(255, 255, 255, 0.5)",
+                    },
+                    "&:focus": {
+                      borderColor: "rgb(139, 92, 246)",
+                      outline: "none",
+                    },
+                  },
+                  label: {
+                    color: "rgb(209, 213, 219)",
+                    fontSize: "0.875rem",
+                    marginBottom: "0.5rem",
                   },
                   anchor: {
                     color: "rgb(139, 92, 246)",
+                    "&:hover": {
+                      color: "rgb(124, 58, 237)",
+                    },
                   },
                   message: {
                     color: "rgb(139, 92, 246)",
