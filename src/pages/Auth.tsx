@@ -138,16 +138,16 @@ const Auth = () => {
             localization={{
               variables: {
                 sign_up: {
-                  email_input_placeholder: "Your email address",
+                  email_input_placeholder: "Choose a username",
                   password_input_placeholder: "Create a password (min. 6 characters)",
-                  email_label: "Email address",
+                  email_label: "Username",
                   password_label: "Password",
                   button_label: "Sign up",
                 },
                 sign_in: {
-                  email_input_placeholder: "Your email address",
-                  password_input_placeholder: "Your password",
-                  email_label: "Email address",
+                  email_input_placeholder: "Enter your username",
+                  password_input_placeholder: "Enter your password",
+                  email_label: "Username",
                   password_label: "Password",
                   button_label: "Sign in",
                 }
