@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { CSSProperties } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 const customTheme = {
   default: {
@@ -93,6 +94,28 @@ const authContainerStyles: {
 };
 
 const Auth = () => {
+  const { toast } = useToast();
+
+  // Handle auth state change
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN') {
+      toast({
+        title: "Welcome!",
+        description: "You have successfully signed in.",
+      });
+    } else if (event === 'SIGNED_OUT') {
+      toast({
+        title: "Signed out",
+        description: "You have been signed out.",
+      });
+    } else if (event === 'USER_UPDATED') {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated.",
+      });
+    }
+  });
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
@@ -112,6 +135,15 @@ const Auth = () => {
             theme="dark"
             providers={[]}
             redirectTo={`${window.location.origin}/dashboard`}
+            localization={{
+              variables: {
+                sign_up: {
+                  password_placeholder: "Password (min. 6 characters)",
+                  email_label: "Email address",
+                  password_label: "Create a password",
+                },
+              },
+            }}
           />
         </Card>
       </motion.div>
