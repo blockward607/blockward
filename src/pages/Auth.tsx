@@ -156,9 +156,9 @@ const Auth = () => {
                     padding: "10px",
                     fontWeight: "500",
                     textTransform: "none",
-                    "&:hover": {
-                      background: "rgb(124, 58, 237)",
-                    },
+                  },
+                  button_hover: { // Changed from &:hover
+                    background: "rgb(124, 58, 237)",
                   },
                   input: {
                     borderRadius: "8px",
@@ -166,13 +166,13 @@ const Auth = () => {
                     backgroundColor: "rgba(255, 255, 255, 0.1)",
                     border: "1px solid rgba(255, 255, 255, 0.2)",
                     color: "white",
-                    "&::placeholder": {
-                      color: "rgba(255, 255, 255, 0.5)",
-                    },
-                    "&:focus": {
-                      borderColor: "rgb(139, 92, 246)",
-                      outline: "none",
-                    },
+                  },
+                  input_placeholder: { // Changed from &::placeholder
+                    color: "rgba(255, 255, 255, 0.5)",
+                  },
+                  input_focus: { // Added separate focus style
+                    borderColor: "rgb(139, 92, 246)",
+                    outline: "none",
                   },
                   label: {
                     color: "rgb(209, 213, 219)",
@@ -181,9 +181,9 @@ const Auth = () => {
                   },
                   anchor: {
                     color: "rgb(139, 92, 246)",
-                    "&:hover": {
-                      color: "rgb(124, 58, 237)",
-                    },
+                  },
+                  anchor_hover: { // Changed from &:hover
+                    color: "rgb(124, 58, 237)",
                   },
                   message: {
                     color: "rgb(139, 92, 246)",
