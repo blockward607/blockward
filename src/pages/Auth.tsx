@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { CSSProperties } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const customTheme = {
   default: {
@@ -138,10 +138,19 @@ const Auth = () => {
             localization={{
               variables: {
                 sign_up: {
-                  password_placeholder: "Password (min. 6 characters)",
+                  email_input_placeholder: "Your email address",
+                  password_input_placeholder: "Create a password (min. 6 characters)",
                   email_label: "Email address",
-                  password_label: "Create a password",
+                  password_label: "Password",
+                  button_label: "Sign up",
                 },
+                sign_in: {
+                  email_input_placeholder: "Your email address",
+                  password_input_placeholder: "Your password",
+                  email_label: "Email address",
+                  password_label: "Password",
+                  button_label: "Sign in",
+                }
               },
             }}
           />
