@@ -110,7 +110,7 @@ const Auth = () => {
               style: authContainerStyles,
             }}
             theme="dark"
-            providers={["google"]}
+            providers={[]}
             redirectTo={`${window.location.origin}/dashboard`}
           />
         </Card>
