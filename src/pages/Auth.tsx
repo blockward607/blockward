@@ -3,6 +3,7 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { CSSProperties } from "react";
 
 const customTheme = {
   default: {
@@ -44,7 +45,15 @@ const customTheme = {
   },
 };
 
-const authContainerStyles = {
+const authContainerStyles: {
+  container?: CSSProperties;
+  button?: CSSProperties;
+  input?: CSSProperties;
+  label?: CSSProperties;
+  anchor?: CSSProperties;
+  message?: CSSProperties;
+  divider?: CSSProperties;
+} = {
   container: {
     width: "100%",
     maxWidth: "400px",
@@ -55,7 +64,7 @@ const authContainerStyles = {
     color: "white",
     padding: "10px",
     fontWeight: "500",
-    textTransform: "none",
+    textTransform: "none" as const,
     transition: "background-color 0.2s ease",
   },
   input: {
