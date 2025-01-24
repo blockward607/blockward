@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { CSSProperties } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const customTheme = {
   default: {
@@ -95,26 +97,41 @@ const authContainerStyles: {
 
 const Auth = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // Handle auth state change
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN') {
-      toast({
-        title: "Welcome!",
-        description: "You have successfully signed in.",
-      });
-    } else if (event === 'SIGNED_OUT') {
-      toast({
-        title: "Signed out",
-        description: "You have been signed out.",
-      });
-    } else if (event === 'USER_UPDATED') {
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated.",
-      });
-    }
-  });
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate('/dashboard');
+      }
+    });
+
+    // Handle auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_UP') {
+        toast({
+          title: "Welcome!",
+          description: "You have successfully signed in.",
+        });
+        navigate('/dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        toast({
+          title: "Signed out",
+          description: "You have been signed out.",
+        });
+      } else if (event === 'USER_UPDATED') {
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been updated.",
+        });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
