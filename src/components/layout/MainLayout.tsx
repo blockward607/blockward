@@ -45,7 +45,7 @@ export const MainLayout = () => {
   }, [isSidebarOpen]);
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(prev => !prev);
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   return (
@@ -103,14 +103,14 @@ export const MainLayout = () => {
         </div>
       </motion.aside>
 
-      {/* Mobile menu button */}
-      <div className="fixed top-4 left-4 z-50 lg:hidden">
+      {/* Mobile menu button and desktop toggle */}
+      <div className="fixed top-4 left-4 z-50">
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
           className={cn(
-            "bg-black/50 backdrop-blur-xl", 
+            "bg-black/50 backdrop-blur-xl",
             isSidebarOpen && "hidden"
           )}
         >

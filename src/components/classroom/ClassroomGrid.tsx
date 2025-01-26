@@ -1,9 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/integrations/supabase/types";
-import { Users, Settings, Grid } from "lucide-react";
+import { Users, Settings, Grid, Calendar } from "lucide-react";
 import { useState } from "react";
 import { SeatingChart } from "@/components/seating/SeatingChart";
+import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
@@ -13,6 +14,7 @@ interface ClassroomGridProps {
 
 export const ClassroomGrid = ({ classroom }: ClassroomGridProps) => {
   const [showSeating, setShowSeating] = useState(false);
+  const [showAttendance, setShowAttendance] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -36,6 +38,14 @@ export const ClassroomGrid = ({ classroom }: ClassroomGridProps) => {
               <Button 
                 variant="outline" 
                 size="sm"
+                onClick={() => setShowAttendance(!showAttendance)}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Attendance
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
                 onClick={() => setShowSeating(!showSeating)}
               >
                 <Grid className="w-4 h-4 mr-2" />
@@ -48,6 +58,10 @@ export const ClassroomGrid = ({ classroom }: ClassroomGridProps) => {
           </div>
         </div>
       </Card>
+
+      {showAttendance && (
+        <AttendanceTracker classroomId={classroom.id} />
+      )}
 
       {showSeating && (
         <SeatingChart classroomId={classroom.id} />
