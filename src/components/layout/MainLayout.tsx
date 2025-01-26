@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Home,
@@ -31,7 +31,7 @@ const navigation = [
 
 const SIDEBAR_STATE_KEY = 'sidebar-state';
 
-export const MainLayout = ({ children }: { children: React.ReactNode }) => {
+export const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_STATE_KEY);
     return saved ? JSON.parse(saved) : true;
@@ -40,7 +40,6 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Save sidebar state to localStorage
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(isSidebarOpen));
   }, [isSidebarOpen]);
@@ -126,7 +125,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           isSidebarOpen ? "lg:ml-64" : "ml-0"
         )}
       >
-        {children}
+        <Outlet />
       </main>
     </div>
   );
