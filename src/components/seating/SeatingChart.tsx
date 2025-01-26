@@ -37,6 +37,42 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
     fetchSeatingArrangement();
   }, [classroomId]);
 
+  const createDefaultSeatingArrangement = async () => {
+    const defaultLayout: SeatingLayout = {
+      rows: 5,
+      columns: 6,
+      seats: []
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('seating_arrangements')
+        .insert({
+          classroom_id: classroomId,
+          layout: defaultLayout as unknown as Json,
+          active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const layout = data.layout as unknown as SeatingLayout;
+        setSeats(layout.seats || []);
+        setRows(layout.rows || 5);
+        setCols(layout.columns || 6);
+      }
+    } catch (error) {
+      console.error('Error creating default seating arrangement:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create default seating arrangement"
+      });
+    }
+  };
+
   const fetchSeatingArrangement = async () => {
     try {
       const { data, error } = await supabase
@@ -44,7 +80,7 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
         .select('*')
         .eq('classroom_id', classroomId)
         .eq('active', true)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -54,6 +90,9 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
         setSeats(layout.seats || []);
         setRows(layout.rows || 5);
         setCols(layout.columns || 6);
+      } else {
+        // If no seating arrangement exists, create a default one
+        await createDefaultSeatingArrangement();
       }
     } catch (error) {
       console.error('Error fetching seating arrangement:', error);
