@@ -109,7 +109,7 @@ const Auth = () => {
 
     // Handle auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_UP') {
+      if (event === 'SIGNED_IN') {
         toast({
           title: "Welcome!",
           description: "You have successfully signed in.",
