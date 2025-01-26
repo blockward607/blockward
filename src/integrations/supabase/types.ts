@@ -722,6 +722,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       wallets: {
         Row: {
           address: string
@@ -754,6 +775,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      user_role: "teacher" | "student"
       wallet_type: "user" | "admin"
     }
     CompositeTypes: {

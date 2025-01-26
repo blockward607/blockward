@@ -16,6 +16,8 @@ import {
   Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -29,20 +31,27 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-const SIDEBAR_STATE_KEY = 'sidebar-state';
-
 export const MainLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem(SIDEBAR_STATE_KEY);
-    return saved ? JSON.parse(saved) : true;
-  });
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
-    localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(isSidebarOpen));
-  }, [isSidebarOpen]);
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        variant: "destructive",
+        title: "Not authenticated",
+        description: "Please log in to access this page"
+      });
+      navigate('/auth');
+    }
+  };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -52,12 +61,16 @@ export const MainLayout = () => {
     <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-black">
       {/* Sidebar */}
       <motion.aside
-        initial={{ x: -300 }}
-        animate={{ x: isSidebarOpen ? 0 : -300 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
+        initial={false}
+        animate={{ 
+          width: isSidebarOpen ? "16rem" : "0rem",
+          opacity: isSidebarOpen ? 1 : 0
+        }}
+        transition={{ duration: 0.2 }}
         className={cn(
-          "fixed top-0 left-0 z-40 h-screen w-64",
-          "bg-black/50 backdrop-blur-xl border-r border-white/10"
+          "fixed top-0 left-0 z-40 h-screen",
+          "bg-black/50 backdrop-blur-xl border-r border-white/10",
+          "overflow-hidden"
         )}
       >
         <div className="flex h-full flex-col">
@@ -66,14 +79,6 @@ export const MainLayout = () => {
             <Link to="/" className="text-2xl font-bold gradient-text">
               Blockward
             </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="lg:hidden"
-            >
-              <X className="h-6 w-6" />
-            </Button>
           </div>
 
           {/* Navigation */}
@@ -103,18 +108,19 @@ export const MainLayout = () => {
         </div>
       </motion.aside>
 
-      {/* Mobile menu button and desktop toggle */}
+      {/* Mobile menu button */}
       <div className="fixed top-4 left-4 z-50">
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className={cn(
-            "bg-black/50 backdrop-blur-xl",
-            isSidebarOpen && "hidden"
-          )}
+          className="bg-black/50 backdrop-blur-xl"
         >
-          <Menu className="h-6 w-6" />
+          {isSidebarOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
         </Button>
       </div>
 
