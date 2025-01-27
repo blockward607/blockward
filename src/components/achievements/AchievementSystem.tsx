@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, Star, Plus, Medal, GraduationCap, Clock } from "lucide-react";
@@ -51,11 +51,48 @@ const defaultAchievements: Achievement[] = [
 
 export const AchievementSystem = () => {
   const { toast } = useToast();
-  const [achievements, setAchievements] = useState<Achievement[]>(defaultAchievements);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [newAchievement, setNewAchievement] = useState<Partial<Achievement>>({
     type: "academic",
     points: 100
   });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAchievements();
+  }, []);
+
+  const fetchAchievements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('achievements')
+        .select(`
+          *,
+          student_achievements (
+            count
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const achievementsWithCount = data.map(achievement => ({
+        ...achievement,
+        earnedCount: achievement.student_achievements[0]?.count || 0
+      }));
+
+      setAchievements(achievementsWithCount);
+    } catch (error) {
+      console.error('Error fetching achievements:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load achievements"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
@@ -80,27 +117,51 @@ export const AchievementSystem = () => {
       return;
     }
 
-    const achievement: Achievement = {
-      id: crypto.randomUUID(),
-      title: newAchievement.title,
-      description: newAchievement.description,
-      type: newAchievement.type || "academic",
-      points: newAchievement.points || 100,
-      icon: "trophy",
-      earnedCount: 0
-    };
+    try {
+      const { data, error } = await supabase
+        .from('achievements')
+        .insert([{
+          title: newAchievement.title,
+          description: newAchievement.description,
+          type: newAchievement.type || "academic",
+          points: newAchievement.points || 100,
+          icon: "trophy",
+          criteria: newAchievement.criteria
+        }])
+        .select()
+        .single();
 
-    setAchievements([...achievements, achievement]);
-    setNewAchievement({
-      type: "academic",
-      points: 100
-    });
+      if (error) throw error;
 
-    toast({
-      title: "Success",
-      description: "Achievement created successfully"
-    });
+      setAchievements([...achievements, { ...data, earnedCount: 0 }]);
+      setNewAchievement({
+        type: "academic",
+        points: 100
+      });
+
+      toast({
+        title: "Success",
+        description: "Achievement created successfully"
+      });
+    } catch (error) {
+      console.error('Error creating achievement:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create achievement"
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="flex justify-center items-center h-40">
+          <p>Loading achievements...</p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 glass-card">
@@ -143,6 +204,13 @@ export const AchievementSystem = () => {
                   onChange={(e) => setNewAchievement({ ...newAchievement, points: parseInt(e.target.value) })}
                 />
               </div>
+              <div className="grid gap-2">
+                <Textarea
+                  placeholder="Achievement criteria (optional)"
+                  value={newAchievement.criteria || ""}
+                  onChange={(e) => setNewAchievement({ ...newAchievement, criteria: e.target.value })}
+                />
+              </div>
             </div>
             <Button onClick={handleCreateAchievement} className="w-full bg-purple-600 hover:bg-purple-700">
               Create Achievement
@@ -170,6 +238,9 @@ export const AchievementSystem = () => {
                   </div>
                 </div>
                 <p className="text-sm text-gray-400 mb-4">{achievement.description}</p>
+                {achievement.criteria && (
+                  <p className="text-sm text-gray-500 mb-4">Criteria: {achievement.criteria}</p>
+                )}
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 text-yellow-400" />
                   <span className="text-sm">{achievement.earnedCount} students earned</span>
