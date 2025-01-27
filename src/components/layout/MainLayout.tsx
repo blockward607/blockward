@@ -57,6 +57,10 @@ export const MainLayout = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const goToHome = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-black">
       {/* Sidebar */}
@@ -108,8 +112,8 @@ export const MainLayout = () => {
         </div>
       </motion.aside>
 
-      {/* Mobile menu button */}
-      <div className="fixed top-4 left-4 z-50">
+      {/* Top Navigation Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-2 p-4 bg-black/50 backdrop-blur-xl">
         <Button
           variant="ghost"
           size="icon"
@@ -122,12 +126,21 @@ export const MainLayout = () => {
             <Menu className="h-6 w-6" />
           )}
         </Button>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToHome}
+          className="bg-black/50 backdrop-blur-xl"
+        >
+          <Home className="h-6 w-6" />
+        </Button>
       </div>
 
       {/* Main content */}
       <main
         className={cn(
-          "transition-all duration-300 p-8",
+          "transition-all duration-300 p-8 mt-16",
           isSidebarOpen ? "lg:ml-64" : "ml-0"
         )}
       >
