@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, XSquare } from "lucide-react";
+import { CheckSquare, XSquare, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { AttendanceStatusSelect, AttendanceStatus } from "./AttendanceStatus";
 import {
   BarChart,
   Bar,
@@ -12,8 +13,10 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
+  const { toast } = useToast();
   const [students, setStudents] = useState<any[]>([]);
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +35,7 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     if (classroomStudents) {
       const studentsWithAttendance = classroomStudents.map((cs) => ({
         ...cs.students,
-        isPresent: true // Default to present
+        status: 'present' as AttendanceStatus
       }));
       setStudents(studentsWithAttendance);
     }
@@ -50,13 +53,15 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
       const chartData = attendance.reduce((acc: any, curr: any) => {
         const date = new Date(curr.date).toLocaleDateString();
         if (!acc[date]) {
-          acc[date] = { date, present: 0, absent: 0 };
+          acc[date] = { 
+            date, 
+            present: 0, 
+            absent: 0, 
+            late: 0, 
+            authorized: 0 
+          };
         }
-        if (curr.status === 'present') {
-          acc[date].present += 1;
-        } else {
-          acc[date].absent += 1;
-        }
+        acc[date][curr.status] += 1;
         return acc;
       }, {});
 
@@ -64,10 +69,10 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     }
   };
 
-  const toggleAttendance = async (studentId: string) => {
+  const updateStudentStatus = (studentId: string, status: AttendanceStatus) => {
     setStudents(students.map(student => 
       student.id === studentId 
-        ? { ...student, isPresent: !student.isPresent }
+        ? { ...student, status }
         : student
     ));
   };
@@ -76,7 +81,7 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     const attendanceRecords = students.map(student => ({
       student_id: student.id,
       classroom_id: classroomId,
-      status: student.isPresent ? 'present' : 'absent',
+      status: student.status,
       date: new Date().toISOString(),
     }));
 
@@ -84,7 +89,17 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
       .from('attendance')
       .insert(attendanceRecords);
 
-    if (!error) {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to submit attendance"
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Attendance submitted successfully"
+      });
       fetchAttendanceData();
     }
   };
@@ -118,6 +133,8 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
               <Legend />
               <Bar dataKey="present" fill="#4ade80" name="Present" />
               <Bar dataKey="absent" fill="#f87171" name="Absent" />
+              <Bar dataKey="late" fill="#fbbf24" name="Late" />
+              <Bar dataKey="authorized" fill="#60a5fa" name="Authorized" />
             </BarChart>
           </div>
         </div>
@@ -132,18 +149,10 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
                 className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5"
               >
                 <span>{student.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleAttendance(student.id)}
-                  className={student.isPresent ? "text-green-500" : "text-red-500"}
-                >
-                  {student.isPresent ? (
-                    <CheckSquare className="w-5 h-5" />
-                  ) : (
-                    <XSquare className="w-5 h-5" />
-                  )}
-                </Button>
+                <AttendanceStatusSelect
+                  value={student.status}
+                  onChange={(status) => updateStudentStatus(student.id, status)}
+                />
               </div>
             ))}
           </div>
