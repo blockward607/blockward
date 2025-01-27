@@ -7,6 +7,9 @@ export interface Achievement {
   type: AchievementType;
   points: number;
   icon: string;
-  criteria?: string;
+  criteria?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   earnedCount?: number;
+  student_achievements?: any[];
 }

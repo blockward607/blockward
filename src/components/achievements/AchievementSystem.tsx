@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Star, Plus, Medal, GraduationCap, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Achievement } from "@/types/achievement";
+import { Achievement, AchievementType } from "@/types/achievement";
 import {
   Dialog,
   DialogContent,
@@ -53,7 +53,7 @@ export const AchievementSystem = () => {
   const { toast } = useToast();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [newAchievement, setNewAchievement] = useState<Partial<Achievement>>({
-    type: "academic",
+    type: "academic" as AchievementType,
     points: 100
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -78,6 +78,7 @@ export const AchievementSystem = () => {
 
       const achievementsWithCount = data.map(achievement => ({
         ...achievement,
+        type: achievement.type as AchievementType,
         earnedCount: achievement.student_achievements[0]?.count || 0
       }));
 
@@ -133,9 +134,15 @@ export const AchievementSystem = () => {
 
       if (error) throw error;
 
-      setAchievements([...achievements, { ...data, earnedCount: 0 }]);
+      const newAchievementWithType = {
+        ...data,
+        type: data.type as AchievementType,
+        earnedCount: 0
+      };
+
+      setAchievements([...achievements, newAchievementWithType]);
       setNewAchievement({
-        type: "academic",
+        type: "academic" as AchievementType,
         points: 100
       });
 
