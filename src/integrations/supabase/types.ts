@@ -385,6 +385,44 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          classroom_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          message: string
+          title: string
+          type: string | null
+        }
+        Insert: {
+          classroom_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          message: string
+          title: string
+          type?: string | null
+        }
+        Update: {
+          classroom_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          message?: string
+          title?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parent_profiles: {
         Row: {
           created_at: string | null
@@ -681,6 +719,7 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          remaining_credits: number | null
           school: string | null
           subject: string | null
           updated_at: string | null
@@ -691,6 +730,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          remaining_credits?: number | null
           school?: string | null
           subject?: string | null
           updated_at?: string | null
@@ -701,6 +741,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          remaining_credits?: number | null
           school?: string | null
           subject?: string | null
           updated_at?: string | null
