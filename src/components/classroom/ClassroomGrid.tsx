@@ -5,6 +5,7 @@ import { Users, Settings, Grid, Calendar } from "lucide-react";
 import { useState } from "react";
 import { SeatingChart } from "@/components/seating/SeatingChart";
 import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
+import { InviteStudents } from "./InviteStudents";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
@@ -15,6 +16,7 @@ interface ClassroomGridProps {
 export const ClassroomGrid = ({ classroom }: ClassroomGridProps) => {
   const [showSeating, setShowSeating] = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -51,11 +53,22 @@ export const ClassroomGrid = ({ classroom }: ClassroomGridProps) => {
                 <Grid className="w-4 h-4 mr-2" />
                 Seating
               </Button>
-              <Button variant="outline" size="sm">
-                Manage
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowInvite(!showInvite)}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Invite
               </Button>
             </div>
           </div>
+
+          {showInvite && (
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <InviteStudents classroomId={classroom.id} />
+            </div>
+          )}
         </div>
       </Card>
 
