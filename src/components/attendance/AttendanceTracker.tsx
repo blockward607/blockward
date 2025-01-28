@@ -12,6 +12,9 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,11 +25,14 @@ interface Student {
   status?: AttendanceStatus;
 }
 
+const COLORS = ['#4ade80', '#f87171', '#fbbf24', '#60a5fa'];
+
 export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewType, setViewType] = useState<'list' | 'chart' | 'pie'>('list');
 
   useEffect(() => {
     fetchStudents();
@@ -115,6 +121,27 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     return <div>Loading...</div>;
   }
 
+  const getPieChartData = () => {
+    const totals = {
+      present: 0,
+      absent: 0,
+      late: 0,
+      authorized: 0
+    };
+
+    attendanceData.forEach(day => {
+      totals.present += day.present;
+      totals.absent += day.absent;
+      totals.late += day.late;
+      totals.authorized += day.authorized;
+    });
+
+    return Object.entries(totals).map(([name, value]) => ({
+      name,
+      value
+    }));
+  };
+
   const getStatusIcon = (status: AttendanceStatus) => {
     switch (status) {
       case 'present':
@@ -132,13 +159,14 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
   return (
     <Card className="p-6 space-y-6">
-      <Tabs defaultValue="students">
+      <Tabs defaultValue="list">
         <TabsList>
-          <TabsTrigger value="students">Students</TabsTrigger>
-          <TabsTrigger value="statistics">Statistics</TabsTrigger>
+          <TabsTrigger value="list">List View</TabsTrigger>
+          <TabsTrigger value="chart">Bar Chart</TabsTrigger>
+          <TabsTrigger value="pie">Pie Chart</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="students">
+        <TabsContent value="list">
           <div className="space-y-4">
             {students.map((student) => (
               <div
@@ -169,11 +197,11 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
           </div>
         </TabsContent>
 
-        <TabsContent value="statistics">
+        <TabsContent value="chart">
           <div className="w-full overflow-x-auto">
             <BarChart
-              width={500}
-              height={300}
+              width={800}
+              height={400}
               data={attendanceData}
               margin={{
                 top: 5,
@@ -192,6 +220,28 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
               <Bar dataKey="late" fill="#fbbf24" name="Late" />
               <Bar dataKey="authorized" fill="#60a5fa" name="Authorized" />
             </BarChart>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="pie">
+          <div className="w-full flex justify-center">
+            <PieChart width={400} height={400}>
+              <Pie
+                data={getPieChartData()}
+                cx={200}
+                cy={200}
+                labelLine={false}
+                outerRadius={150}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {getPieChartData().map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
           </div>
         </TabsContent>
       </Tabs>
