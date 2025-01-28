@@ -136,6 +136,7 @@ export type Database = {
       }
       behavior_records: {
         Row: {
+          category: string | null
           created_at: string | null
           description: string
           id: string
@@ -144,6 +145,7 @@ export type Database = {
           type: string | null
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           description: string
           id?: string
@@ -152,6 +154,7 @@ export type Database = {
           type?: string | null
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           description?: string
           id?: string
@@ -376,6 +379,7 @@ export type Database = {
           created_at: string | null
           creator_wallet_id: string | null
           id: string
+          image_url: string | null
           metadata: Json
           network: string
           owner_wallet_id: string | null
@@ -387,6 +391,7 @@ export type Database = {
           created_at?: string | null
           creator_wallet_id?: string | null
           id?: string
+          image_url?: string | null
           metadata: Json
           network: string
           owner_wallet_id?: string | null
@@ -398,6 +403,7 @@ export type Database = {
           created_at?: string | null
           creator_wallet_id?: string | null
           id?: string
+          image_url?: string | null
           metadata?: Json
           network?: string
           owner_wallet_id?: string | null
