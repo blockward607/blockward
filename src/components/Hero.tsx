@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { GraduationCap, Sparkles, ArrowRight } from "lucide-react";
+import { InteractiveCube } from "./InteractiveCube";
 
 export const Hero = () => {
   return (
@@ -43,9 +44,10 @@ export const Hero = () => {
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="flex justify-center mb-6"
+            className="flex justify-center mb-6 items-center gap-8"
           >
             <GraduationCap className="w-20 h-20 text-purple-400" />
+            <InteractiveCube />
           </motion.div>
 
           <motion.h1 
