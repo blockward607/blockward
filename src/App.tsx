@@ -5,6 +5,12 @@ import Dashboard from "@/pages/Dashboard";
 import Auth from "@/pages/Auth";
 import Rewards from "@/pages/Rewards";
 import Attendance from "@/pages/Attendance";
+import Settings from "@/pages/Settings";
+import Students from "@/pages/Students";
+import Classes from "@/pages/Classes";
+import Behavior from "@/pages/Behavior";
+import Achievements from "@/pages/Achievements";
+import Notifications from "@/pages/Notifications";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,27 +53,27 @@ function App() {
           />
           <Route
             path="/achievements"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
+            element={isAuthenticated ? <Achievements /> : <Navigate to="/auth" />}
           />
           <Route
             path="/students"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
+            element={isAuthenticated ? <Students /> : <Navigate to="/auth" />}
           />
           <Route
             path="/classes"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
+            element={isAuthenticated ? <Classes /> : <Navigate to="/auth" />}
           />
           <Route
             path="/behavior"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
+            element={isAuthenticated ? <Behavior /> : <Navigate to="/auth" />}
           />
           <Route
             path="/notifications"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
+            element={isAuthenticated ? <Notifications /> : <Navigate to="/auth" />}
           />
           <Route
             path="/settings"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
+            element={isAuthenticated ? <Settings /> : <Navigate to="/auth" />}
           />
         </Route>
       </Routes>
