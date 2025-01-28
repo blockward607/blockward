@@ -4,6 +4,7 @@ import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Auth from "@/pages/Auth";
 import Rewards from "@/pages/Rewards";
+import Attendance from "@/pages/Attendance";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -41,6 +42,10 @@ function App() {
             element={isAuthenticated ? <Rewards /> : <Navigate to="/auth" />}
           />
           <Route
+            path="/attendance"
+            element={isAuthenticated ? <Attendance /> : <Navigate to="/auth" />}
+          />
+          <Route
             path="/achievements"
             element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
           />
@@ -54,10 +59,6 @@ function App() {
           />
           <Route
             path="/behavior"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
-          />
-          <Route
-            path="/attendance"
             element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
           />
           <Route
