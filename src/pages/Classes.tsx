@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, BookOpen, Calendar, Award } from "lucide-react";
+import { Users, BookOpen, Calendar, Award, Plus } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -11,6 +11,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
+import { ClassroomGrid } from "@/components/classroom/ClassroomGrid";
 
 interface Classroom {
   id: string;
@@ -64,6 +65,47 @@ const Classes = () => {
     }
   };
 
+  const createNewClass = async () => {
+    try {
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .single();
+
+      if (!teacherProfile) {
+        throw new Error('Teacher profile not found');
+      }
+
+      const { data: newClassroom, error } = await supabase
+        .from('classrooms')
+        .insert([
+          {
+            name: `New Class ${classrooms.length + 1}`,
+            description: 'A new classroom',
+            teacher_id: teacherProfile.id
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setClassrooms([...classrooms, { ...newClassroom, students: [] }]);
+      
+      toast({
+        title: "Success",
+        description: "New classroom created successfully"
+      });
+    } catch (error) {
+      console.error('Error creating classroom:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create new classroom"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -85,92 +127,18 @@ const Classes = () => {
           </div>
           <h1 className="text-3xl font-bold gradient-text">My Classes</h1>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700">
+        <Button 
+          onClick={createNewClass}
+          className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
           Create New Class
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
         {classrooms.map((classroom) => (
-          <Card key={classroom.id} className="p-6">
-            <Tabs defaultValue="overview" className="w-full">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h2 className="text-2xl font-semibold mb-2">{classroom.name}</h2>
-                  <p className="text-gray-400">{classroom.description}</p>
-                </div>
-                <TabsList>
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="attendance">Attendance</TabsTrigger>
-                  <TabsTrigger value="students">Students</TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent value="overview">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="p-4 bg-purple-900/10">
-                    <div className="flex items-center gap-3">
-                      <Users className="w-5 h-5 text-purple-400" />
-                      <div>
-                        <p className="text-sm text-gray-400">Total Students</p>
-                        <p className="text-2xl font-semibold">{classroom.students.length}</p>
-                      </div>
-                    </div>
-                  </Card>
-                  <Card className="p-4 bg-purple-900/10">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-purple-400" />
-                      <div>
-                        <p className="text-sm text-gray-400">Next Class</p>
-                        <p className="text-2xl font-semibold">Today</p>
-                      </div>
-                    </div>
-                  </Card>
-                  <Card className="p-4 bg-purple-900/10">
-                    <div className="flex items-center gap-3">
-                      <Award className="w-5 h-5 text-purple-400" />
-                      <div>
-                        <p className="text-sm text-gray-400">Average Points</p>
-                        <p className="text-2xl font-semibold">
-                          {Math.round(
-                            classroom.students.reduce((acc, student) => acc + (student.points || 0), 0) /
-                            classroom.students.length
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="attendance">
-                <AttendanceTracker classroomId={classroom.id} />
-              </TabsContent>
-
-              <TabsContent value="students">
-                <div className="space-y-4">
-                  {classroom.students.map((student) => (
-                    <Card key={student.id} className="p-4 hover:bg-purple-900/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
-                            {student.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-semibold">{student.name}</p>
-                            <p className="text-sm text-gray-400">{student.points} points</p>
-                          </div>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          View Profile
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </Card>
+          <ClassroomGrid key={classroom.id} classroom={classroom} />
         ))}
       </div>
     </div>
