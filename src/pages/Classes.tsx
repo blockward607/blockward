@@ -4,26 +4,16 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, BookOpen, Calendar, Award, Plus } from "lucide-react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
+import { Database } from "@/integrations/supabase/types";
 import { ClassroomGrid } from "@/components/classroom/ClassroomGrid";
 
-interface Classroom {
-  id: string;
-  name: string;
-  description: string;
-  teacher_id: string;
+type Classroom = Database['public']['Tables']['classrooms']['Row'] & {
   students: {
     id: string;
     name: string;
     points: number;
   }[];
-}
+};
 
 const Classes = () => {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
