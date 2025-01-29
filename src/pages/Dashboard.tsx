@@ -9,7 +9,7 @@ import { ClassroomGrid } from "@/components/classroom/ClassroomGrid";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
 import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
 import { AchievementSystem } from "@/components/achievements/AchievementSystem";
-import { Plus, Users, Award, Wallet, Trophy, ArrowLeft } from "lucide-react";
+import { Plus, Users, Award, Wallet, Trophy, ArrowLeft, ChevronDown, ChevronUp, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -17,27 +17,60 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
+type Notification = Database['public']['Tables']['notifications']['Row'];
 
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [newClassroom, setNewClassroom] = useState({
     name: "",
     description: "",
   });
+  const [expandedSections, setExpandedSections] = useState({
+    notifications: true,
+    classrooms: true,
+  });
 
   useEffect(() => {
     checkAuth();
     fetchClassrooms();
+    fetchNotifications();
   }, []);
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load notifications"
+      });
+    }
+  };
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -154,7 +187,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen p-8 bg-gradient-to-b from-[#1A1F2C] to-black text-white">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
             <Button 
@@ -169,6 +202,31 @@ const Dashboard = () => {
           </div>
           <WalletPanel />
         </div>
+
+        {/* Notifications Section */}
+        <Card className="p-6 glass-card">
+          <div className="flex justify-between items-center mb-4 cursor-pointer" onClick={() => toggleSection('notifications')}>
+            <div className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-purple-400" />
+              <h2 className="text-xl font-semibold">Recent Notifications</h2>
+            </div>
+            {expandedSections.notifications ? <ChevronUp /> : <ChevronDown />}
+          </div>
+          
+          {expandedSections.notifications && (
+            <div className="space-y-3">
+              {notifications.map((notification) => (
+                <Card key={notification.id} className="p-4 bg-purple-900/10 border-purple-500/20">
+                  <h3 className="font-semibold text-purple-300">{notification.title}</h3>
+                  <p className="text-sm text-gray-300">{notification.message}</p>
+                  <span className="text-xs text-gray-400">
+                    {new Date(notification.created_at!).toLocaleDateString()}
+                  </span>
+                </Card>
+              ))}
+            </div>
+          )}
+        </Card>
 
         <Tabs defaultValue="classrooms" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 gap-4">
@@ -193,7 +251,10 @@ const Dashboard = () => {
           <TabsContent value="classrooms">
             <Card className="p-6 glass-card">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold gradient-text">My Classrooms</h2>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleSection('classrooms')}>
+                  <h2 className="text-2xl font-semibold gradient-text">My Classrooms</h2>
+                  {expandedSections.classrooms ? <ChevronUp /> : <ChevronDown />}
+                </div>
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button className="bg-purple-600 hover:bg-purple-700">
@@ -205,20 +266,16 @@ const Dashboard = () => {
                       <DialogTitle>Create New Classroom</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Input
-                          placeholder="Classroom name"
-                          value={newClassroom.name}
-                          onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Textarea
-                          placeholder="Description"
-                          value={newClassroom.description}
-                          onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
-                        />
-                      </div>
+                      <Input
+                        placeholder="Classroom name"
+                        value={newClassroom.name}
+                        onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
+                      />
+                      <Textarea
+                        placeholder="Description"
+                        value={newClassroom.description}
+                        onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
+                      />
                     </div>
                     <Button onClick={createClassroom} className="w-full bg-purple-600 hover:bg-purple-700">
                       Create Classroom
@@ -227,14 +284,14 @@ const Dashboard = () => {
                 </Dialog>
               </div>
               
-              {loading ? (
-                <p className="text-center">Loading classrooms...</p>
-              ) : (
-                <div className="grid gap-4">
-                  {classrooms.length === 0 ? (
+              {expandedSections.classrooms && (
+                <div className="grid gap-6">
+                  {loading ? (
+                    <p className="text-center">Loading classrooms...</p>
+                  ) : classrooms.length === 0 ? (
                     <p className="text-center text-gray-400">No classrooms found. Create your first classroom to get started!</p>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-6">
                       {classrooms.map((classroom) => (
                         <ClassroomGrid key={classroom.id} classroom={classroom} />
                       ))}
@@ -262,7 +319,6 @@ const Dashboard = () => {
       </div>
     </div>
   );
-
 };
 
 export default Dashboard;
