@@ -32,7 +32,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewType, setViewType] = useState<'list' | 'chart' | 'pie'>('list');
 
   useEffect(() => {
     fetchStudents();
@@ -40,17 +39,35 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   }, [classroomId]);
 
   const fetchStudents = async () => {
-    const { data: classroomStudents } = await supabase
-      .from('classroom_students')
-      .select('student_id, students(*)')
-      .eq('classroom_id', classroomId);
+    try {
+      const { data: classroomStudents, error } = await supabase
+        .from('classroom_students')
+        .select(`
+          student_id,
+          students (
+            id,
+            name
+          )
+        `)
+        .eq('classroom_id', classroomId);
 
-    if (classroomStudents) {
-      const studentsWithAttendance = classroomStudents.map((cs) => ({
-        ...cs.students,
-        status: 'present' as AttendanceStatus
-      }));
-      setStudents(studentsWithAttendance);
+      if (error) throw error;
+
+      if (classroomStudents) {
+        const formattedStudents = classroomStudents.map((cs) => ({
+          id: cs.students.id,
+          name: cs.students.name,
+          status: 'present' as AttendanceStatus
+        }));
+        setStudents(formattedStudents);
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load students"
+      });
     }
     setLoading(false);
   };
@@ -157,6 +174,16 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     }
   };
 
+  if (loading) {
+    return (
+      <Card className="p-6">
+        <div className="flex justify-center items-center h-40">
+          <p>Loading students...</p>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-6 space-y-6">
       <Tabs defaultValue="list">
@@ -168,32 +195,40 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
         <TabsContent value="list">
           <div className="space-y-4">
-            {students.map((student) => (
-              <div
-                key={student.id}
-                className="flex items-center justify-between p-4 rounded-lg bg-card hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
-                    {student.name.charAt(0)}
-                  </div>
-                  <span>{student.name}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  {student.status && getStatusIcon(student.status)}
-                  <AttendanceStatusSelect
-                    value={student.status || 'present'}
-                    onChange={(status) => updateStudentStatus(student.id, status)}
-                  />
-                </div>
+            {students.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No students found in this classroom
               </div>
-            ))}
-            <Button 
-              className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
-              onClick={submitAttendance}
-            >
-              Submit Attendance
-            </Button>
+            ) : (
+              students.map((student) => (
+                <div
+                  key={student.id}
+                  className="flex items-center justify-between p-4 rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
+                      {student.name.charAt(0)}
+                    </div>
+                    <span>{student.name}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {student.status && getStatusIcon(student.status)}
+                    <AttendanceStatusSelect
+                      value={student.status || 'present'}
+                      onChange={(status) => updateStudentStatus(student.id, status)}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+            {students.length > 0 && (
+              <Button 
+                className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
+                onClick={submitAttendance}
+              >
+                Submit Attendance
+              </Button>
+            )}
           </div>
         </TabsContent>
 

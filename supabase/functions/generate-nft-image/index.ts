@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +12,8 @@ serve(async (req) => {
 
   try {
     const { prompt } = await req.json()
+
+    console.log('Generating image for prompt:', prompt);
 
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -29,12 +30,14 @@ serve(async (req) => {
     })
 
     const data = await response.json()
+    console.log('OpenAI API response:', data);
     
     return new Response(
       JSON.stringify({ imageUrl: data.data[0].url }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error('Error generating image:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
