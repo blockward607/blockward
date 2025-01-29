@@ -1,31 +1,17 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckSquare, XSquare, Clock, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { AttendanceStatusSelect, AttendanceStatus } from "./AttendanceStatus";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { AttendanceStatus } from "./AttendanceStatus";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StudentList } from "./StudentList";
+import { AttendanceCharts } from "./AttendanceCharts";
 
 interface Student {
   id: string;
   name: string;
   status?: AttendanceStatus;
 }
-
-const COLORS = ['#4ade80', '#f87171', '#fbbf24', '#60a5fa'];
 
 export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   const { toast } = useToast();
@@ -144,27 +130,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     );
   }
 
-  const getPieChartData = () => {
-    const totals = {
-      present: 0,
-      absent: 0,
-      late: 0,
-      authorized: 0
-    };
-
-    attendanceData.forEach(day => {
-      totals.present += day.present;
-      totals.absent += day.absent;
-      totals.late += day.late;
-      totals.authorized += day.authorized;
-    });
-
-    return Object.entries(totals).map(([name, value]) => ({
-      name,
-      value
-    }));
-  };
-
   return (
     <Card className="p-6 space-y-6">
       <Tabs defaultValue="list">
@@ -175,87 +140,19 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
         </TabsList>
 
         <TabsContent value="list">
-          <div className="space-y-4">
-            {students.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No students found in this classroom
-              </div>
-            ) : (
-              students.map((student) => (
-                <div
-                  key={student.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-card hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
-                      {student.name.charAt(0)}
-                    </div>
-                    <span>{student.name}</span>
-                  </div>
-                  <AttendanceStatusSelect
-                    value={student.status || 'present'}
-                    onChange={(status) => updateStudentStatus(student.id, status)}
-                  />
-                </div>
-              ))
-            )}
-            {students.length > 0 && (
-              <Button 
-                className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
-                onClick={submitAttendance}
-              >
-                Submit Attendance
-              </Button>
-            )}
-          </div>
+          <StudentList 
+            students={students}
+            updateStudentStatus={updateStudentStatus}
+            onSubmit={submitAttendance}
+          />
         </TabsContent>
 
         <TabsContent value="chart">
-          <div className="w-full overflow-x-auto">
-            <BarChart
-              width={800}
-              height={400}
-              data={attendanceData}
-              margin={{
-                top: 5,
-                right: 30,
-                left: 20,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="present" fill="#4ade80" name="Present" />
-              <Bar dataKey="absent" fill="#f87171" name="Absent" />
-              <Bar dataKey="late" fill="#fbbf24" name="Late" />
-              <Bar dataKey="authorized" fill="#60a5fa" name="Authorized" />
-            </BarChart>
-          </div>
+          <AttendanceCharts attendanceData={attendanceData} />
         </TabsContent>
 
         <TabsContent value="pie">
-          <div className="w-full flex justify-center">
-            <PieChart width={400} height={400}>
-              <Pie
-                data={getPieChartData()}
-                cx={200}
-                cy={200}
-                labelLine={false}
-                outerRadius={150}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {getPieChartData().map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </div>
+          <AttendanceCharts attendanceData={attendanceData} />
         </TabsContent>
       </Tabs>
     </Card>
