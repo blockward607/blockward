@@ -135,7 +135,13 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <Card className="p-6">
+        <div className="flex justify-center items-center h-40">
+          <p>Loading students...</p>
+        </div>
+      </Card>
+    );
   }
 
   const getPieChartData = () => {
@@ -158,31 +164,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
       value
     }));
   };
-
-  const getStatusIcon = (status: AttendanceStatus) => {
-    switch (status) {
-      case 'present':
-        return <CheckSquare className="w-5 h-5 text-green-500" />;
-      case 'absent':
-        return <XSquare className="w-5 h-5 text-red-500" />;
-      case 'late':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-      case 'authorized':
-        return <AlertTriangle className="w-5 h-5 text-blue-500" />;
-      default:
-        return null;
-    }
-  };
-
-  if (loading) {
-    return (
-      <Card className="p-6">
-        <div className="flex justify-center items-center h-40">
-          <p>Loading students...</p>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <Card className="p-6 space-y-6">
@@ -211,13 +192,10 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
                     </div>
                     <span>{student.name}</span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    {student.status && getStatusIcon(student.status)}
-                    <AttendanceStatusSelect
-                      value={student.status || 'present'}
-                      onChange={(status) => updateStudentStatus(student.id, status)}
-                    />
-                  </div>
+                  <AttendanceStatusSelect
+                    value={student.status || 'present'}
+                    onChange={(status) => updateStudentStatus(student.id, status)}
+                  />
                 </div>
               ))
             )}
