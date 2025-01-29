@@ -1,9 +1,36 @@
+import { useEffect, useState } from "react";
 import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
 import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 const Attendance = () => {
-  // For demo purposes, using a static classroom ID
-  const classroomId = "123e4567-e89b-12d3-a456-426614174000";
+  const [classroomId, setClassroomId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchClassroom = async () => {
+      const { data: classroom } = await supabase
+        .from('classrooms')
+        .select('id')
+        .limit(1)
+        .single();
+      
+      if (classroom) {
+        setClassroomId(classroom.id);
+      }
+      setLoading(false);
+    };
+
+    fetchClassroom();
+  }, []);
+
+  if (loading) {
+    return <div>Loading classroom...</div>;
+  }
+
+  if (!classroomId) {
+    return <div>No classroom found</div>;
+  }
 
   return (
     <div className="space-y-6">
