@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const navigation = [
+const teacherNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Students", href: "/students", icon: Users },
   { name: "Classes", href: "/classes", icon: BookOpen },
@@ -31,8 +31,16 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
+const studentNavigation = [
+  { name: "Classes", href: "/classes", icon: BookOpen },
+  { name: "Behavior", href: "/behavior", icon: ChartBar },
+  { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "Settings", href: "/settings", icon: Settings },
+];
+
 export const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -50,7 +58,17 @@ export const MainLayout = () => {
         description: "Please log in to access this page"
       });
       navigate('/auth');
+      return;
     }
+
+    // Get user role
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    setUserRole(roleData?.role || null);
   };
 
   const toggleSidebar = () => {
@@ -60,6 +78,8 @@ export const MainLayout = () => {
   const goToHome = () => {
     navigate('/');
   };
+
+  const navigation = userRole === 'teacher' ? teacherNavigation : studentNavigation;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-black">

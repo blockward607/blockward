@@ -76,7 +76,7 @@ export const NFTShowcase = () => {
             type: "admin"
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (createError) throw createError;
         if (!newTeacherWallet) throw new Error('Failed to create teacher wallet');
@@ -111,12 +111,13 @@ export const NFTShowcase = () => {
           network: "testnet",
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (nftError) throw nftError;
+      if (!nftData) throw new Error('Failed to create NFT');
 
       // Create transaction record
-      await supabase
+      const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
           nft_id: nftData.id,
@@ -126,11 +127,13 @@ export const NFTShowcase = () => {
           status: 'completed',
         });
 
+      if (transactionError) throw transactionError;
+
       toast({
         title: "Success",
         description: `${nft.title} has been transferred successfully!`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error transferring NFT:', error);
       toast({
         variant: "destructive",
