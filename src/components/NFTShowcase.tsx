@@ -59,7 +59,7 @@ export const NFTShowcase = () => {
       setTransferring(nft.title);
       
       // Get teacher's wallet
-      const { data: teacherWallet, error: teacherWalletError } = await supabase
+      let { data: teacherWallet, error: teacherWalletError } = await supabase
         .from('wallets')
         .select('*')
         .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
