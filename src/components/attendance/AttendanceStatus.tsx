@@ -1,7 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, X, Clock, AlertTriangle } from "lucide-react";
+import { Check, X, Clock } from "lucide-react";
 
-export type AttendanceStatus = 'present' | 'absent' | 'late' | 'authorized';
+export type AttendanceStatus = 'present' | 'absent' | 'late';
 
 interface AttendanceStatusProps {
   value: AttendanceStatus;
@@ -17,8 +17,6 @@ export const AttendanceStatusSelect = ({ value, onChange }: AttendanceStatusProp
         return <X className="w-4 h-4 text-red-500" />;
       case 'late':
         return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'authorized':
-        return <AlertTriangle className="w-4 h-4 text-blue-500" />;
     }
   };
 
@@ -42,10 +40,6 @@ export const AttendanceStatusSelect = ({ value, onChange }: AttendanceStatusProp
         <SelectItem value="late" className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-yellow-500" />
           Late
-        </SelectItem>
-        <SelectItem value="authorized" className="flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-blue-500" />
-          Authorized Absence
         </SelectItem>
       </SelectContent>
     </Select>
