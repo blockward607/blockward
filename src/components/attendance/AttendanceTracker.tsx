@@ -17,60 +17,60 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStudents();
-  }, [classroomId]);
+    const fetchStudents = async () => {
+      try {
+        // First, get all students in the classroom
+        const { data: classroomStudents, error: classroomError } = await supabase
+          .from('classroom_students')
+          .select(`
+            student_id,
+            students (
+              id,
+              name
+            )
+          `)
+          .eq('classroom_id', classroomId);
 
-  const fetchStudents = async () => {
-    try {
-      // First, get all students in the classroom
-      const { data: classroomStudents, error: classroomError } = await supabase
-        .from('classroom_students')
-        .select(`
-          student_id,
-          students (
-            id,
-            name
-          )
-        `)
-        .eq('classroom_id', classroomId);
+        if (classroomError) throw classroomError;
 
-      if (classroomError) throw classroomError;
+        // Then get today's attendance records
+        const today = new Date().toISOString().split('T')[0];
+        const { data: attendanceRecords, error: attendanceError } = await supabase
+          .from('attendance')
+          .select('*')
+          .eq('classroom_id', classroomId)
+          .eq('date', today);
 
-      // Then get today's attendance records
-      const today = new Date().toISOString().split('T')[0];
-      const { data: attendanceRecords, error: attendanceError } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('classroom_id', classroomId)
-        .eq('date', today);
+        if (attendanceError) throw attendanceError;
 
-      if (attendanceError) throw attendanceError;
-
-      if (classroomStudents) {
-        const formattedStudents = classroomStudents.map((cs) => {
-          const attendance = attendanceRecords?.find(
-            (record) => record.student_id === cs.student_id
-          );
+        if (classroomStudents) {
+          const formattedStudents = classroomStudents.map((cs) => {
+            const attendance = attendanceRecords?.find(
+              (record) => record.student_id === cs.student_id
+            );
+            
+            return {
+              id: cs.students.id,
+              name: cs.students.name,
+              status: (attendance?.status as AttendanceStatus) || 'present'
+            };
+          });
           
-          return {
-            id: cs.students.id,
-            name: cs.students.name,
-            status: (attendance?.status as AttendanceStatus) || 'present'
-          };
+          setStudents(formattedStudents);
+        }
+      } catch (error) {
+        console.error('Error fetching students:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load students"
         });
-        
-        setStudents(formattedStudents);
       }
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load students"
-      });
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    };
+
+    fetchStudents();
+  }, [classroomId, toast]);
 
   const updateStudentStatus = async (studentId: string, status: AttendanceStatus) => {
     try {
