@@ -59,21 +59,39 @@ export const NFTShowcase = () => {
       setTransferring(nft.title);
       
       // Get teacher's wallet
-      const { data: teacherWallet } = await supabase
+      const { data: teacherWallet, error: teacherWalletError } = await supabase
         .from('wallets')
         .select('*')
         .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
-        .single();
+        .maybeSingle();
 
-      if (!teacherWallet) throw new Error('Teacher wallet not found');
+      if (teacherWalletError) throw teacherWalletError;
+      if (!teacherWallet) {
+        // Create teacher wallet if it doesn't exist
+        const { data: newTeacherWallet, error: createError } = await supabase
+          .from('wallets')
+          .insert({
+            user_id: (await supabase.auth.getSession()).data.session?.user.id,
+            address: "0x" + Math.random().toString(16).slice(2, 42),
+            type: "admin"
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        if (!newTeacherWallet) throw new Error('Failed to create teacher wallet');
+        
+        teacherWallet = newTeacherWallet;
+      }
 
       // Get student's wallet
-      const { data: studentWallet } = await supabase
+      const { data: studentWallet, error: studentWalletError } = await supabase
         .from('wallets')
         .select('*')
         .eq('user_id', studentId)
-        .single();
+        .maybeSingle();
 
+      if (studentWalletError) throw studentWalletError;
       if (!studentWallet) throw new Error('Student wallet not found');
 
       // Create NFT
@@ -117,7 +135,7 @@ export const NFTShowcase = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to transfer NFT",
+        description: error.message || "Failed to transfer NFT",
       });
     } finally {
       setTransferring(null);
