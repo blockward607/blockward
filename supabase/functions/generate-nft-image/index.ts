@@ -23,9 +23,10 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt,
+        prompt: `Create a high-quality, professional NFT award image for: ${prompt}. The style should be modern, digital, and suitable for an educational achievement.`,
         n: 1,
-        size: "1024x1024"
+        size: "1024x1024",
+        quality: "hd"
       }),
     })
 

@@ -19,7 +19,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        // First, get all students in the classroom
         const { data: classroomStudents, error: classroomError } = await supabase
           .from('classroom_students')
           .select(`
@@ -33,7 +32,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
         if (classroomError) throw classroomError;
 
-        // Then get today's attendance records
         const today = new Date().toISOString().split('T')[0];
         const { data: attendanceRecords, error: attendanceError } = await supabase
           .from('attendance')
@@ -44,17 +42,13 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
         if (attendanceError) throw attendanceError;
 
         if (classroomStudents) {
-          const formattedStudents = classroomStudents.map((cs) => {
-            const attendance = attendanceRecords?.find(
+          const formattedStudents = classroomStudents.map((cs) => ({
+            id: cs.students.id,
+            name: cs.students.name,
+            status: (attendanceRecords?.find(
               (record) => record.student_id === cs.student_id
-            );
-            
-            return {
-              id: cs.students.id,
-              name: cs.students.name,
-              status: (attendance?.status as AttendanceStatus) || 'present'
-            };
-          });
+            )?.status as AttendanceStatus) || 'present'
+          }));
           
           setStudents(formattedStudents);
         }
