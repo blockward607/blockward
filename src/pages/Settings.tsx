@@ -2,7 +2,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, Bell, Shield, Palette, User } from "lucide-react";
+import { Settings as SettingsIcon, Bell, Shield, Palette, User, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Tabs,
   TabsContent,
@@ -12,6 +15,26 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 const Settings = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/auth');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error logging out",
+        description: "There was a problem logging out of your account",
+      });
+    }
+  };
+
   return (
     <div className="p-8 space-y-8">
       <div className="flex items-center gap-4">
@@ -101,6 +124,23 @@ const Settings = () => {
                 <Input type="password" />
               </div>
               <Button className="w-full md:w-auto">Update Password</Button>
+
+              <div className="pt-6 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <h3 className="text-lg font-medium">Logout</h3>
+                    <p className="text-sm text-gray-400">Sign out of your account</p>
+                  </div>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleLogout}
+                    className="gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </Button>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
