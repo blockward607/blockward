@@ -10,10 +10,9 @@ interface Student {
 interface StudentListProps {
   students: Student[];
   updateStudentStatus: (studentId: string, status: AttendanceStatus) => void;
-  onSubmit: () => void;
 }
 
-export const StudentList = ({ students, updateStudentStatus, onSubmit }: StudentListProps) => {
+export const StudentList = ({ students, updateStudentStatus }: StudentListProps) => {
   if (students.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -41,12 +40,6 @@ export const StudentList = ({ students, updateStudentStatus, onSubmit }: Student
           />
         </div>
       ))}
-      <Button 
-        className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
-        onClick={onSubmit}
-      >
-        Submit Attendance
-      </Button>
     </div>
   );
 };

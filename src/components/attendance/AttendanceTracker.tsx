@@ -22,7 +22,8 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
   const fetchStudents = async () => {
     try {
-      const { data: classroomStudents, error } = await supabase
+      // First, get all students in the classroom
+      const { data: classroomStudents, error: classroomError } = await supabase
         .from('classroom_students')
         .select(`
           student_id,
@@ -33,14 +34,31 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
         `)
         .eq('classroom_id', classroomId);
 
-      if (error) throw error;
+      if (classroomError) throw classroomError;
+
+      // Then get today's attendance records
+      const today = new Date().toISOString().split('T')[0];
+      const { data: attendanceRecords, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('classroom_id', classroomId)
+        .eq('date', today);
+
+      if (attendanceError) throw attendanceError;
 
       if (classroomStudents) {
-        const formattedStudents = classroomStudents.map((cs) => ({
-          id: cs.students.id,
-          name: cs.students.name,
-          status: 'present' as AttendanceStatus
-        }));
+        const formattedStudents = classroomStudents.map((cs) => {
+          const attendance = attendanceRecords?.find(
+            (record) => record.student_id === cs.student_id
+          );
+          
+          return {
+            id: cs.students.id,
+            name: cs.students.name,
+            status: (attendance?.status as AttendanceStatus) || 'present'
+          };
+        });
+        
         setStudents(formattedStudents);
       }
     } catch (error) {
@@ -54,36 +72,37 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     setLoading(false);
   };
 
-  const updateStudentStatus = (studentId: string, status: AttendanceStatus) => {
-    setStudents(students.map(student => 
-      student.id === studentId 
-        ? { ...student, status }
-        : student
-    ));
-  };
+  const updateStudentStatus = async (studentId: string, status: AttendanceStatus) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { error } = await supabase
+        .from('attendance')
+        .upsert({
+          student_id: studentId,
+          classroom_id: classroomId,
+          status,
+          date: today
+        });
 
-  const submitAttendance = async () => {
-    const attendanceRecords = students.map(student => ({
-      student_id: student.id,
-      classroom_id: classroomId,
-      status: student.status,
-      date: new Date().toISOString(),
-    }));
+      if (error) throw error;
 
-    const { error } = await supabase
-      .from('attendance')
-      .insert(attendanceRecords);
+      setStudents(students.map(student => 
+        student.id === studentId 
+          ? { ...student, status }
+          : student
+      ));
 
-    if (error) {
+      toast({
+        title: "Success",
+        description: "Attendance status updated"
+      });
+    } catch (error) {
+      console.error('Error updating attendance:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to submit attendance"
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Attendance submitted successfully"
+        description: "Failed to update attendance"
       });
     }
   };
@@ -103,7 +122,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
       <StudentList 
         students={students}
         updateStudentStatus={updateStudentStatus}
-        onSubmit={submitAttendance}
       />
     </Card>
   );
