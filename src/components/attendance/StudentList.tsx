@@ -9,9 +9,10 @@ interface Student {
 interface StudentListProps {
   students: Student[];
   updateStudentStatus: (studentId: string, status: AttendanceStatus) => void;
+  isTeacher?: boolean;
 }
 
-export const StudentList = ({ students, updateStudentStatus }: StudentListProps) => {
+export const StudentList = ({ students, updateStudentStatus, isTeacher = false }: StudentListProps) => {
   if (students.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -33,10 +34,16 @@ export const StudentList = ({ students, updateStudentStatus }: StudentListProps)
             </div>
             <span>{student.name}</span>
           </div>
-          <AttendanceStatusSelect
-            value={student.status || 'present'}
-            onChange={(status) => updateStudentStatus(student.id, status)}
-          />
+          {isTeacher ? (
+            <AttendanceStatusSelect
+              value={student.status || 'present'}
+              onChange={(status) => updateStudentStatus(student.id, status)}
+            />
+          ) : (
+            <div className="px-4 py-2 rounded-md bg-accent/20">
+              {student.status || 'present'}
+            </div>
+          )}
         </div>
       ))}
     </div>

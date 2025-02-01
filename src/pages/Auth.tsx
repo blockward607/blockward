@@ -33,9 +33,68 @@ const Auth = () => {
             .single();
 
           if (!existingRole) {
-            await supabase
+            const { error: roleError } = await supabase
               .from('user_roles')
               .insert([{ user_id: session.user.id, role }]);
+
+            if (roleError) {
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to set user role",
+              });
+              return;
+            }
+          }
+
+          // Create wallet if it doesn't exist
+          const { data: existingWallet } = await supabase
+            .from('wallets')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (!existingWallet) {
+            const { error: walletError } = await supabase
+              .from('wallets')
+              .insert([{
+                user_id: session.user.id,
+                address: `0x${Math.random().toString(36).substring(2, 15)}`,
+                type: role === 'teacher' ? 'admin' : 'user'
+              }]);
+
+            if (walletError) {
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to create wallet",
+              });
+              return;
+            }
+          }
+
+          // Create teacher profile if needed
+          if (role === 'teacher') {
+            const { data: existingProfile } = await supabase
+              .from('teacher_profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+
+            if (!existingProfile) {
+              const { error: profileError } = await supabase
+                .from('teacher_profiles')
+                .insert([{ user_id: session.user.id }]);
+
+              if (profileError) {
+                toast({
+                  variant: "destructive",
+                  title: "Error",
+                  description: "Failed to create teacher profile",
+                });
+                return;
+              }
+            }
           }
         }
 

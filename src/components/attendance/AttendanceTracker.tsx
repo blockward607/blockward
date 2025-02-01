@@ -15,6 +15,24 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        setUserRole(roleData?.role || null);
+      }
+    };
+
+    checkUserRole();
+  }, []);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -67,6 +85,15 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   }, [classroomId, toast]);
 
   const updateStudentStatus = async (studentId: string, status: AttendanceStatus) => {
+    if (userRole !== 'teacher') {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Only teachers can update attendance"
+      });
+      return;
+    }
+
     try {
       const today = new Date().toISOString().split('T')[0];
       
@@ -116,6 +143,7 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
       <StudentList 
         students={students}
         updateStudentStatus={updateStudentStatus}
+        isTeacher={userRole === 'teacher'}
       />
     </Card>
   );
