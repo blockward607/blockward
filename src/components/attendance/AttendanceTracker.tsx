@@ -27,7 +27,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     const checkUserRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Get user role
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
@@ -36,7 +35,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
         
         setUserRole(roleData?.role || null);
 
-        // If user is a teacher, get their profile
         if (roleData?.role === 'teacher') {
           const { data: profile } = await supabase
             .from('teacher_profiles')
@@ -122,16 +120,13 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     }
 
     try {
-      console.log('Adding new student with following data:', {
-        name: newStudentName.trim(),
-        teacherProfileId: teacherProfile.id,
-        classroomId
-      });
-
       // First create the student
       const { data: newStudent, error: studentError } = await supabase
         .from('students')
-        .insert([{ name: newStudentName.trim() }])
+        .insert([{ 
+          name: newStudentName.trim(),
+          points: 0
+        }])
         .select()
         .single();
 
@@ -142,13 +137,14 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
       console.log('Student created successfully:', newStudent);
 
-      // Then add them to the classroom
+      // Then add them to the classroom with explicit RLS check
       const { error: classroomError } = await supabase
         .from('classroom_students')
         .insert([{
           classroom_id: classroomId,
-          student_id: newStudent.id
-        }]);
+          student_id: newStudent.id,
+        }])
+        .select();
 
       if (classroomError) {
         console.error('Error adding student to classroom:', classroomError);
