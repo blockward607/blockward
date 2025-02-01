@@ -21,11 +21,13 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newStudentName, setNewStudentName] = useState("");
+  const [teacherProfile, setTeacherProfile] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
     const checkUserRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // Get user role
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
@@ -33,6 +35,17 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
           .maybeSingle();
         
         setUserRole(roleData?.role || null);
+
+        // If user is a teacher, get their profile
+        if (roleData?.role === 'teacher') {
+          const { data: profile } = await supabase
+            .from('teacher_profiles')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          setTeacherProfile(profile);
+        }
       }
     };
 
@@ -41,7 +54,7 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
   useEffect(() => {
     fetchStudents();
-  }, [classroomId, toast]);
+  }, [classroomId]);
 
   const fetchStudents = async () => {
     try {
@@ -99,7 +112,22 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
       return;
     }
 
+    if (userRole !== 'teacher' || !teacherProfile) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Only teachers can add students"
+      });
+      return;
+    }
+
     try {
+      console.log('Adding new student with following data:', {
+        name: newStudentName.trim(),
+        teacherProfileId: teacherProfile.id,
+        classroomId
+      });
+
       // First create the student
       const { data: newStudent, error: studentError } = await supabase
         .from('students')
@@ -107,7 +135,12 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
         .select()
         .single();
 
-      if (studentError) throw studentError;
+      if (studentError) {
+        console.error('Error creating student:', studentError);
+        throw studentError;
+      }
+
+      console.log('Student created successfully:', newStudent);
 
       // Then add them to the classroom
       const { error: classroomError } = await supabase
@@ -117,7 +150,10 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
           student_id: newStudent.id
         }]);
 
-      if (classroomError) throw classroomError;
+      if (classroomError) {
+        console.error('Error adding student to classroom:', classroomError);
+        throw classroomError;
+      }
 
       toast({
         title: "Success",
