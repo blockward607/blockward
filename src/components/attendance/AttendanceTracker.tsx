@@ -56,6 +56,8 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
   const fetchStudents = async () => {
     try {
+      console.log('Fetching students for classroom:', classroomId);
+      
       const { data: classroomStudents, error: classroomError } = await supabase
         .from('classroom_students')
         .select(`
@@ -67,7 +69,12 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
         `)
         .eq('classroom_id', classroomId);
 
-      if (classroomError) throw classroomError;
+      if (classroomError) {
+        console.error('Error fetching classroom students:', classroomError);
+        throw classroomError;
+      }
+
+      console.log('Fetched classroom students:', classroomStudents);
 
       const today = new Date().toISOString().split('T')[0];
       const { data: attendanceRecords, error: attendanceError } = await supabase
@@ -76,7 +83,12 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
         .eq('classroom_id', classroomId)
         .eq('date', today);
 
-      if (attendanceError) throw attendanceError;
+      if (attendanceError) {
+        console.error('Error fetching attendance records:', attendanceError);
+        throw attendanceError;
+      }
+
+      console.log('Fetched attendance records:', attendanceRecords);
 
       if (classroomStudents) {
         const formattedStudents = classroomStudents.map((cs) => ({
@@ -87,6 +99,7 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
           )?.status as AttendanceStatus) || 'present'
         }));
         
+        console.log('Formatted students:', formattedStudents);
         setStudents(formattedStudents);
       }
     } catch (error) {
@@ -120,6 +133,8 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     }
 
     try {
+      console.log('Creating new student:', newStudentName);
+      
       // First create the student
       const { data: newStudent, error: studentError } = await supabase
         .from('students')
@@ -137,14 +152,13 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
       console.log('Student created successfully:', newStudent);
 
-      // Then add them to the classroom with explicit RLS check
+      // Then add them to the classroom
       const { error: classroomError } = await supabase
         .from('classroom_students')
         .insert([{
           classroom_id: classroomId,
           student_id: newStudent.id,
-        }])
-        .select();
+        }]);
 
       if (classroomError) {
         console.error('Error adding student to classroom:', classroomError);
@@ -180,6 +194,8 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
     }
 
     try {
+      console.log('Updating student status:', { studentId, status });
+      
       const today = new Date().toISOString().split('T')[0];
       
       const { error } = await supabase
