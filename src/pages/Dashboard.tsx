@@ -9,7 +9,8 @@ import { ClassroomGrid } from "@/components/classroom/ClassroomGrid";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
 import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
 import { AchievementSystem } from "@/components/achievements/AchievementSystem";
-import { Plus, Users, Award, Wallet, Trophy, ArrowLeft, ChevronDown, ChevronUp, Bell } from "lucide-react";
+import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
+import { Plus, Users, Award, Wallet, Trophy, ArrowLeft, ChevronDown, ChevronUp, Bell, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
   const [newClassroom, setNewClassroom] = useState({
     name: "",
     description: "",
@@ -116,6 +118,9 @@ const Dashboard = () => {
       if (error) throw error;
 
       setClassrooms(data || []);
+      if (data && data.length > 0) {
+        setSelectedClassroom(data[0].id);
+      }
     } catch (error) {
       console.error('Error fetching classrooms:', error);
       toast({
@@ -229,10 +234,14 @@ const Dashboard = () => {
         </Card>
 
         <Tabs defaultValue="classrooms" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 gap-4">
+          <TabsList className="grid w-full grid-cols-5 gap-4">
             <TabsTrigger value="classrooms" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Classrooms
+            </TabsTrigger>
+            <TabsTrigger value="attendance" className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Attendance
             </TabsTrigger>
             <TabsTrigger value="behavior" className="flex items-center gap-2">
               <Award className="w-4 h-4" />
@@ -300,6 +309,16 @@ const Dashboard = () => {
                 </div>
               )}
             </Card>
+          </TabsContent>
+
+          <TabsContent value="attendance">
+            {selectedClassroom ? (
+              <AttendanceTracker classroomId={selectedClassroom} />
+            ) : (
+              <Card className="p-6">
+                <p className="text-center text-gray-400">Please select or create a classroom first</p>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="behavior">
