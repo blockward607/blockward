@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 interface Student {
   id: string;
   name: string;
+  email?: string;
   status?: AttendanceStatus;
 }
 
@@ -24,7 +25,8 @@ export const useClassroomStudents = (classroomId: string) => {
           student_id,
           students (
             id,
-            name
+            name,
+            user_id
           )
         `)
         .eq('classroom_id', classroomId);
@@ -35,6 +37,21 @@ export const useClassroomStudents = (classroomId: string) => {
       }
 
       console.log('Fetched classroom students:', classroomStudents);
+
+      // Fetch user emails for students that have user accounts
+      const userIds = classroomStudents
+        ?.map(cs => cs.students.user_id)
+        .filter(id => id) || [];
+
+      const { data: userProfiles, error: profilesError } = await supabase
+        .from('auth.users')
+        .select('id, email')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching user profiles:', profilesError);
+        throw profilesError;
+      }
 
       const today = new Date().toISOString().split('T')[0];
       const { data: attendanceRecords, error: attendanceError } = await supabase
@@ -51,13 +68,20 @@ export const useClassroomStudents = (classroomId: string) => {
       console.log('Fetched attendance records:', attendanceRecords);
 
       if (classroomStudents) {
-        const formattedStudents = classroomStudents.map((cs) => ({
-          id: cs.students.id,
-          name: cs.students.name,
-          status: (attendanceRecords?.find(
-            (record) => record.student_id === cs.student_id
-          )?.status as AttendanceStatus) || 'present'
-        }));
+        const formattedStudents = classroomStudents.map((cs) => {
+          const userProfile = userProfiles?.find(
+            up => up.id === cs.students.user_id
+          );
+          
+          return {
+            id: cs.students.id,
+            name: cs.students.name,
+            email: userProfile?.email,
+            status: (attendanceRecords?.find(
+              (record) => record.student_id === cs.student_id
+            )?.status as AttendanceStatus) || 'present'
+          };
+        });
         
         console.log('Formatted students:', formattedStudents);
         setStudents(formattedStudents);

@@ -3,6 +3,7 @@ import { AttendanceStatusSelect, AttendanceStatus } from "./AttendanceStatus";
 interface Student {
   id: string;
   name: string;
+  email?: string;
   status?: AttendanceStatus;
 }
 
@@ -32,7 +33,12 @@ export const StudentList = ({ students, updateStudentStatus, isTeacher = false }
             <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
               {student.name.charAt(0)}
             </div>
-            <span>{student.name}</span>
+            <div className="flex flex-col">
+              <span className="font-medium">{student.name}</span>
+              {student.email && (
+                <span className="text-sm text-gray-400">{student.email}</span>
+              )}
+            </div>
           </div>
           {isTeacher ? (
             <AttendanceStatusSelect

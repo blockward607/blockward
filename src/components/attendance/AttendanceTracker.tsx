@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { AttendanceStatus } from "./AttendanceStatus";
 import { useToast } from "@/hooks/use-toast";
 import { StudentList } from "./StudentList";
-import { AddStudent } from "./AddStudent";
 import { useClassroomStudents } from "@/hooks/use-classroom-students";
 
 export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
@@ -87,12 +86,6 @@ export const AttendanceTracker = ({ classroomId }: { classroomId: string }) => {
 
   return (
     <Card className="p-6 space-y-6">
-      {userRole === 'teacher' && (
-        <AddStudent 
-          classroomId={classroomId}
-          onStudentAdded={fetchStudents}
-        />
-      )}
       <StudentList 
         students={students}
         updateStudentStatus={updateStudentStatus}
