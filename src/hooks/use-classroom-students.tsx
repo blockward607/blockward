@@ -38,12 +38,6 @@ export const useClassroomStudents = (classroomId: string) => {
 
       console.log('Fetched classroom students:', classroomStudents);
 
-      // Get user emails through the admin API
-      const { data: profiles } = await supabase.auth.admin.listUsers();
-      const userEmails = new Map(
-        profiles?.users.map(user => [user.id, user.email as string]) || []
-      );
-
       const today = new Date().toISOString().split('T')[0];
       const { data: attendanceRecords, error: attendanceError } = await supabase
         .from('attendance')
@@ -59,13 +53,10 @@ export const useClassroomStudents = (classroomId: string) => {
       console.log('Fetched attendance records:', attendanceRecords);
 
       if (classroomStudents) {
-        const formattedStudents: Student[] = classroomStudents.map((cs) => {
-          const email = cs.students.user_id ? userEmails.get(cs.students.user_id) : undefined;
-          
+        const formattedStudents: Student[] = classroomStudents.map((cs) => {          
           return {
             id: cs.students.id,
             name: cs.students.name,
-            email: email,
             status: (attendanceRecords?.find(
               (record) => record.student_id === cs.student_id
             )?.status as AttendanceStatus) || 'present'
