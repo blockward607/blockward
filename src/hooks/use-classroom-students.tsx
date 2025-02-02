@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 interface Student {
   id: string;
   name: string;
-  email?: string;
   status?: AttendanceStatus;
 }
 
