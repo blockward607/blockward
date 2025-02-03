@@ -134,13 +134,43 @@ export type Database = {
           },
         ]
       }
+      behavior_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          points: number | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          points?: number | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          points?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
       behavior_records: {
         Row: {
           category: string | null
           created_at: string | null
           description: string
+          follow_up_notes: string | null
+          follow_up_required: boolean | null
           id: string
+          location: string | null
+          parent_notified: boolean | null
           points: number
+          resolved: boolean | null
+          severity: number | null
           student_id: string | null
           type: string | null
         }
@@ -148,8 +178,14 @@ export type Database = {
           category?: string | null
           created_at?: string | null
           description: string
+          follow_up_notes?: string | null
+          follow_up_required?: boolean | null
           id?: string
+          location?: string | null
+          parent_notified?: boolean | null
           points: number
+          resolved?: boolean | null
+          severity?: number | null
           student_id?: string | null
           type?: string | null
         }
@@ -157,8 +193,14 @@ export type Database = {
           category?: string | null
           created_at?: string | null
           description?: string
+          follow_up_notes?: string | null
+          follow_up_required?: boolean | null
           id?: string
+          location?: string | null
+          parent_notified?: boolean | null
           points?: number
+          resolved?: boolean | null
+          severity?: number | null
           student_id?: string | null
           type?: string | null
         }

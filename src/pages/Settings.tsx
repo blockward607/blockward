@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, Bell, Shield, Palette, User, LogOut } from "lucide-react";
+import { Settings as SettingsIcon, Bell, Shield, Palette, User, LogOut, Award, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,35 @@ const Settings = () => {
           <SettingsIcon className="w-6 h-6 text-purple-400" />
         </div>
         <h1 className="text-3xl font-bold gradient-text">Settings</h1>
+      </div>
+
+      {/* Quick Access Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <Card 
+          className="p-6 hover:bg-purple-900/10 transition-all cursor-pointer"
+          onClick={() => navigate('/rewards')}
+        >
+          <div className="flex items-center gap-3">
+            <Award className="w-6 h-6 text-yellow-400" />
+            <div>
+              <h3 className="font-semibold">Rewards & NFTs</h3>
+              <p className="text-sm text-gray-400">Manage student rewards and NFT awards</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card 
+          className="p-6 hover:bg-purple-900/10 transition-all cursor-pointer"
+          onClick={() => navigate('/attendance')}
+        >
+          <div className="flex items-center gap-3">
+            <Calendar className="w-6 h-6 text-blue-400" />
+            <div>
+              <h3 className="font-semibold">Attendance</h3>
+              <p className="text-sm text-gray-400">Track and manage student attendance</p>
+            </div>
+          </div>
+        </Card>
       </div>
 
       <Card className="p-6">
