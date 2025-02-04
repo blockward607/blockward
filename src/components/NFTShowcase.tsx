@@ -4,6 +4,13 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const nfts = [
   {
@@ -53,8 +60,43 @@ const nfts = [
 export const NFTShowcase = () => {
   const { toast } = useToast();
   const [transferring, setTransferring] = useState<string | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
+  const [students, setStudents] = useState<any[]>([]);
+
+  // Fetch students when component mounts
+  useState(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setStudents(data || []);
+    } catch (error: any) {
+      console.error('Error fetching students:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load students"
+      });
+    }
+  };
 
   const transferNFT = async (nft: typeof nfts[0], studentId: string) => {
+    if (!studentId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select a student first"
+      });
+      return;
+    }
+
     try {
       setTransferring(nft.title);
       
@@ -92,7 +134,9 @@ export const NFTShowcase = () => {
         .maybeSingle();
 
       if (studentWalletError) throw studentWalletError;
-      if (!studentWallet) throw new Error('Student wallet not found');
+      if (!studentWallet) {
+        throw new Error('Student wallet not found. Please make sure the student has completed registration.');
+      }
 
       // Create NFT
       const { data: nftData, error: nftError } = await supabase
@@ -111,10 +155,9 @@ export const NFTShowcase = () => {
           network: "testnet",
         })
         .select()
-        .maybeSingle();
+        .single();
 
       if (nftError) throw nftError;
-      if (!nftData) throw new Error('Failed to create NFT');
 
       // Create transaction record
       const { error: transactionError } = await supabase
@@ -128,6 +171,14 @@ export const NFTShowcase = () => {
         });
 
       if (transactionError) throw transactionError;
+
+      // Update student points
+      const { error: updatePointsError } = await supabase
+        .from('students')
+        .update({ points: supabase.sql`points + ${nft.points}` })
+        .eq('id', studentId);
+
+      if (updatePointsError) throw updatePointsError;
 
       toast({
         title: "Success",
@@ -189,10 +240,23 @@ export const NFTShowcase = () => {
               </p>
 
               <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                  <SelectTrigger className="w-full mb-4">
+                    <SelectValue placeholder="Select student" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map((student) => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 <Button
                   className="w-full"
-                  disabled={transferring === nft.title}
-                  onClick={() => transferNFT(nft, "student-id")} // Replace with actual student selection
+                  disabled={transferring === nft.title || !selectedStudent}
+                  onClick={() => transferNFT(nft, selectedStudent)}
                 >
                   {transferring === nft.title ? "Transferring..." : "Transfer NFT"}
                 </Button>
