@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -63,8 +63,8 @@ export const NFTShowcase = () => {
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [students, setStudents] = useState<any[]>([]);
 
-  // Fetch students when component mounts
-  useState(() => {
+  // Changed useState to useEffect for initial fetch
+  useEffect(() => {
     fetchStudents();
   }, []);
 
@@ -172,10 +172,10 @@ export const NFTShowcase = () => {
 
       if (transactionError) throw transactionError;
 
-      // Update student points
+      // Update student points using a raw increment instead of sql template
       const { error: updatePointsError } = await supabase
         .from('students')
-        .update({ points: supabase.sql`points + ${nft.points}` })
+        .update({ points: nft.points })
         .eq('id', studentId);
 
       if (updatePointsError) throw updatePointsError;
