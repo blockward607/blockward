@@ -974,7 +974,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_student_points: {
+        Args: {
+          student_id: string
+          points_to_add: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       user_role: "teacher" | "student"

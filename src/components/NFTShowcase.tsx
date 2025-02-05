@@ -12,7 +12,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const nfts = [
+interface Student {
+  id: string;
+  name: string;
+  points: number;
+}
+
+interface NFTAward {
+  title: string;
+  description: string;
+  icon: any;
+  gradient: string;
+  points: number;
+}
+
+const nfts: NFTAward[] = [
   {
     title: "Academic Excellence Trophy",
     description: "Awarded for outstanding academic achievement",
@@ -61,9 +75,8 @@ export const NFTShowcase = () => {
   const { toast } = useToast();
   const [transferring, setTransferring] = useState<string | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<string>("");
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
 
-  // Changed useState to useEffect for initial fetch
   useEffect(() => {
     fetchStudents();
   }, []);
@@ -76,6 +89,8 @@ export const NFTShowcase = () => {
         .order('name');
 
       if (error) throw error;
+      
+      // Ensure we have an array, even if empty
       setStudents(data || []);
     } catch (error: any) {
       console.error('Error fetching students:', error);
@@ -87,7 +102,7 @@ export const NFTShowcase = () => {
     }
   };
 
-  const transferNFT = async (nft: typeof nfts[0], studentId: string) => {
+  const transferNFT = async (nft: NFTAward, studentId: string) => {
     if (!studentId) {
       toast({
         variant: "destructive",
@@ -100,30 +115,38 @@ export const NFTShowcase = () => {
     try {
       setTransferring(nft.title);
       
+      const session = await supabase.auth.getSession();
+      if (!session.data.session?.user.id) {
+        throw new Error('No authenticated user found');
+      }
+
       // Get teacher's wallet
-      let { data: teacherWallet, error: teacherWalletError } = await supabase
+      const { data: teacherWallet, error: teacherWalletError } = await supabase
         .from('wallets')
         .select('*')
-        .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
+        .eq('user_id', session.data.session.user.id)
         .maybeSingle();
 
       if (teacherWalletError) throw teacherWalletError;
+      
+      let finalTeacherWallet = teacherWallet;
+      
       if (!teacherWallet) {
         // Create teacher wallet if it doesn't exist
         const { data: newTeacherWallet, error: createError } = await supabase
           .from('wallets')
           .insert({
-            user_id: (await supabase.auth.getSession()).data.session?.user.id,
+            user_id: session.data.session.user.id,
             address: "0x" + Math.random().toString(16).slice(2, 42),
             type: "admin"
           })
           .select()
-          .maybeSingle();
+          .single();
 
         if (createError) throw createError;
         if (!newTeacherWallet) throw new Error('Failed to create teacher wallet');
         
-        teacherWallet = newTeacherWallet;
+        finalTeacherWallet = newTeacherWallet;
       }
 
       // Get student's wallet
@@ -150,7 +173,7 @@ export const NFTShowcase = () => {
             points: nft.points,
             created_at: new Date().toISOString(),
           },
-          creator_wallet_id: teacherWallet.id,
+          creator_wallet_id: finalTeacherWallet.id,
           owner_wallet_id: studentWallet.id,
           network: "testnet",
         })
@@ -164,7 +187,7 @@ export const NFTShowcase = () => {
         .from('transactions')
         .insert({
           nft_id: nftData.id,
-          from_wallet_id: teacherWallet.id,
+          from_wallet_id: finalTeacherWallet.id,
           to_wallet_id: studentWallet.id,
           transaction_hash: "0x" + Math.random().toString(16).slice(2, 62),
           status: 'completed',
@@ -172,18 +195,22 @@ export const NFTShowcase = () => {
 
       if (transactionError) throw transactionError;
 
-      // Update student points using a raw increment instead of sql template
-      const { error: updatePointsError } = await supabase
-        .from('students')
-        .update({ points: nft.points })
-        .eq('id', studentId);
+      // Call the increment_student_points function
+      const { error: incrementError } = await supabase
+        .rpc('increment_student_points', {
+          student_id: studentId,
+          points_to_add: nft.points
+        });
 
-      if (updatePointsError) throw updatePointsError;
+      if (incrementError) throw incrementError;
 
       toast({
         title: "Success",
         description: `${nft.title} has been transferred successfully!`,
       });
+      
+      // Refresh the students list to show updated points
+      fetchStudents();
     } catch (error: any) {
       console.error('Error transferring NFT:', error);
       toast({
