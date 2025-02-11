@@ -419,7 +419,7 @@ export type Database = {
         Row: {
           contract_address: string
           created_at: string | null
-          creator_wallet_id: string | null
+          creator_wallet_id: string
           id: string
           image_url: string | null
           metadata: Json
@@ -431,11 +431,11 @@ export type Database = {
         Insert: {
           contract_address: string
           created_at?: string | null
-          creator_wallet_id?: string | null
+          creator_wallet_id: string
           id?: string
           image_url?: string | null
           metadata: Json
-          network: string
+          network?: string
           owner_wallet_id?: string | null
           token_id: string
           updated_at?: string | null
@@ -443,7 +443,7 @@ export type Database = {
         Update: {
           contract_address?: string
           created_at?: string | null
-          creator_wallet_id?: string | null
+          creator_wallet_id?: string
           id?: string
           image_url?: string | null
           metadata?: Json
@@ -875,29 +875,29 @@ export type Database = {
       transactions: {
         Row: {
           created_at: string | null
-          from_wallet_id: string | null
+          from_wallet_id: string
           id: string
-          nft_id: string | null
+          nft_id: string
           status: string
-          to_wallet_id: string | null
+          to_wallet_id: string
           transaction_hash: string
         }
         Insert: {
           created_at?: string | null
-          from_wallet_id?: string | null
+          from_wallet_id: string
           id?: string
-          nft_id?: string | null
-          status: string
-          to_wallet_id?: string | null
+          nft_id: string
+          status?: string
+          to_wallet_id: string
           transaction_hash: string
         }
         Update: {
           created_at?: string | null
-          from_wallet_id?: string | null
+          from_wallet_id?: string
           id?: string
-          nft_id?: string | null
+          nft_id?: string
           status?: string
-          to_wallet_id?: string | null
+          to_wallet_id?: string
           transaction_hash?: string
         }
         Relationships: [
@@ -951,21 +951,21 @@ export type Database = {
           created_at: string | null
           id: string
           type: Database["public"]["Enums"]["wallet_type"]
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           address: string
           created_at?: string | null
           id?: string
           type: Database["public"]["Enums"]["wallet_type"]
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           address?: string
           created_at?: string | null
           id?: string
           type?: Database["public"]["Enums"]["wallet_type"]
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
