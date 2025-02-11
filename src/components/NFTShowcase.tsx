@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -77,10 +78,6 @@ export const NFTShowcase = () => {
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [students, setStudents] = useState<Student[]>([]);
 
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
   const fetchStudents = async () => {
     try {
       const { data, error } = await supabase
@@ -89,8 +86,6 @@ export const NFTShowcase = () => {
         .order('name');
 
       if (error) throw error;
-      
-      // Ensure we have an array, even if empty
       setStudents(data || []);
     } catch (error: any) {
       console.error('Error fetching students:', error);
@@ -101,6 +96,10 @@ export const NFTShowcase = () => {
       });
     }
   };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []); // Moved after function definition
 
   const transferNFT = async (nft: NFTAward, studentId: string) => {
     if (!studentId) {
@@ -115,38 +114,17 @@ export const NFTShowcase = () => {
     try {
       setTransferring(nft.title);
       
-      const session = await supabase.auth.getSession();
-      if (!session.data.session?.user.id) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
         throw new Error('No authenticated user found');
       }
 
-      // Get teacher's wallet
-      const { data: teacherWallet, error: teacherWalletError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', session.data.session.user.id)
-        .maybeSingle();
+      const userId = session.user.id;
 
-      if (teacherWalletError) throw teacherWalletError;
-      
-      let finalTeacherWallet = teacherWallet;
-      
+      // Get or create teacher's wallet
+      let teacherWallet = await getOrCreateTeacherWallet(userId);
       if (!teacherWallet) {
-        // Create teacher wallet if it doesn't exist
-        const { data: newTeacherWallet, error: createError } = await supabase
-          .from('wallets')
-          .insert({
-            user_id: session.data.session.user.id,
-            address: "0x" + Math.random().toString(16).slice(2, 42),
-            type: "admin"
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        if (!newTeacherWallet) throw new Error('Failed to create teacher wallet');
-        
-        finalTeacherWallet = newTeacherWallet;
+        throw new Error('Failed to get or create teacher wallet');
       }
 
       // Get student's wallet
@@ -173,7 +151,7 @@ export const NFTShowcase = () => {
             points: nft.points,
             created_at: new Date().toISOString(),
           },
-          creator_wallet_id: finalTeacherWallet.id,
+          creator_wallet_id: teacherWallet.id,
           owner_wallet_id: studentWallet.id,
           network: "testnet",
         })
@@ -187,7 +165,7 @@ export const NFTShowcase = () => {
         .from('transactions')
         .insert({
           nft_id: nftData.id,
-          from_wallet_id: finalTeacherWallet.id,
+          from_wallet_id: teacherWallet.id,
           to_wallet_id: studentWallet.id,
           transaction_hash: "0x" + Math.random().toString(16).slice(2, 62),
           status: 'completed',
@@ -209,8 +187,7 @@ export const NFTShowcase = () => {
         description: `${nft.title} has been transferred successfully!`,
       });
       
-      // Refresh the students list to show updated points
-      fetchStudents();
+      await fetchStudents();
     } catch (error: any) {
       console.error('Error transferring NFT:', error);
       toast({
@@ -221,6 +198,32 @@ export const NFTShowcase = () => {
     } finally {
       setTransferring(null);
     }
+  };
+
+  const getOrCreateTeacherWallet = async (userId: string) => {
+    // Try to get existing wallet
+    const { data: existingWallet, error: getError } = await supabase
+      .from('wallets')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (getError) throw getError;
+    if (existingWallet) return existingWallet;
+
+    // Create new wallet if none exists
+    const { data: newWallet, error: createError } = await supabase
+      .from('wallets')
+      .insert({
+        user_id: userId,
+        address: "0x" + Math.random().toString(16).slice(2, 42),
+        type: "admin"
+      })
+      .select()
+      .single();
+
+    if (createError) throw createError;
+    return newWallet;
   };
 
   return (
@@ -274,7 +277,7 @@ export const NFTShowcase = () => {
                   <SelectContent>
                     {students.map((student) => (
                       <SelectItem key={student.id} value={student.id}>
-                        {student.name}
+                        {student.name} ({student.points} points)
                       </SelectItem>
                     ))}
                   </SelectContent>
