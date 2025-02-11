@@ -1,5 +1,5 @@
+
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,9 +116,20 @@ export const CreateNFTAward = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!imageUrl) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please upload or generate an image"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Get teacher's wallet
       const { data: walletData, error: walletError } = await supabase
         .from('wallets')
         .select('*')
@@ -135,6 +146,7 @@ export const CreateNFTAward = () => {
         created_at: new Date().toISOString(),
       };
 
+      // Create NFT with required fields
       const { data: nft, error: nftError } = await supabase
         .from('nfts')
         .insert({
@@ -142,8 +154,9 @@ export const CreateNFTAward = () => {
           contract_address: "0x" + Math.random().toString(16).slice(2, 42),
           metadata,
           creator_wallet_id: walletData.id,
-          network: "testnet",
           image_url: imageUrl,
+          owner_wallet_id: null, // Will be set when transferred
+          network: "testnet",
         })
         .select()
         .single();
@@ -185,6 +198,7 @@ export const CreateNFTAward = () => {
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             className="glass-input"
+            required
           />
 
           <Textarea
@@ -192,6 +206,7 @@ export const CreateNFTAward = () => {
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             className="glass-input min-h-[100px]"
+            required
           />
 
           <Input
@@ -200,6 +215,7 @@ export const CreateNFTAward = () => {
             value={formData.points}
             onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
             className="glass-input"
+            required
           />
 
           <div className="space-y-2">
@@ -278,7 +294,7 @@ export const CreateNFTAward = () => {
           <div className="flex justify-end">
             <Button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || !formData.title || !formData.description || !imageUrl}
               className="bg-purple-600 hover:bg-purple-700"
             >
               {loading ? (
