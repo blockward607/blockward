@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
@@ -32,8 +33,9 @@ const teacherNavigation = [
 ];
 
 const studentNavigation = [
+  { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Classes", href: "/classes", icon: BookOpen },
-  { name: "Behavior", href: "/behavior", icon: ChartBar },
+  { name: "My NFTs", href: "/rewards", icon: Award },
   { name: "Notifications", href: "/notifications", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
@@ -66,7 +68,7 @@ export const MainLayout = () => {
       .from('user_roles')
       .select('role')
       .eq('user_id', session.user.id)
-      .maybeSingle();
+      .single();
 
     setUserRole(roleData?.role || null);
   };

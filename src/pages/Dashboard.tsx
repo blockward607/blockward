@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Link } from "react-router-dom";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 type Notification = Database['public']['Tables']['notifications']['Row'];
@@ -28,6 +29,60 @@ type Notification = Database['public']['Tables']['notifications']['Row'];
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        variant: "destructive",
+        title: "Not authenticated",
+        description: "Please log in to access the dashboard"
+      });
+      navigate('/auth');
+      return;
+    }
+
+    // Get user role and name
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .single();
+
+    setUserRole(roleData?.role || null);
+
+    // Get user name based on role
+    if (roleData?.role === 'student') {
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('name')
+        .eq('user_id', session.user.id)
+        .single();
+      setUserName(studentData?.name);
+    } else {
+      const { data: teacherData } = await supabase
+        .from('teacher_profiles')
+        .select('full_name')
+        .eq('user_id', session.user.id)
+        .single();
+      setUserName(teacherData?.full_name);
+    }
+  };
+
+  if (!userRole || !userName) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="p-4">Loading...</div>
+      </div>
+    );
+  }
+
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,10 +97,9 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
-    checkAuth();
     fetchClassrooms();
     fetchNotifications();
-  }, []);
+  }, [userRole]);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -71,19 +125,6 @@ const Dashboard = () => {
         title: "Error",
         description: "Failed to load notifications"
       });
-    }
-  };
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({
-        variant: "destructive",
-        title: "Not authenticated",
-        description: "Please log in to access the dashboard"
-      });
-      navigate('/auth');
-      return;
     }
   };
 
@@ -233,108 +274,126 @@ const Dashboard = () => {
           )}
         </Card>
 
-        <Tabs defaultValue="classrooms" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5 gap-4">
-            <TabsTrigger value="classrooms" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Classrooms
-            </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Attendance
-            </TabsTrigger>
-            <TabsTrigger value="behavior" className="flex items-center gap-2">
-              <Award className="w-4 h-4" />
-              Behavior
-            </TabsTrigger>
-            <TabsTrigger value="achievements" className="flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              Achievements
-            </TabsTrigger>
-            <TabsTrigger value="wallet" className="flex items-center gap-2">
-              <Wallet className="w-4 h-4" />
-              NFT Wallet
-            </TabsTrigger>
-          </TabsList>
+        {userRole === 'teacher' ? (
+          <Tabs defaultValue="classrooms" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-5 gap-4">
+              <TabsTrigger value="classrooms" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Classrooms
+              </TabsTrigger>
+              <TabsTrigger value="attendance" className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Attendance
+              </TabsTrigger>
+              <TabsTrigger value="behavior" className="flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                Behavior
+              </TabsTrigger>
+              <TabsTrigger value="achievements" className="flex items-center gap-2">
+                <Trophy className="w-4 h-4" />
+                Achievements
+              </TabsTrigger>
+              <TabsTrigger value="wallet" className="flex items-center gap-2">
+                <Wallet className="w-4 h-4" />
+                NFT Wallet
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="classrooms">
-            <Card className="p-6 glass-card">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleSection('classrooms')}>
-                  <h2 className="text-2xl font-semibold gradient-text">My Classrooms</h2>
-                  {expandedSections.classrooms ? <ChevronUp /> : <ChevronDown />}
+            <TabsContent value="classrooms">
+              <Card className="p-6 glass-card">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleSection('classrooms')}>
+                    <h2 className="text-2xl font-semibold gradient-text">My Classrooms</h2>
+                    {expandedSections.classrooms ? <ChevronUp /> : <ChevronDown />}
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="bg-purple-600 hover:bg-purple-700">
+                        <Plus className="w-4 h-4 mr-2" /> New Classroom
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Create New Classroom</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <Input
+                          placeholder="Classroom name"
+                          value={newClassroom.name}
+                          onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
+                        />
+                        <Textarea
+                          placeholder="Description"
+                          value={newClassroom.description}
+                          onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
+                        />
+                      </div>
+                      <Button onClick={createClassroom} className="w-full bg-purple-600 hover:bg-purple-700">
+                        Create Classroom
+                      </Button>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="bg-purple-600 hover:bg-purple-700">
-                      <Plus className="w-4 h-4 mr-2" /> New Classroom
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Create New Classroom</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <Input
-                        placeholder="Classroom name"
-                        value={newClassroom.name}
-                        onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
-                      />
-                      <Textarea
-                        placeholder="Description"
-                        value={newClassroom.description}
-                        onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
-                      />
-                    </div>
-                    <Button onClick={createClassroom} className="w-full bg-purple-600 hover:bg-purple-700">
-                      Create Classroom
-                    </Button>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              
-              {expandedSections.classrooms && (
-                <div className="grid gap-6">
-                  {loading ? (
-                    <p className="text-center">Loading classrooms...</p>
-                  ) : classrooms.length === 0 ? (
-                    <p className="text-center text-gray-400">No classrooms found. Create your first classroom to get started!</p>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-6">
-                      {classrooms.map((classroom) => (
-                        <ClassroomGrid key={classroom.id} classroom={classroom} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="attendance">
-            {selectedClassroom ? (
-              <AttendanceTracker classroomId={selectedClassroom} />
-            ) : (
-              <Card className="p-6">
-                <p className="text-center text-gray-400">Please select or create a classroom first</p>
+                
+                {expandedSections.classrooms && (
+                  <div className="grid gap-6">
+                    {loading ? (
+                      <p className="text-center">Loading classrooms...</p>
+                    ) : classrooms.length === 0 ? (
+                      <p className="text-center text-gray-400">No classrooms found. Create your first classroom to get started!</p>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-6">
+                        {classrooms.map((classroom) => (
+                          <ClassroomGrid key={classroom.id} classroom={classroom} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </Card>
-            )}
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="behavior">
-            <BehaviorTracker />
-          </TabsContent>
+            <TabsContent value="attendance">
+              {selectedClassroom ? (
+                <AttendanceTracker classroomId={selectedClassroom} />
+              ) : (
+                <Card className="p-6">
+                  <p className="text-center text-gray-400">Please select or create a classroom first</p>
+                </Card>
+              )}
+            </TabsContent>
 
-          <TabsContent value="achievements">
-            <AchievementSystem />
-          </TabsContent>
+            <TabsContent value="behavior">
+              <BehaviorTracker />
+            </TabsContent>
 
-          <TabsContent value="wallet">
+            <TabsContent value="achievements">
+              <AchievementSystem />
+            </TabsContent>
+
+            <TabsContent value="wallet">
+              <Card className="p-6 glass-card">
+                <WalletPanel expanded={true} />
+              </Card>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          // Student view
+          <div className="grid gap-6 md:grid-cols-2">
             <Card className="p-6 glass-card">
-              <WalletPanel expanded={true} />
+              <h2 className="text-xl font-semibold mb-4">My NFT Collection</h2>
+              <Link to="/rewards" className="text-purple-400 hover:text-purple-300">
+                View my NFTs →
+              </Link>
             </Card>
-          </TabsContent>
-        </Tabs>
+            <Card className="p-6 glass-card">
+              <h2 className="text-xl font-semibold mb-4">My Classes</h2>
+              <Link to="/classes" className="text-purple-400 hover:text-purple-300">
+                View my classes →
+              </Link>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
