@@ -2,12 +2,10 @@
 import { useState } from "react";
 import { Bell, ChevronDown, ChevronUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Database } from "@/integrations/supabase/types";
-
-type Notification = Database['public']['Tables']['notifications']['Row'];
+import type { Notification } from "@/types/notification";
 
 interface NotificationsPanelProps {
-  notifications: Notification[];
+  notifications: Partial<Notification>[];
 }
 
 export const NotificationsPanel = ({ notifications }: NotificationsPanelProps) => {
@@ -33,7 +31,7 @@ export const NotificationsPanel = ({ notifications }: NotificationsPanelProps) =
               <h3 className="font-semibold text-purple-300">{notification.title}</h3>
               <p className="text-sm text-gray-300">{notification.message}</p>
               <span className="text-xs text-gray-400">
-                {new Date(notification.created_at!).toLocaleDateString()}
+                {notification.created_at ? new Date(notification.created_at).toLocaleDateString() : 'Date not available'}
               </span>
             </Card>
           ))}

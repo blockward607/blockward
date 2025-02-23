@@ -15,8 +15,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
-  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [classrooms, setClassrooms] = useState<Partial<Classroom>[]>([]);
+  const [notifications, setNotifications] = useState<Partial<Notification>[]>([]);
   const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 

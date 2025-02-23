@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ClassroomListProps {
-  classrooms: Classroom[];
+  classrooms: Partial<Classroom>[];
 }
 
 export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
@@ -69,10 +70,6 @@ export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
 
       if (error) throw error;
 
-      // Update classrooms state with the new classroom
-      // Assuming you have a way to update the classrooms state
-      // For example, if you're using useState:
-      // setClassrooms([data, ...classrooms]);
       window.location.reload();
 
       setNewClassroom({ name: "", description: "" });
@@ -129,7 +126,7 @@ export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
       {expanded && (
         <div className="grid gap-6">
           {classrooms.map((classroom) => (
-            <ClassroomGrid key={classroom.id} classroom={classroom} />
+            classroom.id && <ClassroomGrid key={classroom.id} classroom={classroom as Classroom} />
           ))}
           {classrooms.length === 0 && (
             <p className="text-center text-gray-400">No classrooms found. Create your first classroom to get started!</p>
