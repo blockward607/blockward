@@ -15,6 +15,11 @@ import {
   Calendar,
   ChartBar,
   Trophy,
+  Wallet,
+  FileText,
+  BarChart,
+  MessageSquare,
+  Layers
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -24,10 +29,15 @@ const teacherNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Students", href: "/students", icon: Users },
   { name: "Classes", href: "/classes", icon: BookOpen },
-  { name: "Behavior", href: "/behavior", icon: ChartBar },
+  { name: "Assignments", href: "/assignments", icon: FileText },
   { name: "Attendance", href: "/attendance", icon: Calendar },
+  { name: "Behavior", href: "/behavior", icon: ChartBar },
   { name: "Achievements", href: "/achievements", icon: Trophy },
+  { name: "Resources", href: "/resources", icon: Layers },
+  { name: "Messages", href: "/messages", icon: MessageSquare },
+  { name: "Analytics", href: "/analytics", icon: BarChart },
   { name: "Rewards", href: "/rewards", icon: Award },
+  { name: "NFT Wallet", href: "/wallet", icon: Wallet },
   { name: "Notifications", href: "/notifications", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
@@ -35,7 +45,13 @@ const teacherNavigation = [
 const studentNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Classes", href: "/classes", icon: BookOpen },
+  { name: "Assignments", href: "/assignments", icon: FileText },
+  { name: "Progress", href: "/progress", icon: ChartBar },
+  { name: "Achievements", href: "/achievements", icon: Trophy },
+  { name: "Resources", href: "/resources", icon: Layers },
+  { name: "Messages", href: "/messages", icon: MessageSquare },
   { name: "My NFTs", href: "/rewards", icon: Award },
+  { name: "Wallet", href: "/wallet", icon: Wallet },
   { name: "Notifications", href: "/notifications", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
@@ -108,7 +124,7 @@ export const MainLayout = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 px-3 py-4">
+          <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
@@ -126,7 +142,7 @@ export const MainLayout = () => {
                   )}
                 >
                   <Icon className="mr-3 h-5 w-5" />
-                  <span>{item.name}</span>
+                  <span className="truncate">{item.name}</span>
                 </Link>
               );
             })}
