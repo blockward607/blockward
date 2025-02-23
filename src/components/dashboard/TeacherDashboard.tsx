@@ -10,7 +10,7 @@ import { WalletPanel } from "@/components/wallet/WalletPanel";
 import type { Classroom } from "@/types/classroom";
 
 interface TeacherDashboardProps {
-  classrooms: Classroom[];
+  classrooms: Partial<Classroom>[];
   selectedClassroom: string | null;
 }
 
