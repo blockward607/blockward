@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +10,7 @@ interface Student {
   name: string;
   points: number;
   created_at: string;
+  school?: string;
 }
 
 const Students = () => {
@@ -72,6 +74,9 @@ const Students = () => {
               <div>
                 <p className="font-semibold">{student.name}</p>
                 <p className="text-sm text-gray-400">{student.points} points</p>
+                {student.school && (
+                  <p className="text-sm text-gray-400">{student.school}</p>
+                )}
               </div>
             </div>
           </Card>

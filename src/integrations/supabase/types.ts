@@ -818,6 +818,7 @@ export type Database = {
           id: string
           name: string
           points: number | null
+          school: string | null
           user_id: string | null
         }
         Insert: {
@@ -825,6 +826,7 @@ export type Database = {
           id?: string
           name: string
           points?: number | null
+          school?: string | null
           user_id?: string | null
         }
         Update: {
@@ -832,6 +834,7 @@ export type Database = {
           id?: string
           name?: string
           points?: number | null
+          school?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -974,6 +977,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      enroll_student: {
+        Args: {
+          invitation_token: string
+          student_id: string
+        }
+        Returns: undefined
+      }
       increment_student_points: {
         Args: {
           student_id: string
