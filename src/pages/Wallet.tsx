@@ -9,20 +9,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
+import { Json } from "@/integrations/supabase/types";
+
+interface NFTMetadata {
+  name: string;
+  description: string;
+  image?: string;
+  attributes?: Array<{
+    trait_type: string;
+    value: string;
+  }>;
+}
 
 interface NFT {
   id: string;
-  metadata: {
-    name: string;
-    description: string;
-    image?: string;
-    attributes?: Array<{
-      trait_type: string;
-      value: string;
-    }>;
-  };
+  metadata: NFTMetadata;
   image_url: string | null;
   created_at: string;
+}
+
+interface SupabaseNFT {
+  id: string;
+  metadata: Json;
+  image_url: string | null;
+  created_at: string;
+  creator_wallet_id: string;
+  owner_wallet_id: string;
+  token_id: string;
+  contract_address: string;
+  network: string;
+  updated_at: string;
 }
 
 interface Wallet {
@@ -95,7 +111,27 @@ const Wallet = () => {
             throw nftError;
           }
           
-          setNfts(nftData || []);
+          // Transform the Supabase NFT data to match our NFT interface
+          const transformedNfts: NFT[] = (nftData || []).map((nft: SupabaseNFT) => {
+            // Parse the metadata JSON if it's a string
+            const parsedMetadata: NFTMetadata = typeof nft.metadata === 'string' 
+              ? JSON.parse(nft.metadata) 
+              : (nft.metadata as unknown as NFTMetadata);
+              
+            return {
+              id: nft.id,
+              metadata: {
+                name: parsedMetadata.name || `NFT #${nft.id.substring(0, 4)}`,
+                description: parsedMetadata.description || "Educational achievement NFT",
+                image: parsedMetadata.image,
+                attributes: parsedMetadata.attributes || []
+              },
+              image_url: nft.image_url,
+              created_at: nft.created_at
+            };
+          });
+          
+          setNfts(transformedNfts);
         }
         
         setIsLoading(false);
