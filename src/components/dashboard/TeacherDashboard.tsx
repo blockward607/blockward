@@ -7,6 +7,7 @@ import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
 import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
 import { AchievementSystem } from "@/components/achievements/AchievementSystem";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
+import { TeacherToolbox } from "@/components/teacher/TeacherToolbox";
 import type { Classroom } from "@/types/classroom";
 
 interface TeacherDashboardProps {
@@ -65,7 +66,10 @@ export const TeacherDashboard = ({ classrooms, selectedClassroom }: TeacherDashb
       </TabsList>
 
       <TabsContent value="classrooms">
-        <ClassroomList classrooms={classrooms} />
+        <div className="space-y-6">
+          <TeacherToolbox />
+          <ClassroomList classrooms={classrooms} />
+        </div>
       </TabsContent>
 
       <TabsContent value="attendance">

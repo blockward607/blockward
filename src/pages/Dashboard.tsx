@@ -43,30 +43,31 @@ const Dashboard = () => {
       return;
     }
 
-    // Get user role and name
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
+    // Get user role from teacher_profiles or students table directly
+    const { data: teacherData } = await supabase
+      .from('teacher_profiles')
+      .select('full_name')
       .eq('user_id', session.user.id)
       .single();
-
-    setUserRole(roleData?.role || null);
-
-    // Get user name based on role
-    if (roleData?.role === 'student') {
+    
+    if (teacherData) {
+      setUserRole('teacher');
+      setUserName(teacherData.full_name || session.user.email);
+    } else {
       const { data: studentData } = await supabase
         .from('students')
         .select('name')
         .eq('user_id', session.user.id)
         .single();
-      setUserName(studentData?.name);
-    } else {
-      const { data: teacherData } = await supabase
-        .from('teacher_profiles')
-        .select('full_name')
-        .eq('user_id', session.user.id)
-        .single();
-      setUserName(teacherData?.full_name);
+        
+      if (studentData) {
+        setUserRole('student');
+        setUserName(studentData.name || session.user.email);
+      } else {
+        // If no role is found, default to student
+        setUserRole('student');
+        setUserName(session.user.email);
+      }
     }
   };
 
@@ -125,7 +126,7 @@ const Dashboard = () => {
     }
   };
 
-  if (!userRole || !userName) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="p-4">Loading...</div>
