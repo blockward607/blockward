@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { MessageSquare, Send, User, Clock, Check, CheckCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,8 +24,7 @@ interface Message {
   sender_id: string;
   read: boolean;
   sender_role: string;
-  students?: { name: string };
-  teacher_profiles?: { full_name: string };
+  sender_name?: string;
 }
 
 const Messages = () => {
@@ -82,58 +80,32 @@ const Messages = () => {
     
     const loadConversations = async () => {
       try {
-        // Use the raw method to bypass the type checking
-        const { data, error } = await supabase.rpc('get_user_conversations', {
-          user_id_param: userId
-        });
+        // Using a direct query instead of RPC due to typings issue
+        const { data, error } = await supabase
+          .from('conversations')
+          .select(`
+            id, 
+            name, 
+            created_at,
+            updated_at,
+            conversation_participants(user_id)
+          `)
+          .order('updated_at', { ascending: false });
         
-        if (error) {
-          console.error('RPC error:', error);
-          
-          // Fallback to direct query if RPC fails
-          const { data: fallbackData, error: fallbackError } = await supabase.from('conversations')
-            .select(`
-              id, 
-              name, 
-              created_at
-            `)
-            .order('updated_at', { ascending: false });
-            
-          if (fallbackError) throw fallbackError;
-          
-          // Get conversation participants separately
-          const participantsPromises = fallbackData?.map(async (conv) => {
-            const { data: participants } = await supabase.from('conversation_participants')
-              .select('user_id')
-              .eq('conversation_id', conv.id);
-              
-            return {
-              ...conv,
-              conversation_participants: participants || []
-            };
-          }) || [];
-          
-          const conversationsWithParticipants = await Promise.all(participantsPromises);
-          
-          // Filter conversations where the current user is a participant
-          const userConversations = conversationsWithParticipants.filter(conv => 
-            conv.conversation_participants.some(p => p.user_id === userId)
-          );
-          
-          setConversations(userConversations);
-          
-          // Set first conversation as selected if none is selected
-          if (userConversations.length > 0 && !selectedConversation) {
-            setSelectedConversation(userConversations[0].id);
-          }
-        } else {
-          // RPC succeeded
-          setConversations(data || []);
-          
-          // Set first conversation as selected if none is selected
-          if (data && data.length > 0 && !selectedConversation) {
-            setSelectedConversation(data[0].id);
-          }
+        if (error) throw error;
+        
+        // Filter conversations where the current user is a participant
+        const userConversations = data
+          .filter(conv => 
+            (conv.conversation_participants as { user_id: string }[])
+              .some(p => p.user_id === userId)
+          ) as Conversation[];
+        
+        setConversations(userConversations);
+        
+        // Set first conversation as selected if none is selected
+        if (userConversations.length > 0 && !selectedConversation) {
+          setSelectedConversation(userConversations[0].id);
         }
       } catch (error) {
         console.error('Error loading conversations:', error);
@@ -186,81 +158,66 @@ const Messages = () => {
     
     const loadMessages = async () => {
       try {
-        // Use the raw method to bypass the type checking
-        const { data, error } = await supabase.rpc('get_conversation_messages', {
-          conversation_id_param: selectedConversation
+        // Using a direct query instead of RPC due to typings issue
+        const { data, error } = await supabase
+          .from('messages')
+          .select(`
+            id, 
+            content, 
+            created_at, 
+            sender_id,
+            sender_role, 
+            read
+          `)
+          .eq('conversation_id', selectedConversation)
+          .order('created_at', { ascending: true });
+            
+        if (error) throw error;
+        
+        // Enrich messages with sender information
+        const enrichMessagesPromises = data.map(async (msg) => {
+          let senderName = "Unknown User";
+          
+          if (msg.sender_role === 'teacher') {
+            const { data: teacherData } = await supabase
+              .from('teacher_profiles')
+              .select('full_name')
+              .eq('user_id', msg.sender_id)
+              .single();
+              
+            senderName = teacherData?.full_name || "Teacher";
+          } else {
+            const { data: studentData } = await supabase
+              .from('students')
+              .select('name')
+              .eq('user_id', msg.sender_id)
+              .single();
+              
+            senderName = studentData?.name || "Student";
+          }
+          
+          return {
+            ...msg,
+            sender_name: senderName
+          };
         });
         
-        if (error) {
-          console.error('RPC error:', error);
-          
-          // Fallback to direct query if RPC fails
-          const { data: fallbackData, error: fallbackError } = await supabase.from('messages')
-            .select(`
-              id, 
-              content, 
-              created_at, 
-              sender_id,
-              sender_role, 
-              read
-            `)
-            .eq('conversation_id', selectedConversation)
-            .order('created_at', { ascending: true });
-            
-          if (fallbackError) throw fallbackError;
-          
-          // Enrich messages with sender information
-          const messagesEnrichPromises = fallbackData?.map(async (msg) => {
-            if (msg.sender_role === 'teacher') {
-              const { data: teacherData } = await supabase.from('teacher_profiles')
-                .select('full_name')
-                .eq('user_id', msg.sender_id)
-                .single();
-                
-              return {
-                ...msg,
-                teacher_profiles: teacherData
-              };
-            } else {
-              const { data: studentData } = await supabase.from('students')
-                .select('name')
-                .eq('user_id', msg.sender_id)
-                .single();
-                
-              return {
-                ...msg,
-                students: studentData
-              };
-            }
-          }) || [];
-          
-          const enrichedMessages = await Promise.all(messagesEnrichPromises);
-          setMessages(enrichedMessages);
-        } else {
-          // RPC succeeded
-          setMessages(data || []);
-        }
+        const enrichedMessages = await Promise.all(enrichMessagesPromises);
+        setMessages(enrichedMessages);
         
         // Mark messages as read
-        const unreadMessages = messages.filter(
+        const unreadMessages = enrichedMessages.filter(
           msg => msg.sender_id !== userId && !msg.read
         );
         
         if (unreadMessages.length > 0) {
           // Update read status in database
-          await supabase.rpc('mark_messages_as_read', {
-            message_ids: unreadMessages.map(msg => msg.id),
-            user_id_param: userId
-          }).catch(e => {
-            console.error('Failed to mark messages as read:', e);
-            
-            // Fallback if RPC fails
-            unreadMessages.forEach(async (msg) => {
-              await supabase.from('messages')
-                .update({ read: true })
-                .eq('id', msg.id);
-            });
-          });
+          for (const msg of unreadMessages) {
+            await supabase
+              .from('messages')
+              .update({ read: true })
+              .eq('id', msg.id);
+          }
           
           // Update local state
           setMessages(prev => 
@@ -298,7 +255,7 @@ const Messages = () => {
         },
         async (payload) => {
           const newMessage = payload.new as any;
-          let messageWithSender = newMessage;
+          let senderName = "Unknown User";
           
           // Get the sender's name
           try {
@@ -309,10 +266,7 @@ const Messages = () => {
                 .eq('user_id', newMessage.sender_id)
                 .single();
                 
-              messageWithSender = {
-                ...newMessage,
-                teacher_profiles: teacherData
-              };
+              senderName = teacherData?.full_name || "Teacher";
             } else {
               const { data: studentData } = await supabase
                 .from('students')
@@ -320,14 +274,16 @@ const Messages = () => {
                 .eq('user_id', newMessage.sender_id)
                 .single();
                 
-              messageWithSender = {
-                ...newMessage,
-                students: studentData
-              };
+              senderName = studentData?.name || "Student";
             }
           } catch (error) {
             console.error('Error fetching sender information:', error);
           }
+          
+          const messageWithSender = {
+            ...newMessage,
+            sender_name: senderName
+          };
           
           setMessages(prev => [...prev, messageWithSender]);
           
@@ -348,7 +304,7 @@ const Messages = () => {
     return () => {
       supabase.removeChannel(messagesChannel);
     };
-  }, [selectedConversation, userId, toast, messages]);
+  }, [selectedConversation, userId, toast]);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -362,41 +318,23 @@ const Messages = () => {
     
     try {
       // Insert directly into messages table
-      const { error } = await supabase.rpc('send_message', {
-        conversation_id_param: selectedConversation,
-        content_param: newMessage,
-        sender_id_param: userId,
-        sender_role_param: userRole
-      });
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: selectedConversation,
+          content: newMessage,
+          sender_id: userId,
+          sender_role: userRole
+        })
+        .select();
       
-      if (error) {
-        console.error('RPC error:', error);
-        
-        // Fallback to direct insert if RPC fails
-        const { error: insertError } = await supabase
-          .from('messages')
-          .insert({
-            conversation_id: selectedConversation,
-            content: newMessage,
-            sender_id: userId,
-            sender_role: userRole
-          });
-          
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
       
       // Update conversation's updated_at
-      await supabase.rpc('update_conversation_timestamp', {
-        conversation_id_param: selectedConversation
-      }).catch(e => {
-        console.error('Failed to update conversation timestamp:', e);
-        
-        // Fallback if RPC fails
-        supabase
-          .from('conversations')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', selectedConversation);
-      });
+      await supabase
+        .from('conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', selectedConversation);
       
       setNewMessage("");
     } catch (error) {
@@ -422,7 +360,7 @@ const Messages = () => {
   // Find the appropriate name to display for a message sender
   const getSenderName = (message: Message) => {
     if (message.sender_id === userId) return 'You';
-    return message.students?.name || message.teacher_profiles?.full_name || 'Unknown User';
+    return message.sender_name || 'Unknown User';
   };
 
   // Filter conversations based on search query

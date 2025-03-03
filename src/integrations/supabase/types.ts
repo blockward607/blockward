@@ -1072,10 +1072,58 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_conversation_messages: {
+        Args: {
+          conversation_id_param: string
+        }
+        Returns: {
+          id: string
+          conversation_id: string
+          sender_id: string
+          sender_role: string
+          content: string
+          created_at: string
+          read: boolean
+          sender_name: string
+        }[]
+      }
+      get_user_conversations: {
+        Args: {
+          user_id_param: string
+        }
+        Returns: {
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }[]
+      }
       increment_student_points: {
         Args: {
           student_id: string
           points_to_add: number
+        }
+        Returns: undefined
+      }
+      mark_messages_as_read: {
+        Args: {
+          message_ids: string[]
+          user_id_param: string
+        }
+        Returns: undefined
+      }
+      send_message: {
+        Args: {
+          conversation_id_param: string
+          content_param: string
+          sender_id_param: string
+          sender_role_param: string
+        }
+        Returns: string
+      }
+      update_conversation_timestamp: {
+        Args: {
+          conversation_id_param: string
         }
         Returns: undefined
       }
