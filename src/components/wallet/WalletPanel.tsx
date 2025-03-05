@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { Wallet, ChevronDown, ChevronUp, Plus, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
 interface WalletPanelProps {
   expanded?: boolean;
@@ -14,10 +15,13 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
   const [walletType, setWalletType] = useState<'user' | 'admin'>('user');
   const [isTeacher, setIsTeacher] = useState(false);
   const [nftCount, setNftCount] = useState(0);
+  const [balance, setBalance] = useState(0);
+  const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
     checkUserRole();
     fetchNFTCount();
+    fetchWalletDetails();
   }, []);
 
   const checkUserRole = async () => {
@@ -62,6 +66,28 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
     }
   };
 
+  const fetchWalletDetails = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: walletData } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (walletData) {
+        setAddress(walletData.address);
+        // For a real app, we would fetch the actual balance here
+        // This is just a placeholder
+        setBalance(Math.floor(Math.random() * 1000));
+      }
+    } catch (error) {
+      console.error('Error fetching wallet details:', error);
+    }
+  };
+
   return (
     <Card className={`glass-card transition-all ${isExpanded ? 'p-6' : 'p-2'}`}>
       <div className="flex items-center justify-between">
@@ -85,24 +111,47 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
 
       {isExpanded && (
         <div className="mt-4 space-y-4">
+          {address && (
+            <div className="p-3 bg-purple-900/20 rounded-lg">
+              <p className="text-xs text-gray-400">Wallet Address</p>
+              <p className="text-sm font-mono truncate">{address}</p>
+            </div>
+          )}
+          
           <div className="p-4 bg-purple-900/20 rounded-lg">
-            <h4 className="font-medium mb-2">Your NFTs</h4>
-            {nftCount > 0 ? (
-              <p className="text-sm">You have {nftCount} NFTs in your wallet</p>
-            ) : (
-              <p className="text-sm text-gray-400">No NFTs found in your wallet</p>
-            )}
+            <div className="flex justify-between mb-2">
+              <h4 className="font-medium">Balance</h4>
+              <span className="font-bold text-purple-400">{balance} points</span>
+            </div>
+            <div className="flex justify-between">
+              <h4 className="font-medium">NFTs</h4>
+              <span className="font-bold text-purple-400">{nftCount}</span>
+            </div>
           </div>
           
-          {isTeacher && (
+          {isTeacher ? (
             <div className="space-y-2">
-              <Button className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Generate NFT
-              </Button>
-              <Button variant="outline" className="w-full">
-                Send NFT
-              </Button>
+              <Link to="/rewards">
+                <Button className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create NFT Award
+                </Button>
+              </Link>
+              <Link to="/students">
+                <Button variant="outline" className="w-full">
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Points
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Link to="/rewards">
+                <Button className="w-full">
+                  <Wallet className="w-4 h-4 mr-2" />
+                  View My NFTs
+                </Button>
+              </Link>
             </div>
           )}
         </div>

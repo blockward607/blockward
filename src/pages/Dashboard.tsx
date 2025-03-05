@@ -5,8 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
-import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
 import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
+import StudentDashboard from "@/pages/StudentDashboard";
 import type { Classroom } from "@/types/classroom";
 import type { Notification } from "@/types/notification";
 
@@ -140,13 +140,13 @@ const Dashboard = () => {
         <DashboardHeader userName={userName} />
         <NotificationsPanel notifications={notifications} />
         
-        {userRole === 'teacher' ? (
+        {userRole === 'student' ? (
+          <StudentDashboard />
+        ) : (
           <TeacherDashboard 
             classrooms={classrooms} 
             selectedClassroom={selectedClassroom}
           />
-        ) : (
-          <StudentDashboard />
         )}
       </div>
     </div>

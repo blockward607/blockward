@@ -14,6 +14,7 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
   const { toast } = useToast();
   const [recipientAddress, setRecipientAddress] = useState("");
   const [isTeacher, setIsTeacher] = useState(false);
+  const [transferAmount, setTransferAmount] = useState("10");
   
   useEffect(() => {
     checkUserRole();
@@ -36,14 +37,25 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
     }
   };
   
-  const handleTransfer = (amount: number) => {
+  const handleTransfer = () => {
     if (!recipientAddress) return;
+    
+    const amount = parseInt(transferAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Invalid amount",
+        description: "Please enter a valid amount to transfer."
+      });
+      return;
+    }
     
     toast({
       title: "Transfer Initiated",
-      description: `Demo: This would transfer ${amount} points`
+      description: `Demo: This would transfer ${amount} points to ${recipientAddress}`
     });
     setRecipientAddress("");
+    setTransferAmount("10");
   };
 
   if (!isTeacher) {
@@ -59,7 +71,7 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
 
   return (
     <div className="space-y-2 pt-4 border-t border-gray-700">
-      <h3 className="font-semibold text-sm">Quick Transfer</h3>
+      <h3 className="font-semibold text-sm">Teacher Transfer</h3>
       <div className="space-y-2">
         <Label htmlFor="recipient">Recipient Address</Label>
         <Input 
@@ -69,26 +81,25 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
           onChange={(e) => setRecipientAddress(e.target.value)}
           disabled={disabled}
         />
-        <div className="flex space-x-2">
-          <Button 
-            size="sm" 
-            variant="secondary"
-            className="flex-1"
-            disabled={!recipientAddress || disabled}
-            onClick={() => handleTransfer(10)}
-          >
-            Send 10
-          </Button>
-          <Button 
-            size="sm" 
-            variant="secondary"
-            className="flex-1"
-            disabled={!recipientAddress || disabled}
-            onClick={() => handleTransfer(50)}
-          >
-            Send 50
-          </Button>
+        <div className="space-y-2">
+          <Label htmlFor="amount">Amount</Label>
+          <Input 
+            id="amount"
+            type="number"
+            placeholder="Amount to transfer"
+            value={transferAmount}
+            onChange={(e) => setTransferAmount(e.target.value)}
+            disabled={disabled}
+            min="1"
+          />
         </div>
+        <Button 
+          className="w-full"
+          disabled={!recipientAddress || disabled || parseInt(transferAmount) <= 0}
+          onClick={handleTransfer}
+        >
+          Send Points
+        </Button>
       </div>
     </div>
   );
