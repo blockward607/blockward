@@ -1,5 +1,4 @@
 
-import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -34,8 +33,8 @@ const Auth = () => {
     // Handle auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
-        // Set user role
         if (session) {
+          // Check if role exists already
           const { data: existingRole } = await supabase
             .from('user_roles')
             .select('role')
@@ -43,6 +42,7 @@ const Auth = () => {
             .single();
 
           if (!existingRole) {
+            // Add role to user_roles table
             const { error: roleError } = await supabase
               .from('user_roles')
               .insert([{ user_id: session.user.id, role }]);
@@ -53,11 +53,12 @@ const Auth = () => {
                 title: "Error",
                 description: "Failed to set user role",
               });
+              console.error("Role assignment error:", roleError);
               return;
             }
           }
 
-          // Create wallet if it doesn't exist
+          // Create wallet if not exists - We'll do this manually instead of relying on the trigger
           const { data: existingWallet } = await supabase
             .from('wallets')
             .select('*')
@@ -65,11 +66,15 @@ const Auth = () => {
             .maybeSingle();
 
           if (!existingWallet) {
+            // Generate a random hex address without using DB functions
+            const randomAddress = `0x${Array.from({length: 40}, () => 
+              Math.floor(Math.random() * 16).toString(16)).join('')}`;
+              
             const { error: walletError } = await supabase
               .from('wallets')
               .insert([{
                 user_id: session.user.id,
-                address: `0x${Math.random().toString(36).substring(2, 15)}`,
+                address: randomAddress,
                 type: role === 'teacher' ? 'admin' : 'user'
               }]);
 
@@ -79,6 +84,7 @@ const Auth = () => {
                 title: "Error",
                 description: "Failed to create wallet",
               });
+              console.error("Wallet creation error:", walletError);
               return;
             }
           }
@@ -102,24 +108,54 @@ const Auth = () => {
                   title: "Error",
                   description: "Failed to create teacher profile",
                 });
+                console.error("Teacher profile error:", profileError);
+                return;
+              }
+            }
+          } else {
+            // For students, create a student record
+            const { data: existingStudent } = await supabase
+              .from('students')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+              
+            if (!existingStudent) {
+              // Use email as name if no other info available
+              const studentName = email.split('@')[0];
+              
+              const { error: studentError } = await supabase
+                .from('students')
+                .insert([{ 
+                  user_id: session.user.id,
+                  name: studentName
+                }]);
+                
+              if (studentError) {
+                toast({
+                  variant: "destructive",
+                  title: "Error",
+                  description: "Failed to create student profile",
+                });
+                console.error("Student profile error:", studentError);
                 return;
               }
             }
           }
-        }
 
-        toast({
-          title: "Welcome!",
-          description: "You have successfully signed in.",
-        });
-        navigate('/dashboard');
+          toast({
+            title: "Welcome!",
+            description: "You have successfully signed in.",
+          });
+          navigate('/dashboard');
+        }
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, toast, role]);
+  }, [navigate, toast, role, email]);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -130,6 +166,11 @@ const Auth = () => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            role: role // Include role in metadata
+          }
+        }
       });
 
       if (error) {
