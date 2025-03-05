@@ -37,7 +37,7 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
     }
   };
   
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     if (!recipientAddress) return;
     
     const amount = parseInt(transferAmount);
@@ -50,12 +50,68 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
       return;
     }
     
-    toast({
-      title: "Transfer Initiated",
-      description: `Demo: This would transfer ${amount} points to ${recipientAddress}`
-    });
-    setRecipientAddress("");
-    setTransferAmount("10");
+    try {
+      // Get the recipient's wallet
+      const { data: recipientWallet, error: walletError } = await supabase
+        .from('wallets')
+        .select('id, user_id')
+        .eq('address', recipientAddress)
+        .single();
+        
+      if (walletError) {
+        console.error('Error finding recipient wallet:', walletError);
+        toast({
+          variant: "destructive",
+          title: "Recipient not found",
+          description: "Could not find a wallet with that address."
+        });
+        return;
+      }
+      
+      // Get the recipient student
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('id, points')
+        .eq('user_id', recipientWallet.user_id)
+        .single();
+        
+      if (studentError) {
+        console.error('Error finding student:', studentError);
+        toast({
+          variant: "destructive",
+          title: "Recipient not found",
+          description: "Recipient is not a student."
+        });
+        return;
+      }
+      
+      // Update student points
+      const { error: updateError } = await supabase
+        .from('students')
+        .update({ points: (student.points || 0) + amount })
+        .eq('id', student.id);
+        
+      if (updateError) {
+        console.error('Error updating student points:', updateError);
+        throw updateError;
+      }
+      
+      toast({
+        title: "Transfer Successful",
+        description: `Transferred ${amount} points to ${recipientAddress}`
+      });
+      
+      setRecipientAddress("");
+      setTransferAmount("10");
+      
+    } catch (error) {
+      console.error('Error during transfer:', error);
+      toast({
+        variant: "destructive",
+        title: "Transfer Failed",
+        description: "Could not complete the transfer. Please try again."
+      });
+    }
   };
 
   if (!isTeacher) {

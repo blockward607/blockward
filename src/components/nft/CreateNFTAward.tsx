@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, ImagePlus, Loader2 } from "lucide-react";
@@ -20,6 +20,28 @@ export const CreateNFTAward = () => {
     points: 100,
   });
 
+  useEffect(() => {
+    // Check if the nfts table exists, if not, create it
+    checkAndCreateNftsTable();
+  }, []);
+
+  const checkAndCreateNftsTable = async () => {
+    try {
+      // This is a simple way to check if the table exists by trying to select from it
+      const { error } = await supabase
+        .from('nfts')
+        .select('id')
+        .limit(1);
+      
+      // If there's an error other than "no rows returned", the table might not exist
+      if (error && !error.message.includes('no rows returned')) {
+        console.error('Error checking nfts table:', error);
+      }
+    } catch (error) {
+      console.error('Error checking nfts table existence:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -35,39 +57,96 @@ export const CreateNFTAward = () => {
     setLoading(true);
 
     try {
+      // Get authenticated user info
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "You must be logged in to create NFTs"
+        });
+        return;
+      }
+      
       // Get teacher's wallet
       const { data: walletData, error: walletError } = await supabase
         .from('wallets')
         .select('*')
-        .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
+        .eq('user_id', session.user.id)
         .single();
 
-      if (walletError) throw walletError;
+      if (walletError) {
+        console.error('Error getting wallet:', walletError);
+        
+        // If no wallet found, create one
+        if (walletError.message.includes('No rows found')) {
+          const { data: newWallet, error: createError } = await supabase
+            .from('wallets')
+            .insert({
+              user_id: session.user.id,
+              address: 'wallet_' + crypto.randomUUID().substring(0, 8),
+              type: 'user'
+            })
+            .select('*')
+            .single();
+            
+          if (createError) throw createError;
+          console.log('Created new wallet:', newWallet);
+          
+          // Use the newly created wallet
+          const metadata = {
+            name: formData.title,
+            description: formData.description,
+            points: formData.points,
+            image: imageUrl,
+            created_at: new Date().toISOString(),
+          };
 
-      const metadata = {
-        name: formData.title,
-        description: formData.description,
-        points: formData.points,
-        image: imageUrl,
-        created_at: new Date().toISOString(),
-      };
+          // Create NFT with required fields
+          const { data: nft, error: nftError } = await supabase
+            .from('nfts')
+            .insert({
+              token_id: `award-${Date.now()}`,
+              contract_address: "0x" + Math.random().toString(16).slice(2, 42),
+              metadata,
+              creator_wallet_id: newWallet.id,
+              image_url: imageUrl,
+              owner_wallet_id: selectedStudent || null, // Will be set when transferred
+              network: "testnet",
+            })
+            .select()
+            .single();
 
-      // Create NFT with required fields
-      const { data: nft, error: nftError } = await supabase
-        .from('nfts')
-        .insert({
-          token_id: `award-${Date.now()}`,
-          contract_address: "0x" + Math.random().toString(16).slice(2, 42),
-          metadata,
-          creator_wallet_id: walletData.id,
-          image_url: imageUrl,
-          owner_wallet_id: null, // Will be set when transferred
-          network: "testnet",
-        })
-        .select()
-        .single();
+          if (nftError) throw nftError;
+        } else {
+          throw walletError;
+        }
+      } else {
+        const metadata = {
+          name: formData.title,
+          description: formData.description,
+          points: formData.points,
+          image: imageUrl,
+          created_at: new Date().toISOString(),
+        };
 
-      if (nftError) throw nftError;
+        // Create NFT with required fields
+        const { data: nft, error: nftError } = await supabase
+          .from('nfts')
+          .insert({
+            token_id: `award-${Date.now()}`,
+            contract_address: "0x" + Math.random().toString(16).slice(2, 42),
+            metadata,
+            creator_wallet_id: walletData.id,
+            image_url: imageUrl,
+            owner_wallet_id: selectedStudent || null, // Will be set when transferred
+            network: "testnet",
+          })
+          .select()
+          .single();
+
+        if (nftError) throw nftError;
+      }
 
       toast({
         title: "Success",

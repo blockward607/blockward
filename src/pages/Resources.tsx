@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,9 +40,26 @@ const Resources = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    createResourcesBucketIfNeeded();
     fetchClassrooms();
     fetchResources();
   }, [selectedClassroom]);
+
+  const createResourcesBucketIfNeeded = async () => {
+    try {
+      const { data, error } = await supabase.storage.getBucket('resources');
+      if (error && error.message.includes('The resource was not found')) {
+        console.log('Resources bucket does not exist, creating it...');
+        const { error: createError } = await supabase.storage.createBucket('resources', {
+          public: true
+        });
+        if (createError) throw createError;
+        console.log('Resources bucket created successfully');
+      }
+    } catch (error) {
+      console.error('Error checking/creating resources bucket:', error);
+    }
+  };
 
   const fetchClassrooms = async () => {
     try {
@@ -75,7 +91,6 @@ const Resources = () => {
           }
         }
       } else {
-        // For students, fetch enrolled classrooms
         const { data: studentProfile } = await supabase
           .from('students')
           .select('id')
@@ -145,21 +160,23 @@ const Resources = () => {
     setUploading(true);
     try {
       const fileExt = selectedFile.name.split('.').pop();
-      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
-      // Upload file to Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('resources')
-        .upload(filePath, selectedFile);
+        .upload(fileName, selectedFile);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
 
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('resources')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      // Create resource record
+      console.log('File uploaded successfully, public URL:', publicUrl);
+
       const { data, error } = await supabase
         .from('resources')
         .insert([
@@ -182,7 +199,6 @@ const Resources = () => {
         description: "Resource uploaded successfully"
       });
 
-      // Reset form
       setSelectedFile(null);
       setNewResource({
         title: "",
@@ -194,7 +210,7 @@ const Resources = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to upload resource"
+        description: "Failed to upload resource. " + (error.message || "")
       });
     } finally {
       setUploading(false);
@@ -203,15 +219,17 @@ const Resources = () => {
 
   const deleteResource = async (id: string, url: string) => {
     try {
-      // Delete from storage
       const filePath = url.split('/').pop();
       if (filePath) {
-        await supabase.storage
+        const { error: storageError } = await supabase.storage
           .from('resources')
           .remove([filePath]);
+          
+        if (storageError) {
+          console.error('Error removing file from storage:', storageError);
+        }
       }
 
-      // Delete from database
       const { error } = await supabase
         .from('resources')
         .delete()

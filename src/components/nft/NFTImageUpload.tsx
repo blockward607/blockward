@@ -25,31 +25,56 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imagePrompt, setImagePrompt] = useState("");
 
+  const createNftImagesBucketIfNeeded = async () => {
+    try {
+      const { data, error } = await supabase.storage.getBucket('nft-images');
+      if (error && error.message.includes('The resource was not found')) {
+        console.log('NFT images bucket does not exist, creating it...');
+        const { error: createError } = await supabase.storage.createBucket('nft-images', {
+          public: true
+        });
+        if (createError) throw createError;
+        console.log('NFT images bucket created successfully');
+      }
+    } catch (error) {
+      console.error('Error checking/creating NFT images bucket:', error);
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setLoading(true);
+      
+      // Ensure the bucket exists
+      await createNftImagesBucketIfNeeded();
+      
       const fileExt = file.name.split('.').pop();
-      const filePath = `${Math.random()}.${fileExt}`;
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('nft-images')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('nft-images')
         .getPublicUrl(filePath);
 
+      console.log('Image uploaded successfully, public URL:', publicUrl);
       onImageSelect(publicUrl);
     } catch (error: any) {
+      console.error('Error uploading image:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to upload image"
+        description: "Failed to upload image: " + (error.message || "")
       });
     } finally {
       setLoading(false);
