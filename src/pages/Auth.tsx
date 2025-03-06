@@ -34,120 +34,151 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
         if (session) {
-          // Check if role exists already
-          const { data: existingRole } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
-
-          if (!existingRole) {
-            // Add role to user_roles table
-            const { error: roleError } = await supabase
+          try {
+            // Check if role exists already
+            const { data: existingRole, error: roleCheckError } = await supabase
               .from('user_roles')
-              .insert([{ user_id: session.user.id, role }]);
+              .select('role')
+              .eq('user_id', session.user.id)
+              .single();
 
-            if (roleError) {
+            if (roleCheckError && roleCheckError.code !== 'PGRST116') {
+              console.error("Error checking role:", roleCheckError);
               toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to set user role",
+                description: "Failed to check user role",
               });
-              console.error("Role assignment error:", roleError);
-              return;
             }
-          }
 
-          // Create wallet if not exists - We'll do this manually instead of relying on the trigger
-          const { data: existingWallet } = await supabase
-            .from('wallets')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          if (!existingWallet) {
-            // Generate a random hex address without using DB functions
-            const randomAddress = `0x${Array.from({length: 40}, () => 
-              Math.floor(Math.random() * 16).toString(16)).join('')}`;
-              
-            const { error: walletError } = await supabase
-              .from('wallets')
-              .insert([{
-                user_id: session.user.id,
-                address: randomAddress,
-                type: role === 'teacher' ? 'admin' : 'user'
-              }]);
-
-            if (walletError) {
-              toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Failed to create wallet",
-              });
-              console.error("Wallet creation error:", walletError);
-              return;
-            }
-          }
-
-          // Create teacher profile if needed
-          if (role === 'teacher') {
-            const { data: existingProfile } = await supabase
-              .from('teacher_profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-
-            if (!existingProfile) {
-              const { error: profileError } = await supabase
-                .from('teacher_profiles')
-                .insert([{ user_id: session.user.id }]);
-
-              if (profileError) {
-                toast({
-                  variant: "destructive",
-                  title: "Error",
-                  description: "Failed to create teacher profile",
-                });
-                console.error("Teacher profile error:", profileError);
-                return;
-              }
-            }
-          } else {
-            // For students, create a student record
-            const { data: existingStudent } = await supabase
-              .from('students')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-              
-            if (!existingStudent) {
-              // Use email as name if no other info available
-              const studentName = email.split('@')[0];
-              
-              const { error: studentError } = await supabase
-                .from('students')
+            if (!existingRole) {
+              // Add role to user_roles table
+              const { error: roleError } = await supabase
+                .from('user_roles')
                 .insert([{ 
-                  user_id: session.user.id,
-                  name: studentName
+                  user_id: session.user.id, 
+                  role: session.user.user_metadata.role || role 
                 }]);
-                
-              if (studentError) {
+
+              if (roleError) {
                 toast({
                   variant: "destructive",
                   title: "Error",
-                  description: "Failed to create student profile",
+                  description: "Failed to set user role",
                 });
-                console.error("Student profile error:", studentError);
-                return;
+                console.error("Role assignment error:", roleError);
               }
             }
-          }
 
-          toast({
-            title: "Welcome!",
-            description: "You have successfully signed in.",
-          });
-          navigate('/dashboard');
+            // Create wallet if not exists
+            const { data: existingWallet, error: walletCheckError } = await supabase
+              .from('wallets')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+
+            if (walletCheckError && walletCheckError.code !== 'PGRST116') {
+              console.error("Error checking wallet:", walletCheckError);
+            }
+
+            if (!existingWallet) {
+              // Generate a random hex address client-side
+              const randomAddress = `0x${Array.from({length: 40}, () => 
+                Math.floor(Math.random() * 16).toString(16)).join('')}`;
+                
+              const { error: walletError } = await supabase
+                .from('wallets')
+                .insert([{
+                  user_id: session.user.id,
+                  address: randomAddress,
+                  type: session.user.user_metadata.role === 'student' ? 'user' : 'admin'
+                }]);
+
+              if (walletError) {
+                toast({
+                  variant: "destructive",
+                  title: "Error",
+                  description: "Failed to create wallet",
+                });
+                console.error("Wallet creation error:", walletError);
+              }
+            }
+
+            // Create profile based on role
+            const userRole = session.user.user_metadata.role || role;
+            
+            if (userRole === 'teacher') {
+              const { data: existingProfile, error: profileCheckError } = await supabase
+                .from('teacher_profiles')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+
+              if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+                console.error("Error checking teacher profile:", profileCheckError);
+              }
+
+              if (!existingProfile) {
+                const { error: profileError } = await supabase
+                  .from('teacher_profiles')
+                  .insert([{ user_id: session.user.id }]);
+
+                if (profileError) {
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Failed to create teacher profile",
+                  });
+                  console.error("Teacher profile error:", profileError);
+                }
+              }
+            } else {
+              // For students, create a student record
+              const { data: existingStudent, error: studentCheckError } = await supabase
+                .from('students')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+                
+              if (studentCheckError && studentCheckError.code !== 'PGRST116') {
+                console.error("Error checking student record:", studentCheckError);
+              }
+                
+              if (!existingStudent) {
+                // Use email as name if no other info available
+                const studentName = email || session.user.email?.split('@')[0] || 'Student';
+                
+                const { error: studentError } = await supabase
+                  .from('students')
+                  .insert([{ 
+                    user_id: session.user.id,
+                    name: studentName
+                  }]);
+                  
+                if (studentError) {
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Failed to create student profile",
+                  });
+                  console.error("Student profile error:", studentError);
+                }
+              }
+            }
+
+            toast({
+              title: "Welcome!",
+              description: "You have successfully signed in.",
+            });
+            navigate('/dashboard');
+          } catch (error) {
+            console.error("Unexpected error during account setup:", error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Something went wrong during account setup. Please try again.",
+            });
+          }
         }
       }
     });
