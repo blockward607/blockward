@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +14,7 @@ export function useAuth() {
     
     try {
       const userId = session.user.id;
-      const userRole = session.user.user_metadata.role;
+      const userRole = session.user.user_metadata.role as 'teacher' | 'student';
       
       // Check if role exists
       const { data: existingRole } = await AuthService.checkUserRole(userId);

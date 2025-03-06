@@ -40,7 +40,7 @@ export const SignUpForm = ({
         password,
         options: {
           data: {
-            role: role // Include role in metadata
+            role: role
           }
         }
       });

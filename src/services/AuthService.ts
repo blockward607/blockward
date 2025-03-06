@@ -24,14 +24,14 @@ export const AuthService = {
   },
 
   // Create a role for the user
-  async createUserRole(userId: string, role: string) {
+  async createUserRole(userId: string, role: 'teacher' | 'student') {
     try {
       const { error: roleError } = await supabase
         .from('user_roles')
-        .insert([{ 
+        .insert({
           user_id: userId, 
           role: role 
-        }]);
+        });
 
       if (roleError) {
         console.error("Role assignment error:", roleError);
