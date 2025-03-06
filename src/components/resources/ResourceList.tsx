@@ -17,7 +17,7 @@ interface Resource {
 interface ResourceListProps {
   resources: Resource[];
   loading: boolean;
-  onDelete: (id: string, url: string) => void;
+  onDelete?: (id: string, url: string) => void;
 }
 
 export const ResourceList: React.FC<ResourceListProps> = ({ 
@@ -62,16 +62,18 @@ export const ResourceList: React.FC<ResourceListProps> = ({
                 >
                   <Download className="w-4 h-4" />
                 </a>
-                <button
-                  onClick={() => onDelete(resource.id, resource.url)}
-                  className={cn(
-                    "text-xs px-2 py-1 rounded-full",
-                    "bg-red-600/20 text-red-400",
-                    "hover:bg-red-600/30 transition-colors"
-                  )}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {onDelete && (
+                  <button
+                    onClick={() => onDelete(resource.id, resource.url)}
+                    className={cn(
+                      "text-xs px-2 py-1 rounded-full",
+                      "bg-red-600/20 text-red-400",
+                      "hover:bg-red-600/30 transition-colors"
+                    )}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

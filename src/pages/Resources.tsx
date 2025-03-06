@@ -4,6 +4,10 @@ import { useToast } from "@/hooks/use-toast";
 import { ResourceList } from "@/components/resources/ResourceList";
 import { UploadResourceDialog } from "@/components/resources/UploadResourceDialog";
 import { ResourcesService, Resource } from "@/services/ResourcesService";
+import { JoinClassSection } from "@/components/classroom/JoinClassSection";
+import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Resources = () => {
   const [resources, setResources] = useState<Resource[]>([]);
@@ -12,12 +16,34 @@ const Resources = () => {
   const [uploading, setUploading] = useState(false);
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [newResource, setNewResource] = useState({
     title: "",
     description: "",
     classroom_id: "",
   });
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+
+        setUserRole(roleData?.role || null);
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+
+    checkUserRole();
+  }, []);
 
   useEffect(() => {
     const initializeResources = async () => {
@@ -135,24 +161,53 @@ const Resources = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Resources</h1>
-        <UploadResourceDialog
-          classrooms={classrooms}
-          selectedClassroom={selectedClassroom}
-          onClassroomChange={handleClassroomChange}
-          onUpload={handleUploadResource}
-          uploading={uploading}
-          selectedFile={selectedFile}
-          onFileChange={handleFileChange}
-          newResource={newResource}
-          onResourceChange={handleResourceChange}
-        />
+        {userRole === 'teacher' && (
+          <UploadResourceDialog
+            classrooms={classrooms}
+            selectedClassroom={selectedClassroom}
+            onClassroomChange={handleClassroomChange}
+            onUpload={handleUploadResource}
+            uploading={uploading}
+            selectedFile={selectedFile}
+            onFileChange={handleFileChange}
+            newResource={newResource}
+            onResourceChange={handleResourceChange}
+          />
+        )}
       </div>
 
-      <ResourceList 
-        resources={resources} 
-        loading={loading} 
-        onDelete={handleDeleteResource} 
-      />
+      <Tabs defaultValue={userRole === 'student' ? "join" : "resources"}>
+        <TabsList>
+          <TabsTrigger value="resources">Class Resources</TabsTrigger>
+          {userRole === 'student' && (
+            <TabsTrigger value="join">Join a Class</TabsTrigger>
+          )}
+        </TabsList>
+        
+        <TabsContent value="resources">
+          {classrooms.length > 0 ? (
+            <ResourceList 
+              resources={resources} 
+              loading={loading} 
+              onDelete={userRole === 'teacher' ? handleDeleteResource : undefined} 
+            />
+          ) : (
+            <Card className="p-6">
+              <div className="text-center text-gray-400">
+                {userRole === 'teacher' 
+                  ? "No classes created yet. Create your first class to upload resources." 
+                  : "You're not enrolled in any classes yet. Join a class to see resources."}
+              </div>
+            </Card>
+          )}
+        </TabsContent>
+        
+        {userRole === 'student' && (
+          <TabsContent value="join">
+            <JoinClassSection />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 };

@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail } from "lucide-react";
+import { Mail, Copy, Users, Link2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 
 interface InviteStudentsProps {
   classroomId: string;
@@ -13,6 +15,7 @@ interface InviteStudentsProps {
 export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [invitationCode, setInvitationCode] = useState("");
   const { toast } = useToast();
 
   const handleInvite = async () => {
@@ -27,16 +30,19 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('class_invitations')
         .insert([
           { 
             classroom_id: classroomId,
             email: email.toLowerCase(),
           }
-        ]);
+        ])
+        .select();
 
       if (error) throw error;
+
+      setInvitationCode(data?.[0]?.invitation_token || "");
 
       toast({
         title: "Success",
@@ -54,23 +60,111 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
     }
   };
 
+  const generateInviteCode = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('class_invitations')
+        .insert([
+          { 
+            classroom_id: classroomId,
+            email: 'general_invitation@blockward.app', // A placeholder email for code generation
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      const code = data?.[0]?.invitation_token || "";
+      setInvitationCode(code);
+
+      toast({
+        title: "Invitation Code Generated",
+        description: "Share this code with your students",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(invitationCode);
+    toast({
+      title: "Copied!",
+      description: "Invitation code copied to clipboard",
+    });
+  };
+
   return (
-    <div className="flex gap-2">
-      <Input
-        type="email"
-        placeholder="student@example.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="max-w-xs"
-      />
-      <Button 
-        onClick={handleInvite} 
-        disabled={loading}
-        className="flex items-center gap-2"
-      >
-        <Mail className="w-4 h-4" />
-        Invite
-      </Button>
-    </div>
+    <Card className="p-4">
+      <Tabs defaultValue="code" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="code">Invite Code</TabsTrigger>
+          <TabsTrigger value="email">Email Invite</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="code" className="space-y-4">
+          <div className="text-sm text-gray-400">
+            Generate an invitation code that students can use to join your class.
+          </div>
+          
+          {invitationCode ? (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input value={invitationCode} readOnly className="font-mono" />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={copyToClipboard}
+                  title="Copy to clipboard"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-400">
+                This code expires in 7 days. Share it with your students.
+              </p>
+            </div>
+          ) : (
+            <Button 
+              onClick={generateInviteCode} 
+              disabled={loading}
+              className="w-full"
+            >
+              <Link2 className="w-4 h-4 mr-2" />
+              Generate Invitation Code
+            </Button>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="email" className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              type="email"
+              placeholder="student@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1"
+            />
+            <Button 
+              onClick={handleInvite} 
+              disabled={loading}
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Send
+            </Button>
+          </div>
+          <div className="text-xs text-gray-400">
+            Send an email invitation to a specific student.
+          </div>
+        </TabsContent>
+      </Tabs>
+    </Card>
   );
 };
