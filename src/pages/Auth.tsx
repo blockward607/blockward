@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -17,6 +18,15 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  const handleForgotPasswordClick = () => {
+    setShowForgotPassword(true);
+  };
+
+  const handleBackToSignIn = () => {
+    setShowForgotPassword(false);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-[#1A1F2C] to-black">
@@ -27,44 +37,68 @@ const Auth = () => {
         className="w-full max-w-md"
       >
         <Card className="glass-card p-8">
-          <Tabs defaultValue="teacher" onValueChange={(value) => setRole(value as 'teacher' | 'student')}>
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="teacher">Teacher</TabsTrigger>
-              <TabsTrigger value="student">Student</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="signin" className="space-y-4">
-              <SignInForm
+          {showForgotPassword ? (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-center mb-6">Reset Password</h2>
+              <ForgotPasswordForm
                 email={email}
                 setEmail={setEmail}
-                password={password}
-                setPassword={setPassword}
                 setErrorMessage={setErrorMessage}
                 setShowError={setShowError}
                 setLoading={setLoading}
+                onBackToSignIn={handleBackToSignIn}
               />
-            </TabsContent>
+            </div>
+          ) : (
+            <>
+              <Tabs defaultValue="teacher" onValueChange={(value) => setRole(value as 'teacher' | 'student')}>
+                <TabsList className="grid w-full grid-cols-2 mb-8">
+                  <TabsTrigger value="teacher">Teacher</TabsTrigger>
+                  <TabsTrigger value="student">Student</TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-            <TabsContent value="signup" className="space-y-4">
-              <SignUpForm
-                role={role}
-                email={email}
-                setEmail={setEmail}
-                password={password}
-                setPassword={setPassword}
-                setErrorMessage={setErrorMessage}
-                setShowError={setShowError}
-                setLoading={setLoading}
-              />
-            </TabsContent>
-          </Tabs>
+              <Tabs defaultValue="signin" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="signin">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="signin" className="space-y-4">
+                  <SignInForm
+                    email={email}
+                    setEmail={setEmail}
+                    password={password}
+                    setPassword={setPassword}
+                    setErrorMessage={setErrorMessage}
+                    setShowError={setShowError}
+                    setLoading={setLoading}
+                  />
+                  <div className="text-center mt-4">
+                    <button 
+                      onClick={handleForgotPasswordClick}
+                      className="text-sm text-purple-400 hover:text-purple-300 underline"
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="signup" className="space-y-4">
+                  <SignUpForm
+                    role={role}
+                    email={email}
+                    setEmail={setEmail}
+                    password={password}
+                    setPassword={setPassword}
+                    setErrorMessage={setErrorMessage}
+                    setShowError={setShowError}
+                    setLoading={setLoading}
+                  />
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
 
           {showError && (
             <div className="mt-4 p-3 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-sm">

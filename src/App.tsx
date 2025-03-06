@@ -61,6 +61,11 @@ function App() {
     }
   };
 
+  // Direct access to student dashboard for testing
+  const viewStudentDashboard = () => {
+    return <StudentDashboard />;
+  };
+
   if (isAuthenticated === null) {
     return null; // Loading state
   }
@@ -70,6 +75,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/reset-password" element={<Auth />} />
+        <Route path="/view-student-dashboard" element={viewStudentDashboard()} />
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />} />
           <Route path="/student-dashboard" element={
