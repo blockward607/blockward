@@ -28,6 +28,13 @@ export const ForgotPasswordForm = ({
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !email.trim()) {
+      setErrorMessage("Please enter your email address");
+      setShowError(true);
+      return;
+    }
+    
     setLoading(true);
     setShowError(false);
 

@@ -22,10 +22,12 @@ const Auth = () => {
 
   const handleForgotPasswordClick = () => {
     setShowForgotPassword(true);
+    setShowError(false); // Clear any previous errors
   };
 
   const handleBackToSignIn = () => {
     setShowForgotPassword(false);
+    setShowError(false); // Clear any previous errors
   };
 
   return (
