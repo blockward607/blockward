@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ResourceList } from "@/components/resources/ResourceList";
@@ -176,12 +175,13 @@ const Resources = () => {
         )}
       </div>
 
-      <Tabs defaultValue={userRole === 'student' ? "join" : "resources"}>
+      {userRole === 'student' && (
+        <JoinClassSection />
+      )}
+
+      <Tabs defaultValue="resources">
         <TabsList>
           <TabsTrigger value="resources">Class Resources</TabsTrigger>
-          {userRole === 'student' && (
-            <TabsTrigger value="join">Join a Class</TabsTrigger>
-          )}
         </TabsList>
         
         <TabsContent value="resources">
@@ -201,12 +201,6 @@ const Resources = () => {
             </Card>
           )}
         </TabsContent>
-        
-        {userRole === 'student' && (
-          <TabsContent value="join">
-            <JoinClassSection />
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );
