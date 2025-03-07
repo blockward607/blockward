@@ -1,11 +1,13 @@
+
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { GraduationCap, Sparkles, ArrowRight } from "lucide-react";
+import { DemoSection } from "./demo/DemoSection";
 
 export const Hero = () => {
   return (
-    <div className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <div className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(155,135,245,0.1),rgba(30,27,38,0.3))] animate-pulse" />
       
@@ -90,6 +92,9 @@ export const Hero = () => {
           </motion.div>
         </motion.div>
       </div>
+      
+      {/* Add the demo section below the hero content */}
+      <DemoSection />
     </div>
   );
 };
