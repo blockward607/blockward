@@ -3,8 +3,8 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
-import { Calendar, Users, Clock } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { Calendar, Users, Clock, Award } from "lucide-react";
 import { AttendanceStatus } from "./AttendanceStatus";
 
 interface AttendanceStatsProps {
@@ -19,7 +19,7 @@ export const AttendanceStats = ({ students }: AttendanceStatsProps) => {
   // Early return if there are no students
   if (!students || students.length === 0) {
     return (
-      <Card className="w-full">
+      <Card className="w-full glass-card border-purple-500/20">
         <CardContent className="p-6">
           <div className="text-center py-6">
             <p className="text-gray-500">No students to display stats for.</p>
@@ -73,6 +73,7 @@ export const AttendanceStats = ({ students }: AttendanceStatsProps) => {
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
+          <Tooltip />
           <Legend verticalAlign="bottom" height={36} />
         </PieChart>
       </ResponsiveContainer>
@@ -80,20 +81,20 @@ export const AttendanceStats = ({ students }: AttendanceStatsProps) => {
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full glass-card border-purple-500/20 hover:border-purple-500/40 transition-colors">
       <CardContent className="p-6">
         <Tabs defaultValue="summary">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="summary">Summary</TabsTrigger>
-            <TabsTrigger value="chart">Chart</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 bg-purple-900/20 border border-purple-500/20 mb-6">
+            <TabsTrigger value="summary" className="data-[state=active]:bg-purple-600">Summary</TabsTrigger>
+            <TabsTrigger value="chart" className="data-[state=active]:bg-purple-600">Chart</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="summary" className="space-y-6 mt-6">
+          <TabsContent value="summary" className="space-y-6 animate-fade-in">
             <div className="grid gap-6 md:grid-cols-3">
-              <div className="flex flex-col space-y-2">
+              <div className="flex flex-col space-y-2 glass-card p-4 border border-purple-500/20 rounded-lg hover-scale">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-full bg-green-100">
-                    <Users className="h-5 w-5 text-green-600" />
+                  <div className="p-2 rounded-full bg-green-100/10">
+                    <Award className="h-5 w-5 text-green-500" />
                   </div>
                   <span className="text-sm font-medium">Present</span>
                 </div>
@@ -102,15 +103,16 @@ export const AttendanceStats = ({ students }: AttendanceStatsProps) => {
                 </div>
                 <Progress 
                   value={presentPercentage} 
-                  className="h-2 bg-gray-100"
+                  className="h-2 bg-gray-100/10"
+                  indicatorClassName="bg-green-500"
                 />
                 <span className="text-sm text-gray-500">{presentPercentage}% of total</span>
               </div>
               
-              <div className="flex flex-col space-y-2">
+              <div className="flex flex-col space-y-2 glass-card p-4 border border-purple-500/20 rounded-lg hover-scale">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-full bg-red-100">
-                    <Calendar className="h-5 w-5 text-red-600" />
+                  <div className="p-2 rounded-full bg-red-100/10">
+                    <Calendar className="h-5 w-5 text-red-500" />
                   </div>
                   <span className="text-sm font-medium">Absent</span>
                 </div>
@@ -119,15 +121,16 @@ export const AttendanceStats = ({ students }: AttendanceStatsProps) => {
                 </div>
                 <Progress 
                   value={absentPercentage} 
-                  className="h-2 bg-gray-100"
+                  className="h-2 bg-gray-100/10"
+                  indicatorClassName="bg-red-500"
                 />
                 <span className="text-sm text-gray-500">{absentPercentage}% of total</span>
               </div>
               
-              <div className="flex flex-col space-y-2">
+              <div className="flex flex-col space-y-2 glass-card p-4 border border-purple-500/20 rounded-lg hover-scale">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-full bg-yellow-100">
-                    <Clock className="h-5 w-5 text-yellow-600" />
+                  <div className="p-2 rounded-full bg-yellow-100/10">
+                    <Clock className="h-5 w-5 text-yellow-500" />
                   </div>
                   <span className="text-sm font-medium">Late</span>
                 </div>
@@ -136,14 +139,15 @@ export const AttendanceStats = ({ students }: AttendanceStatsProps) => {
                 </div>
                 <Progress 
                   value={latePercentage} 
-                  className="h-2 bg-gray-100"
+                  className="h-2 bg-gray-100/10"
+                  indicatorClassName="bg-yellow-500"
                 />
                 <span className="text-sm text-gray-500">{latePercentage}% of total</span>
               </div>
             </div>
           </TabsContent>
           
-          <TabsContent value="chart" className="mt-6">
+          <TabsContent value="chart" className="animate-fade-in">
             {renderPieChart()}
           </TabsContent>
         </Tabs>

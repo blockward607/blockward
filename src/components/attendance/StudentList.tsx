@@ -1,7 +1,7 @@
 
 import { AttendanceStatusSelect, AttendanceStatus } from "./AttendanceStatus";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Check, X, Clock } from "lucide-react";
+import { Check, X, Clock, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Student {
@@ -20,9 +20,9 @@ interface StudentListProps {
 export const StudentList = ({ students, updateStudentStatus, isTeacher = false }: StudentListProps) => {
   if (students.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div className="rounded-full bg-muted p-3 mb-4">
-          <X className="h-6 w-6" />
+      <div className="flex flex-col items-center justify-center py-12 px-4 text-center glass-card rounded-lg">
+        <div className="rounded-full bg-purple-900/20 p-3 mb-4">
+          <AlertCircle className="h-6 w-6 text-purple-400" />
         </div>
         <h3 className="text-lg font-medium">No students found</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-md">
@@ -63,16 +63,16 @@ export const StudentList = ({ students, updateStudentStatus, isTeacher = false }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
-        <div className="grid grid-cols-1 divide-y">
+      <div className="rounded-md border border-purple-500/20 overflow-hidden glass-card">
+        <div className="grid grid-cols-1 divide-y divide-purple-500/10">
           {students.map((student) => (
             <div
               key={student.id}
-              className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
+              className="flex items-center justify-between p-4 hover:bg-purple-900/20 transition-colors animate-fade-in"
             >
               <div className="flex items-center gap-4">
-                <Avatar>
-                  <AvatarFallback className="bg-primary/10 text-primary">
+                <Avatar className="border-2 border-purple-500/20 hover-scale">
+                  <AvatarFallback className="bg-purple-800/30 text-purple-100">
                     {student.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

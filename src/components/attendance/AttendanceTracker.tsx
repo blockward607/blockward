@@ -11,7 +11,7 @@ import { AttendanceStatus } from "@/components/attendance/AttendanceStatus";
 import { useClassroomStudents } from "@/hooks/use-classroom-students";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RefreshCw, Download, Save } from "lucide-react";
+import { Loader2, RefreshCw, Download, Save, FileText } from "lucide-react";
 
 interface AttendanceTrackerProps {
   classroomId: string;
@@ -232,6 +232,11 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      toast({
+        title: "Success",
+        description: "Attendance data exported successfully"
+      });
     } catch (error) {
       console.error('Error exporting CSV:', error);
       toast({
@@ -241,10 +246,17 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
       });
     }
   };
+
+  const exportToPdf = () => {
+    toast({
+      title: "Coming Soon",
+      description: "PDF export feature will be available in the next update"
+    });
+  };
   
   if (studentsLoading && students.length === 0) {
     return (
-      <Card>
+      <Card className="glass-card">
         <CardContent className="pt-6">
           <div className="flex justify-center items-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -255,7 +267,7 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
   }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <DatePicker selectedDate={selectedDate} onDateChange={handleDateChange} />
         
@@ -266,6 +278,7 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
             onClick={handleRefresh}
             disabled={refreshing}
             title="Refresh attendance data"
+            className="hover:bg-purple-100/10"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
@@ -277,14 +290,25 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
                 size="icon"
                 onClick={exportToCsv}
                 title="Export as CSV"
+                className="hover:bg-purple-100/10"
               >
                 <Download className="h-4 w-4" />
               </Button>
               
               <Button 
+                variant="outline" 
+                size="icon"
+                onClick={exportToPdf}
+                title="Export as PDF (Coming Soon)"
+                className="hover:bg-purple-100/10"
+              >
+                <FileText className="h-4 w-4" />
+              </Button>
+              
+              <Button 
                 onClick={handleSaveAttendance}
                 disabled={saving || students.length === 0}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-600 hover:bg-purple-700 transition-colors"
               >
                 {saving ? (
                   <>
@@ -304,12 +328,12 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
       </div>
       
       <Tabs defaultValue="attendance" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="stats">Statistics</TabsTrigger>
+        <TabsList className="bg-purple-900/20 border border-purple-500/20">
+          <TabsTrigger value="attendance" className="data-[state=active]:bg-purple-600">Attendance</TabsTrigger>
+          <TabsTrigger value="stats" className="data-[state=active]:bg-purple-600">Statistics</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="attendance" className="space-y-4">
+        <TabsContent value="attendance" className="space-y-4 animate-fade-in">
           <StudentList 
             students={students} 
             updateStudentStatus={updateStudentStatus}
@@ -323,7 +347,7 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
           )}
         </TabsContent>
         
-        <TabsContent value="stats">
+        <TabsContent value="stats" className="animate-fade-in">
           <AttendanceStats students={students} />
         </TabsContent>
       </Tabs>
