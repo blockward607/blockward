@@ -1,198 +1,153 @@
 
-import { useEffect, useState } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle,
-  CardDescription
-} from "@/components/ui/card";
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { UserCheck, UserX, Clock } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { Calendar, Users, Clock } from "lucide-react";
+import { AttendanceStatus } from "./AttendanceStatus";
 
 interface AttendanceStatsProps {
-  classroomId: string;
-  attendanceHistory: Record<string, any>[];
-  isLoading: boolean;
+  students: {
+    id: string;
+    name: string;
+    status?: AttendanceStatus;
+  }[];
 }
 
-export function AttendanceStats({ 
-  attendanceHistory, 
-  isLoading 
-}: AttendanceStatsProps) {
-  const [stats, setStats] = useState({
-    present: 0,
-    absent: 0,
-    late: 0,
-    totalRecords: 0,
-    presentPercentage: 0,
-    absentPercentage: 0,
-    latePercentage: 0
-  });
-  
-  const [chartData, setChartData] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!attendanceHistory.length) return;
-    
-    // Calculate stats
-    const present = attendanceHistory.filter(record => record.status === 'present').length;
-    const absent = attendanceHistory.filter(record => record.status === 'absent').length;
-    const late = attendanceHistory.filter(record => record.status === 'late').length;
-    const total = present + absent + late;
-    
-    setStats({
-      present,
-      absent,
-      late,
-      totalRecords: total,
-      presentPercentage: total ? Math.round((present / total) * 100) : 0,
-      absentPercentage: total ? Math.round((absent / total) * 100) : 0,
-      latePercentage: total ? Math.round((late / total) * 100) : 0
-    });
-    
-    // Prepare chart data by date
-    const dateGroups = attendanceHistory.reduce((groups: Record<string, any>, record) => {
-      const date = record.date;
-      if (!groups[date]) {
-        groups[date] = { date, present: 0, absent: 0, late: 0 };
-      }
-      
-      groups[date][record.status] += 1;
-      return groups;
-    }, {});
-    
-    const chartDataArray = Object.values(dateGroups)
-      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(-10); // Get last 10 days
-    
-    setChartData(chartDataArray);
-  }, [attendanceHistory]);
-  
-  if (isLoading) {
+export const AttendanceStats = ({ students }: AttendanceStatsProps) => {
+  // Early return if there are no students
+  if (!students || students.length === 0) {
     return (
-      <div className="flex justify-center items-center h-80">
-        <p>Loading statistics...</p>
-      </div>
-    );
-  }
-
-  if (!attendanceHistory.length) {
-    return (
-      <Card className="p-6 text-center">
-        <p>No attendance records found. Start tracking attendance to see statistics.</p>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Present Rate
-            </CardTitle>
-            <UserCheck className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.presentPercentage}%</div>
-            <Progress 
-              value={stats.presentPercentage} 
-              className="h-2 mt-2"
-              indicatorClassName="bg-green-500" 
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              {stats.present} out of {stats.totalRecords} records
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Absent Rate
-            </CardTitle>
-            <UserX className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.absentPercentage}%</div>
-            <Progress 
-              value={stats.absentPercentage} 
-              className="h-2 mt-2"
-              indicatorClassName="bg-red-500" 
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              {stats.absent} out of {stats.totalRecords} records
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Late Rate
-            </CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.latePercentage}%</div>
-            <Progress 
-              value={stats.latePercentage} 
-              className="h-2 mt-2"
-              indicatorClassName="bg-yellow-500" 
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              {stats.late} out of {stats.totalRecords} records
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Attendance Trends</CardTitle>
-          <CardDescription>Last 10 days of attendance records</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={chartData}
-                margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 50,
-                }}
-              >
-                <XAxis 
-                  dataKey="date" 
-                  angle={-45} 
-                  textAnchor="end" 
-                  tick={{ fontSize: 12 }}
-                  height={60}
-                />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="present" name="Present" fill="#22c55e" />
-                <Bar dataKey="absent" name="Absent" fill="#ef4444" />
-                <Bar dataKey="late" name="Late" fill="#eab308" />
-              </BarChart>
-            </ResponsiveContainer>
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <div className="text-center py-6">
+            <p className="text-gray-500">No students to display stats for.</p>
           </div>
         </CardContent>
       </Card>
-    </div>
+    );
+  }
+
+  // Calculate stats
+  const totalStudents = students.length;
+  const presentCount = students.filter(s => s.status === 'present' || !s.status).length;
+  const absentCount = students.filter(s => s.status === 'absent').length;
+  const lateCount = students.filter(s => s.status === 'late').length;
+
+  const presentPercentage = Math.round((presentCount / totalStudents) * 100);
+  const absentPercentage = Math.round((absentCount / totalStudents) * 100);
+  const latePercentage = Math.round((lateCount / totalStudents) * 100);
+
+  // Prepare data for pie chart
+  const data = [
+    { name: 'Present', value: presentCount, color: '#22c55e' },
+    { name: 'Absent', value: absentCount, color: '#ef4444' },
+    { name: 'Late', value: lateCount, color: '#eab308' },
+  ].filter(item => item.value > 0);
+
+  const renderPieChart = () => {
+    if (totalStudents === 0) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <p className="text-gray-500">No data to display</p>
+        </div>
+      );
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius={90}
+            fill="#8884d8"
+            dataKey="value"
+            nameKey="name"
+            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Legend verticalAlign="bottom" height={36} />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  return (
+    <Card className="w-full">
+      <CardContent className="p-6">
+        <Tabs defaultValue="summary">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="summary">Summary</TabsTrigger>
+            <TabsTrigger value="chart">Chart</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="summary" className="space-y-6 mt-6">
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-full bg-green-100">
+                    <Users className="h-5 w-5 text-green-600" />
+                  </div>
+                  <span className="text-sm font-medium">Present</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {presentCount} <span className="text-sm text-gray-500">/ {totalStudents}</span>
+                </div>
+                <Progress 
+                  value={presentPercentage} 
+                  className="h-2 bg-gray-100"
+                />
+                <span className="text-sm text-gray-500">{presentPercentage}% of total</span>
+              </div>
+              
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-full bg-red-100">
+                    <Calendar className="h-5 w-5 text-red-600" />
+                  </div>
+                  <span className="text-sm font-medium">Absent</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {absentCount} <span className="text-sm text-gray-500">/ {totalStudents}</span>
+                </div>
+                <Progress 
+                  value={absentPercentage} 
+                  className="h-2 bg-gray-100"
+                />
+                <span className="text-sm text-gray-500">{absentPercentage}% of total</span>
+              </div>
+              
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-full bg-yellow-100">
+                    <Clock className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <span className="text-sm font-medium">Late</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {lateCount} <span className="text-sm text-gray-500">/ {totalStudents}</span>
+                </div>
+                <Progress 
+                  value={latePercentage} 
+                  className="h-2 bg-gray-100"
+                />
+                <span className="text-sm text-gray-500">{latePercentage}% of total</span>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="chart" className="mt-6">
+            {renderPieChart()}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
-}
+};

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AttendanceStatus } from "@/components/attendance/AttendanceStatus";
@@ -15,6 +16,12 @@ export const useClassroomStudents = (classroomId: string) => {
   const { toast } = useToast();
 
   const fetchStudents = async () => {
+    if (!classroomId) {
+      setStudents([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       console.log('Fetching students for classroom:', classroomId);
       
@@ -53,12 +60,20 @@ export const useClassroomStudents = (classroomId: string) => {
 
       if (classroomStudents) {
         const formattedStudents: Student[] = classroomStudents.map((cs) => {          
+          // Ensure student.id is properly typed
+          const studentId = cs.students?.id;
+          
+          // Safe status casting
+          const attendanceRecord = attendanceRecords?.find(
+            (record) => record.student_id === cs.student_id
+          );
+          
+          const status = attendanceRecord?.status as AttendanceStatus | undefined;
+          
           return {
-            id: cs.students.id,
-            name: cs.students.name,
-            status: (attendanceRecords?.find(
-              (record) => record.student_id === cs.student_id
-            )?.status as AttendanceStatus) || 'present'
+            id: studentId,
+            name: cs.students?.name || 'Unknown Student',
+            status: status || 'present'
           };
         });
         
@@ -72,8 +87,10 @@ export const useClassroomStudents = (classroomId: string) => {
         title: "Error",
         description: "Failed to load students"
       });
+      setStudents([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {

@@ -10,92 +10,113 @@ import {
   SelectTrigger, 
   SelectValue
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { RefreshCw } from "lucide-react";
 
 const Attendance = () => {
   const [userClassrooms, setUserClassrooms] = useState<any[]>([]);
   const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchUserClassrooms = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          setLoading(false);
-          return;
-        }
-        
-        // Fetch user role
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        const userRole = roleData?.role;
-        
-        if (userRole === 'teacher') {
-          // For teachers, get all classrooms they teach
-          const { data: teacherProfile } = await supabase
-            .from('teacher_profiles')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          if (teacherProfile) {
-            const { data: classrooms, error } = await supabase
-              .from('classrooms')
-              .select('*')
-              .eq('teacher_id', teacherProfile.id);
-            
-            if (error) throw error;
-            
-            setUserClassrooms(classrooms || []);
-            if (classrooms && classrooms.length > 0) {
-              setSelectedClassroom(classrooms[0].id);
-            }
-          }
-        } else {
-          // For students, get classrooms they're enrolled in
-          const { data: studentData } = await supabase
-            .from('students')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          if (studentData) {
-            const { data: enrollments, error } = await supabase
-              .from('classroom_students')
-              .select(`
-                classroom_id,
-                classrooms (*)
-              `)
-              .eq('student_id', studentData.id);
-            
-            if (error) throw error;
-            
-            if (enrollments) {
-              const classrooms = enrollments.map(enrollment => enrollment.classrooms);
-              setUserClassrooms(classrooms as any[]);
-              if (classrooms.length > 0) {
-                setSelectedClassroom((classrooms[0] as any).id);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching classrooms:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUserClassrooms();
   }, []);
 
+  const fetchUserClassrooms = async () => {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch user role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      
+      const userRole = roleData?.role;
+      
+      if (userRole === 'teacher') {
+        // For teachers, get all classrooms they teach
+        const { data: teacherProfile } = await supabase
+          .from('teacher_profiles')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (teacherProfile) {
+          const { data: classrooms, error } = await supabase
+            .from('classrooms')
+            .select('*')
+            .eq('teacher_id', teacherProfile.id);
+          
+          if (error) throw error;
+          
+          setUserClassrooms(classrooms || []);
+          if (classrooms && classrooms.length > 0) {
+            setSelectedClassroom(classrooms[0].id);
+          }
+        }
+      } else {
+        // For students, get classrooms they're enrolled in
+        const { data: studentData } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (studentData) {
+          const { data: enrollments, error } = await supabase
+            .from('classroom_students')
+            .select(`
+              classroom_id,
+              classrooms (*)
+            `)
+            .eq('student_id', studentData.id);
+          
+          if (error) throw error;
+          
+          if (enrollments) {
+            const classrooms = enrollments.map(enrollment => enrollment.classrooms);
+            setUserClassrooms(classrooms as any[]);
+            if (classrooms.length > 0) {
+              setSelectedClassroom((classrooms[0] as any).id);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching classrooms:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load classrooms"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClassroomChange = (classroomId: string) => {
     setSelectedClassroom(classroomId);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchUserClassrooms();
+    setRefreshing(false);
+    toast({
+      title: "Refreshed",
+      description: "Classroom list has been refreshed"
+    });
   };
 
   if (loading) {
@@ -111,6 +132,14 @@ const Attendance = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Attendance Tracking</h1>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
         <Card className="p-6">
           <div className="text-center py-8">
@@ -129,21 +158,32 @@ const Attendance = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-white">Attendance Tracking</h1>
         
-        <Select
-          value={selectedClassroom || undefined}
-          onValueChange={handleClassroomChange}
-        >
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Select a classroom" />
-          </SelectTrigger>
-          <SelectContent>
-            {userClassrooms.map((classroom) => (
-              <SelectItem key={classroom.id} value={classroom.id}>
-                {classroom.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select
+            value={selectedClassroom || undefined}
+            onValueChange={handleClassroomChange}
+          >
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Select a classroom" />
+            </SelectTrigger>
+            <SelectContent>
+              {userClassrooms.map((classroom) => (
+                <SelectItem key={classroom.id} value={classroom.id}>
+                  {classroom.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
       
       {selectedClassroom ? (

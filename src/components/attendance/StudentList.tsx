@@ -33,7 +33,8 @@ export const StudentList = ({ students, updateStudentStatus, isTeacher = false }
   }
 
   const getStatusIcon = (status: AttendanceStatus | undefined) => {
-    switch (status) {
+    const statusValue = status || 'present';
+    switch (statusValue) {
       case 'present':
         return <Check className="h-4 w-4 text-green-500" />;
       case 'absent':
@@ -46,17 +47,17 @@ export const StudentList = ({ students, updateStudentStatus, isTeacher = false }
   };
 
   const getStatusBadge = (status: AttendanceStatus | undefined) => {
-    const statusText = status || 'present';
+    const statusValue = status || 'present';
     
-    switch (statusText) {
+    switch (statusValue) {
       case 'present':
-        return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">{statusText}</Badge>;
+        return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">{statusValue}</Badge>;
       case 'absent':
-        return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">{statusText}</Badge>;
+        return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">{statusValue}</Badge>;
       case 'late':
-        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">{statusText}</Badge>;
+        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">{statusValue}</Badge>;
       default:
-        return <Badge variant="outline">{statusText}</Badge>;
+        return <Badge variant="outline">{statusValue}</Badge>;
     }
   };
 
