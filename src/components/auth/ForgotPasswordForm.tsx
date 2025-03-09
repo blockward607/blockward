@@ -25,9 +25,15 @@ export const ForgotPasswordForm = ({
 }: ForgotPasswordFormProps) => {
   const { toast } = useToast();
   const [emailSent, setEmailSent] = useState(false);
+  
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowError(false);
     
     if (!email || !email.trim()) {
       setErrorMessage("Please enter your email address");
@@ -35,8 +41,13 @@ export const ForgotPasswordForm = ({
       return;
     }
     
+    if (!validateEmail(email)) {
+      setErrorMessage("Please enter a valid email address");
+      setShowError(true);
+      return;
+    }
+    
     setLoading(true);
-    setShowError(false);
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

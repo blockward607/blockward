@@ -30,6 +30,13 @@ const Auth = () => {
     setShowError(false); // Clear any previous errors
   };
 
+  // Clear error when input changes
+  useEffect(() => {
+    if (showError) {
+      setShowError(false);
+    }
+  }, [email, password]);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-[#1A1F2C] to-black">
       <motion.div
@@ -75,15 +82,8 @@ const Auth = () => {
                     setErrorMessage={setErrorMessage}
                     setShowError={setShowError}
                     setLoading={setLoading}
+                    onForgotPasswordClick={handleForgotPasswordClick}
                   />
-                  <div className="text-center mt-4">
-                    <button 
-                      onClick={handleForgotPasswordClick}
-                      className="text-sm text-purple-400 hover:text-purple-300 underline"
-                    >
-                      Forgot your password?
-                    </button>
-                  </div>
                 </TabsContent>
 
                 <TabsContent value="signup" className="space-y-4">

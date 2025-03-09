@@ -14,6 +14,7 @@ interface SignInFormProps {
   setErrorMessage: (message: string) => void;
   setShowError: (show: boolean) => void;
   setLoading: (loading: boolean) => void;
+  onForgotPasswordClick: () => void;
 }
 
 export const SignInForm = ({
@@ -24,13 +25,27 @@ export const SignInForm = ({
   setErrorMessage,
   setShowError,
   setLoading,
+  onForgotPasswordClick,
 }: SignInFormProps) => {
   const { toast } = useToast();
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setShowError(false);
+    
+    // Validate email format
+    if (!validateEmail(email)) {
+      setErrorMessage("Please enter a valid email address");
+      setShowError(true);
+      return;
+    }
+    
+    setLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -79,6 +94,15 @@ export const SignInForm = ({
       <Button type="submit" className="w-full">
         Sign In
       </Button>
+      <div className="text-center mt-4">
+        <button 
+          type="button"
+          onClick={onForgotPasswordClick}
+          className="text-sm text-purple-400 hover:text-purple-300 underline"
+        >
+          Forgot your password?
+        </button>
+      </div>
     </form>
   );
 };
