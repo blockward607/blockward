@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Hero } from "@/components/Hero";
@@ -24,7 +23,9 @@ const Index = () => {
       {/* Enhanced header with interactive logo and navigation */}
       <header className="container mx-auto py-6 px-4 flex justify-between items-center border-b border-purple-900/20">
         <div className="flex items-center gap-3">
-          <InteractiveLogo size={40} />
+          <div className="w-10 h-10">
+            <InteractiveLogo />
+          </div>
           <h1 className="text-3xl blockward-logo">Blockward</h1>
         </div>
         
@@ -129,7 +130,7 @@ const Index = () => {
       {/* Features section */}
       <Features />
       
-      {/* Contact Section - NEW */}
+      {/* Contact Section */}
       <section className="container mx-auto py-16 px-4">
         <div className="glass-card modern-shadow p-8 max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center blockward-logo">Get In Touch</h2>
@@ -174,7 +175,9 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center mb-8">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <InteractiveLogo size={30} />
+              <div className="w-7 h-7">
+                <InteractiveLogo />
+              </div>
               <h3 className="text-xl blockward-logo">Blockward</h3>
             </div>
             
