@@ -1,12 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Award, Book, ChartBar, Grid, Mail, User, Wallet } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Award, Book, ChartBar, Grid, Mail, User, Wallet, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
 import { NFTGrid } from "@/components/wallet/NFTGrid";
+import { JoinClassSection } from "@/components/classroom/JoinClassSection";
+import { motion } from "framer-motion";
 
 const StudentDashboard = () => {
   const [studentEmail, setStudentEmail] = useState<string | null>(null);
@@ -14,11 +17,51 @@ const StudentDashboard = () => {
   const [studentName, setStudentName] = useState<string | null>(null);
   const [nfts, setNfts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchStudentInfo();
-    fetchStudentNFTs();
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsAuthenticated(true);
+        await fetchStudentInfo();
+        await fetchStudentNFTs();
+      } else {
+        // Check if this is a demo view
+        const path = window.location.pathname;
+        if (path === '/view-student-dashboard') {
+          setIsDemo(true);
+          // Load some demo data
+          setStudentName('Demo Student');
+          setStudentEmail('demo@example.com');
+          setStudentPoints(150);
+          setNfts([
+            {
+              id: '1',
+              image_url: '/placeholder.svg',
+              metadata: {
+                name: 'Perfect Attendance',
+                description: 'Attended all classes for a month'
+              }
+            },
+            {
+              id: '2',
+              image_url: '/placeholder.svg',
+              metadata: {
+                name: 'Math Wizard',
+                description: 'Completed all advanced math assignments'
+              }
+            }
+          ]);
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
   const fetchStudentInfo = async () => {
@@ -46,8 +89,6 @@ const StudentDashboard = () => {
         title: "Error",
         description: "Failed to load student information"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -76,6 +117,10 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error('Error fetching NFTs:', error);
     }
+  };
+
+  const handleSignUp = () => {
+    navigate('/auth');
   };
 
   if (loading) {
@@ -107,6 +152,31 @@ const StudentDashboard = () => {
         </div>
       </Card>
 
+      {/* Demo Banner (only shown in demo mode) */}
+      {isDemo && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-6 glass-card bg-gradient-to-r from-purple-900/30 to-indigo-900/30 text-center"
+        >
+          <h2 className="text-xl font-bold mb-3 gradient-text">You're viewing the Student Demo</h2>
+          <p className="text-gray-300 mb-4">
+            This is a preview of the Blockward student dashboard. Sign up to access all features and start earning rewards!
+          </p>
+          <Button
+            onClick={handleSignUp}
+            className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
+          >
+            Sign Up Now <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Join Class Section (only for authenticated non-demo users) */}
+      {isAuthenticated && !isDemo && (
+        <JoinClassSection />
+      )}
+
       {/* Dashboard Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="p-6 glass-card hover:bg-purple-900/10 transition-all">
@@ -118,8 +188,8 @@ const StudentDashboard = () => {
               <h3 className="text-lg font-semibold">My Classes</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">View your enrolled classes and assignments</p>
-            <Link to="/classes" className="mt-auto text-purple-400 hover:text-purple-300">
-              View classes →
+            <Link to={isDemo ? "/auth" : "/classes"} className="mt-auto text-purple-400 hover:text-purple-300">
+              {isDemo ? "Sign up to access" : "View classes"} →
             </Link>
           </div>
         </Card>
@@ -133,8 +203,8 @@ const StudentDashboard = () => {
               <h3 className="text-lg font-semibold">My Progress</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">Track your academic progress</p>
-            <Link to="/progress" className="mt-auto text-purple-400 hover:text-purple-300">
-              View progress →
+            <Link to={isDemo ? "/auth" : "/progress"} className="mt-auto text-purple-400 hover:text-purple-300">
+              {isDemo ? "Sign up to access" : "View progress"} →
             </Link>
           </div>
         </Card>
@@ -148,8 +218,8 @@ const StudentDashboard = () => {
               <h3 className="text-lg font-semibold">Achievements</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">View your earned achievements and badges</p>
-            <Link to="/achievements" className="mt-auto text-purple-400 hover:text-purple-300">
-              View achievements →
+            <Link to={isDemo ? "/auth" : "/achievements"} className="mt-auto text-purple-400 hover:text-purple-300">
+              {isDemo ? "Sign up to access" : "View achievements"} →
             </Link>
           </div>
         </Card>
@@ -158,15 +228,27 @@ const StudentDashboard = () => {
       {/* My Wallet */}
       <Card className="p-6 glass-card">
         <h3 className="text-lg font-semibold mb-4">My Wallet</h3>
-        <WalletPanel expanded={true} />
+        {isDemo ? (
+          <div className="text-center py-4">
+            <p className="text-gray-400 mb-4">Sign up to access your blockchain wallet and NFT collection.</p>
+            <Button
+              onClick={handleSignUp}
+              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
+            >
+              Create Account
+            </Button>
+          </div>
+        ) : (
+          <WalletPanel expanded={true} />
+        )}
       </Card>
 
       {/* My NFTs */}
       <Card className="p-6 glass-card">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">My NFT Achievements</h3>
-          <Link to="/wallet" className="text-purple-400 hover:text-purple-300 text-sm">
-            View all →
+          <Link to={isDemo ? "/auth" : "/wallet"} className="text-purple-400 hover:text-purple-300 text-sm">
+            {isDemo ? "Sign up to view all" : "View all"} →
           </Link>
         </div>
         

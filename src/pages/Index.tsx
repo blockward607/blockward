@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Hero } from "@/components/Hero";
@@ -12,6 +13,11 @@ const Index = () => {
   
   const handleDirectAccess = () => {
     navigate('/view-student-dashboard');
+  };
+
+  const handleTeacherDemo = () => {
+    // This would navigate to a teacher dashboard demo
+    navigate('/view-teacher-dashboard');
   };
 
   const handleSignUp = () => {
@@ -42,7 +48,7 @@ const Index = () => {
             <BookOpen className="w-4 h-4" />
             <span>Features</span>
           </a>
-          <a href="#" className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2">
+          <a href="#contact" className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2">
             <Phone className="w-4 h-4" />
             <span>Contact</span>
           </a>
@@ -103,7 +109,7 @@ const Index = () => {
         </div>
       </motion.section>
       
-      {/* Easy Access Section with clear header */}
+      {/* Easy Access Demo Section with clear header */}
       <div className="container mx-auto mt-16 px-4">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
@@ -113,14 +119,28 @@ const Index = () => {
         >
           <h2 className="text-2xl font-bold mb-4 gradient-text">Easy Access Demo</h2>
           <p className="text-gray-300 mb-6">
-            Experience Blockward without registration. Click below to view a demo of our student dashboard to see how our platform transforms classroom management.
+            Experience Blockward without registration. Click below to explore our platform from either a student or teacher perspective.
           </p>
-          <button
-            onClick={handleDirectAccess}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 rounded-full text-white font-medium hover-scale hover:from-purple-700 hover:to-purple-900 flex items-center gap-2 mx-auto"
-          >
-            View Student Dashboard Demo <ArrowRight className="w-4 h-4" />
-          </button>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={handleDirectAccess}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 rounded-full text-white font-medium hover-scale hover:from-purple-700 hover:to-purple-900 flex items-center gap-2"
+            >
+              View Student Demo <ArrowRight className="w-4 h-4" />
+            </button>
+            
+            <button
+              onClick={handleTeacherDemo}
+              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-full text-white font-medium hover-scale hover:from-indigo-700 hover:to-indigo-900 flex items-center gap-2"
+            >
+              View Teacher Demo <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <p className="mt-4 text-sm text-gray-400">
+            After exploring the demo, sign up to create your own account and unlock all features.
+          </p>
         </motion.div>
       </div>
       
@@ -131,7 +151,7 @@ const Index = () => {
       <Features />
       
       {/* Contact Section */}
-      <section className="container mx-auto py-16 px-4">
+      <section id="contact" className="container mx-auto py-16 px-4">
         <div className="glass-card modern-shadow p-8 max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center blockward-logo">Get In Touch</h2>
           
@@ -145,7 +165,7 @@ const Index = () => {
               <div className="space-y-3 mt-6">
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-purple-400" />
-                  <p className="text-gray-300">contact@blockward.edu</p>
+                  <p className="text-gray-300">blockwardcontact@gmail.com</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-purple-400" />
@@ -206,7 +226,7 @@ const Index = () => {
             <div className="flex gap-6">
               <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors text-sm">Privacy Policy</a>
               <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors text-sm">Terms of Service</a>
-              <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors text-sm">Contact</a>
+              <a href="#contact" className="text-gray-400 hover:text-purple-400 transition-colors text-sm">Contact</a>
             </div>
           </div>
         </div>
