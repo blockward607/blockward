@@ -6,25 +6,25 @@ const features = [
   {
     icon: Shield,
     title: "Secure & Transparent",
-    description: "Built on blockchain technology for maximum security and transparency",
+    description: "Built on blockchain technology for maximum security and transparency in educational record-keeping",
     gradient: "from-blue-500 to-cyan-500",
   },
   {
     icon: Award,
     title: "NFT Rewards",
-    description: "Gamify learning with unique NFT rewards for student achievements",
+    description: "Gamify learning with unique NFT rewards for student achievements that students can showcase",
     gradient: "from-purple-500 to-pink-500",
   },
   {
     icon: Users,
     title: "Community Driven",
-    description: "Foster a collaborative learning environment with social features",
+    description: "Foster a collaborative learning environment with social features that connect classrooms",
     gradient: "from-orange-500 to-red-500",
   },
   {
     icon: Zap,
     title: "Real-time Tracking",
-    description: "Monitor student progress and behavior in real-time",
+    description: "Monitor student progress and behavior in real-time with intuitive dashboards and analytics",
     gradient: "from-green-500 to-emerald-500",
   },
 ];
@@ -51,13 +51,24 @@ export const Features = () => {
       
       <div className="container mx-auto px-4 relative z-10">
         <motion.h2 
-          className="text-4xl font-bold text-center mb-12 blockward-logo"
+          className="text-4xl font-bold text-center mb-4 blockward-logo"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
           Why Choose Blockward?
         </motion.h2>
+        
+        <motion.p
+          className="text-xl text-gray-300 text-center max-w-3xl mx-auto mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+        >
+          Our platform combines educational expertise with blockchain innovation to create a 
+          more engaging, transparent, and rewarding learning experience.
+        </motion.p>
 
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"

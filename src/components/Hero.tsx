@@ -7,7 +7,7 @@ import { DemoSection } from "./demo/DemoSection";
 
 export const Hero = () => {
   return (
-    <div className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
+    <div className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden py-24">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(155,135,245,0.1),rgba(30,27,38,0.3))] animate-pulse" />
       
@@ -57,7 +57,7 @@ export const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            Welcome to Blockward
+            Transform Your Classroom
           </motion.h1>
 
           <motion.p 
@@ -66,7 +66,7 @@ export const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            The future of classroom management powered by blockchain technology
+            Engage students, track attendance, and reward achievements with blockchain technology
           </motion.p>
 
           <motion.div
