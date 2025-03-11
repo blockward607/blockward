@@ -5,7 +5,6 @@ import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
 import { NavBar } from "@/components/layout/NavBar";
 import { AboutSection } from "@/components/about/AboutSection";
-import { DemoAccessSection } from "@/components/demo/DemoAccessSection";
 import { ContactSection } from "@/components/contact/ContactSection";
 import { Footer } from "@/components/layout/Footer";
 
@@ -21,14 +20,11 @@ const Index = () => {
       {/* Navigation */}
       <NavBar />
       
+      {/* Hero section with integrated Demo Access */}
+      <Hero />
+      
       {/* About Section */}
       <AboutSection />
-      
-      {/* Easy Access Demo Section */}
-      <DemoAccessSection />
-      
-      {/* Hero section */}
-      <Hero />
       
       {/* Features section */}
       <Features />

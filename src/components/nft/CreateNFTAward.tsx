@@ -18,27 +18,29 @@ export const CreateNFTAward = () => {
     title: "",
     description: "",
     points: 100,
+    nftType: "academic"
   });
 
   useEffect(() => {
     // Check if the nfts table exists, if not, create it
-    checkAndCreateNftsTable();
+    checkAndCreateNFTsBucket();
   }, []);
 
-  const checkAndCreateNftsTable = async () => {
+  const checkAndCreateNFTsBucket = async () => {
     try {
-      // This is a simple way to check if the table exists by trying to select from it
-      const { error } = await supabase
-        .from('nfts')
-        .select('id')
-        .limit(1);
+      // Check if 'nft-images' bucket exists
+      const { data, error } = await supabase.storage.getBucket('nft-images');
       
-      // If there's an error other than "no rows returned", the table might not exist
-      if (error && !error.message.includes('no rows returned')) {
-        console.error('Error checking nfts table:', error);
+      if (error && error.message.includes('The resource was not found')) {
+        console.log('NFT images bucket does not exist, creating it...');
+        const { error: createError } = await supabase.storage.createBucket('nft-images', {
+          public: true
+        });
+        if (createError) throw createError;
+        console.log('NFT images bucket created successfully');
       }
     } catch (error) {
-      console.error('Error checking nfts table existence:', error);
+      console.error('Error checking/creating NFT images bucket:', error);
     }
   };
 
@@ -85,7 +87,7 @@ export const CreateNFTAward = () => {
             .insert({
               user_id: session.user.id,
               address: 'wallet_' + crypto.randomUUID().substring(0, 8),
-              type: 'user'
+              type: 'admin'
             })
             .select('*')
             .single();
@@ -98,8 +100,19 @@ export const CreateNFTAward = () => {
             name: formData.title,
             description: formData.description,
             points: formData.points,
+            type: formData.nftType,
             image: imageUrl,
             created_at: new Date().toISOString(),
+            attributes: [
+              {
+                trait_type: "Type",
+                value: formData.nftType
+              },
+              {
+                trait_type: "Points",
+                value: formData.points.toString()
+              }
+            ]
           };
 
           // Create NFT with required fields
@@ -126,8 +139,19 @@ export const CreateNFTAward = () => {
           name: formData.title,
           description: formData.description,
           points: formData.points,
+          type: formData.nftType,
           image: imageUrl,
           created_at: new Date().toISOString(),
+          attributes: [
+            {
+              trait_type: "Type",
+              value: formData.nftType
+            },
+            {
+              trait_type: "Points",
+              value: formData.points.toString()
+            }
+          ]
         };
 
         // Create NFT with required fields
@@ -146,6 +170,40 @@ export const CreateNFTAward = () => {
           .single();
 
         if (nftError) throw nftError;
+        
+        // If a student is selected, record the transaction
+        if (selectedStudent) {
+          // Get student's wallet
+          const { data: studentWallet, error: studentWalletError } = await supabase
+            .from('wallets')
+            .select('*')
+            .eq('user_id', selectedStudent)
+            .single();
+            
+          if (studentWalletError) throw studentWalletError;
+          
+          // Create transaction record
+          const { error: transactionError } = await supabase
+            .from('transactions')
+            .insert({
+              nft_id: nft.id,
+              from_wallet_id: walletData.id,
+              to_wallet_id: studentWallet.id,
+              transaction_hash: "0x" + Math.random().toString(16).slice(2, 62),
+              status: 'completed',
+            });
+
+          if (transactionError) throw transactionError;
+          
+          // Award points to student
+          const { error: incrementError } = await supabase
+            .rpc('increment_student_points', {
+              student_id: selectedStudent,
+              points_to_add: formData.points
+            });
+
+          if (incrementError) throw incrementError;
+        }
       }
 
       toast({
@@ -153,7 +211,7 @@ export const CreateNFTAward = () => {
         description: "NFT Award created successfully",
       });
 
-      setFormData({ title: "", description: "", points: 100 });
+      setFormData({ title: "", description: "", points: 100, nftType: "academic" });
       setImageUrl(null);
       setSelectedStudent("");
     } catch (error: any) {

@@ -1,48 +1,76 @@
 
 import React from 'react';
 import { motion } from "framer-motion";
-import { Info, GraduationCap } from "lucide-react";
+import { GraduationCap, Award, BookOpen } from "lucide-react";
 
 export const AboutSection = () => {
   return (
-    <motion.section 
-      id="about"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-      className="container mx-auto mt-16 px-4"
-    >
-      <div className="glass-card modern-shadow p-8 max-w-4xl mx-auto">
-        <div className="flex items-center gap-3 mb-4">
-          <Info className="w-5 h-5 text-purple-400" />
-          <h2 className="text-2xl font-bold gradient-text">What is Blockward?</h2>
-        </div>
+    <section id="about" className="py-20 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(155,135,245,0.1),transparent_75%)]" />
+      
+      <div className="container mx-auto px-4 relative">
+        <motion.h2 
+          className="text-4xl font-bold text-center mb-12 blockward-logo"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          About Blockward
+        </motion.h2>
         
-        <p className="text-gray-300 mb-6">
-          Blockward is an innovative educational platform that combines blockchain technology with classroom management. It empowers educators to create engaging learning environments while providing students with unique digital rewards for their achievements.
-        </p>
-        
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-3 text-purple-300">How Blockward Works:</h3>
-          <ul className="intro-list text-gray-300">
-            <li>Create virtual classrooms and invite your students</li>
-            <li>Track attendance with secure blockchain verification</li>
-            <li>Issue NFT rewards for academic achievements and positive behavior</li>
-            <li>Monitor student progress through detailed analytics</li>
-            <li>Share educational resources securely with your class</li>
-            <li>Engage students with gamified learning experiences</li>
-          </ul>
-        </div>
-        
-        <div className="flex justify-center">
-          <motion.div 
-            className="p-4 rounded-full bg-purple-900/30 animate-float"
-            whileHover={{ scale: 1.05, rotate: 5 }}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="glass-card p-6 text-center modern-shadow"
           >
-            <GraduationCap className="w-16 h-16 text-purple-400" />
+            <div className="rounded-full bg-purple-900/40 w-16 h-16 flex items-center justify-center mx-auto mb-6">
+              <GraduationCap className="text-purple-400 w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4 gradient-text">Revolutionary Education</h3>
+            <p className="text-gray-300">
+              Blockward transforms traditional classrooms with blockchain technology,
+              bringing transparency and engagement to the educational experience.
+            </p>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="glass-card p-6 text-center modern-shadow"
+          >
+            <div className="rounded-full bg-indigo-900/40 w-16 h-16 flex items-center justify-center mx-auto mb-6">
+              <Award className="text-indigo-400 w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4 gradient-text">NFT Achievements</h3>
+            <p className="text-gray-300">
+              Our unique NFT-based achievement system rewards students with digital
+              collectibles, creating lasting records of their academic accomplishments.
+            </p>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="glass-card p-6 text-center modern-shadow"
+          >
+            <div className="rounded-full bg-fuchsia-900/40 w-16 h-16 flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="text-fuchsia-400 w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4 gradient-text">Comprehensive Toolkit</h3>
+            <p className="text-gray-300">
+              Blockward provides tools for attendance tracking, behavior management,
+              assignment grading, and more in a secure, integrated platform.
+            </p>
           </motion.div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 };

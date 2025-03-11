@@ -6,6 +6,13 @@ import { GraduationCap, Sparkles, ArrowRight } from "lucide-react";
 import { DemoSection } from "./demo/DemoSection";
 
 export const Hero = () => {
+  const handleLearnMore = () => {
+    const aboutSection = document.getElementById('about');
+    if (aboutSection) {
+      aboutSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+  
   return (
     <div className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden py-24">
       {/* Animated background gradient */}
@@ -87,6 +94,7 @@ export const Hero = () => {
               size="lg" 
               variant="outline"
               className="border-purple-400 text-purple-400 hover:bg-purple-400/10 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+              onClick={handleLearnMore}
             >
               Learn More <Sparkles className="w-4 h-4" />
             </Button>
