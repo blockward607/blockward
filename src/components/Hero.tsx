@@ -7,7 +7,7 @@ import { DemoSection } from "./demo/DemoSection";
 
 export const Hero = () => {
   return (
-    <div className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
+    <div className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(155,135,245,0.1),rgba(30,27,38,0.3))] animate-pulse" />
       
@@ -44,6 +44,7 @@ export const Hero = () => {
           <motion.div
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
+            whileHover={{ scale: 1.1, rotate: 5 }}
             transition={{ duration: 0.5 }}
             className="flex justify-center mb-6"
           >
@@ -51,7 +52,7 @@ export const Hero = () => {
           </motion.div>
 
           <motion.h1 
-            className="text-5xl md:text-7xl font-bold mb-6 gradient-text"
+            className="text-5xl md:text-7xl font-bold mb-6 blockward-logo"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -77,7 +78,7 @@ export const Hero = () => {
             <Link to="/auth">
               <Button 
                 size="lg" 
-                className="bg-purple-600 hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-none modern-shadow transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
               >
                 Get Started <ArrowRight className="w-4 h-4" />
               </Button>

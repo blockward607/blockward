@@ -1,3 +1,4 @@
+
 import { Shield, Award, Users, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -45,12 +46,12 @@ const item = {
 
 export const Features = () => {
   return (
-    <section className="py-20 relative overflow-hidden">
+    <section id="features" className="py-20 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent" />
       
       <div className="container mx-auto px-4 relative z-10">
         <motion.h2 
-          className="text-4xl font-bold text-center mb-12 gradient-text"
+          className="text-4xl font-bold text-center mb-12 blockward-logo"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -69,7 +70,7 @@ export const Features = () => {
             <motion.div
               key={index}
               variants={item}
-              className="glass-card p-6 group hover:scale-105 transition-transform duration-300"
+              className="glass-card modern-shadow p-6 group hover-scale transition-transform duration-300"
               whileHover={{
                 y: -5,
                 transition: { duration: 0.2 }
