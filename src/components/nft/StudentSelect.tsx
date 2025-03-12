@@ -41,14 +41,19 @@ export const StudentSelect = ({ value, onChange }: StudentSelectProps) => {
 
         // Add demo students if they don't exist
         const demoEmails = ["arya47332js@gmail.com", "youthinkofc@gmail.com"];
-        const { data: users, error: usersError } = await supabase
-          .from("auth")
-          .select("id, email")
-          .in("email", demoEmails);
-
-        if (!usersError && (!users || users.length < demoEmails.length)) {
-          // Create demo students here if needed
-          console.log("Demo students could be created here");
+        
+        // Check if students with these emails exist
+        for (const email of demoEmails) {
+          const { data: user } = await supabase
+            .from("students")
+            .select("id")
+            .eq("name", email.split("@")[0])
+            .maybeSingle();
+            
+          if (!user) {
+            console.log(`Demo student ${email} could be created here`);
+            // We'll handle the actual creation in NFTShowcase.tsx
+          }
         }
 
         setStudents(data || []);

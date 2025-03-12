@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -124,16 +123,50 @@ export const NFTShowcase = () => {
       
       // Create demo students if they don't exist
       const demoEmails = ["arya47332js@gmail.com", "youthinkofc@gmail.com"];
+      
+      // Check if each demo student exists by name (email username)
       for (const email of demoEmails) {
-        const { data: user } = await supabase.auth.admin.getUserByEmail(email);
-        
-        if (!user) {
-          // In a real implementation, we would create the user
-          console.log(`Demo student with email ${email} could be created here`);
+        const username = email.split('@')[0];
+        const { data: existingStudent } = await supabase
+          .from('students')
+          .select('id')
+          .eq('name', username)
+          .maybeSingle();
+          
+        if (!existingStudent) {
+          // Create user record for demo student if it doesn't exist
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log(`Creating demo student: ${username}`);
+            
+            // Create student record 
+            const { data: newStudent, error: studentError } = await supabase
+              .from('students')
+              .insert({
+                name: username,
+                points: 0
+              })
+              .select()
+              .single();
+              
+            if (studentError) {
+              console.error(`Error creating demo student ${username}:`, studentError);
+            } else {
+              console.log(`Demo student created: ${username}`);
+            }
+          }
         }
       }
       
-      setStudents(data || []);
+      // Fetch students again after potentially creating demo ones
+      const { data: updatedData, error: refetchError } = await supabase
+        .from('students')
+        .select('*')
+        .order('name');
+        
+      if (refetchError) throw refetchError;
+      
+      setStudents(updatedData || []);
     } catch (error: any) {
       console.error('Error fetching students:', error);
       toast({
@@ -247,10 +280,13 @@ export const NFTShowcase = () => {
         throw new Error('Student not found');
       }
       
+      // If student has no user_id (demo student), create a wallet directly linked to student id
+      const studentUserId = studentData.user_id || studentId;
+      
       const { data: studentWallet, error: studentWalletError } = await supabase
         .from('wallets')
         .select('*')
-        .eq('user_id', studentData.user_id)
+        .eq('user_id', studentUserId)
         .maybeSingle();
 
       if (studentWalletError) throw studentWalletError;
@@ -262,7 +298,7 @@ export const NFTShowcase = () => {
         const { data: newWallet, error: createError } = await supabase
           .from('wallets')
           .insert({
-            user_id: studentData.user_id,
+            user_id: studentUserId,
             address: "wallet_" + Math.random().toString(16).slice(2, 10),
             type: "user"
           })
