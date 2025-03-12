@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDown } from 'lucide-react';
@@ -27,6 +26,8 @@ export const SplashIntro = () => {
     });
   };
 
+  // This component is no longer used in the Index page
+  // but we'll keep it for backward compatibility
   return (
     <motion.div 
       className="h-screen w-full relative bg-black overflow-hidden"
