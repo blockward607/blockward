@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,11 @@ import { Award, Sparkles, Shield } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import './intro-animation.css';
 
-export const BlockwardIntro = () => {
+interface BlockwardIntroProps {
+  onEnter?: () => void;
+}
+
+export const BlockwardIntro = ({ onEnter }: BlockwardIntroProps) => {
   const navigate = useNavigate();
   const [showIntro, setShowIntro] = useState(true);
   
@@ -50,10 +53,15 @@ export const BlockwardIntro = () => {
     // Animate out
     setShowIntro(false);
     
-    // Redirect after animation
-    setTimeout(() => {
-      navigate('/home');
-    }, 1000);
+    // If onEnter prop exists, call it
+    if (onEnter) {
+      onEnter();
+    } else {
+      // Otherwise use the default behavior
+      setTimeout(() => {
+        navigate('/home');
+      }, 1000);
+    }
   };
 
   // Generate random NFT-style hexagon backgrounds
