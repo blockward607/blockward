@@ -1,7 +1,7 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url('./components/intro/intro-animation.css');
  
 @layer base {
   :root {
@@ -90,6 +90,15 @@
 
 .gradient-text {
   @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600;
+}
+
+.nft-card {
+  @apply relative overflow-hidden transition-all duration-300 hover:transform hover:scale-105;
+  box-shadow: 0 10px 30px -15px rgba(155, 135, 245, 0.3);
+}
+
+.nft-card:hover {
+  box-shadow: 0 20px 40px -20px rgba(155, 135, 245, 0.5);
 }
 
 /* Animation styles */

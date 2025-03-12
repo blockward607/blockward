@@ -68,12 +68,21 @@ export const Hero = () => {
           </motion.h1>
 
           <motion.p 
-            className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto"
+            className="text-xl md:text-2xl text-gray-300 mb-4 max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
             Engage students, track attendance, and reward achievements with blockchain technology
+          </motion.p>
+          
+          <motion.p 
+            className="text-xl md:text-2xl text-purple-400 font-bold mb-8 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            Featuring Unique Educational NFT Awards!
           </motion.p>
 
           <motion.div

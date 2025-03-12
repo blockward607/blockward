@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ const defaultNfts: NFTAward[] = [
     icon: Trophy,
     gradient: "from-yellow-400 to-orange-500",
     points: 1000,
-    image: "https://plus.unsplash.com/premium_photo-1673548917471-3113dedda9a5?q=80&w=1000",
+    image: "https://images.unsplash.com/photo-1673548917471-3113dedda9a5?q=80&w=1000",
   },
   {
     id: "innovation-1",
@@ -410,17 +411,45 @@ export const NFTShowcase = () => {
 
   return (
     <section className="py-16 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(155,135,245,0.1),transparent_50%)]" />
+      {/* Enhanced background with animated gradient */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(155,135,245,0.2),transparent_70%)]" />
+      <motion.div 
+        className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.1),transparent_50%)]"
+        animate={{
+          opacity: [0.5, 0.8, 0.5],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
       
       <div className="container mx-auto px-4 relative">
-        <motion.h2 
-          className="text-4xl font-bold text-center mb-12 gradient-text"
+        <motion.div 
+          className="text-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          NFT Awards Collection
-        </motion.h2>
+          <motion.h2 
+            className="text-4xl md:text-6xl font-bold mb-4 gradient-text"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            NFT Awards Collection
+          </motion.h2>
+          <motion.p
+            className="text-xl text-gray-300 max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            Unique blockchain-backed rewards that recognize student achievements and build a lasting digital portfolio
+          </motion.p>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {nfts.map((nft, index) => (
@@ -430,13 +459,29 @@ export const NFTShowcase = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -10 }}
-              className="glass-card p-8 text-center group cursor-pointer"
+              whileHover={{ y: -10, scale: 1.03 }}
+              className="glass-card p-8 text-center group relative overflow-hidden"
+              style={{
+                backgroundImage: `radial-gradient(circle at bottom right, rgba(${index * 40}, ${100 + index * 20}, ${200 - index * 10}, 0.2), transparent)`,
+              }}
             >
+              {/* Animated background glow */}
+              <motion.div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                animate={{
+                  background: [
+                    `radial-gradient(circle at center, rgba(${index * 40}, ${100 + index * 20}, ${200 - index * 10}, 0.3) 0%, transparent 70%)`,
+                    `radial-gradient(circle at center, rgba(${index * 40}, ${100 + index * 20}, ${200 - index * 10}, 0.1) 0%, transparent 70%)`,
+                    `radial-gradient(circle at center, rgba(${index * 40}, ${100 + index * 20}, ${200 - index * 10}, 0.3) 0%, transparent 70%)`,
+                  ]
+                }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+              
               {nft.image ? (
                 <motion.div 
-                  className="w-32 h-32 mx-auto mb-6 rounded-lg overflow-hidden"
-                  whileHover={{ scale: 1.1 }}
+                  className="w-40 h-40 mx-auto mb-6 rounded-lg overflow-hidden ring-2 ring-purple-500/20"
+                  whileHover={{ scale: 1.1, rotate: 3 }}
                   transition={{ duration: 0.3 }}
                 >
                   <img 
@@ -455,23 +500,23 @@ export const NFTShowcase = () => {
                 </motion.div>
               )}
               
-              <h3 className="text-xl font-semibold mb-2 group-hover:text-purple-400 transition-colors duration-300">
+              <h3 className="text-2xl font-semibold mb-2 group-hover:text-purple-400 transition-colors duration-300">
                 {nft.title}
               </h3>
               <p className="text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
                 {nft.description}
               </p>
-              <p className="text-sm text-purple-400 mt-2">
+              <p className="text-lg text-purple-400 mt-4 font-bold">
                 {nft.points} points
               </p>
 
               {isTeacher && (
-                <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-95 group-hover:scale-100">
                   <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                    <SelectTrigger className="w-full mb-4">
+                    <SelectTrigger className="w-full mb-4 bg-black/20 backdrop-blur-sm">
                       <SelectValue placeholder="Select student" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-black/90 backdrop-blur-md border-purple-500/20">
                       {students.map((student) => (
                         <SelectItem key={student.id} value={student.id}>
                           {student.name} ({student.points} points)
@@ -481,7 +526,7 @@ export const NFTShowcase = () => {
                   </Select>
 
                   <Button
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
                     disabled={transferring === nft.id || !selectedStudent}
                     onClick={() => transferNFT(nft, selectedStudent)}
                   >
