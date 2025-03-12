@@ -6,8 +6,8 @@ export const Footer = () => {
   return (
     <footer className="py-8 bg-black mt-8 border-t border-purple-900/30">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-          <div className="flex items-center gap-2 mb-4 md:mb-0">
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex items-center gap-2">
             <div className="w-7 h-7">
               <InteractiveLogo />
             </div>
@@ -30,16 +30,6 @@ export const Footer = () => {
                 <path d="M24 11.5c0 6.35-5.15 11.5-11.5 11.5S1 17.85 1 11.5 6.15 0 12.5 0 24 5.15 24 11.5zm-11.5 8.5c4.7 0 8.5-3.8 8.5-8.5S17.2 3 12.5 3 4 6.8 4 11.5s3.8 8.5 8.5 8.5zm.5-10.5v-4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .55.45 1 1 1s1-.45 1-1zm0 4v-1c0-.55-.45-1-1-1s-1 .45-1 1v1c0 .55.45 1 1 1s1-.45 1-1z" />
               </svg>
             </a>
-          </div>
-        </div>
-        
-        <div className="flex flex-col md:flex-row justify-between items-center pt-4 border-t border-purple-900/30">
-          <p className="text-gray-400 text-sm mb-4 md:mb-0">© 2023 Blockward. All rights reserved.</p>
-          
-          <div className="flex gap-6">
-            <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors text-sm">Privacy Policy</a>
-            <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors text-sm">Terms of Service</a>
-            <a href="#contact" className="text-gray-400 hover:text-purple-400 transition-colors text-sm">Contact</a>
           </div>
         </div>
       </div>
