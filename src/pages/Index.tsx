@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
@@ -9,17 +9,21 @@ import { ContactSection } from "@/components/contact/ContactSection";
 import { Footer } from "@/components/layout/Footer";
 import { BlockwardIntro } from "@/components/intro/BlockwardIntro";
 
-const Index = () => {
+interface IndexProps {
+  showIntro?: boolean;
+}
+
+const Index = ({ showIntro }: IndexProps = { showIntro: true }) => {
   const navigate = useNavigate();
-  const [showingIntro, setShowingIntro] = useState(true);
+  const [showingIntro, setShowingIntro] = useState(showIntro !== false);
   
   const handleSignUp = () => {
     navigate('/auth');
   };
   
-  // By default, show the intro screen
+  // By default, show the intro screen unless showIntro is explicitly set to false
   if (showingIntro) {
-    return <BlockwardIntro />;
+    return <BlockwardIntro onEnter={() => setShowingIntro(false)} />;
   }
   
   return (
