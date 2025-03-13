@@ -2,18 +2,21 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, ImagePlus, Loader2 } from "lucide-react";
+import { Trophy, ImagePlus, Loader2, Template } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NFTImageUpload } from "./NFTImageUpload";
 import { StudentSelect } from "./StudentSelect";
 import { NFTAwardForm } from "./NFTAwardForm";
+import { TemplateSelector } from "./TemplateSelector";
 
 export const CreateNFTAward = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [useTemplate, setUseTemplate] = useState(true);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -26,21 +29,81 @@ export const CreateNFTAward = () => {
     checkAndCreateNFTsBucket();
   }, []);
 
+  // Load template data if a template is selected
+  useEffect(() => {
+    if (selectedTemplate && useTemplate) {
+      // Find the template data and apply it
+      const template = templates.find(t => t.id === selectedTemplate);
+      if (template) {
+        setFormData({
+          title: template.title,
+          description: template.description,
+          points: template.points,
+          nftType: template.type
+        });
+        setImageUrl(template.imageUrl);
+      }
+    }
+  }, [selectedTemplate, useTemplate]);
+
+  const templates = [
+    {
+      id: "math-excellence",
+      title: "Mathematics Excellence Award",
+      description: "Awarded for outstanding achievement in mathematics",
+      points: 200,
+      type: "academic",
+      imageUrl: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2070",
+    },
+    {
+      id: "science-achievement",
+      title: "Science Achievement Award",
+      description: "Recognizing exceptional work in scientific studies",
+      points: 200,
+      type: "academic",
+      imageUrl: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2070",
+    },
+    {
+      id: "leadership",
+      title: "Leadership Excellence",
+      description: "Recognizing outstanding leadership qualities and initiative",
+      points: 250,
+      type: "behavior",
+      imageUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070",
+    },
+    {
+      id: "perfect-attendance",
+      title: "Perfect Attendance",
+      description: "Awarded for outstanding attendance record",
+      points: 150,
+      type: "attendance",
+      imageUrl: "https://images.unsplash.com/photo-1506784365847-bbad939e9335?q=80&w=2068",
+    },
+    {
+      id: "creativity",
+      title: "Creative Excellence",
+      description: "Recognizing exceptional creativity and innovation",
+      points: 180,
+      type: "special",
+      imageUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071",
+    }
+  ];
+
   const checkAndCreateNFTsBucket = async () => {
     try {
       // Check if 'nft-images' bucket exists
       const { data, error } = await supabase.storage.getBucket('nft-images');
       
       if (error && error.message.includes('The resource was not found')) {
-        console.log('NFT images bucket does not exist, creating it...');
+        console.log('BlockWard images bucket does not exist, creating it...');
         const { error: createError } = await supabase.storage.createBucket('nft-images', {
           public: true
         });
         if (createError) throw createError;
-        console.log('NFT images bucket created successfully');
+        console.log('BlockWard images bucket created successfully');
       }
     } catch (error) {
-      console.error('Error checking/creating NFT images bucket:', error);
+      console.error('Error checking/creating BlockWard images bucket:', error);
     }
   };
 
@@ -65,7 +128,7 @@ export const CreateNFTAward = () => {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "You must be logged in to create NFTs"
+          description: "You must be logged in to create BlockWards"
         });
         return;
       }
@@ -115,7 +178,7 @@ export const CreateNFTAward = () => {
             ]
           };
 
-          // Create NFT with required fields
+          // Create BlockWard with required fields
           const { data: nft, error: nftError } = await supabase
             .from('nfts')
             .insert({
@@ -154,7 +217,7 @@ export const CreateNFTAward = () => {
           ]
         };
 
-        // Create NFT with required fields
+        // Create BlockWard with required fields
         const { data: nft, error: nftError } = await supabase
           .from('nfts')
           .insert({
@@ -208,18 +271,19 @@ export const CreateNFTAward = () => {
 
       toast({
         title: "Success",
-        description: "NFT Award created successfully",
+        description: "BlockWard Award created successfully",
       });
 
       setFormData({ title: "", description: "", points: 100, nftType: "academic" });
       setImageUrl(null);
       setSelectedStudent("");
+      setSelectedTemplate("");
     } catch (error: any) {
-      console.error('Error creating NFT:', error);
+      console.error('Error creating BlockWard:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to create NFT Award",
+        description: error.message || "Failed to create BlockWard Award",
       });
     } finally {
       setLoading(false);
@@ -233,18 +297,57 @@ export const CreateNFTAward = () => {
           <div className="p-3 rounded-full bg-purple-600/20">
             <Trophy className="w-6 h-6 text-purple-400" />
           </div>
-          <h2 className="text-2xl font-semibold gradient-text">Create NFT Award</h2>
+          <h2 className="text-2xl font-semibold gradient-text">Create BlockWard Award</h2>
         </div>
 
-        <NFTAwardForm 
-          formData={formData}
-          onChange={setFormData}
-        />
+        <div className="flex items-center space-x-4 mb-4">
+          <div className="flex rounded-lg overflow-hidden">
+            <button
+              type="button"
+              className={`flex-1 py-3 px-4 text-center font-medium transition-all ${
+                useTemplate
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+              onClick={() => setUseTemplate(true)}
+            >
+              <Template className="w-4 h-4 mr-2 inline-block" />
+              Use Template
+            </button>
+            <button
+              type="button"
+              className={`flex-1 py-3 px-4 text-center font-medium transition-all ${
+                !useTemplate
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+              onClick={() => setUseTemplate(false)}
+            >
+              <ImagePlus className="w-4 h-4 mr-2 inline-block" />
+              Custom Award
+            </button>
+          </div>
+        </div>
 
-        <NFTImageUpload
-          imageUrl={imageUrl}
-          onImageSelect={setImageUrl}
-        />
+        {useTemplate ? (
+          <TemplateSelector
+            templates={templates}
+            selectedTemplate={selectedTemplate}
+            onSelect={setSelectedTemplate}
+          />
+        ) : (
+          <>
+            <NFTAwardForm 
+              formData={formData}
+              onChange={setFormData}
+            />
+
+            <NFTImageUpload
+              imageUrl={imageUrl}
+              onImageSelect={setImageUrl}
+            />
+          </>
+        )}
 
         <div>
           <StudentSelect
@@ -267,7 +370,7 @@ export const CreateNFTAward = () => {
             ) : (
               <>
                 <ImagePlus className="w-4 h-4 mr-2" />
-                Create NFT Award
+                Create BlockWard Award
               </>
             )}
           </Button>

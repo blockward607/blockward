@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,8 +29,12 @@ export function useAuth() {
       const { data: existingWallet } = await AuthService.checkUserWallet(userId);
       
       if (!existingWallet) {
+        // Create wallet based on role
+        const walletType = userRole === 'teacher' ? 'admin' : 'user';
+        const walletAddress = `wallet_${Math.random().toString(16).slice(2, 10)}`;
+        
         // Create wallet
-        await AuthService.createUserWallet(userId, userRole);
+        await AuthService.createUserWallet(userId, walletType, walletAddress);
       }
       
       // Create profile based on role

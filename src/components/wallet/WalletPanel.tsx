@@ -62,7 +62,7 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
         setNftCount(count || 0);
       }
     } catch (error) {
-      console.error('Error fetching NFT count:', error);
+      console.error('Error fetching BlockWards count:', error);
     }
   };
 
@@ -80,7 +80,6 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
       if (walletData) {
         setAddress(walletData.address);
         // For a real app, we would fetch the actual balance here
-        // This is just a placeholder
         setBalance(Math.floor(Math.random() * 1000));
       }
     } catch (error) {
@@ -95,7 +94,7 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
           <Wallet className="w-5 h-5 text-purple-400" />
           {isExpanded && (
             <div>
-              <h3 className="font-semibold">Blockward Wallet</h3>
+              <h3 className="font-semibold">BlockWard Wallet</h3>
               <p className="text-sm text-gray-400">{isTeacher ? 'Teacher Admin Wallet' : 'Student Wallet'}</p>
             </div>
           )}
@@ -124,7 +123,7 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
               <span className="font-bold text-purple-400">{balance} points</span>
             </div>
             <div className="flex justify-between">
-              <h4 className="font-medium">NFTs</h4>
+              <h4 className="font-medium">BlockWards</h4>
               <span className="font-bold text-purple-400">{nftCount}</span>
             </div>
           </div>
@@ -134,7 +133,7 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
               <Link to="/rewards">
                 <Button className="w-full">
                   <Plus className="w-4 h-4 mr-2" />
-                  Create NFT Award
+                  Create BlockWard Award
                 </Button>
               </Link>
               <Link to="/students">
@@ -149,7 +148,7 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
               <Link to="/rewards">
                 <Button className="w-full">
                   <Wallet className="w-4 h-4 mr-2" />
-                  View My NFTs
+                  View My BlockWards
                 </Button>
               </Link>
             </div>

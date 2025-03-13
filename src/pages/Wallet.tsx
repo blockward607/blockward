@@ -56,6 +56,7 @@ const Wallet = () => {
   const [balance, setBalance] = useState<number>(0);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -71,6 +72,17 @@ const Wallet = () => {
       }
       
       setIsAuthenticated(true);
+      
+      // Check user role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+        
+      if (roleData) {
+        setUserRole(roleData.role as 'teacher' | 'student');
+      }
       
       // Load user wallet
       try {
@@ -98,7 +110,7 @@ const Wallet = () => {
           setBalance(studentData.points || 0);
         }
         
-        // Load NFTs
+        // Load BlockWards
         if (walletData) {
           const { data: nftData, error: nftError } = await supabase
             .from('nfts')
@@ -106,7 +118,7 @@ const Wallet = () => {
             .eq('owner_wallet_id', walletData.id);
             
           if (nftError) {
-            console.error('Error fetching NFTs:', nftError);
+            console.error('Error fetching BlockWards:', nftError);
             throw nftError;
           }
           
@@ -120,8 +132,8 @@ const Wallet = () => {
             return {
               id: nft.id,
               metadata: {
-                name: parsedMetadata.name || `NFT #${nft.id.substring(0, 4)}`,
-                description: parsedMetadata.description || "Educational achievement NFT",
+                name: parsedMetadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
+                description: parsedMetadata.description || "Educational achievement award",
                 image: parsedMetadata.image,
                 attributes: parsedMetadata.attributes || []
               },
@@ -154,7 +166,7 @@ const Wallet = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">NFT Wallet</h1>
+      <h1 className="text-2xl font-bold">BlockWard Wallet</h1>
       
       <WalletPanel expanded={false} />
       
@@ -166,16 +178,20 @@ const Wallet = () => {
             isLoading={isLoading} 
           />
           
-          <TransferForm disabled={isLoading} />
+          {userRole === 'teacher' && (
+            <TransferForm disabled={isLoading} />
+          )}
         </div>
 
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Your NFTs</h2>
-            <Button size="sm" variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              View All
-            </Button>
+            <h2 className="text-xl font-semibold">Your BlockWards</h2>
+            {userRole === 'teacher' && (
+              <Button size="sm" variant="outline" onClick={() => navigate('/rewards')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create BlockWard
+              </Button>
+            )}
           </div>
           
           <NFTGrid nfts={nfts} isLoading={isLoading} />

@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ interface Student {
   user_id: string;
 }
 
-interface NFTAward {
+interface BlockWard {
   id: string;
   title: string;
   description: string;
@@ -30,7 +29,7 @@ interface NFTAward {
   image?: string;
 }
 
-const defaultNfts: NFTAward[] = [
+const defaultBlockWards: BlockWard[] = [
   {
     id: "academic-1",
     title: "Academic Excellence Trophy",
@@ -87,13 +86,13 @@ const defaultNfts: NFTAward[] = [
   },
 ];
 
-export const NFTShowcase = () => {
+export const BlockWardShowcase = () => {
   const { toast } = useToast();
   const [transferring, setTransferring] = useState<string | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [students, setStudents] = useState<Student[]>([]);
-  const [dbNfts, setDbNfts] = useState<NFTAward[]>([]);
-  const [nfts, setNfts] = useState<NFTAward[]>(defaultNfts);
+  const [dbBlockWards, setDbBlockWards] = useState<BlockWard[]>([]);
+  const [blockWards, setBlockWards] = useState<BlockWard[]>(defaultBlockWards);
   const [isTeacher, setIsTeacher] = useState(false);
   
   const fetchUserRole = async () => {
@@ -178,7 +177,7 @@ export const NFTShowcase = () => {
     }
   };
   
-  const fetchCustomNfts = async () => {
+  const fetchCustomBlockWards = async () => {
     try {
       const { data, error } = await supabase
         .from('nfts')
@@ -188,15 +187,15 @@ export const NFTShowcase = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const customNfts = data.map(nft => {
+        const customBlockWards = data.map(nft => {
           const metadata = typeof nft.metadata === 'string' 
             ? JSON.parse(nft.metadata) 
             : nft.metadata;
             
           return {
             id: nft.id,
-            title: metadata.name || `NFT #${nft.id.substring(0, 4)}`,
-            description: metadata.description || "Educational achievement NFT",
+            title: metadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
+            description: metadata.description || "Educational achievement BlockWard",
             icon: getIconForType(metadata.type || 'academic'),
             gradient: getGradientForType(metadata.type || 'academic'),
             points: metadata.points || 100,
@@ -204,23 +203,23 @@ export const NFTShowcase = () => {
           };
         });
         
-        setDbNfts(customNfts);
+        setDbBlockWards(customBlockWards);
       }
     } catch (error) {
-      console.error('Error fetching custom NFTs:', error);
+      console.error('Error fetching custom BlockWards:', error);
     }
   };
 
   useEffect(() => {
     fetchUserRole();
     fetchStudents();
-    fetchCustomNfts();
+    fetchCustomBlockWards();
   }, []); 
   
   useEffect(() => {
-    // Combine default and custom NFTs
-    setNfts([...defaultNfts, ...dbNfts]);
-  }, [dbNfts]);
+    // Combine default and custom BlockWards
+    setBlockWards([...defaultBlockWards, ...dbBlockWards]);
+  }, [dbBlockWards]);
 
   const getIconForType = (type: string) => {
     switch (type) {
@@ -244,7 +243,7 @@ export const NFTShowcase = () => {
     }
   };
 
-  const transferNFT = async (nft: NFTAward, studentId: string) => {
+  const transferBlockWard = async (blockWard: BlockWard, studentId: string) => {
     if (!studentId) {
       toast({
         variant: "destructive",
@@ -255,7 +254,7 @@ export const NFTShowcase = () => {
     }
 
     try {
-      setTransferring(nft.id);
+      setTransferring(blockWard.id);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.id) {
@@ -310,30 +309,30 @@ export const NFTShowcase = () => {
         finalStudentWallet = newWallet;
       }
 
-      // Create NFT
-      const { data: nftData, error: nftError } = await supabase
+      // Create BlockWard
+      const { data: blockWardData, error: blockWardError } = await supabase
         .from('nfts')
         .insert({
           token_id: `award-${Date.now()}`,
           contract_address: "0x" + Math.random().toString(16).slice(2, 42),
           metadata: {
-            name: nft.title,
-            description: nft.description,
-            points: nft.points,
+            name: blockWard.title,
+            description: blockWard.description,
+            points: blockWard.points,
             created_at: new Date().toISOString(),
-            image: nft.image,
+            image: blockWard.image,
             attributes: [
               {
                 trait_type: "Type",
-                value: nft.id.split('-')[0]
+                value: blockWard.id.split('-')[0]
               },
               {
                 trait_type: "Points",
-                value: nft.points.toString()
+                value: blockWard.points.toString()
               }
             ]
           },
-          image_url: nft.image,
+          image_url: blockWard.image,
           creator_wallet_id: teacherWallet.id,
           owner_wallet_id: finalStudentWallet.id,
           network: "testnet",
@@ -341,13 +340,13 @@ export const NFTShowcase = () => {
         .select()
         .single();
 
-      if (nftError) throw nftError;
+      if (blockWardError) throw blockWardError;
 
       // Create transaction record
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
-          nft_id: nftData.id,
+          nft_id: blockWardData.id,
           from_wallet_id: teacherWallet.id,
           to_wallet_id: finalStudentWallet.id,
           transaction_hash: "0x" + Math.random().toString(16).slice(2, 62),
@@ -360,23 +359,23 @@ export const NFTShowcase = () => {
       const { error: incrementError } = await supabase
         .rpc('increment_student_points', {
           student_id: studentId,
-          points_to_add: nft.points
+          points_to_add: blockWard.points
         });
 
       if (incrementError) throw incrementError;
 
       toast({
         title: "Success",
-        description: `${nft.title} has been transferred successfully!`,
+        description: `${blockWard.title} has been transferred successfully!`,
       });
       
       await fetchStudents();
     } catch (error: any) {
-      console.error('Error transferring NFT:', error);
+      console.error('Error transferring BlockWard:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to transfer NFT",
+        description: error.message || "Failed to transfer BlockWard",
       });
     } finally {
       setTransferring(null);
@@ -438,7 +437,7 @@ export const NFTShowcase = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            NFT Awards Collection
+            BlockWard Awards Collection
           </motion.h2>
           <motion.p
             className="text-xl text-gray-300 max-w-3xl mx-auto"
@@ -452,9 +451,9 @@ export const NFTShowcase = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {nfts.map((nft, index) => (
+          {blockWards.map((blockWard, index) => (
             <motion.div
-              key={nft.id}
+              key={blockWard.id}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
@@ -478,36 +477,36 @@ export const NFTShowcase = () => {
                 transition={{ duration: 3, repeat: Infinity }}
               />
               
-              {nft.image ? (
+              {blockWard.image ? (
                 <motion.div 
                   className="w-40 h-40 mx-auto mb-6 rounded-lg overflow-hidden ring-2 ring-purple-500/20"
                   whileHover={{ scale: 1.1, rotate: 3 }}
                   transition={{ duration: 0.3 }}
                 >
                   <img 
-                    src={nft.image} 
-                    alt={nft.title} 
+                    src={blockWard.image} 
+                    alt={blockWard.title} 
                     className="w-full h-full object-cover"
                   />
                 </motion.div>
               ) : (
                 <motion.div 
-                  className={`w-24 h-24 rounded-full bg-gradient-to-r ${nft.gradient} mx-auto mb-6 p-5 group-hover:scale-110 transition-transform duration-300`}
+                  className={`w-24 h-24 rounded-full bg-gradient-to-r ${blockWard.gradient} mx-auto mb-6 p-5 group-hover:scale-110 transition-transform duration-300`}
                   whileHover={{ rotate: 360 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <nft.icon className="w-full h-full text-white" />
+                  <blockWard.icon className="w-full h-full text-white" />
                 </motion.div>
               )}
               
               <h3 className="text-2xl font-semibold mb-2 group-hover:text-purple-400 transition-colors duration-300">
-                {nft.title}
+                {blockWard.title}
               </h3>
               <p className="text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
-                {nft.description}
+                {blockWard.description}
               </p>
               <p className="text-lg text-purple-400 mt-4 font-bold">
-                {nft.points} points
+                {blockWard.points} points
               </p>
 
               {isTeacher && (
@@ -527,10 +526,10 @@ export const NFTShowcase = () => {
 
                   <Button
                     className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                    disabled={transferring === nft.id || !selectedStudent}
-                    onClick={() => transferNFT(nft, selectedStudent)}
+                    disabled={transferring === blockWard.id || !selectedStudent}
+                    onClick={() => transferBlockWard(blockWard, selectedStudent)}
                   >
-                    {transferring === nft.id ? "Transferring..." : "Transfer NFT"}
+                    {transferring === blockWard.id ? "Transferring..." : "Transfer BlockWard"}
                   </Button>
                 </div>
               )}
