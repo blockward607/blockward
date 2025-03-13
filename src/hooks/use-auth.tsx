@@ -20,8 +20,8 @@ export function useAuth() {
       let userRole;
       
       if (session.user.app_metadata?.provider === 'google') {
-        // If coming from Google, check if a role was passed in the OAuth options
-        userRole = session.user.user_metadata?.role || 'student';
+        // If coming from Google, check if a role was passed in the queryParams
+        userRole = session.user.user_metadata?.role || session.user.app_metadata?.role || 'student';
       } else {
         // Regular email login
         userRole = session.user.user_metadata?.role as 'teacher' | 'student';
