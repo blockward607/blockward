@@ -28,11 +28,28 @@ export const SignUpForm = ({
   setLoading,
 }: SignUpFormProps) => {
   const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [country, setCountry] = useState("");
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setShowError(false);
+
+    if (!name) {
+      setErrorMessage("Please enter your name");
+      setShowError(true);
+      setLoading(false);
+      return;
+    }
+
+    if (!schoolName) {
+      setErrorMessage("Please enter your school name");
+      setShowError(true);
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -40,7 +57,10 @@ export const SignUpForm = ({
         password,
         options: {
           data: {
-            role: role
+            role: role,
+            name: name,
+            school: schoolName,
+            country: country
           }
         }
       });
@@ -67,6 +87,18 @@ export const SignUpForm = ({
   return (
     <form onSubmit={handleSignup} className="space-y-4">
       <div className="space-y-2">
+        <Label htmlFor="signup-name">Full Name</Label>
+        <Input 
+          id="signup-name"
+          type="text"
+          placeholder="Your Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
         <Label htmlFor="signup-email">Email</Label>
         <Input 
           id="signup-email"
@@ -77,6 +109,7 @@ export const SignUpForm = ({
           required
         />
       </div>
+      
       <div className="space-y-2">
         <Label htmlFor="signup-password">Password</Label>
         <Input 
@@ -88,6 +121,31 @@ export const SignUpForm = ({
           required
         />
       </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="signup-school">School Name</Label>
+        <Input 
+          id="signup-school"
+          type="text"
+          placeholder="Enter school name"
+          value={schoolName}
+          onChange={(e) => setSchoolName(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="signup-country">Country</Label>
+        <Input 
+          id="signup-country"
+          type="text"
+          placeholder="Enter country"
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          required
+        />
+      </div>
+      
       <Button type="submit" className="w-full">
         Create Account
       </Button>

@@ -1,15 +1,19 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, User, BookOpen, Phone } from "lucide-react";
+import { Home, User, BookOpen, Phone, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InteractiveLogo } from "@/components/logo/InteractiveLogo";
 
 export const NavBar = () => {
   const navigate = useNavigate();
   
-  const handleSignUp = () => {
+  const handleSignIn = () => {
     navigate('/auth');
+  };
+  
+  const handleSignUp = () => {
+    navigate('/signup');
   };
   
   return (
@@ -38,20 +42,42 @@ export const NavBar = () => {
           <Phone className="w-4 h-4" />
           <span>Contact</span>
         </a>
+        
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={handleSignIn}
+            variant="ghost"
+            className="text-purple-400 hover:text-purple-300"
+          >
+            Sign In
+          </Button>
+          
+          <Button 
+            onClick={handleSignUp}
+            className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
+          >
+            Sign Up
+          </Button>
+        </div>
+      </nav>
+      
+      {/* Mobile menu button */}
+      <div className="md:hidden flex items-center gap-2">
+        <Button 
+          onClick={handleSignIn}
+          variant="ghost"
+          className="text-purple-400 hover:text-purple-300"
+        >
+          Sign In
+        </Button>
+        
         <Button 
           onClick={handleSignUp}
           className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
         >
           Sign Up
         </Button>
-      </nav>
-      
-      {/* Mobile menu button */}
-      <button className="md:hidden text-gray-300 hover:text-purple-400">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
+      </div>
     </header>
   );
 };

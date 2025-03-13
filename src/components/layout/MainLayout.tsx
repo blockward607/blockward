@@ -25,35 +25,81 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const teacherNavigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Students", href: "/students", icon: Users },
-  { name: "Classes", href: "/classes", icon: BookOpen },
-  { name: "Assignments", href: "/assignments", icon: FileText },
-  { name: "Attendance", href: "/attendance", icon: Calendar },
-  { name: "Behavior", href: "/behavior", icon: ChartBar },
-  { name: "Achievements", href: "/achievements", icon: Trophy },
-  { name: "Resources", href: "/resources", icon: Layers },
-  { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "Analytics", href: "/analytics", icon: BarChart },
-  { name: "Rewards", href: "/rewards", icon: Award },
-  { name: "NFT Wallet", href: "/wallet", icon: Wallet },
-  { name: "Notifications", href: "/notifications", icon: Bell },
-  { name: "Settings", href: "/settings", icon: Settings },
+// Combine related routes into groups
+const teacherNavGroups = [
+  {
+    name: "Main",
+    items: [
+      { name: "Dashboard", href: "/dashboard", icon: Home },
+      { name: "Students", href: "/students", icon: Users },
+      { name: "Classes", href: "/classes", icon: BookOpen },
+    ]
+  },
+  {
+    name: "Teaching",
+    items: [
+      { name: "Assignments", href: "/assignments", icon: FileText },
+      { name: "Attendance", href: "/attendance", icon: Calendar },
+      { name: "Behavior", href: "/behavior", icon: ChartBar },
+      { name: "Resources", href: "/resources", icon: Layers },
+    ]
+  },
+  {
+    name: "Rewards",
+    items: [
+      { name: "Achievements", href: "/achievements", icon: Trophy },
+      { name: "Rewards", href: "/rewards", icon: Award },
+      { name: "NFT Wallet", href: "/wallet", icon: Wallet },
+    ]
+  },
+  {
+    name: "Communication",
+    items: [
+      { name: "Messages", href: "/messages", icon: MessageSquare },
+      { name: "Notifications", href: "/notifications", icon: Bell },
+    ]
+  },
+  {
+    name: "Analysis",
+    items: [
+      { name: "Analytics", href: "/analytics", icon: BarChart },
+      { name: "Settings", href: "/settings", icon: Settings },
+    ]
+  }
 ];
 
-const studentNavigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Classes", href: "/classes", icon: BookOpen },
-  { name: "Assignments", href: "/assignments", icon: FileText },
-  { name: "Progress", href: "/progress", icon: ChartBar },
-  { name: "Achievements", href: "/achievements", icon: Trophy },
-  { name: "Resources", href: "/resources", icon: Layers },
-  { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "My NFTs", href: "/rewards", icon: Award },
-  { name: "Wallet", href: "/wallet", icon: Wallet },
-  { name: "Notifications", href: "/notifications", icon: Bell },
-  { name: "Settings", href: "/settings", icon: Settings },
+const studentNavGroups = [
+  {
+    name: "Main",
+    items: [
+      { name: "Dashboard", href: "/dashboard", icon: Home },
+      { name: "Classes", href: "/classes", icon: BookOpen },
+      { name: "Assignments", href: "/assignments", icon: FileText },
+    ]
+  },
+  {
+    name: "Learning",
+    items: [
+      { name: "Progress", href: "/progress", icon: ChartBar },
+      { name: "Resources", href: "/resources", icon: Layers },
+    ]
+  },
+  {
+    name: "Rewards",
+    items: [
+      { name: "Achievements", href: "/achievements", icon: Trophy },
+      { name: "My NFTs", href: "/rewards", icon: Award },
+      { name: "Wallet", href: "/wallet", icon: Wallet },
+    ]
+  },
+  {
+    name: "Communication",
+    items: [
+      { name: "Messages", href: "/messages", icon: MessageSquare },
+      { name: "Notifications", href: "/notifications", icon: Bell },
+      { name: "Settings", href: "/settings", icon: Settings },
+    ]
+  }
 ];
 
 export const MainLayout = () => {
@@ -97,7 +143,7 @@ export const MainLayout = () => {
     navigate('/');
   };
 
-  const navigation = userRole === 'teacher' ? teacherNavigation : studentNavigation;
+  const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-black">
@@ -105,7 +151,7 @@ export const MainLayout = () => {
       <motion.aside
         initial={false}
         animate={{ 
-          width: isSidebarOpen ? "16rem" : "0rem",
+          width: isSidebarOpen ? "18rem" : "0rem",
           opacity: isSidebarOpen ? 1 : 0
         }}
         transition={{ duration: 0.2 }}
@@ -117,35 +163,44 @@ export const MainLayout = () => {
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center justify-between px-6 py-5">
             <Link to="/" className="text-2xl font-bold gradient-text">
               Blockward
             </Link>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.href;
-              
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center px-3 py-2 rounded-lg",
-                    "text-gray-300 hover:bg-white/10",
-                    "transition-colors duration-200",
-                    "group",
-                    isActive && "bg-purple-600/20 text-purple-400"
-                  )}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  <span className="truncate">{item.name}</span>
-                </Link>
-              );
-            })}
+          <nav className="flex-1 space-y-6 px-4 py-6 overflow-y-auto">
+            {navGroups.map((group) => (
+              <div key={group.name} className="space-y-3">
+                <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {group.name}
+                </h3>
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.href;
+                    
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className={cn(
+                          "flex items-center px-4 py-3 rounded-lg",
+                          "text-gray-300 hover:bg-white/10",
+                          "transition-colors duration-200",
+                          "group",
+                          isActive && "bg-purple-600/20 text-purple-400"
+                        )}
+                      >
+                        <Icon className="mr-3 h-5 w-5" />
+                        <span className="truncate">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
         </div>
       </motion.aside>
@@ -179,7 +234,7 @@ export const MainLayout = () => {
       <main
         className={cn(
           "transition-all duration-300 p-8 mt-16",
-          isSidebarOpen ? "lg:ml-64" : "ml-0"
+          isSidebarOpen ? "lg:ml-72" : "ml-0"
         )}
       >
         <Outlet />

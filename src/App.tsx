@@ -1,9 +1,11 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import StudentDashboard from "@/pages/StudentDashboard";
 import Auth from "@/pages/Auth";
+import SignUp from "@/pages/SignUp";
 import Rewards from "@/pages/Rewards";
 import Attendance from "@/pages/Attendance";
 import Settings from "@/pages/Settings";
@@ -64,6 +66,11 @@ function App() {
   const viewStudentDashboard = () => {
     return <StudentDashboard />;
   };
+  
+  // Direct access to teacher dashboard for testing
+  const viewTeacherDashboard = () => {
+    return <Dashboard />;
+  };
 
   if (isAuthenticated === null) {
     return null; // Loading state
@@ -75,8 +82,10 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/home" element={<Index showIntro={false} />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/signup" element={<SignUp />} />
         <Route path="/auth/reset-password" element={<Auth />} />
         <Route path="/view-student-dashboard" element={viewStudentDashboard()} />
+        <Route path="/view-teacher-dashboard" element={viewTeacherDashboard()} />
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />} />
           <Route path="/student-dashboard" element={

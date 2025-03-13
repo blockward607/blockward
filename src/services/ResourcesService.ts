@@ -106,7 +106,8 @@ export const ResourcesService = {
     resourceData: { title: string; description: string; classroom_id: string; }
   ): Promise<Resource> => {
     try {
-      await this.createResourcesBucketIfNeeded();
+      // Create resources bucket if it doesn't exist
+      await ResourcesService.createResourcesBucketIfNeeded();
       
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
