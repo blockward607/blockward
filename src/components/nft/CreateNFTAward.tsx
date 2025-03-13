@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, ImagePlus, Loader2, Template } from "lucide-react";
+import { Trophy, ImagePlus, Loader2, LayoutTemplate } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NFTImageUpload } from "./NFTImageUpload";
@@ -311,7 +310,7 @@ export const CreateNFTAward = () => {
               }`}
               onClick={() => setUseTemplate(true)}
             >
-              <Template className="w-4 h-4 mr-2 inline-block" />
+              <LayoutTemplate className="w-4 h-4 mr-2 inline-block" />
               Use Template
             </button>
             <button

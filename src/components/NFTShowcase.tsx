@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -540,3 +541,6 @@ export const BlockWardShowcase = () => {
     </section>
   );
 };
+
+// Export with both names for backwards compatibility
+export const NFTShowcase = BlockWardShowcase;

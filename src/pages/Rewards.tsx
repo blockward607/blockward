@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { NFTShowcase } from "@/components/NFTShowcase";
+import { BlockWardShowcase } from "@/components/NFTShowcase";
 import { CreateNFTAward } from "@/components/nft/CreateNFTAward";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,7 +53,7 @@ const Rewards = () => {
           <Trophy className="w-6 h-6 text-purple-400" />
         </div>
         <h1 className="text-3xl font-bold gradient-text">
-          {userRole === 'teacher' ? 'Rewards & NFTs' : 'My NFT Collection'}
+          {userRole === 'teacher' ? 'Rewards & BlockWards' : 'My BlockWard Collection'}
         </h1>
       </div>
 
@@ -63,7 +62,7 @@ const Rewards = () => {
           <TabsList>
             <TabsTrigger value="showcase" className="flex items-center gap-2">
               <Star className="w-4 h-4" />
-              NFT Showcase
+              BlockWard Showcase
             </TabsTrigger>
             <TabsTrigger value="create" className="flex items-center gap-2">
               <ImagePlus className="w-4 h-4" />
@@ -73,7 +72,7 @@ const Rewards = () => {
 
           <TabsContent value="showcase">
             <Card className="p-6 glass-card">
-              <NFTShowcase />
+              <BlockWardShowcase />
             </Card>
           </TabsContent>
 
@@ -83,7 +82,7 @@ const Rewards = () => {
         </Tabs>
       ) : (
         <Card className="p-6 glass-card">
-          <NFTShowcase />
+          <BlockWardShowcase />
         </Card>
       )}
     </div>
