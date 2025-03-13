@@ -120,8 +120,8 @@ export const AuthService = {
   },
   
   // Create a student profile
-  createStudentProfile: async (userId: string, email: string) => {
-    const username = email.split('@')[0];
+  createStudentProfile: async (userId: string, email: string, name?: string) => {
+    const username = name || email.split('@')[0];
     
     const { data, error } = await supabase
       .from('students')

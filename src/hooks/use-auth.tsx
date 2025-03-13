@@ -15,7 +15,17 @@ export function useAuth() {
     
     try {
       const userId = session.user.id;
-      const userRole = session.user.user_metadata.role as 'teacher' | 'student';
+      // For Google auth, we need to determine the role differently
+      // Check if we have role in user metadata, otherwise assume 'student'
+      let userRole;
+      
+      if (session.user.app_metadata?.provider === 'google') {
+        // If coming from Google, check if a role was passed in the OAuth options
+        userRole = session.user.user_metadata?.role || 'student';
+      } else {
+        // Regular email login
+        userRole = session.user.user_metadata?.role as 'teacher' | 'student';
+      }
       
       // Check if role exists
       const { data: existingRole } = await AuthService.checkUserRole(userId);
@@ -50,7 +60,8 @@ export function useAuth() {
         
         if (!existingStudent) {
           const email = session.user.email;
-          await AuthService.createStudentProfile(userId, email);
+          const name = session.user.user_metadata?.name || session.user.user_metadata?.full_name || email.split('@')[0];
+          await AuthService.createStudentProfile(userId, email, name);
         }
       }
       
