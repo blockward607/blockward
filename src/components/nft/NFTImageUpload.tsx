@@ -29,15 +29,15 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
     try {
       const { data, error } = await supabase.storage.getBucket('nft-images');
       if (error && error.message.includes('The resource was not found')) {
-        console.log('NFT images bucket does not exist, creating it...');
+        console.log('BlockWard images bucket does not exist, creating it...');
         const { error: createError } = await supabase.storage.createBucket('nft-images', {
           public: true
         });
         if (createError) throw createError;
-        console.log('NFT images bucket created successfully');
+        console.log('BlockWard images bucket created successfully');
       }
     } catch (error) {
-      console.error('Error checking/creating NFT images bucket:', error);
+      console.error('Error checking/creating BlockWard images bucket:', error);
     }
   };
 
@@ -112,7 +112,7 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
 
   return (
     <div className="space-y-2">
-      <label className="text-sm text-gray-400">NFT Image</label>
+      <label className="text-sm text-gray-400">BlockWard Image</label>
       <div className="flex gap-4">
         <Input
           type="file"
@@ -129,7 +129,7 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Generate NFT Image with AI</DialogTitle>
+              <DialogTitle>Generate BlockWard Image with AI</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <Textarea
@@ -162,7 +162,7 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
         <div className="mt-4">
           <img 
             src={imageUrl} 
-            alt="NFT Preview" 
+            alt="BlockWard Preview" 
             className="w-full max-w-md mx-auto rounded-lg shadow-lg"
           />
         </div>

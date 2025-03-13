@@ -60,7 +60,7 @@ export const NFTAwardForm = ({ formData, onChange }: NFTAwardFormProps) => {
             onValueChange={(value) => onChange({ ...formData, nftType: value })}
           >
             <SelectTrigger className="glass-input">
-              <SelectValue placeholder="Select NFT Type" />
+              <SelectValue placeholder="Select BlockWard Type" />
             </SelectTrigger>
             <SelectContent>
               {nftTypes.map((type) => (

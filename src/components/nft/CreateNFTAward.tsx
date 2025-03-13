@@ -24,14 +24,11 @@ export const CreateNFTAward = () => {
   });
 
   useEffect(() => {
-    // Check if the nfts table exists, if not, create it
     checkAndCreateNFTsBucket();
   }, []);
 
-  // Load template data if a template is selected
   useEffect(() => {
     if (selectedTemplate && useTemplate) {
-      // Find the template data and apply it
       const template = templates.find(t => t.id === selectedTemplate);
       if (template) {
         setFormData({
@@ -90,7 +87,6 @@ export const CreateNFTAward = () => {
 
   const checkAndCreateNFTsBucket = async () => {
     try {
-      // Check if 'nft-images' bucket exists
       const { data, error } = await supabase.storage.getBucket('nft-images');
       
       if (error && error.message.includes('The resource was not found')) {
@@ -121,7 +117,6 @@ export const CreateNFTAward = () => {
     setLoading(true);
 
     try {
-      // Get authenticated user info
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -132,7 +127,6 @@ export const CreateNFTAward = () => {
         return;
       }
       
-      // Get teacher's wallet
       const { data: walletData, error: walletError } = await supabase
         .from('wallets')
         .select('*')
@@ -142,7 +136,6 @@ export const CreateNFTAward = () => {
       if (walletError) {
         console.error('Error getting wallet:', walletError);
         
-        // If no wallet found, create one
         if (walletError.message.includes('No rows found')) {
           const { data: newWallet, error: createError } = await supabase
             .from('wallets')
@@ -157,7 +150,6 @@ export const CreateNFTAward = () => {
           if (createError) throw createError;
           console.log('Created new wallet:', newWallet);
           
-          // Use the newly created wallet
           const metadata = {
             name: formData.title,
             description: formData.description,
@@ -177,7 +169,6 @@ export const CreateNFTAward = () => {
             ]
           };
 
-          // Create BlockWard with required fields
           const { data: nft, error: nftError } = await supabase
             .from('nfts')
             .insert({
@@ -186,7 +177,7 @@ export const CreateNFTAward = () => {
               metadata,
               creator_wallet_id: newWallet.id,
               image_url: imageUrl,
-              owner_wallet_id: selectedStudent || null, // Will be set when transferred
+              owner_wallet_id: selectedStudent || null,
               network: "testnet",
             })
             .select()
@@ -216,7 +207,6 @@ export const CreateNFTAward = () => {
           ]
         };
 
-        // Create BlockWard with required fields
         const { data: nft, error: nftError } = await supabase
           .from('nfts')
           .insert({
@@ -225,7 +215,7 @@ export const CreateNFTAward = () => {
             metadata,
             creator_wallet_id: walletData.id,
             image_url: imageUrl,
-            owner_wallet_id: selectedStudent || null, // Will be set when transferred
+            owner_wallet_id: selectedStudent || null,
             network: "testnet",
           })
           .select()
@@ -233,9 +223,7 @@ export const CreateNFTAward = () => {
 
         if (nftError) throw nftError;
         
-        // If a student is selected, record the transaction
         if (selectedStudent) {
-          // Get student's wallet
           const { data: studentWallet, error: studentWalletError } = await supabase
             .from('wallets')
             .select('*')
@@ -244,7 +232,6 @@ export const CreateNFTAward = () => {
             
           if (studentWalletError) throw studentWalletError;
           
-          // Create transaction record
           const { error: transactionError } = await supabase
             .from('transactions')
             .insert({
@@ -257,7 +244,6 @@ export const CreateNFTAward = () => {
 
           if (transactionError) throw transactionError;
           
-          // Award points to student
           const { error: incrementError } = await supabase
             .rpc('increment_student_points', {
               student_id: selectedStudent,
