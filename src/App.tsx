@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import Index from "@/pages/Index";
@@ -80,7 +79,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/home" element={<Index showIntro={false} />} />
+        <Route path="/home" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/auth/reset-password" element={<Auth />} />

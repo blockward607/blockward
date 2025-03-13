@@ -3,13 +3,19 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { GraduationCap, Sparkles, ArrowRight } from "lucide-react";
-import { DemoSection } from "./demo/DemoSection";
 
 export const Hero = () => {
   const handleLearnMore = () => {
     const aboutSection = document.getElementById('about');
     if (aboutSection) {
       aboutSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+  
+  const handleViewPreview = () => {
+    const previewSection = document.getElementById('preview');
+    if (previewSection) {
+      previewSection.scrollIntoView({ behavior: 'smooth' });
     }
   };
   
@@ -82,7 +88,7 @@ export const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            Featuring Unique Educational NFT Awards!
+            Featuring Unique Educational BlockWard Awards!
           </motion.p>
 
           <motion.div
@@ -103,16 +109,21 @@ export const Hero = () => {
               size="lg" 
               variant="outline"
               className="border-purple-400 text-purple-400 hover:bg-purple-400/10 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+              onClick={handleViewPreview}
+            >
+              See Preview <Sparkles className="w-4 h-4" />
+            </Button>
+            <Button 
+              size="lg" 
+              variant="ghost"
+              className="text-gray-400 hover:text-white transition-all duration-300 flex items-center gap-2"
               onClick={handleLearnMore}
             >
-              Learn More <Sparkles className="w-4 h-4" />
+              Learn More
             </Button>
           </motion.div>
         </motion.div>
       </div>
-      
-      {/* Add the demo section below the hero content */}
-      <DemoSection />
     </div>
   );
 };
