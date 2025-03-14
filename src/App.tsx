@@ -1,129 +1,115 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { MainLayout } from "@/components/layout/MainLayout";
-import Index from "@/pages/Index";
-import Dashboard from "@/pages/Dashboard";
-import StudentDashboard from "@/pages/StudentDashboard";
-import Auth from "@/pages/Auth";
-import SignUp from "@/pages/SignUp";
-import Rewards from "@/pages/Rewards";
-import Attendance from "@/pages/Attendance";
-import Settings from "@/pages/Settings";
-import Students from "@/pages/Students";
-import Classes from "@/pages/Classes";
-import Behavior from "@/pages/Behavior";
-import Achievements from "@/pages/Achievements";
-import Assignments from "@/pages/Assignments";
-import Resources from "@/pages/Resources";
-import Progress from "@/pages/Progress";
-import Messages from "@/pages/Messages";
-import Analytics from "@/pages/Analytics";
-import Notifications from "@/pages/Notifications";
-import Wallet from "@/pages/Wallet";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Index from '@/pages/Index';
+import Auth from '@/pages/Auth';
+import SignUp from '@/pages/SignUp';
+import Dashboard from '@/pages/Dashboard';
+import Classes from '@/pages/Classes';
+import Students from '@/pages/Students';
+import Attendance from '@/pages/Attendance';
+import Behavior from '@/pages/Behavior';
+import Assignments from '@/pages/Assignments';
+import Rewards from '@/pages/Rewards';
+import Achievements from '@/pages/Achievements';
+import Wallet from '@/pages/Wallet';
+import Messages from '@/pages/Messages';
+import Notifications from '@/pages/Notifications';
+import Analytics from '@/pages/Analytics';
+import Resources from '@/pages/Resources';
+import Progress from '@/pages/Progress';
+import Settings from '@/pages/Settings';
+import StudentDashboard from '@/pages/StudentDashboard';
+import ViewTeacherDashboard from '@/pages/ViewTeacherDashboard';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import './App.css';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-      if (session) {
-        checkUserRole(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setIsAuthenticated(!!session);
-    if (session) {
-      checkUserRole(session.user.id);
-    }
-  };
-
-  const checkUserRole = async (userId: string) => {
-    try {
-      const { data: teacherProfile } = await supabase
-        .from('teacher_profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
-      
-      setUserRole(teacherProfile ? 'teacher' : 'student');
-    } catch (error) {
-      setUserRole('student'); // Default to student if error
-    }
-  };
-
-  // Direct access to student dashboard for testing
-  const viewStudentDashboard = () => {
-    return <StudentDashboard />;
-  };
-  
-  // Direct access to teacher dashboard for testing
-  const viewTeacherDashboard = () => {
-    return <Dashboard />;
-  };
-
-  if (isAuthenticated === null) {
-    return null; // Loading state
-  }
-
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/home" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/auth/reset-password" element={<Auth />} />
-        <Route path="/view-student-dashboard" element={viewStudentDashboard()} />
-        <Route path="/view-teacher-dashboard" element={viewTeacherDashboard()} />
-        <Route element={<MainLayout />}>
-          <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />} />
-          <Route path="/student-dashboard" element={
-            isAuthenticated ? 
-              (userRole === 'student' ? <StudentDashboard /> : <Navigate to="/dashboard" />) : 
-              <Navigate to="/auth" />
+      <div className="min-h-screen antialiased App">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/classes" element={
+            <ProtectedRoute>
+              <Classes />
+            </ProtectedRoute>
           } />
           <Route path="/students" element={
-            isAuthenticated ? 
-              (userRole === 'teacher' ? <Students /> : <Navigate to="/dashboard" />) : 
-              <Navigate to="/auth" />
+            <ProtectedRoute>
+              <Students />
+            </ProtectedRoute>
           } />
-          <Route path="/classes" element={isAuthenticated ? <Classes /> : <Navigate to="/auth" />} />
-          <Route path="/assignments" element={isAuthenticated ? <Assignments /> : <Navigate to="/auth" />} />
           <Route path="/attendance" element={
-            isAuthenticated ? 
-              (userRole === 'teacher' ? <Attendance /> : <Navigate to="/dashboard" />) : 
-              <Navigate to="/auth" />
+            <ProtectedRoute>
+              <Attendance />
+            </ProtectedRoute>
           } />
           <Route path="/behavior" element={
-            isAuthenticated ? 
-              (userRole === 'teacher' ? <Behavior /> : <Navigate to="/dashboard" />) : 
-              <Navigate to="/auth" />
+            <ProtectedRoute>
+              <Behavior />
+            </ProtectedRoute>
           } />
-          <Route path="/achievements" element={isAuthenticated ? <Achievements /> : <Navigate to="/auth" />} />
-          <Route path="/resources" element={isAuthenticated ? <Resources /> : <Navigate to="/auth" />} />
-          <Route path="/messages" element={isAuthenticated ? <Messages /> : <Navigate to="/auth" />} />
+          <Route path="/assignments" element={
+            <ProtectedRoute>
+              <Assignments />
+            </ProtectedRoute>
+          } />
+          <Route path="/rewards" element={
+            <ProtectedRoute>
+              <Rewards />
+            </ProtectedRoute>
+          } />
+          <Route path="/achievements" element={
+            <ProtectedRoute>
+              <Achievements />
+            </ProtectedRoute>
+          } />
+          <Route path="/wallet" element={
+            <ProtectedRoute>
+              <Wallet />
+            </ProtectedRoute>
+          } />
+          <Route path="/messages" element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          } />
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          } />
           <Route path="/analytics" element={
-            isAuthenticated ? 
-              (userRole === 'teacher' ? <Analytics /> : <Navigate to="/dashboard" />) : 
-              <Navigate to="/auth" />
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
           } />
-          <Route path="/rewards" element={isAuthenticated ? <Rewards /> : <Navigate to="/auth" />} />
-          <Route path="/wallet" element={isAuthenticated ? <Wallet /> : <Navigate to="/auth" />} />
-          <Route path="/notifications" element={isAuthenticated ? <Notifications /> : <Navigate to="/auth" />} />
-          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/auth" />} />
-          <Route path="/progress" element={isAuthenticated ? <Progress /> : <Navigate to="/auth" />} />
-        </Route>
-      </Routes>
+          <Route path="/resources" element={
+            <ProtectedRoute>
+              <Resources />
+            </ProtectedRoute>
+          } />
+          <Route path="/progress" element={
+            <ProtectedRoute>
+              <Progress />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
+          <Route path="/view-student-dashboard" element={<StudentDashboard />} />
+          <Route path="/view-teacher-dashboard" element={<ViewTeacherDashboard />} />
+        </Routes>
+      </div>
     </Router>
   );
 }
