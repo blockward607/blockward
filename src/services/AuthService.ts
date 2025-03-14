@@ -95,11 +95,16 @@ export const AuthService = {
   },
   
   // Create a teacher profile
-  createTeacherProfile: async (userId: string) => {
+  createTeacherProfile: async (userId: string, school?: string, subject?: string) => {
     console.log('Creating teacher profile for:', userId);
     const { data, error } = await supabase
       .from('teacher_profiles')
-      .insert({ user_id: userId })
+      .insert({ 
+        user_id: userId,
+        school: school || '',
+        subject: subject || '',
+        remaining_credits: 1000
+      })
       .select()
       .single();
       
@@ -130,15 +135,16 @@ export const AuthService = {
   },
   
   // Create a student profile
-  createStudentProfile: async (userId: string, email: string, name?: string) => {
+  createStudentProfile: async (userId: string, email: string, name?: string, school?: string) => {
     const username = name || email.split('@')[0];
-    console.log('Creating student profile:', { userId, username });
+    console.log('Creating student profile:', { userId, username, school });
     
     const { data, error } = await supabase
       .from('students')
       .insert({
         user_id: userId,
         name: username,
+        school: school || '',
         points: 0
       })
       .select()
@@ -151,5 +157,15 @@ export const AuthService = {
     
     console.log('Student profile created successfully:', data);
     return { data, error };
+  },
+
+  // Generate a unique class code for teacher
+  generateClassCode: async () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return code;
   }
 };

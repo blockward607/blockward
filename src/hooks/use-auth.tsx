@@ -20,21 +20,32 @@ export function useAuth() {
       
       const userId = session.user.id;
       
-      // For Google auth, we need to determine the role differently
+      // For auth providers, determine the role differently
       // Check if we have role in user metadata, otherwise assume 'student'
       let userRole;
+      let school = '';
+      let subject = '';
       
-      if (session.user.app_metadata?.provider === 'google') {
-        // If coming from Google, check if a role was passed in the queryParams
+      if (session.user.app_metadata?.provider === 'google' || 
+          session.user.app_metadata?.provider === 'github' || 
+          session.user.app_metadata?.provider === 'facebook') {
+        // If coming from social login, check if a role was passed in the queryParams
         // or metadata, otherwise use 'student' as default
         userRole = session.user.user_metadata?.role || 
                   session.user.app_metadata?.role || 
                   'student';
         
-        console.log('Determined role for Google auth user:', userRole);
+        // Try to get additional profile data
+        school = session.user.user_metadata?.school || '';
+        subject = session.user.user_metadata?.subject || '';
+                  
+        console.log('Determined role for social auth user:', userRole);
       } else {
         // Regular email login
         userRole = session.user.user_metadata?.role || 'student';
+        school = session.user.user_metadata?.school || '';
+        subject = session.user.user_metadata?.subject || '';
+        
         console.log('Determined role for email auth user:', userRole);
       }
       
@@ -63,7 +74,7 @@ export function useAuth() {
       if (!existingWallet) {
         // Create wallet based on role
         const walletType = userRole === 'teacher' ? 'admin' : 'user';
-        const walletAddress = `wallet_${Math.random().toString(16).slice(2, 10)}`;
+        const walletAddress = `${Math.random().toString(16).slice(2, 10)}_${Math.random().toString(16).slice(2, 10)}`;
         
         console.log('Creating new wallet:', { type: walletType, address: walletAddress });
         
@@ -82,8 +93,30 @@ export function useAuth() {
         }
         
         if (!existingProfile) {
-          console.log('Creating teacher profile');
-          await AuthService.createTeacherProfile(userId);
+          console.log('Creating teacher profile with school and subject');
+          await AuthService.createTeacherProfile(userId, school, subject);
+          
+          // Generate a unique class code
+          const classCode = await AuthService.generateClassCode();
+          
+          // Create a default classroom for the teacher
+          const { data: teacherProfile } = await supabase
+            .from('teacher_profiles')
+            .select('id')
+            .eq('user_id', userId)
+            .single();
+            
+          if (teacherProfile) {
+            const className = subject ? `${subject} Class` : 'My First Class';
+            
+            await supabase
+              .from('classrooms')
+              .insert({
+                teacher_id: teacherProfile.id,
+                name: className,
+                description: 'Welcome to your first classroom!'
+              });
+          }
         } else {
           console.log('Teacher profile already exists');
         }
@@ -101,8 +134,8 @@ export function useAuth() {
                       session.user.user_metadata?.full_name || 
                       email.split('@')[0];
                       
-          console.log('Creating student profile with name:', name);
-          await AuthService.createStudentProfile(userId, email, name);
+          console.log('Creating student profile with name and school:', name, school);
+          await AuthService.createStudentProfile(userId, email, name, school);
         } else {
           console.log('Student profile already exists');
         }
