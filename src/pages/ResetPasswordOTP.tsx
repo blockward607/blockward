@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   InputOTP,
   InputOTPGroup,
@@ -18,6 +18,7 @@ import {
 const ResetPasswordOTP = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'email' | 'otp' | 'password'>('email');
   const [email, setEmail] = useState("");
@@ -27,6 +28,33 @@ const ResetPasswordOTP = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [resetSuccess, setResetSuccess] = useState(false);
+
+  // Check for token in URL hash
+  useEffect(() => {
+    const hash = location.hash;
+    if (hash && hash.includes('access_token=')) {
+      // Extract the token
+      const token = new URLSearchParams(hash.substring(1)).get('access_token');
+      if (token) {
+        // Token exists, move to password reset step
+        setStep('password');
+      }
+    } else if (hash && hash.includes('error=')) {
+      // Extract error message
+      const error = new URLSearchParams(hash.substring(1)).get('error_description');
+      if (error) {
+        setErrorMessage(error.replace(/\+/g, ' '));
+        setShowError(true);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.replace(/\+/g, ' '),
+        });
+        // Clear the hash
+        navigate(location.pathname, { replace: true });
+      }
+    }
+  }, [location, navigate, toast]);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,8 +80,8 @@ const ResetPasswordOTP = () => {
       } else {
         setStep('otp');
         toast({
-          title: "OTP Sent",
-          description: "Check your email for a verification code.",
+          title: "Email Sent",
+          description: "Check your email for a verification link. Click it and then enter the verification code here.",
         });
       }
     } catch (error) {
@@ -189,7 +217,7 @@ const ResetPasswordOTP = () => {
                   </div>
                   
                   <Button type="submit" className="w-full">
-                    Send Verification Code
+                    Send Verification Link
                   </Button>
                   
                   <Button
@@ -206,6 +234,9 @@ const ResetPasswordOTP = () => {
               {step === 'otp' && (
                 <form onSubmit={handleVerifyOTP} className="space-y-4">
                   <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      We've sent a verification link to your email. After clicking the link, enter the verification code below.
+                    </p>
                     <Label htmlFor="otp">Enter Verification Code</Label>
                     <InputOTP
                       value={otp}

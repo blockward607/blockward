@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,22 @@ export const ForgotPasswordForm = ({
     setLoading(true);
 
     try {
-      navigate('/auth/reset-password-otp');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password-otp`,
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        setShowError(true);
+        console.error("Password reset error:", error);
+      } else {
+        setEmailSent(true);
+        toast({
+          title: "Reset email sent",
+          description: "Check your email for a password reset link.",
+        });
+        navigate('/auth/reset-password-otp');
+      }
     } catch (error) {
       console.error("Unexpected error:", error);
       setErrorMessage("An unexpected error occurred. Please try again.");
