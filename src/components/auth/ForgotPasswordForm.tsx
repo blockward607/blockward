@@ -26,6 +26,8 @@ export const ForgotPasswordForm = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const [localLoading, setLocalLoading] = useState(false);
+  const [localError, setLocalError] = useState("");
+  const [showLocalError, setShowLocalError] = useState(false);
   
   const handleResetPassword = (e: React.FormEvent) => {
     setShowError(false);
@@ -44,7 +46,7 @@ export const ForgotPasswordForm = ({
         onBackToSignIn={onBackToSignIn}
       />
       
-      <ErrorDisplay message={setErrorMessage} show={setShowError} />
+      <ErrorDisplay message={localError} show={showLocalError} />
       
       <LoadingDialog open={localLoading} onOpenChange={setLocalLoading} />
     </div>
