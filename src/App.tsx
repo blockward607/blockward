@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import ResetPassword from '@/pages/ResetPassword';
+import ResetPasswordOTP from '@/pages/ResetPasswordOTP';
 import SignUp from '@/pages/SignUp';
 import Dashboard from '@/pages/Dashboard';
 import Classes from '@/pages/Classes';
@@ -32,6 +32,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/reset-password-otp" element={<ResetPasswordOTP />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/dashboard" element={
