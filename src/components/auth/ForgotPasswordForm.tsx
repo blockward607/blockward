@@ -1,11 +1,10 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { ErrorDisplay } from "@/components/auth/reset-password/ErrorDisplay";
+import { EmailStep } from "@/components/auth/reset-password/EmailStep";
+import { LoadingDialog } from "@/components/auth/LoadingDialog";
 
 interface ForgotPasswordFormProps {
   email: string;
@@ -26,82 +25,28 @@ export const ForgotPasswordForm = ({
 }: ForgotPasswordFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [emailSent, setEmailSent] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleResetPassword = (e: React.FormEvent) => {
     setShowError(false);
-    
-    if (!email || !email.trim()) {
-      setErrorMessage("Please enter your email address");
-      setShowError(true);
-      return;
-    }
-    
-    if (!validateEmail(email)) {
-      setErrorMessage("Please enter a valid email address");
-      setShowError(true);
-      return;
-    }
-    
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password-otp`,
-      });
-
-      if (error) {
-        setErrorMessage(error.message);
-        setShowError(true);
-        console.error("Password reset error:", error);
-      } else {
-        setEmailSent(true);
-        toast({
-          title: "Reset email sent",
-          description: "Check your email for a password reset link.",
-        });
-        navigate('/auth/reset-password-otp');
-      }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-      setErrorMessage("An unexpected error occurred. Please try again.");
-      setShowError(true);
-    } finally {
-      setLoading(false);
-    }
+    navigate('/auth/reset-password-otp');
   };
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleResetPassword} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="reset-email">Email</Label>
-          <Input 
-            id="reset-email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <Button type="submit" className="w-full">
-          Reset Password
-        </Button>
-        <Button 
-          onClick={onBackToSignIn} 
-          variant="outline" 
-          className="w-full"
-        >
-          Back to Sign In
-        </Button>
-      </form>
+      <EmailStep
+        email={email}
+        setEmail={setEmail}
+        setStep={() => {}} // Not needed for this component
+        setErrorMessage={setErrorMessage}
+        setShowError={setShowError}
+        setLoading={setLoading}
+        onBackToSignIn={onBackToSignIn}
+      />
+      
+      <ErrorDisplay message={setErrorMessage} show={setShowError} />
+      
+      <LoadingDialog open={localLoading} onOpenChange={setLocalLoading} />
     </div>
   );
 };
