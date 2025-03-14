@@ -142,16 +142,16 @@ export function AppSidebar() {
   const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
 
   return (
-    <Sidebar>
-      <SidebarHeader className="flex items-center px-6 py-4">
-        <div className="text-xl font-bold gradient-text" onClick={() => navigate('/')}>
+    <Sidebar className="bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl">
+      <SidebarHeader className="flex items-center px-6 py-6">
+        <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
           Blockward
         </div>
       </SidebarHeader>
       <SidebarContent>
         {navGroups.map((group) => (
           <SidebarGroup key={group.name}>
-            <SidebarGroupLabel>{group.name}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-gray-300 font-semibold">{group.name}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
@@ -162,15 +162,19 @@ export function AppSidebar() {
                         asChild 
                         isActive={isActive}
                         tooltip={item.name}
+                        className={cn(
+                          "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300",
+                          isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
+                        )}
                       >
                         <div 
                           onClick={() => navigate(item.href)} 
                           className={cn(
-                            "cursor-pointer",
-                            isActive && "text-purple-400"
+                            "cursor-pointer text-lg",
+                            isActive ? "text-white font-semibold" : "text-gray-300"
                           )}
                         >
-                          <item.icon />
+                          <item.icon className={cn("w-5 h-5 mr-3", isActive && "text-purple-300")} />
                           <span>{item.name}</span>
                         </div>
                       </SidebarMenuButton>
@@ -185,11 +189,11 @@ export function AppSidebar() {
       <SidebarFooter className="p-4">
         <Button 
           variant="ghost" 
-          className="w-full justify-start gap-2 text-sidebar-foreground"
+          className="w-full justify-start gap-2 text-gray-300 hover:text-white hover:bg-red-500/20"
           onClick={handleLogout}
         >
-          <LogOut className="h-4 w-4" />
-          <span>Log Out</span>
+          <LogOut className="h-5 w-5" />
+          <span className="text-base">Log Out</span>
         </Button>
       </SidebarFooter>
     </Sidebar>

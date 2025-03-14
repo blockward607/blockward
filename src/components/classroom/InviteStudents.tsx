@@ -102,27 +102,28 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 bg-purple-900/30 backdrop-blur-md border border-purple-500/30 shadow-lg">
       <Tabs defaultValue="code" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="code">Invite Code</TabsTrigger>
-          <TabsTrigger value="email">Email Invite</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-purple-950/50">
+          <TabsTrigger value="code" className="data-[state=active]:bg-purple-700/40">Invite Code</TabsTrigger>
+          <TabsTrigger value="email" className="data-[state=active]:bg-purple-700/40">Email Invite</TabsTrigger>
         </TabsList>
         
         <TabsContent value="code" className="space-y-4">
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-gray-300">
             Generate an invitation code that students can use to join your class.
           </div>
           
           {invitationCode ? (
             <div className="space-y-2">
               <div className="flex gap-2">
-                <Input value={invitationCode} readOnly className="font-mono" />
+                <Input value={invitationCode} readOnly className="font-mono bg-black/50 border-purple-500/30" />
                 <Button 
                   variant="outline" 
                   size="icon" 
                   onClick={copyToClipboard}
                   title="Copy to clipboard"
+                  className="bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
@@ -135,7 +136,7 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
             <Button 
               onClick={generateInviteCode} 
               disabled={loading}
-              className="w-full"
+              className="w-full bg-purple-600 hover:bg-purple-700"
             >
               <Link2 className="w-4 h-4 mr-2" />
               Generate Invitation Code
@@ -150,11 +151,12 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
               placeholder="student@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1"
+              className="flex-1 bg-black/50 border-purple-500/30"
             />
             <Button 
               onClick={handleInvite} 
               disabled={loading}
+              className="bg-purple-600 hover:bg-purple-700"
             >
               <Mail className="w-4 h-4 mr-2" />
               Send

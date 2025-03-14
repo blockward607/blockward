@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,12 +77,12 @@ export const AddStudent = ({ classroomId, onStudentAdded }: AddStudentProps) => 
 
   return (
     <div className="flex justify-between items-center">
-      <h2 className="text-lg font-semibold">Students</h2>
+      <h2 className="text-lg font-semibold text-white">Students</h2>
       {!showAddStudent ? (
         <Button 
           variant="outline" 
           onClick={() => setShowAddStudent(true)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-purple-700/30 text-white border-purple-500/30 hover:bg-purple-600/50"
         >
           <Plus className="w-4 h-4" />
           Add Student
@@ -92,9 +93,14 @@ export const AddStudent = ({ classroomId, onStudentAdded }: AddStudentProps) => 
             placeholder="Enter student name"
             value={newStudentName}
             onChange={(e) => setNewStudentName(e.target.value)}
-            className="w-64"
+            className="w-64 bg-black/50 border-purple-500/30 text-white"
           />
-          <Button onClick={addNewStudent}>Add</Button>
+          <Button 
+            onClick={addNewStudent}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            Add
+          </Button>
           <Button 
             variant="ghost" 
             size="icon"
@@ -102,6 +108,7 @@ export const AddStudent = ({ classroomId, onStudentAdded }: AddStudentProps) => 
               setShowAddStudent(false);
               setNewStudentName("");
             }}
+            className="text-gray-300 hover:text-white hover:bg-red-500/20"
           >
             <X className="w-4 h-4" />
           </Button>

@@ -124,10 +124,10 @@ export const JoinClassSection = () => {
   };
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 bg-purple-900/30 backdrop-blur-md border border-purple-500/30 shadow-lg">
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Join a Class</h2>
-        <p className="text-sm text-gray-400">
+        <h2 className="text-xl font-semibold text-white">Join a Class</h2>
+        <p className="text-sm text-gray-300">
           Enter the invitation code provided by your teacher to join their class.
         </p>
         
@@ -136,7 +136,7 @@ export const JoinClassSection = () => {
             placeholder="Enter invitation code"
             value={invitationCode}
             onChange={(e) => setInvitationCode(e.target.value)}
-            className="flex-1"
+            className="flex-1 bg-black/50 border-purple-500/30 text-white"
           />
           <Button 
             onClick={handleJoinClass}
@@ -158,7 +158,7 @@ export const JoinClassSection = () => {
         </div>
 
         <div className="mt-4">
-          <h3 className="text-md font-medium mb-2">How to Join a Class</h3>
+          <h3 className="text-md font-medium mb-2 text-purple-300">How to Join a Class</h3>
           <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300">
             <li>Ask your teacher for the class invitation code</li>
             <li>Enter the code in the field above</li>
