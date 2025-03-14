@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Users, Award, Plus, Settings, 
   Upload, Download, Send, FileSpreadsheet,
-  Database, Key, FileText
+  Database, Key, FileText, Loader
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -444,7 +444,7 @@ export const TeacherToolbox = () => {
                         >
                           {importing ? (
                             <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Loader className="mr-2 h-4 w-4 animate-spin" />
                               Importing...
                             </>
                           ) : (
@@ -476,7 +476,7 @@ export const TeacherToolbox = () => {
                         >
                           {importing ? (
                             <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Loader className="mr-2 h-4 w-4 animate-spin" />
                               Importing...
                             </>
                           ) : (
