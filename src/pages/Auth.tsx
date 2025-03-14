@@ -9,9 +9,12 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
 import { useAuth } from "@/hooks/use-auth";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Auth = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { loading, setLoading } = useAuth();
   const [role, setRole] = useState<'teacher' | 'student'>('teacher');
   const [email, setEmail] = useState("");
@@ -19,6 +22,14 @@ const Auth = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  
+  // Check if coming from password reset link
+  useEffect(() => {
+    const resetToken = searchParams.get('reset');
+    if (resetToken) {
+      navigate('/auth/reset-password', { state: { token: resetToken } });
+    }
+  }, [searchParams, navigate]);
 
   const handleForgotPasswordClick = () => {
     setShowForgotPassword(true);
