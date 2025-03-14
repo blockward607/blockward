@@ -69,8 +69,7 @@ const ViewTeacherDashboard = () => {
       </motion.div>
 
       <DashboardHeader
-        title="Teacher Dashboard Demo"
-        subtitle="Explore the teacher features of Blockward"
+        userName="Demo Teacher"
       />
       
       <TeacherDashboard 
