@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -23,6 +24,7 @@ import Settings from '@/pages/Settings';
 import StudentDashboard from '@/pages/StudentDashboard';
 import ViewTeacherDashboard from '@/pages/ViewTeacherDashboard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import './App.css';
 
 function App() {
@@ -35,81 +37,26 @@ function App() {
           <Route path="/auth/reset-password-otp" element={<ResetPasswordOTP />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/classes" element={
-            <ProtectedRoute>
-              <Classes />
-            </ProtectedRoute>
-          } />
-          <Route path="/students" element={
-            <ProtectedRoute>
-              <Students />
-            </ProtectedRoute>
-          } />
-          <Route path="/attendance" element={
-            <ProtectedRoute>
-              <Attendance />
-            </ProtectedRoute>
-          } />
-          <Route path="/behavior" element={
-            <ProtectedRoute>
-              <Behavior />
-            </ProtectedRoute>
-          } />
-          <Route path="/assignments" element={
-            <ProtectedRoute>
-              <Assignments />
-            </ProtectedRoute>
-          } />
-          <Route path="/rewards" element={
-            <ProtectedRoute>
-              <Rewards />
-            </ProtectedRoute>
-          } />
-          <Route path="/achievements" element={
-            <ProtectedRoute>
-              <Achievements />
-            </ProtectedRoute>
-          } />
-          <Route path="/wallet" element={
-            <ProtectedRoute>
-              <Wallet />
-            </ProtectedRoute>
-          } />
-          <Route path="/messages" element={
-            <ProtectedRoute>
-              <Messages />
-            </ProtectedRoute>
-          } />
-          <Route path="/notifications" element={
-            <ProtectedRoute>
-              <Notifications />
-            </ProtectedRoute>
-          } />
-          <Route path="/analytics" element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          } />
-          <Route path="/resources" element={
-            <ProtectedRoute>
-              <Resources />
-            </ProtectedRoute>
-          } />
-          <Route path="/progress" element={
-            <ProtectedRoute>
-              <Progress />
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          } />
+          
+          {/* Protected routes with sidebar layout */}
+          <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/classes" element={<Classes />} />
+            <Route path="/students" element={<Students />} />
+            <Route path="/attendance" element={<Attendance />} />
+            <Route path="/behavior" element={<Behavior />} />
+            <Route path="/assignments" element={<Assignments />} />
+            <Route path="/rewards" element={<Rewards />} />
+            <Route path="/achievements" element={<Achievements />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+          
           <Route path="/view-student-dashboard" element={<StudentDashboard />} />
           <Route path="/view-teacher-dashboard" element={<ViewTeacherDashboard />} />
         </Routes>

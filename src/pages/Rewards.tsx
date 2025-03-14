@@ -4,18 +4,10 @@ import { BlockWardShowcase } from "@/components/NFTShowcase";
 import { CreateNFTAward } from "@/components/nft/CreateNFTAward";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star, ImagePlus, ArrowLeft } from "lucide-react";
+import { Trophy, Star, ImagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 
 const Rewards = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -47,17 +39,9 @@ const Rewards = () => {
     setUserRole(roleData?.role || null);
   };
 
-  const goBack = () => {
-    navigate(-1);
-  };
-
-  const goToDashboard = () => {
-    navigate('/dashboard');
-  };
-
   if (!userRole) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center">
         <div className="p-4">Loading...</div>
       </div>
     );
@@ -65,40 +49,11 @@ const Rewards = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between w-full">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={goBack} 
-          className="mr-2"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="sr-only">Go back</span>
-        </Button>
-        
-        <Breadcrumb className="flex-1">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink onClick={goToDashboard} className="cursor-pointer">
-                Dashboard
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink className="font-semibold">Rewards</BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-      
       <div className="flex items-center gap-4 mb-8">
         <div className="p-3 rounded-full bg-purple-600/20">
           <Trophy className="w-6 h-6 text-purple-400" />
         </div>
-        <h1 
-          className="text-3xl font-bold gradient-text cursor-pointer"
-          onClick={goToDashboard}
-        >
+        <h1 className="text-3xl font-bold gradient-text">
           {userRole === 'teacher' ? 'Rewards & BlockWards' : 'My BlockWard Collection'}
         </h1>
       </div>

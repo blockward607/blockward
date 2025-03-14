@@ -3,16 +3,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { Trophy } from "lucide-react";
 
 interface Achievement {
   id: string;
@@ -28,7 +19,6 @@ const Achievements = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchAchievements();
@@ -55,17 +45,9 @@ const Achievements = () => {
     }
   };
 
-  const goBack = () => {
-    navigate(-1);
-  };
-
-  const goToDashboard = () => {
-    navigate('/dashboard');
-  };
-
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-4">
         <Card className="p-6">
           <div className="flex justify-center items-center h-40">
             <p>Loading achievements...</p>
@@ -76,41 +58,12 @@ const Achievements = () => {
   }
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between w-full">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={goBack} 
-          className="mr-2"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="sr-only">Go back</span>
-        </Button>
-        
-        <Breadcrumb className="flex-1">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink onClick={goToDashboard} className="cursor-pointer">
-                Dashboard
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink className="font-semibold">Achievements</BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
+    <div className="space-y-8">
       <div className="flex items-center gap-4">
         <div className="p-3 rounded-full bg-purple-600/20">
           <Trophy className="w-6 h-6 text-purple-400" />
         </div>
-        <h1 
-          className="text-3xl font-bold gradient-text cursor-pointer"
-          onClick={goToDashboard}
-        >
+        <h1 className="text-3xl font-bold gradient-text">
           Achievements
         </h1>
       </div>
