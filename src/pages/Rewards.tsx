@@ -4,10 +4,11 @@ import { BlockWardShowcase } from "@/components/NFTShowcase";
 import { CreateNFTAward } from "@/components/nft/CreateNFTAward";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star, ImagePlus } from "lucide-react";
+import { Trophy, Star, ImagePlus, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 const Rewards = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -41,52 +42,106 @@ const Rewards = () => {
 
   if (!userRole) {
     return (
-      <div className="flex items-center justify-center">
-        <div className="p-4">Loading...</div>
+      <div className="flex items-center justify-center h-[80vh]">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="p-4 flex items-center gap-3"
+        >
+          <Sparkles className="w-6 h-6 text-purple-400 animate-pulse" />
+          <span className="text-xl">Loading rewards...</span>
+        </motion.div>
       </div>
     );
   }
 
+  // Animation variants for staggered animations
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 rounded-full bg-purple-600/20">
-          <Trophy className="w-6 h-6 text-purple-400" />
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={containerVariants}
+      className="space-y-8"
+    >
+      <motion.div 
+        variants={itemVariants}
+        className="flex items-center gap-4 mb-8"
+      >
+        <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
+          <Trophy className="w-8 h-8 text-purple-300" />
         </div>
-        <h1 className="text-3xl font-bold gradient-text">
+        <h1 className="text-4xl font-bold shimmer-text">
           {userRole === 'teacher' ? 'Rewards & BlockWards' : 'My BlockWard Collection'}
         </h1>
-      </div>
+      </motion.div>
 
       {userRole === 'teacher' ? (
-        <Tabs defaultValue="showcase" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="showcase" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              BlockWard Showcase
-            </TabsTrigger>
-            <TabsTrigger value="create" className="flex items-center gap-2">
-              <ImagePlus className="w-4 h-4" />
-              Create Award
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="showcase" className="space-y-6">
+          <motion.div variants={itemVariants}>
+            <TabsList className="p-1 bg-black/40 backdrop-blur-xl border border-purple-500/20 rounded-xl">
+              <TabsTrigger value="showcase" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
+                <Star className="w-4 h-4" />
+                BlockWard Showcase
+              </TabsTrigger>
+              <TabsTrigger value="create" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
+                <ImagePlus className="w-4 h-4" />
+                Create Award
+              </TabsTrigger>
+            </TabsList>
+          </motion.div>
 
           <TabsContent value="showcase">
-            <Card className="p-6 glass-card">
-              <BlockWardShowcase />
-            </Card>
+            <motion.div
+              variants={itemVariants}
+              whileHover={{ scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            >
+              <Card className="p-6 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
+                <BlockWardShowcase />
+              </Card>
+            </motion.div>
           </TabsContent>
 
           <TabsContent value="create">
-            <CreateNFTAward />
+            <motion.div variants={itemVariants}>
+              <CreateNFTAward />
+            </motion.div>
           </TabsContent>
         </Tabs>
       ) : (
-        <Card className="p-6 glass-card">
-          <BlockWardShowcase />
-        </Card>
+        <motion.div
+          variants={itemVariants}
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300, damping: 15 }}
+        >
+          <Card className="p-6 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
+            <BlockWardShowcase />
+          </Card>
+        </motion.div>
       )}
-    </div>
+      
+      {/* Decorative elements */}
+      <div className="hidden md:block">
+        <div className="hexagon absolute top-20 right-20 w-28 h-28 bg-gradient-to-r from-purple-500/10 to-pink-500/10 -z-10"></div>
+        <div className="hexagon absolute bottom-20 left-40 w-36 h-36 bg-gradient-to-r from-blue-500/10 to-purple-500/10 -z-10"></div>
+      </div>
+    </motion.div>
   );
 };
 
