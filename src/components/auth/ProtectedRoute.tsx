@@ -20,6 +20,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
+          console.log('No active session found, redirecting to auth page');
           setIsAuthenticated(false);
           toast({
             variant: "destructive",
@@ -28,6 +29,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           });
           navigate('/auth');
         } else {
+          console.log('Active session found, user is authenticated');
           setIsAuthenticated(true);
         }
       } catch (error) {
@@ -41,9 +43,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event);
         if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
           navigate('/auth');
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setIsAuthenticated(true);
         }
       }
     );

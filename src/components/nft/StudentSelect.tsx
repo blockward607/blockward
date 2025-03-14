@@ -9,9 +9,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { User, Users, Medal, Star } from "lucide-react";
+import { User, Users, Medal, Star, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Student {
   id: string;
@@ -33,17 +33,22 @@ export const StudentSelect = ({ value, onChange }: StudentSelectProps) => {
   useEffect(() => {
     async function loadStudents() {
       try {
+        console.log('Loading students...');
+        setLoading(true);
+        
         const { data, error } = await supabase
           .from("students")
           .select("*")
           .order("name");
 
         if (error) {
+          console.error('Error from Supabase:', error);
           throw error;
         }
 
         // If no students in database, use demo data
         if (!data || data.length === 0) {
+          console.log('No students found, using demo data');
           const demoStudents = [
             { id: "1", name: "Student 1", user_id: "user1", points: 750 },
             { id: "2", name: "Student 2", user_id: "user2", points: 520 },
@@ -52,7 +57,29 @@ export const StudentSelect = ({ value, onChange }: StudentSelectProps) => {
             { id: "5", name: "Student 5", user_id: "user5", points: 670 },
           ];
           setStudents(demoStudents);
+          
+          // Create these demo students in the database for better experience
+          try {
+            console.log('Creating demo students in database...');
+            for (const student of demoStudents) {
+              const { error: insertError } = await supabase
+                .from("students")
+                .upsert({
+                  id: student.id,
+                  name: student.name,
+                  user_id: student.user_id,
+                  points: student.points
+                });
+                
+              if (insertError) {
+                console.error('Error creating demo student:', insertError);
+              }
+            }
+          } catch (dbError) {
+            console.error('Error creating demo students:', dbError);
+          }
         } else {
+          console.log(`Found ${data.length} students in database`);
           setStudents(data);
         }
       } catch (error) {
@@ -74,7 +101,7 @@ export const StudentSelect = ({ value, onChange }: StudentSelectProps) => {
     return (
       <div className="space-y-2">
         <label className="text-sm text-gray-400 flex items-center gap-2">
-          <Users className="w-4 h-4" /> Loading Students...
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading Students...
         </label>
         <Select disabled>
           <SelectTrigger className="bg-black/20 border-purple-500/20 backdrop-blur-sm">

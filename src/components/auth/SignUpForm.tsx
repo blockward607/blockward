@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FcGoogle } from "react-icons/fc";
 import { Separator } from "@/components/ui/separator";
+import { Loader2 } from "lucide-react";
 
 interface SignUpFormProps {
   role: 'teacher' | 'student';
@@ -32,27 +34,30 @@ export const SignUpForm = ({
   const [name, setName] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [country, setCountry] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setEmailLoading(true);
     setShowError(false);
 
     if (!name) {
       setErrorMessage("Please enter your name");
       setShowError(true);
-      setLoading(false);
+      setEmailLoading(false);
       return;
     }
 
     if (!schoolName) {
       setErrorMessage("Please enter your school name");
       setShowError(true);
-      setLoading(false);
+      setEmailLoading(false);
       return;
     }
 
     try {
+      console.log(`Signing up with email: ${email}, role: ${role}`);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -62,7 +67,8 @@ export const SignUpForm = ({
             name: name,
             school: schoolName,
             country: country
-          }
+          },
+          emailRedirectTo: window.location.origin + '/dashboard'
         }
       });
 
@@ -76,20 +82,23 @@ export const SignUpForm = ({
           description: "Please check your email to confirm your account.",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Unexpected error:", error);
       setErrorMessage("An unexpected error occurred. Please try again.");
       setShowError(true);
     } finally {
+      setEmailLoading(false);
       setLoading(false);
     }
   };
 
   const handleGoogleSignUp = async () => {
     setShowError(false);
+    setGoogleLoading(true);
     setLoading(true);
     
     try {
+      console.log(`Initiating Google sign-up with role: ${role}`);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -106,13 +115,16 @@ export const SignUpForm = ({
         setErrorMessage(error.message);
         setShowError(true);
         console.error("Google sign-up error:", error);
+      } else {
+        console.log("Google sign-up initiated successfully:", data);
       }
-    } catch (error) {
-      console.error("Unexpected error:", error);
+    } catch (error: any) {
+      console.error("Unexpected error during Google sign-up:", error);
       setErrorMessage("An unexpected error occurred. Please try again.");
       setShowError(true);
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
+      // Don't set loading to false here as the user will be redirected
     }
   };
 
@@ -123,9 +135,19 @@ export const SignUpForm = ({
         variant="outline" 
         className="w-full py-6 flex items-center justify-center gap-2"
         onClick={handleGoogleSignUp}
+        disabled={googleLoading}
       >
-        <FcGoogle className="w-5 h-5" />
-        <span>Continue with Google</span>
+        {googleLoading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Connecting to Google...</span>
+          </>
+        ) : (
+          <>
+            <FcGoogle className="w-5 h-5" />
+            <span>Continue with Google</span>
+          </>
+        )}
       </Button>
       
       <div className="relative my-6">
@@ -196,8 +218,15 @@ export const SignUpForm = ({
           />
         </div>
         
-        <Button type="submit" className="w-full">
-          Create Account
+        <Button type="submit" className="w-full" disabled={emailLoading}>
+          {emailLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating Account...
+            </>
+          ) : (
+            "Create Account"
+          )}
         </Button>
       </form>
     </div>

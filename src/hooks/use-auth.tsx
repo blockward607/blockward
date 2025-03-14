@@ -14,54 +14,97 @@ export function useAuth() {
     if (!session) return;
     
     try {
+      console.log('Setting up user account for:', session.user.id);
+      console.log('Auth provider:', session.user.app_metadata?.provider);
+      console.log('User metadata:', session.user.user_metadata);
+      
       const userId = session.user.id;
+      
       // For Google auth, we need to determine the role differently
       // Check if we have role in user metadata, otherwise assume 'student'
       let userRole;
       
       if (session.user.app_metadata?.provider === 'google') {
         // If coming from Google, check if a role was passed in the queryParams
-        userRole = session.user.user_metadata?.role || session.user.app_metadata?.role || 'student';
+        // or metadata, otherwise use 'student' as default
+        userRole = session.user.user_metadata?.role || 
+                  session.user.app_metadata?.role || 
+                  'student';
+        
+        console.log('Determined role for Google auth user:', userRole);
       } else {
         // Regular email login
-        userRole = session.user.user_metadata?.role as 'teacher' | 'student';
+        userRole = session.user.user_metadata?.role || 'student';
+        console.log('Determined role for email auth user:', userRole);
       }
       
       // Check if role exists
-      const { data: existingRole } = await AuthService.checkUserRole(userId);
+      const { data: existingRole, error: roleError } = await AuthService.checkUserRole(userId);
+      
+      if (roleError) {
+        console.error('Error checking user role:', roleError);
+      }
       
       if (!existingRole) {
+        console.log('Creating new user role:', userRole);
         // Create role
         await AuthService.createUserRole(userId, userRole);
+      } else {
+        console.log('User role already exists:', existingRole);
       }
       
       // Check if wallet exists
-      const { data: existingWallet } = await AuthService.checkUserWallet(userId);
+      const { data: existingWallet, error: walletError } = await AuthService.checkUserWallet(userId);
+      
+      if (walletError) {
+        console.error('Error checking user wallet:', walletError);
+      }
       
       if (!existingWallet) {
         // Create wallet based on role
         const walletType = userRole === 'teacher' ? 'admin' : 'user';
         const walletAddress = `wallet_${Math.random().toString(16).slice(2, 10)}`;
         
+        console.log('Creating new wallet:', { type: walletType, address: walletAddress });
+        
         // Create wallet
         await AuthService.createUserWallet(userId, walletType, walletAddress);
+      } else {
+        console.log('User wallet already exists:', existingWallet);
       }
       
       // Create profile based on role
       if (userRole === 'teacher') {
-        const { data: existingProfile } = await AuthService.checkTeacherProfile(userId);
+        const { data: existingProfile, error: profileError } = await AuthService.checkTeacherProfile(userId);
+        
+        if (profileError) {
+          console.error('Error checking teacher profile:', profileError);
+        }
         
         if (!existingProfile) {
+          console.log('Creating teacher profile');
           await AuthService.createTeacherProfile(userId);
+        } else {
+          console.log('Teacher profile already exists');
         }
       } else {
         // For students
-        const { data: existingStudent } = await AuthService.checkStudentProfile(userId);
+        const { data: existingStudent, error: studentError } = await AuthService.checkStudentProfile(userId);
+        
+        if (studentError) {
+          console.error('Error checking student profile:', studentError);
+        }
         
         if (!existingStudent) {
           const email = session.user.email;
-          const name = session.user.user_metadata?.name || session.user.user_metadata?.full_name || email.split('@')[0];
+          const name = session.user.user_metadata?.name || 
+                      session.user.user_metadata?.full_name || 
+                      email.split('@')[0];
+                      
+          console.log('Creating student profile with name:', name);
           await AuthService.createStudentProfile(userId, email, name);
+        } else {
+          console.log('Student profile already exists');
         }
       }
       
@@ -85,14 +128,22 @@ export function useAuth() {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
+        console.log('Found existing session, navigating to dashboard');
         navigate('/dashboard');
+      } else {
+        console.log('No existing session found');
       }
     });
 
     // Handle auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change event:', event);
+      
       if (event === 'SIGNED_IN') {
+        console.log('User signed in, setting up account');
         await setupUserAccount(session);
+      } else if (event === 'USER_UPDATED') {
+        console.log('User updated');
       }
     });
 

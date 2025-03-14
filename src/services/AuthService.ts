@@ -5,11 +5,12 @@ export const AuthService = {
   
   // Check if a user role exists
   checkUserRole: async (userId: string) => {
+    console.log('Checking user role for:', userId);
     const { data, error } = await supabase
       .from('user_roles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
       
     if (error && !error.message.includes('No rows found')) {
       console.error('Error checking user role:', error);
@@ -21,6 +22,7 @@ export const AuthService = {
   
   // Create a user role
   createUserRole: async (userId: string, role: 'teacher' | 'student') => {
+    console.log('Creating user role:', { userId, role });
     const { data, error } = await supabase
       .from('user_roles')
       .insert({ user_id: userId, role })
@@ -32,16 +34,18 @@ export const AuthService = {
       throw error;
     }
     
+    console.log('User role created successfully:', data);
     return { data, error };
   },
   
   // Check if a wallet exists
   checkUserWallet: async (userId: string) => {
+    console.log('Checking wallet for user:', userId);
     const { data, error } = await supabase
       .from('wallets')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
       
     if (error && !error.message.includes('No rows found')) {
       console.error('Error checking user wallet:', error);
@@ -53,6 +57,7 @@ export const AuthService = {
   
   // Create a user wallet
   createUserWallet: async (userId: string, type: 'user' | 'admin', address: string) => {
+    console.log('Creating wallet:', { userId, type, address });
     const { data, error } = await supabase
       .from('wallets')
       .insert({ 
@@ -68,16 +73,18 @@ export const AuthService = {
       throw error;
     }
     
+    console.log('Wallet created successfully:', data);
     return { data, error };
   },
   
   // Check if a teacher profile exists
   checkTeacherProfile: async (userId: string) => {
+    console.log('Checking teacher profile for:', userId);
     const { data, error } = await supabase
       .from('teacher_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
       
     if (error && !error.message.includes('No rows found')) {
       console.error('Error checking teacher profile:', error);
@@ -89,6 +96,7 @@ export const AuthService = {
   
   // Create a teacher profile
   createTeacherProfile: async (userId: string) => {
+    console.log('Creating teacher profile for:', userId);
     const { data, error } = await supabase
       .from('teacher_profiles')
       .insert({ user_id: userId })
@@ -100,16 +108,18 @@ export const AuthService = {
       throw error;
     }
     
+    console.log('Teacher profile created successfully:', data);
     return { data, error };
   },
   
   // Check if a student profile exists
   checkStudentProfile: async (userId: string) => {
+    console.log('Checking student profile for:', userId);
     const { data, error } = await supabase
       .from('students')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
       
     if (error && !error.message.includes('No rows found')) {
       console.error('Error checking student profile:', error);
@@ -122,6 +132,7 @@ export const AuthService = {
   // Create a student profile
   createStudentProfile: async (userId: string, email: string, name?: string) => {
     const username = name || email.split('@')[0];
+    console.log('Creating student profile:', { userId, username });
     
     const { data, error } = await supabase
       .from('students')
@@ -138,6 +149,7 @@ export const AuthService = {
       throw error;
     }
     
+    console.log('Student profile created successfully:', data);
     return { data, error };
   }
 };

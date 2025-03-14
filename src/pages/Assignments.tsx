@@ -1,512 +1,405 @@
 
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { 
+  FileText, 
+  Upload, 
+  Calendar, 
+  Clock, 
+  Users, 
+  CheckCircle,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { StudentSelect } from "@/components/nft/StudentSelect";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { FileText, Calendar, Clock, ChevronRight, PlusCircle, Book, Award, Sparkles } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { motion } from "framer-motion";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
+// Define the Assignment type
 interface Assignment {
   id: string;
   title: string;
   description: string;
-  due_date: string;
-  points_possible: number;
-  classroom_id: string;
-  created_at: string;
-}
-
-interface Student {
-  id: string;
-  name: string;
+  dueDate: string;
+  type: string;
+  status: string;
   points: number;
 }
 
-const demoStudents: Student[] = [
-  { id: "1", name: "Student 1", points: 750 },
-  { id: "2", name: "Student 2", points: 520 },
-  { id: "3", name: "Student 3", points: 890 },
-  { id: "4", name: "Student 4", points: 430 },
-  { id: "5", name: "Student 5", points: 670 },
-];
-
-const assignmentTypes = [
-  { value: "quiz", label: "Quiz", icon: Book, color: "from-blue-500 to-cyan-400" },
-  { value: "project", label: "Project", icon: Sparkles, color: "from-purple-500 to-pink-400" },
-  { value: "homework", label: "Homework", icon: FileText, color: "from-green-500 to-emerald-400" },
-  { value: "exam", label: "Exam", icon: Award, color: "from-red-500 to-orange-400" },
-];
-
 const Assignments = () => {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [classrooms, setClassrooms] = useState<any[]>([]);
-  const [selectedClassroom, setSelectedClassroom] = useState<string>("");
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState("quiz");
-  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
-  const [newAssignment, setNewAssignment] = useState({
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
-    due_date: "",
-    points_possible: 100,
-    classroom_id: "",
-    type: "quiz"
+    dueDate: "",
+    dueTime: "",
+    type: "homework",
+    points: 100
   });
-  const { toast } = useToast();
 
-  useEffect(() => {
-    checkUserRole();
-    fetchClassrooms();
-    setTimeout(() => setLoading(false), 1000);
-  }, []);
-
-  useEffect(() => {
-    if (selectedClassroom) {
-      fetchAssignments();
+  // Demo assignments
+  const [assignments, setAssignments] = useState<Assignment[]>([
+    {
+      id: "1",
+      title: "Math Problem Set",
+      description: "Complete problems 1-20 on page 45",
+      dueDate: "2023-11-15",
+      type: "homework",
+      status: "submitted",
+      points: 100
+    },
+    {
+      id: "2",
+      title: "Science Lab Report",
+      description: "Write a report on the water cycle experiment",
+      dueDate: "2023-11-20",
+      type: "project",
+      status: "in-progress",
+      points: 150
+    },
+    {
+      id: "3",
+      title: "History Essay",
+      description: "Write a 500-word essay on Ancient Rome",
+      dueDate: "2023-11-25",
+      type: "essay",
+      status: "not-started",
+      points: 200
     }
-  }, [selectedClassroom]);
+  ]);
 
-  const checkUserRole = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .single();
-
-    setUserRole(roleData?.role || 'teacher');
-  };
-
-  const fetchClassrooms = async () => {
-    try {
-      // If no classrooms in database, use demo data
-      setClassrooms([
-        { id: "1", name: "Mathematics 101" },
-        { id: "2", name: "Computer Science" },
-        { id: "3", name: "Physics Advanced" },
-      ]);
-      setSelectedClassroom("1");
-    } catch (error) {
-      console.error('Error fetching classrooms:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load classrooms"
-      });
-    }
-  };
-
-  const fetchAssignments = async () => {
-    setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    try {
-      // For demo, use static assignments
-      const demoAssignments = [
-        {
-          id: "1",
-          title: "Algebra Quiz",
-          description: "Test your knowledge of algebraic expressions and equations",
-          due_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          points_possible: 50,
-          classroom_id: "1",
-          created_at: new Date().toISOString(),
-          type: "quiz"
-        },
-        {
-          id: "2",
-          title: "Geometry Project",
-          description: "Create a 3D model demonstrating geometric principles",
-          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          points_possible: 150,
-          classroom_id: "1",
-          created_at: new Date().toISOString(),
-          type: "project"
-        },
-        {
-          id: "3",
-          title: "Calculus Homework",
-          description: "Complete problems 1-10 in chapter 3",
-          due_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-          points_possible: 30,
-          classroom_id: "1",
-          created_at: new Date().toISOString(),
-          type: "homework"
-        }
-      ];
-      
-      setAssignments(demoAssignments);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching assignments:', error);
+    if (!selectedStudent) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load assignments"
+        description: "Please select a student for this assignment"
       });
-      setLoading(false);
+      return;
     }
-  };
 
-  const createAssignment = async () => {
-    if (!selectedClassroom) return;
+    setLoading(true);
 
     try {
-      const newId = (assignments.length + 1).toString();
-      const newAssignmentItem = {
-        ...newAssignment,
-        id: newId,
-        classroom_id: selectedClassroom,
-        created_at: new Date().toISOString(),
-        type: selectedType
+      const newAssignment: Assignment = {
+        id: Date.now().toString(),
+        title: formData.title,
+        description: formData.description,
+        dueDate: `${formData.dueDate} ${formData.dueTime}`,
+        type: formData.type,
+        status: "not-started",
+        points: formData.points
       };
 
-      setAssignments(prev => [...prev, newAssignmentItem]);
+      // In a real app, we would save to Supabase here
+      // For demo purposes, we'll just update the local state
+      setAssignments([...assignments, newAssignment]);
+      
       toast({
         title: "Success",
-        description: "Assignment created successfully"
+        description: "Assignment created successfully",
       });
 
       // Reset form
-      setNewAssignment({
+      setFormData({
         title: "",
         description: "",
-        due_date: "",
-        points_possible: 100,
-        classroom_id: "",
-        type: "quiz"
+        dueDate: "",
+        dueTime: "",
+        type: "homework",
+        points: 100
       });
-    } catch (error) {
+      setSelectedStudent("");
+    } catch (error: any) {
       console.error('Error creating assignment:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create assignment"
+        description: error.message || "Failed to create assignment",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const assignToStudent = (assignmentId: string, studentId: string) => {
-    toast({
-      title: "Assignment Assigned",
-      description: `Assignment successfully assigned to student`
-    });
-    setSelectedStudent(null);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "submitted":
+        return "bg-green-600/20 text-green-400 border-green-500/30";
+      case "in-progress":
+        return "bg-blue-600/20 text-blue-400 border-blue-500/30";
+      case "not-started":
+        return "bg-purple-600/20 text-purple-400 border-purple-500/30";
+      default:
+        return "bg-gray-600/20 text-gray-400 border-gray-500/30";
+    }
   };
 
-  const getTypeInfo = (type: string) => {
-    return assignmentTypes.find(t => t.value === type) || assignmentTypes[0];
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "homework":
+        return <FileText className="w-5 h-5 text-purple-400" />;
+      case "project":
+        return <Sparkles className="w-5 h-5 text-blue-400" />;
+      case "essay":
+        return <FileText className="w-5 h-5 text-green-400" />;
+      case "quiz":
+        return <CheckCircle className="w-5 h-5 text-yellow-400" />;
+      default:
+        return <FileText className="w-5 h-5 text-purple-400" />;
+    }
   };
 
   return (
-    <div className="space-y-6 py-8">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-transparent to-blue-600/10 rounded-3xl blur-3xl" />
-        <div className="relative flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="p-4 rounded-2xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm"
-            >
-              <FileText className="w-8 h-8 text-purple-400" />
-            </motion.div>
-            <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <h1 className="text-3xl font-bold gradient-text bg-gradient-to-r from-purple-400 to-blue-500 text-transparent bg-clip-text">
-                BlockWard Assignments
-              </h1>
-              <p className="text-gray-400 mt-1">Create, track and award points for academic work</p>
-            </motion.div>
-          </div>
-          {userRole === 'teacher' && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-xl">
-                  <PlusCircle className="w-5 h-5 mr-2" />
-                  Create Assignment
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[525px] glass-card bg-black/80 border border-purple-500/20 backdrop-blur-xl">
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-bold gradient-text bg-gradient-to-r from-purple-400 to-blue-500 text-transparent bg-clip-text">
-                    Create New BlockWard Assignment
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-300">
-                      Assignment Type
-                    </label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {assignmentTypes.map((type) => (
-                        <button
-                          key={type.value}
-                          className={`p-3 flex flex-col items-center justify-center rounded-lg border transition-all ${
-                            selectedType === type.value 
-                              ? `bg-gradient-to-b ${type.color} border-transparent` 
-                              : 'bg-black/30 border-gray-700 hover:bg-black/50'
-                          }`}
-                          onClick={() => setSelectedType(type.value)}
-                        >
-                          <type.icon className={`w-5 h-5 mb-1 ${selectedType === type.value ? 'text-white' : 'text-gray-400'}`} />
-                          <span className={`text-xs ${selectedType === type.value ? 'text-white' : 'text-gray-400'}`}>
-                            {type.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-300">
-                      Select Classroom
-                    </label>
-                    <select
-                      className="w-full p-2 rounded-md border bg-black/50 border-gray-700 text-gray-200"
-                      value={selectedClassroom}
-                      onChange={(e) => setSelectedClassroom(e.target.value)}
-                    >
-                      {classrooms.map((classroom) => (
-                        <option key={classroom.id} value={classroom.id}>
-                          {classroom.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <Input
-                    placeholder="Assignment Title"
-                    value={newAssignment.title}
-                    onChange={(e) => setNewAssignment(prev => ({ ...prev, title: e.target.value }))}
-                    className="bg-black/50 border-gray-700 text-gray-200"
-                  />
-                  <Textarea
-                    placeholder="Assignment Description"
-                    value={newAssignment.description}
-                    onChange={(e) => setNewAssignment(prev => ({ ...prev, description: e.target.value }))}
-                    className="bg-black/50 border-gray-700 text-gray-200 min-h-24"
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-300">
-                        Due Date
-                      </label>
-                      <Input
-                        type="datetime-local"
-                        value={newAssignment.due_date}
-                        onChange={(e) => setNewAssignment(prev => ({ ...prev, due_date: e.target.value }))}
-                        className="bg-black/50 border-gray-700 text-gray-200"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-300">
-                        Points Value
-                      </label>
-                      <Input
-                        type="number"
-                        placeholder="Points"
-                        value={newAssignment.points_possible}
-                        onChange={(e) => setNewAssignment(prev => ({ ...prev, points_possible: parseInt(e.target.value) }))}
-                        className="bg-black/50 border-gray-700 text-gray-200"
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                    onClick={createAssignment}
-                  >
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Create BlockWard Assignment
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-      </div>
-
-      {classrooms.length > 0 && (
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex gap-2 overflow-x-auto pb-2"
-        >
-          {classrooms.map((classroom) => (
-            <Button
-              key={classroom.id}
-              variant={selectedClassroom === classroom.id ? "default" : "outline"}
-              className={selectedClassroom === classroom.id 
-                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 border-none" 
-                : "border-purple-500/20 hover:bg-purple-500/10"}
-              onClick={() => setSelectedClassroom(classroom.id)}
-            >
-              {classroom.name}
-            </Button>
-          ))}
-        </motion.div>
-      )}
-
-      <div className="grid gap-4">
-        {assignments.map((assignment, index) => {
-          const typeInfo = getTypeInfo(assignment.type || 'quiz');
-          
-          return (
-            <motion.div
-              key={assignment.id}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.1 * index }}
-            >
-              <Card className="p-4 hover:bg-purple-900/10 border border-purple-500/20 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
-                <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${typeInfo.color}`}>
-                    <typeInfo.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-lg">{assignment.title}</h3>
-                        <p className="text-sm text-gray-400 mt-1">{assignment.description}</p>
-                      </div>
-                      
-                      {userRole === 'teacher' && (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="border-purple-500/20 hover:bg-purple-500/10">
-                              Assign to Student
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px] glass-card bg-black/80 border border-purple-500/20 backdrop-blur-xl">
-                            <DialogHeader>
-                              <DialogTitle className="text-xl font-bold gradient-text bg-gradient-to-r from-purple-400 to-blue-500 text-transparent bg-clip-text">
-                                Assign to Student
-                              </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 mt-4">
-                              <p className="text-sm text-gray-300">Select a student to assign <span className="font-semibold">{assignment.title}</span>:</p>
-                              <div className="grid gap-2 max-h-60 overflow-y-auto pr-2">
-                                {demoStudents.map(student => (
-                                  <button
-                                    key={student.id}
-                                    className={`flex items-center gap-3 p-2 rounded-lg border text-left transition-all ${
-                                      selectedStudent === student.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-black/30 border-gray-700 hover:bg-black/50'
-                                    }`}
-                                    onClick={() => setSelectedStudent(student.id)}
-                                  >
-                                    <Avatar className="border-2 border-purple-500/20">
-                                      <AvatarFallback className="bg-purple-800/30 text-purple-100">
-                                        {student.name.charAt(0).toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <div className="font-medium">{student.name}</div>
-                                      <div className="text-xs text-purple-400">{student.points} points</div>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                              <Button 
-                                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                                onClick={() => assignToStudent(assignment.id, selectedStudent || '')}
-                                disabled={!selectedStudent}
-                              >
-                                Assign Assignment
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 mt-3">
-                      <div className="flex items-center text-sm text-gray-400">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {new Date(assignment.due_date).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-400">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {formatDistanceToNow(new Date(assignment.due_date), { addSuffix: true })}
-                      </div>
-                      <div className="text-sm font-semibold bg-gradient-to-r from-purple-400 to-blue-500 text-transparent bg-clip-text">
-                        {assignment.points_possible} points
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="icon" className="hover:bg-purple-500/10">
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          )
-        })}
-
-        {assignments.length === 0 && !loading && (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Assignments & Activities</h1>
+      
+      <div className="grid gap-6 md:grid-cols-[1fr_350px]">
+        <div className="space-y-6">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            <Card className="p-6 border border-purple-500/20 backdrop-blur-sm">
-              <div className="text-center text-gray-400">
-                <div className="p-4 rounded-full bg-purple-900/20 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                  <FileText className="w-10 h-10 text-purple-400 opacity-50" />
+            <Card className="p-6 glass-card">
+              <h2 className="text-xl font-semibold mb-4">Create New Assignment</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Assignment Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="Enter assignment title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="glass-input"
+                    required
+                  />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">No Assignments Yet</h3>
-                <p className="text-sm text-gray-400 max-w-md mx-auto">
-                  There are no assignments available in this classroom yet. Create your first assignment to get started.
-                </p>
-                {userRole === 'teacher' && (
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Enter assignment details"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="glass-input min-h-[100px]"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dueDate" className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-purple-400" /> Due Date
+                    </Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      value={formData.dueDate}
+                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                      className="glass-input"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="dueTime" className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-purple-400" /> Due Time
+                    </Label>
+                    <Input
+                      id="dueTime"
+                      type="time"
+                      value={formData.dueTime}
+                      onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
+                      className="glass-input"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Assignment Type</Label>
+                    <Select 
+                      value={formData.type} 
+                      onValueChange={(value) => setFormData({ ...formData, type: value })}
+                    >
+                      <SelectTrigger className="glass-input">
+                        <SelectValue placeholder="Select Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="homework">Homework</SelectItem>
+                        <SelectItem value="project">Project</SelectItem>
+                        <SelectItem value="essay">Essay</SelectItem>
+                        <SelectItem value="quiz">Quiz</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="points">Points</Label>
+                    <Input
+                      id="points"
+                      type="number"
+                      min="0"
+                      value={formData.points}
+                      onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
+                      className="glass-input"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-purple-400" /> Assign To
+                  </Label>
+                  <StudentSelect
+                    value={selectedStudent}
+                    onChange={setSelectedStudent}
+                  />
+                </div>
+                
+                <div className="pt-4 flex justify-end">
                   <Button 
-                    className="mt-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                    onClick={() => document.querySelector<HTMLButtonElement>('button:has(.lucide-plus-circle)')?.click()}
+                    type="submit" 
+                    className="bg-purple-600 hover:bg-purple-700"
+                    disabled={loading}
                   >
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Create Assignment
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Create Assignment
+                      </>
+                    )}
                   </Button>
-                )}
-              </div>
+                </div>
+              </form>
             </Card>
           </motion.div>
-        )}
-        
-        {loading && (
+          
           <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <Card key={i} className="p-4 border border-purple-500/10">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-purple-600/20 animate-pulse" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-5 bg-purple-600/20 rounded animate-pulse w-1/3" />
-                    <div className="h-4 bg-purple-600/10 rounded animate-pulse w-2/3" />
-                    <div className="flex gap-4 pt-1">
-                      <div className="h-3 bg-purple-600/10 rounded animate-pulse w-24" />
-                      <div className="h-3 bg-purple-600/10 rounded animate-pulse w-24" />
-                      <div className="h-3 bg-purple-600/10 rounded animate-pulse w-16" />
+            <h2 className="text-xl font-semibold">Current Assignments</h2>
+            
+            {assignments.map((assignment, index) => (
+              <motion.div 
+                key={assignment.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+              >
+                <Card className="p-5 glass-card hover:shadow-md transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-full bg-purple-800/20">
+                      {getTypeIcon(assignment.type)}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-lg">{assignment.title}</h3>
+                          <p className="text-gray-400 text-sm mt-1">{assignment.description}</p>
+                        </div>
+                        
+                        <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(assignment.status)}`}>
+                          {assignment.status.replace('-', ' ')}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 flex flex-wrap gap-3 text-sm">
+                        <div className="flex items-center gap-1 text-gray-400">
+                          <Calendar className="w-4 h-4" />
+                          <span>Due: {assignment.dueDate}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 text-purple-400">
+                          <Sparkles className="w-4 h-4" />
+                          <span>{assignment.points} Points</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
           </div>
-        )}
+        </div>
+        
+        <div className="space-y-4">
+          <Card className="p-6 glass-card">
+            <h3 className="text-lg font-semibold mb-4">Assignment Progress</h3>
+            
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-400">Completed</span>
+                  <span className="text-purple-400">33%</span>
+                </div>
+                <div className="h-2 bg-purple-900/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 w-1/3"></div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-purple-900/10 rounded-lg text-center">
+                  <h4 className="text-gray-400 text-sm mb-1">To Do</h4>
+                  <p className="text-2xl font-bold text-white">2</p>
+                </div>
+                
+                <div className="p-4 bg-purple-900/10 rounded-lg text-center">
+                  <h4 className="text-gray-400 text-sm mb-1">Completed</h4>
+                  <p className="text-2xl font-bold text-white">1</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-300 mb-3">Upcoming Due Dates</h4>
+                <ul className="space-y-3">
+                  <li className="flex justify-between items-center p-3 bg-black/20 rounded-lg">
+                    <div>
+                      <p className="font-medium">Science Lab Report</p>
+                      <p className="text-sm text-gray-400">Due Nov 20</p>
+                    </div>
+                    <div className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs font-medium">
+                      In Progress
+                    </div>
+                  </li>
+                  <li className="flex justify-between items-center p-3 bg-black/20 rounded-lg">
+                    <div>
+                      <p className="font-medium">History Essay</p>
+                      <p className="text-sm text-gray-400">Due Nov 25</p>
+                    </div>
+                    <div className="px-2 py-1 rounded bg-purple-600/20 text-purple-400 text-xs font-medium">
+                      Not Started
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );
