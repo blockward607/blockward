@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Student, getDemoStudents } from "@/components/nft/StudentSelectHelpers";
+import { Student } from "@/components/nft/StudentSelectHelpers";
 
 export const useStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -59,28 +59,28 @@ export const useStudents = () => {
                   console.log(`Found ${studentData.length} students in teacher's classrooms`);
                   setStudents(studentData);
                 } else {
-                  // Use demo data if no students found
-                  setStudents(getDemoStudents());
+                  // No students found, return empty array
+                  setStudents([]);
                 }
               } else {
-                // Use demo data if no classroom students found
-                setStudents(getDemoStudents());
+                // No classroom students found, return empty array
+                setStudents([]);
               }
             } else {
-              // Use demo data if no classrooms found
-              setStudents(getDemoStudents());
+              // No classrooms found, return empty array
+              setStudents([]);
             }
           } else {
-            // Use demo data if no teacher profile found
-            setStudents(getDemoStudents());
+            // No teacher profile found, return empty array
+            setStudents([]);
           }
         } else {
-          // Use demo data if no session found
-          setStudents(getDemoStudents());
+          // No session found, return empty array
+          setStudents([]);
         }
       } catch (error) {
         console.error("Error loading students:", error);
-        setStudents(getDemoStudents());
+        setStudents([]);
         toast({
           variant: "destructive",
           title: "Error",

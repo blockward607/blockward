@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Sparkles, PlusCircle } from "lucide-react";
+import { Users, Sparkles, PlusCircle, Trash2, Edit, School } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Student {
   id: string;
@@ -22,6 +23,8 @@ const Students = () => {
   const [loading, setLoading] = useState(true);
   const [newStudentName, setNewStudentName] = useState("");
   const [newStudentSchool, setNewStudentSchool] = useState("");
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,6 +33,7 @@ const Students = () => {
 
   const fetchStudents = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('students')
         .select('*')
@@ -73,7 +77,7 @@ const Students = () => {
 
       if (error) throw error;
       
-      setStudents([...(data || []), ...students]);
+      fetchStudents(); // Refresh the list after adding
       setNewStudentName("");
       setNewStudentSchool("");
       
@@ -88,6 +92,48 @@ const Students = () => {
         title: "Error",
         description: "Failed to add student"
       });
+    }
+  };
+
+  const deleteStudent = async () => {
+    if (!studentToDelete) return;
+    
+    try {
+      // First delete any classroom_students associations
+      const { error: relError } = await supabase
+        .from('classroom_students')
+        .delete()
+        .eq('student_id', studentToDelete);
+
+      if (relError) {
+        console.error('Error deleting classroom associations:', relError);
+        // Continue anyway
+      }
+
+      // Then delete the student
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', studentToDelete);
+
+      if (error) throw error;
+      
+      setStudents(students.filter(student => student.id !== studentToDelete));
+      
+      toast({
+        title: "Success",
+        description: "Student deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete student"
+      });
+    } finally {
+      setStudentToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -206,7 +252,7 @@ const Students = () => {
                     <p className="text-xl font-semibold text-white">{student.name}</p>
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-purple-400" />
+                        <School className="w-4 h-4 text-purple-400" />
                         <span className="text-sm text-gray-300">
                           {student.school || "No school"}
                         </span>
@@ -217,11 +263,54 @@ const Students = () => {
                     </div>
                   </div>
                 </div>
+                <div className="flex justify-end mt-4 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="bg-transparent border-purple-500/30 hover:bg-purple-600/20"
+                  >
+                    <Edit className="w-4 h-4 text-purple-300" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => {
+                      setStudentToDelete(student.id);
+                      setIsDeleteDialogOpen(true);
+                    }}
+                    className="bg-transparent border-red-500/30 hover:bg-red-600/20"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-300" />
+                  </Button>
+                </div>
               </Card>
             </motion.div>
           ))
         )}
       </motion.div>
+      
+      {/* Confirmation Dialog for Delete */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-[#25293A] border border-purple-500/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Student</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this student? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-purple-500/30 hover:bg-purple-600/20 text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={deleteStudent}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       {/* Decorative elements */}
       <div className="hidden md:block">
