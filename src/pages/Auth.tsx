@@ -9,12 +9,13 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
 import { useAuth } from "@/hooks/use-auth";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 
 const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { loading, setLoading } = useAuth();
   const [role, setRole] = useState<'teacher' | 'student'>('teacher');
   const [email, setEmail] = useState("");
@@ -22,6 +23,28 @@ const Auth = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  
+  // Check for token errors in URL hash
+  useEffect(() => {
+    const hashParams = new URLSearchParams(location.hash.substring(1));
+    const error = hashParams.get('error');
+    const errorDescription = hashParams.get('error_description');
+    
+    if (error === 'access_denied' && errorDescription) {
+      setShowError(true);
+      setErrorMessage(errorDescription.replace(/\+/g, ' '));
+      
+      // Clear the hash from URL to prevent showing the error again on refresh
+      navigate(location.pathname, { replace: true });
+      
+      // Show a toast for better visibility
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorDescription.replace(/\+/g, ' '),
+      });
+    }
+  }, [location, navigate, toast]);
   
   // Check if coming from password reset link
   useEffect(() => {
