@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Mail, Copy, Link2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { AuthService } from "@/services/AuthService";
 
 interface InviteStudentsProps {
   classroomId: string;
@@ -76,14 +75,20 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
     setLoading(true);
     try {
       // Create invitation record
-      const { data, error: inviteError } = await AuthService.createClassInvitation(classroomId, email);
-
-      if (inviteError || !data) {
+      const { data: invitation, error: inviteError } = await supabase
+        .from('class_invitations')
+        .insert({
+          classroom_id: classroomId,
+          email: email.toLowerCase(),
+          status: 'pending'
+        })
+        .select()
+        .single();
+      
+      if (inviteError || !invitation) {
         throw new Error(inviteError?.message || 'Failed to create invitation');
       }
 
-      setInvitationCode(data.invitation_token);
-      
       // Send email using edge function
       const response = await fetch("https://vuwowvhoiyzmnjuoawqz.supabase.co/functions/v1/send-verification", {
         method: 'POST',
@@ -93,7 +98,7 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
         },
         body: JSON.stringify({
           email: email,
-          verificationToken: data.invitation_token,
+          verificationToken: invitation.invitation_token,
           teacherName: teacherName,
           className: classroomName
         })
@@ -123,13 +128,22 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      const { data, error } = await AuthService.createClassInvitation(classroomId);
+      // Create invitation record
+      const { data: invitation, error: inviteError } = await supabase
+        .from('class_invitations')
+        .insert({
+          classroom_id: classroomId,
+          email: 'general_invitation@blockward.app',
+          status: 'pending'
+        })
+        .select()
+        .single();
       
-      if (error || !data) {
-        throw new Error(error?.message || 'Failed to generate invitation code');
+      if (inviteError || !invitation) {
+        throw new Error(inviteError?.message || 'Failed to generate invitation code');
       }
       
-      setInvitationCode(data.invitation_token);
+      setInvitationCode(invitation.invitation_token);
       
       toast({
         title: "Invitation Code Generated",

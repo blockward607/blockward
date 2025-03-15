@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthService } from "@/services/AuthService";
 
 interface EmailInviteTabProps {
   onSuccess: () => void;
@@ -28,7 +27,7 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
 
     setLoading(true);
     try {
-      // Get first classroom of the teacher
+      // Get user session and teacher profile
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -54,6 +53,7 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
         return;
       }
 
+      // Get the first classroom of the teacher
       const { data: classrooms } = await supabase
         .from('classrooms')
         .select('id, name')
@@ -72,10 +72,18 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
       const classroom = classrooms[0];
       const teacherName = teacherProfile.full_name || session.user.user_metadata?.name || 'Your Teacher';
 
-      // Create invitation
-      const { data, error: inviteError } = await AuthService.createClassInvitation(classroom.id, studentEmail);
+      // Create invitation in database
+      const { data: invitation, error: inviteError } = await supabase
+        .from('class_invitations')
+        .insert({
+          classroom_id: classroom.id,
+          email: studentEmail.toLowerCase(),
+          status: 'pending'
+        })
+        .select()
+        .single();
       
-      if (inviteError || !data) {
+      if (inviteError || !invitation) {
         throw new Error(inviteError?.message || 'Failed to create invitation');
       }
       
@@ -88,7 +96,7 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
         },
         body: JSON.stringify({
           email: studentEmail,
-          verificationToken: data.invitation_token,
+          verificationToken: invitation.invitation_token,
           teacherName: teacherName,
           className: classroom.name
         })

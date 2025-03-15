@@ -53,10 +53,15 @@ export const JoinClassSection = () => {
         return;
       }
 
-      // Directly validate with AuthService
-      const { data: invitationData } = await AuthService.validateInvitationCode(invitationCode);
+      // Validate invitation code
+      const { data: invitationData, error: validationError } = await supabase
+        .from('class_invitations')
+        .select('classroom_id, classroom:classrooms(name)')
+        .eq('invitation_token', invitationCode)
+        .eq('status', 'pending')
+        .maybeSingle();
       
-      if (!invitationData) {
+      if (validationError || !invitationData) {
         toast({
           variant: "destructive",
           title: "Invalid Invitation",
@@ -67,14 +72,14 @@ export const JoinClassSection = () => {
       }
 
       // Check if student is already enrolled
-      const { data: existingEnrollment } = await supabase
+      const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
         .from('classroom_students')
         .select('id')
         .match({
           classroom_id: invitationData.classroom_id,
           student_id: studentData.id
         })
-        .single();
+        .maybeSingle();
 
       if (existingEnrollment) {
         toast({
@@ -86,23 +91,17 @@ export const JoinClassSection = () => {
         return;
       }
 
-      // Enroll student using the AuthService
-      // The error here was trying to destructure an 'error' property that doesn't exist in the return type
-      const enrollmentResult = await AuthService.enrollStudentInClassroom(
-        studentData.id, 
-        invitationData.classroom_id
-      );
+      // Enroll student
+      const { error: enrollError } = await supabase
+        .from('classroom_students')
+        .insert({
+          classroom_id: invitationData.classroom_id,
+          student_id: studentData.id
+        });
 
-      if (!enrollmentResult.data) {
+      if (enrollError) {
         throw new Error("Failed to enroll in the classroom");
       }
-
-      // Get class details to show in success message
-      const { data: classroom } = await supabase
-        .from('classrooms')
-        .select('name')
-        .eq('id', invitationData.classroom_id)
-        .single();
 
       // Update invitation status
       await supabase
@@ -112,7 +111,7 @@ export const JoinClassSection = () => {
 
       toast({
         title: "Success",
-        description: `You have successfully joined ${classroom?.name || 'the class'}`
+        description: `You have successfully joined ${invitationData.classroom?.name || 'the class'}`
       });
 
       setInvitationCode("");

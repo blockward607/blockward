@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthService } from "@/services/AuthService";
 
 export const InviteCodeTab = () => {
   const [invitationCode, setInvitationCode] = useState("");
@@ -15,7 +14,7 @@ export const InviteCodeTab = () => {
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      // Get first classroom of the teacher
+      // Get user session and teacher profile
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -41,6 +40,7 @@ export const InviteCodeTab = () => {
         return;
       }
 
+      // Get the first classroom of the teacher
       const { data: classrooms } = await supabase
         .from('classrooms')
         .select('id')
@@ -56,21 +56,32 @@ export const InviteCodeTab = () => {
         return;
       }
 
-      const { data } = await AuthService.createClassInvitation(classrooms[0].id);
+      // Create invitation in database
+      const { data: invitation, error: inviteError } = await supabase
+        .from('class_invitations')
+        .insert({
+          classroom_id: classrooms[0].id,
+          email: 'general_invitation@blockward.app',
+          status: 'pending'
+        })
+        .select()
+        .single();
       
-      if (data) {
-        setInvitationCode(data.invitation_token);
-        toast({
-          title: "Code Generated",
-          description: "Invitation code generated successfully"
-        });
+      if (inviteError || !invitation) {
+        throw new Error(inviteError?.message || 'Failed to generate invitation');
       }
-    } catch (error) {
+      
+      setInvitationCode(invitation.invitation_token);
+      toast({
+        title: "Code Generated",
+        description: "Invitation code generated successfully"
+      });
+    } catch (error: any) {
       console.error('Error generating code:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to generate invitation code"
+        description: error.message || "Failed to generate invitation code"
       });
     } finally {
       setLoading(false);
