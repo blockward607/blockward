@@ -38,7 +38,12 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
           </div>
           <Button 
             variant="outline" 
-            onClick={() => document.querySelector('button[value="draggable"]')?.click()}
+            onClick={() => {
+              const draggableTab = document.querySelector('button[value="draggable"]');
+              if (draggableTab instanceof HTMLElement) {
+                draggableTab.click();
+              }
+            }}
           >
             Switch to Draggable Layout
           </Button>

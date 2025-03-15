@@ -69,8 +69,8 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
         const studentIds = classroomStudents.map(cs => cs.student_id);
         
         const { data: studentProfiles, error: profilesError } = await supabase
-          .from('student_profiles')
-          .select('id, full_name')
+          .from('students')
+          .select('id, name')
           .in('id', studentIds);
 
         if (profilesError) throw profilesError;
@@ -78,7 +78,7 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
         if (studentProfiles) {
           setStudents(studentProfiles.map(profile => ({
             id: profile.id,
-            name: profile.full_name || 'Unnamed Student'
+            name: profile.name || 'Unnamed Student'
           })));
         }
       }
