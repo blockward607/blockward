@@ -71,8 +71,8 @@ export const SendPointsDialog = () => {
           <div className="space-y-2">
             <Label htmlFor="student">Select Student</Label>
             <StudentSelect
-              value={selectedStudent}
-              onChange={setSelectedStudent}
+              selectedStudentId={selectedStudent}
+              onStudentSelect={setSelectedStudent}
             />
           </div>
           <div className="space-y-2">

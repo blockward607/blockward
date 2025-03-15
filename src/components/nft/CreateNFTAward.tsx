@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -336,8 +337,8 @@ export const CreateNFTAward = () => {
 
         <div>
           <StudentSelect
-            value={selectedStudent}
-            onChange={setSelectedStudent}
+            selectedStudentId={selectedStudent}
+            onStudentSelect={setSelectedStudent}
           />
         </div>
 

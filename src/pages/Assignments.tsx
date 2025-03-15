@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -27,7 +26,6 @@ import { StudentSelect } from "@/components/nft/StudentSelect";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define the Assignment type
 interface Assignment {
   id: string;
   title: string;
@@ -51,7 +49,6 @@ const Assignments = () => {
     points: 100
   });
 
-  // Demo assignments
   const [assignments, setAssignments] = useState<Assignment[]>([
     {
       id: "1",
@@ -107,8 +104,6 @@ const Assignments = () => {
         points: formData.points
       };
 
-      // In a real app, we would save to Supabase here
-      // For demo purposes, we'll just update the local state
       setAssignments([...assignments, newAssignment]);
       
       toast({
@@ -116,7 +111,6 @@ const Assignments = () => {
         description: "Assignment created successfully",
       });
 
-      // Reset form
       setFormData({
         title: "",
         description: "",
@@ -272,8 +266,8 @@ const Assignments = () => {
                     <Users className="w-4 h-4 text-purple-400" /> Assign To
                   </Label>
                   <StudentSelect
-                    value={selectedStudent}
-                    onChange={setSelectedStudent}
+                    selectedStudentId={selectedStudent}
+                    onStudentSelect={setSelectedStudent}
                   />
                 </div>
                 
