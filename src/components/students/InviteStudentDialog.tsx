@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -192,21 +193,21 @@ export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2 text-lg py-6 px-4">
+        <Button className="bg-purple-700 hover:bg-purple-800 flex items-center gap-2 text-lg py-6 px-4">
           <PlusCircle className="w-5 h-5" />
           Add Student
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
+      <DialogContent className="sm:max-w-[500px] bg-[#1a1d2a] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
         <DialogHeader>
           <DialogTitle className="text-xl text-center text-white">Add Student</DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="email" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-black/20">
-            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-            <TabsTrigger value="email">Email Invite</TabsTrigger>
-            <TabsTrigger value="code">Invite Code</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-black/40">
+            <TabsTrigger value="manual" className="data-[state=active]:bg-purple-700">Manual Entry</TabsTrigger>
+            <TabsTrigger value="email" className="data-[state=active]:bg-purple-700">Email Invite</TabsTrigger>
+            <TabsTrigger value="code" className="data-[state=active]:bg-purple-700">Invite Code</TabsTrigger>
           </TabsList>
           
           <TabsContent value="manual" className="space-y-4 mt-4">
@@ -214,17 +215,17 @@ export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) 
               placeholder="Student name"
               value={newStudentName}
               onChange={(e) => setNewStudentName(e.target.value)}
-              className="bg-black/50 border-purple-500/30 text-white"
+              className="bg-black/60 border-purple-500/30 text-white"
             />
             <Input
               placeholder="School (optional)"
               value={newStudentSchool}
               onChange={(e) => setNewStudentSchool(e.target.value)}
-              className="bg-black/50 border-purple-500/30 text-white"
+              className="bg-black/60 border-purple-500/30 text-white"
             />
             <Button 
               onClick={handleAddStudent} 
-              className="w-full bg-purple-600 hover:bg-purple-700 py-6 text-lg"
+              className="w-full bg-purple-700 hover:bg-purple-800 py-6 text-lg"
             >
               Add Student
             </Button>
@@ -239,12 +240,12 @@ export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) 
               placeholder="student@gmail.com"
               value={studentEmail}
               onChange={(e) => setStudentEmail(e.target.value)}
-              className="bg-black/50 border-purple-500/30 text-white"
+              className="bg-black/60 border-purple-500/30 text-white"
             />
             <Button 
               onClick={handleSendEmailInvitation} 
               disabled={loading}
-              className="w-full bg-purple-600 hover:bg-purple-700 py-6 text-lg flex items-center justify-center gap-2"
+              className="w-full bg-purple-700 hover:bg-purple-800 py-6 text-lg flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -271,13 +272,13 @@ export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) 
                   <Input 
                     value={invitationCode} 
                     readOnly 
-                    className="font-mono bg-black/50 border-purple-500/30 text-white"
+                    className="font-mono bg-black/60 border-purple-500/30 text-white"
                   />
                   <Button 
                     variant="outline" 
                     size="icon" 
                     onClick={copyToClipboard}
-                    className="bg-purple-600/20 border-purple-500/30"
+                    className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/40"
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
@@ -290,7 +291,7 @@ export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) 
               <Button 
                 onClick={generateInviteCode} 
                 disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-700 py-6 text-lg flex items-center justify-center gap-2"
+                className="w-full bg-purple-700 hover:bg-purple-800 py-6 text-lg flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
