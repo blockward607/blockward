@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,27 +19,22 @@ const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // User profile state
   const [fullName, setFullName] = useState("");
   const [school, setSchool] = useState("");
   const [subject, setSubject] = useState("");
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   
-  // Password state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  // Theme state
   const [darkMode, setDarkMode] = useState(true);
   const [compactView, setCompactView] = useState(false);
   
-  // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [achievementAlerts, setAchievementAlerts] = useState(true);
 
-  // Fetch user profile on mount
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -70,7 +64,6 @@ const Settings = () => {
             setSubject(profile.subject || '');
           }
         } else {
-          // For students
           const { data: profile, error } = await supabase
             .from('students')
             .select('*')
@@ -94,7 +87,6 @@ const Settings = () => {
       }
     };
     
-    // Load theme preferences from localStorage
     const savedDarkMode = localStorage.getItem('darkMode');
     if (savedDarkMode !== null) {
       setDarkMode(savedDarkMode === 'true');
@@ -109,7 +101,6 @@ const Settings = () => {
     fetchUserProfile();
   }, [navigate, toast]);
 
-  // Save profile changes
   const handleSaveProfile = async () => {
     setLoading(true);
     try {
@@ -133,13 +124,12 @@ const Settings = () => {
             full_name: fullName,
             school: school,
             subject: subject,
-            updated_at: new Date()
+            updated_at: new Date().toISOString()
           })
           .eq('user_id', session.user.id);
           
         if (error) throw error;
       } else {
-        // For students
         const { error } = await supabase
           .from('students')
           .update({
@@ -167,7 +157,6 @@ const Settings = () => {
     }
   };
 
-  // Update password
   const handleUpdatePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast({
@@ -200,7 +189,6 @@ const Settings = () => {
         description: "Password updated successfully"
       });
       
-      // Clear password fields
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -216,13 +204,11 @@ const Settings = () => {
     }
   };
 
-  // Toggle dark mode
   const handleToggleDarkMode = (enabled: boolean) => {
     setDarkMode(enabled);
     localStorage.setItem('darkMode', String(enabled));
     document.documentElement.classList.toggle('dark', enabled);
     
-    // Update app theme
     if (enabled) {
       document.documentElement.classList.add('dark');
     } else {
@@ -230,16 +216,13 @@ const Settings = () => {
     }
   };
 
-  // Toggle compact view
   const handleToggleCompactView = (enabled: boolean) => {
     setCompactView(enabled);
     localStorage.setItem('compactView', String(enabled));
     
-    // Apply compact view class to body or a container element
     document.body.classList.toggle('compact-view', enabled);
   };
 
-  // Save notification settings
   const handleSaveNotificationSettings = () => {
     localStorage.setItem('emailNotifications', String(emailNotifications));
     localStorage.setItem('achievementAlerts', String(achievementAlerts));
@@ -276,7 +259,6 @@ const Settings = () => {
         <h1 className="text-3xl font-bold gradient-text">Settings</h1>
       </div>
 
-      {/* Quick Access Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Card 
           className="p-6 hover:bg-purple-900/10 transition-all cursor-pointer"
