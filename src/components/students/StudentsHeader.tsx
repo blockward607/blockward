@@ -1,7 +1,7 @@
 
 import { motion } from "framer-motion";
 import { Users } from "lucide-react";
-import { InviteStudentDialog } from "./InviteStudentDialog";
+import { InviteStudentDialog } from "@/components/students/invite";
 
 interface StudentsHeaderProps {
   onAddStudent: (name: string, school: string) => Promise<void>;

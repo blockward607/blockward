@@ -30,7 +30,7 @@ export const InviteCodeTab = () => {
         .from('teacher_profiles')
         .select('id')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (!teacherProfile) {
         toast({
@@ -51,7 +51,7 @@ export const InviteCodeTab = () => {
         toast({
           variant: "destructive",
           title: "No Classroom",
-          description: "Please create a classroom first"
+          description: "Please create a classroom first before generating an invite code"
         });
         return;
       }

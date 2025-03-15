@@ -41,7 +41,7 @@ export const JoinClassSection = () => {
         .from('students')
         .select('id')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (studentError || !studentData) {
         toast({
@@ -67,7 +67,7 @@ export const JoinClassSection = () => {
       }
 
       // Enroll student in the class
-      const { alreadyEnrolled } = await AuthService.enrollStudentInClassroom(
+      const { data: enrollmentData, alreadyEnrolled } = await AuthService.enrollStudentInClassroom(
         studentData.id, 
         invitationData.classroom_id
       );

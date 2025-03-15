@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManualEntryTab } from "./ManualEntryTab";
 import { EmailInviteTab } from "./EmailInviteTab";
 import { InviteCodeTab } from "./InviteCodeTab";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface InviteStudentDialogProps {
@@ -26,6 +25,7 @@ export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) 
   const handleAddStudent = async (name: string, school: string) => {
     try {
       await onAddStudent(name, school);
+      handleCloseDialog();
     } catch (error) {
       console.error("Error in InviteStudentDialog:", error);
       toast({

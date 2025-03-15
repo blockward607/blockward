@@ -43,7 +43,7 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
         .from('teacher_profiles')
         .select('id')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (!teacherProfile) {
         toast({
