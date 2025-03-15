@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import {
   MoveHorizontal,
   ArrowUp,
   Users,
-  ArrowsOutLineVertical
+  ArrowsUpDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,7 +49,7 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
   const [isEditing, setIsEditing] = useState(false);
   const [draggedSeatId, setDraggedSeatId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
   const [draggedStudent, setDraggedStudent] = useState<string | null>(null);
   const [isDraggingNewSeat, setIsDraggingNewSeat] = useState(false);
   const [newSeatPosition, setNewSeatPosition] = useState({ x: 0, y: 0 });
@@ -228,9 +227,9 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!containerRef.current) return;
+    if (!containerRef) return;
     
-    const containerRect = containerRef.current.getBoundingClientRect();
+    const containerRect = containerRef.getBoundingClientRect();
     
     // Handle moving existing seats
     if (isEditing && draggedSeatId) {
@@ -302,9 +301,9 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
   };
 
   const handleAddSeat = () => {
-    if (!containerRef.current) return;
+    if (!containerRef) return;
     
-    const containerRect = containerRef.current.getBoundingClientRect();
+    const containerRect = containerRef.getBoundingClientRect();
     setIsDraggingNewSeat(true);
     setNewSeatPosition({
       x: containerRect.width / 2,
@@ -444,7 +443,7 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
             <div className="w-1/3">
               <label className="text-sm font-medium mb-2 block">Default Seat Size</label>
               <div className="flex items-center gap-2">
-                <ArrowsOutLineVertical className="w-4 h-4" />
+                <ArrowsUpDown className="w-4 h-4" />
                 <Slider 
                   className="w-full" 
                   defaultValue={[defaultSeatSize.width]}
@@ -492,7 +491,7 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
         {/* Classroom layout (right panel) */}
         <div 
           className="col-span-3 relative" 
-          ref={containerRef}
+          ref={setContainerRef}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
