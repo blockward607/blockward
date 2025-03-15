@@ -20,7 +20,7 @@ export const Hero = () => {
   };
   
   return (
-    <div className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden py-24">
+    <div className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden py-24 bg-black">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(155,135,245,0.1),rgba(30,27,38,0.3))] animate-pulse" />
       

@@ -2,17 +2,19 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorialModal } from "@/components/tutorial/TutorialModal";
+import { TutorialStartDialog } from "@/components/tutorial/TutorialStartDialog";
 
 export const useTutorial = () => {
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
   const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
 
   useEffect(() => {
-    const determineUserRole = async () => {
+    const checkTutorialStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Check if user is a teacher
+      // Determine user role
       const { data: teacherData } = await supabase
         .from('teacher_profiles')
         .select('id')
@@ -21,28 +23,37 @@ export const useTutorial = () => {
         
       if (teacherData) {
         setUserRole('teacher');
-        return;
+      } else {
+        const { data: studentData } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+          
+        if (studentData) {
+          setUserRole('student');
+        }
       }
-      
-      // Check if user is a student
-      const { data: studentData } = await supabase
-        .from('students')
-        .select('id')
+
+      // Check if user has completed tutorial
+      const { data: preferences } = await supabase
+        .from('user_preferences')
+        .select('tutorial_completed')
         .eq('user_id', session.user.id)
         .single();
-        
-      if (studentData) {
-        setUserRole('student');
+
+      // If no preferences record or tutorial not completed, show tutorial prompt
+      if (!preferences) {
+        setShowTutorialPrompt(true);
       }
     };
 
-    if (showTutorial) {
-      determineUserRole();
-    }
-  }, [showTutorial]);
+    checkTutorialStatus();
+  }, []);
 
   const startTutorial = () => {
     setShowTutorial(true);
+    setShowTutorialPrompt(false);
   };
 
   const resetTutorialStatus = async () => {
@@ -60,12 +71,23 @@ export const useTutorial = () => {
 
   return {
     showTutorial,
+    showTutorialPrompt,
+    userRole,
     startTutorial,
     resetTutorialStatus,
+    setShowTutorialPrompt,
     TutorialComponent: showTutorial ? (
       <TutorialModal 
         userRole={userRole}
         onClose={() => setShowTutorial(false)} 
+      />
+    ) : null,
+    TutorialPrompt: showTutorialPrompt ? (
+      <TutorialStartDialog
+        userRole={userRole}
+        isOpen={showTutorialPrompt}
+        onOpenChange={setShowTutorialPrompt}
+        onStartTutorial={startTutorial}
       />
     ) : null
   };

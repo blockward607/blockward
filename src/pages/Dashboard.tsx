@@ -1,21 +1,21 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
 import StudentDashboard from "@/pages/StudentDashboard";
+import { useTutorial } from "@/hooks/useTutorial";
 import type { Classroom } from "@/types/classroom";
-import type { Notification } from "@/types/notification";
 
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { TutorialComponent, TutorialPrompt } = useTutorial();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [classrooms, setClassrooms] = useState<Partial<Classroom>[]>([]);
-  const [notifications, setNotifications] = useState<Partial<Notification>[]>([]);
   const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +26,6 @@ const Dashboard = () => {
   useEffect(() => {
     if (userRole) {
       fetchClassrooms();
-      fetchNotifications();
     }
   }, [userRole]);
 
@@ -67,26 +66,6 @@ const Dashboard = () => {
         setUserRole('student');
         setUserName(session.user.email);
       }
-    }
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load notifications"
-      });
     }
   };
 
@@ -135,8 +114,9 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      {TutorialComponent}
+      {TutorialPrompt}
       <DashboardHeader userName={userName} />
-      <NotificationsPanel notifications={notifications} />
       
       {userRole === 'student' ? (
         <StudentDashboard />

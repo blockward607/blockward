@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 
 export const EasyToUse = () => {
   return (
-    <section id="easy-to-use" className="py-16 px-4">
+    <section id="easy-to-use" className="py-16 px-4 bg-black">
       <div className="container mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -68,7 +68,7 @@ export const EasyToUse = () => {
                   <Check className="w-4 h-4 text-green-400" />
                 </div>
                 <p className="text-gray-300">
-                  <span className="font-bold text-white">Guided onboarding</span>: Tutorial walks you through all features
+                  <span className="font-bold text-white">Guided onboarding</span>: Optional tutorial walks you through all features
                 </p>
               </div>
             </div>
