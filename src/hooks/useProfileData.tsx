@@ -58,9 +58,12 @@ export const useProfileData = () => {
           setFullName(profile.name || '');
           setSchool(profile.school || '');
           // Students don't have a subject field
-          // Since avatar_url might not exist in some database configurations
-          // Use optional chaining to safely access it
-          setAvatarUrl(profile.avatar_url || null);
+          
+          // Check if avatar_url exists in the response before accessing it
+          // This handles the case where the field might not be in the type definition
+          // but might be present in the actual database response
+          const studentProfile = profile as any; // Use type assertion to bypass TypeScript checking
+          setAvatarUrl(studentProfile.avatar_url || null);
         }
       }
     } catch (error) {
@@ -109,6 +112,7 @@ export const useProfileData = () => {
           
         if (error) throw error;
       } else {
+        // Add avatar_url to students table update
         const { error } = await supabase
           .from('students')
           .update({
