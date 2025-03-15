@@ -146,7 +146,17 @@ export const MainLayout = () => {
   const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-navy-800 to-navy-900">
+    <div className="min-h-screen bg-black">
+      {/* Background elements */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(147,51,234,0.2),transparent_60%)]"></div>
+        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,rgba(147,51,234,0.15),transparent_70%)]"></div>
+        <div className="absolute -z-10 opacity-20">
+          <div className="hexagon top-40 left-[20%] w-72 h-72 bg-purple-700/30"></div>
+          <div className="hexagon bottom-60 right-[15%] w-96 h-96 bg-purple-600/20"></div>
+        </div>
+      </div>
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -157,14 +167,14 @@ export const MainLayout = () => {
         transition={{ duration: 0.2 }}
         className={cn(
           "fixed top-0 left-0 z-40 h-screen",
-          "bg-navy-900/90 backdrop-blur-xl border-r border-purple-500/10",
+          "bg-black/90 backdrop-blur-xl border-r border-purple-500/20",
           "overflow-hidden"
         )}
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex items-center justify-between px-6 py-5">
-            <Link to="/" className="text-2xl font-bold gradient-text">
+            <Link to="/" className="text-2xl font-bold blockward-logo">
               Blockward
             </Link>
           </div>
@@ -187,13 +197,13 @@ export const MainLayout = () => {
                         to={item.href}
                         className={cn(
                           "flex items-center px-4 py-3 rounded-lg",
-                          "text-gray-300 hover:bg-purple-600/10",
+                          "text-gray-300 hover:bg-purple-900/30",
                           "transition-colors duration-200",
                           "group",
-                          isActive && "bg-purple-600/20 text-purple-400"
+                          isActive && "bg-purple-900/40 text-purple-300 glow-text"
                         )}
                       >
-                        <Icon className="mr-3 h-5 w-5" />
+                        <Icon className={cn("mr-3 h-5 w-5", isActive && "text-purple-400")} />
                         <span className="truncate">{item.name}</span>
                       </Link>
                     );
@@ -206,17 +216,17 @@ export const MainLayout = () => {
       </motion.aside>
 
       {/* Top Navigation Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-2 p-4 bg-navy-900/90 backdrop-blur-xl border-b border-purple-500/10">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-2 p-4 bg-black/90 backdrop-blur-xl border-b border-purple-500/20">
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="bg-navy-800/50 hover:bg-purple-600/20"
+          className="bg-purple-900/30 hover:bg-purple-800/40"
         >
           {isSidebarOpen ? (
-            <X className="h-6 w-6" />
+            <X className="h-6 w-6 text-purple-300" />
           ) : (
-            <Menu className="h-6 w-6" />
+            <Menu className="h-6 w-6 text-purple-300" />
           )}
         </Button>
         
@@ -224,9 +234,9 @@ export const MainLayout = () => {
           variant="ghost"
           size="icon"
           onClick={goToHome}
-          className="bg-navy-800/50 hover:bg-purple-600/20"
+          className="bg-purple-900/30 hover:bg-purple-800/40"
         >
-          <Home className="h-6 w-6" />
+          <Home className="h-6 w-6 text-purple-300" />
         </Button>
       </div>
 

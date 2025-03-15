@@ -6,65 +6,65 @@
  
 @layer base {
   :root {
-    --background: 222 42% 18%;
+    --background: 240 30% 3%;
     --foreground: 210 40% 98%;
 
-    --card: 225 45% 20%;
+    --card: 240 30% 5%;
     --card-foreground: 210 40% 98%;
  
-    --popover: 225 45% 15%;
+    --popover: 240 30% 4%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 263 70% 60%;
+    --primary: 265 70% 60%;
     --primary-foreground: 210 40% 98%;
  
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 240 30% 10%;
     --secondary-foreground: 210 40% 98%;
  
-    --muted: 220 40% 25%;
+    --muted: 240 30% 15%;
     --muted-foreground: 215 20.2% 65.1%;
  
-    --accent: 263 70% 50%;
+    --accent: 265 70% 50%;
     --accent-foreground: 210 40% 98%;
  
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 30% 30%;
-    --input: 220 30% 30%;
-    --ring: 263 70% 50%;
+    --border: 240 30% 20%;
+    --input: 240 30% 20%;
+    --ring: 265 70% 50%;
  
     --radius: 0.5rem;
   }
  
   .dark {
-    --background: 222 42% 18%;
+    --background: 240 30% 3%;
     --foreground: 210 40% 98%;
  
-    --card: 225 45% 20%;
+    --card: 240 30% 5%;
     --card-foreground: 210 40% 98%;
  
-    --popover: 225 45% 15%;
+    --popover: 240 30% 4%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 263 70% 60%;
+    --primary: 265 70% 60%;
     --primary-foreground: 222 47.4% 11.2%;
  
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 240 30% 10%;
     --secondary-foreground: 210 40% 98%;
  
-    --muted: 220 40% 25%;
+    --muted: 240 30% 15%;
     --muted-foreground: 215 20.2% 65.1%;
  
-    --accent: 263 70% 50%;
+    --accent: 265 70% 50%;
     --accent-foreground: 210 40% 98%;
  
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
  
-    --border: 220 30% 30%;
-    --input: 220 30% 30%;
-    --ring: 263 70% 50%;
+    --border: 240 30% 20%;
+    --input: 240 30% 20%;
+    --ring: 265 70% 50%;
   }
 }
  
@@ -73,16 +73,16 @@
     @apply border-border;
   }
   body {
-    @apply bg-navy-900 text-foreground;
+    @apply bg-black text-foreground;
   }
 }
 
 .glass-card {
-  @apply bg-navy-800/80 backdrop-blur-lg border border-purple-500/20 rounded-lg shadow-xl;
+  @apply bg-purple-900/30 backdrop-blur-lg border border-purple-500/30 rounded-lg shadow-xl;
 }
 
 .modern-shadow {
-  @apply shadow-[0_10px_30px_-15px_rgba(155,135,245,0.3)];
+  @apply shadow-[0_10px_30px_-15px_rgba(155,135,245,0.5)];
 }
 
 .blockward-logo {
@@ -110,11 +110,11 @@
 
 .nft-card {
   @apply relative overflow-hidden transition-all duration-300 hover:transform hover:scale-105;
-  box-shadow: 0 10px 30px -15px rgba(155, 135, 245, 0.3);
+  box-shadow: 0 10px 30px -15px rgba(155, 135, 245, 0.5);
 }
 
 .nft-card:hover {
-  box-shadow: 0 20px 40px -20px rgba(155, 135, 245, 0.5);
+  box-shadow: 0 20px 40px -20px rgba(155, 135, 245, 0.8);
 }
 
 /* Animation styles */
@@ -189,7 +189,7 @@
 
 /* Glowing effect */
 .glow {
-  box-shadow: 0 0 15px 2px rgba(147, 51, 234, 0.6);
+  box-shadow: 0 0 20px 5px rgba(147, 51, 234, 0.7);
 }
 
 .glow-text {
@@ -198,5 +198,18 @@
 
 /* Dark glass effect */
 .glass-input {
-  @apply bg-navy-800/80 backdrop-blur-md border border-purple-500/20;
+  @apply bg-purple-900/20 backdrop-blur-md border border-purple-500/30;
+}
+
+/* Enhanced visual elements */
+.purple-glow {
+  @apply animate-pulse-glow;
+}
+
+.purple-border {
+  @apply border border-purple-500/50;
+}
+
+.black-purple-gradient {
+  @apply bg-gradient-to-br from-black to-purple-900;
 }
