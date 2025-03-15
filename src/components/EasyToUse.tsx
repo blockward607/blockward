@@ -89,16 +89,19 @@ export const EasyToUse = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             viewport={{ once: true }}
-            className="glass-card p-4 rounded-lg overflow-hidden shadow-xl"
+            className="glass-card p-6 rounded-lg overflow-hidden shadow-xl flex flex-col items-center justify-center"
           >
-            <img 
-              src="/lovable-uploads/d4c06354-8d12-4434-b918-657c21b7f4c8.png" 
-              alt="Blockward interface" 
-              className="w-full rounded-lg shadow-lg border border-purple-500/30"
-            />
-            <div className="mt-4 text-center">
-              <h4 className="text-lg font-semibold text-purple-400">Clean, Intuitive Interface</h4>
-              <p className="text-sm text-gray-400">Focused on what matters - your students and their progress</p>
+            <h3 className="text-2xl font-bold text-purple-400 mb-4">Interactive Tutorials</h3>
+            <p className="text-gray-300 mb-4 text-center">Our guided tutorials help both teachers and students get started quickly</p>
+            <div className="grid grid-cols-2 gap-4 w-full">
+              <div className="p-4 rounded-lg bg-purple-900/30 border border-purple-500/30 text-center">
+                <h4 className="text-lg font-semibold text-purple-300 mb-2">Teacher Tutorial</h4>
+                <p className="text-sm text-gray-400">Learn how to manage classes, track attendance, and award achievements</p>
+              </div>
+              <div className="p-4 rounded-lg bg-indigo-900/30 border border-indigo-500/30 text-center">
+                <h4 className="text-lg font-semibold text-indigo-300 mb-2">Student Tutorial</h4>
+                <p className="text-sm text-gray-400">See how to join classes, track your progress, and collect rewards</p>
+              </div>
             </div>
           </motion.div>
         </div>
