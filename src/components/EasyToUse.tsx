@@ -92,7 +92,7 @@ export const EasyToUse = () => {
             className="glass-card p-4 rounded-lg overflow-hidden shadow-xl"
           >
             <img 
-              src="/lovable-uploads/7ec67536-e04a-4363-90ac-c6a0d76c4811.png" 
+              src="/lovable-uploads/d4c06354-8d12-4434-b918-657c21b7f4c8.png" 
               alt="Blockward interface" 
               className="w-full rounded-lg shadow-lg border border-purple-500/30"
             />
