@@ -1,7 +1,7 @@
 
 import { motion } from "framer-motion";
 import { Users } from "lucide-react";
-import { AddStudentDialog } from "./AddStudentDialog";
+import { InviteStudentDialog } from "./InviteStudentDialog";
 
 interface StudentsHeaderProps {
   onAddStudent: (name: string, school: string) => Promise<void>;
@@ -25,7 +25,7 @@ export const StudentsHeader = ({ onAddStudent }: StudentsHeaderProps) => {
         <h1 className="text-4xl font-bold shimmer-text">Students</h1>
       </div>
       
-      <AddStudentDialog onAddStudent={onAddStudent} />
+      <InviteStudentDialog onAddStudent={onAddStudent} />
     </motion.div>
   );
 };
