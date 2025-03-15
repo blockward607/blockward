@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -246,7 +247,7 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
     if (isEditing && isResizing && resizingSeatId && resizeDirection) {
       const deltaX = e.clientX - resizeStartPos.x;
       const deltaY = e.clientY - resizeStartPos.y;
-      const minSize = 80;
+      const minSize = 40; // Changed from 80 to 40 to allow smaller seats
       
       setSeats(prevSeats => 
         prevSeats.map(seat => {
@@ -438,7 +439,7 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
                   className="w-full" 
                   defaultValue={[defaultSeatSize.width]}
                   max={200} 
-                  min={80} 
+                  min={40} // Changed from 80 to 40 to allow smaller default seat sizes
                   step={10}
                   onValueChange={handleSeatSizeChange}
                 />
@@ -580,3 +581,4 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
     </Card>
   );
 };
+
