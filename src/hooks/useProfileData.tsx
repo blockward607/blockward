@@ -11,6 +11,7 @@ export const useProfileData = () => {
   const [fullName, setFullName] = useState("");
   const [school, setSchool] = useState("");
   const [subject, setSubject] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -44,6 +45,7 @@ export const useProfileData = () => {
           setFullName(profile.full_name || '');
           setSchool(profile.school || '');
           setSubject(profile.subject || '');
+          setAvatarUrl(profile.avatar_url || null);
         }
       } else {
         const { data: profile, error } = await supabase
@@ -55,6 +57,7 @@ export const useProfileData = () => {
         if (profile) {
           setFullName(profile.name || '');
           setSchool(profile.school || '');
+          setAvatarUrl(profile.avatar_url || null);
         }
       }
     } catch (error) {
@@ -67,6 +70,10 @@ export const useProfileData = () => {
     } finally {
       setProfileLoading(false);
     }
+  };
+
+  const handleAvatarChange = (url: string) => {
+    setAvatarUrl(url);
   };
 
   const handleSaveProfile = async () => {
@@ -92,6 +99,7 @@ export const useProfileData = () => {
             full_name: fullName,
             school: school,
             subject: subject,
+            avatar_url: avatarUrl,
             updated_at: new Date().toISOString() // Convert Date to ISO string format
           })
           .eq('user_id', session.user.id);
@@ -102,7 +110,8 @@ export const useProfileData = () => {
           .from('students')
           .update({
             name: fullName,
-            school: school
+            school: school,
+            avatar_url: avatarUrl
           })
           .eq('user_id', session.user.id);
           
@@ -132,6 +141,8 @@ export const useProfileData = () => {
     setSchool,
     subject, 
     setSubject,
+    avatarUrl,
+    handleAvatarChange,
     loading,
     profileLoading,
     handleSaveProfile

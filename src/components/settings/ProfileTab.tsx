@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useProfileData } from "@/hooks/useProfileData";
+import AvatarUpload from "@/components/settings/AvatarUpload";
 
 const ProfileTab = () => {
   const {
@@ -12,12 +13,20 @@ const ProfileTab = () => {
     setSchool,
     subject,
     setSubject,
+    avatarUrl,
+    handleAvatarChange,
     loading,
     handleSaveProfile
   } = useProfileData();
 
   return (
     <div className="space-y-6">
+      <AvatarUpload 
+        avatarUrl={avatarUrl} 
+        fullName={fullName}
+        onAvatarChange={handleAvatarChange} 
+      />
+      
       <div className="space-y-4">
         <div className="space-y-2">
           <Label>Full Name</Label>
