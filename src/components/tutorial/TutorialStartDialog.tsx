@@ -42,7 +42,12 @@ export const TutorialStartDialog = ({
   };
 
   const handleStartTutorial = () => {
-    onStartTutorial();
+    if (userRole) {
+      navigate(`/tutorial/${userRole}`);
+    } else {
+      // If role is not determined yet, use the popup tutorial
+      onStartTutorial();
+    }
     onOpenChange(false);
   };
 

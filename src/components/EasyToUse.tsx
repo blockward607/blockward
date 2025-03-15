@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -93,15 +93,25 @@ export const EasyToUse = () => {
           >
             <h3 className="text-2xl font-bold text-purple-400 mb-4">Interactive Tutorials</h3>
             <p className="text-gray-300 mb-4 text-center">Our guided tutorials help both teachers and students get started quickly</p>
-            <div className="grid grid-cols-2 gap-4 w-full">
-              <div className="p-4 rounded-lg bg-purple-900/30 border border-purple-500/30 text-center">
-                <h4 className="text-lg font-semibold text-purple-300 mb-2">Teacher Tutorial</h4>
-                <p className="text-sm text-gray-400">Learn how to manage classes, track attendance, and award achievements</p>
-              </div>
-              <div className="p-4 rounded-lg bg-indigo-900/30 border border-indigo-500/30 text-center">
-                <h4 className="text-lg font-semibold text-indigo-300 mb-2">Student Tutorial</h4>
-                <p className="text-sm text-gray-400">See how to join classes, track your progress, and collect rewards</p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+              <Link to="/tutorial/teacher" className="block">
+                <div className="p-4 rounded-lg bg-purple-900/30 border border-purple-500/30 text-center transition-all duration-300 hover:bg-purple-900/50 hover:scale-105">
+                  <div className="flex justify-center mb-2">
+                    <BookOpen className="w-8 h-8 text-purple-400" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-purple-300 mb-2">Teacher Tutorial</h4>
+                  <p className="text-sm text-gray-400">Learn how to manage classes, track attendance, and award achievements</p>
+                </div>
+              </Link>
+              <Link to="/tutorial/student" className="block">
+                <div className="p-4 rounded-lg bg-indigo-900/30 border border-indigo-500/30 text-center transition-all duration-300 hover:bg-indigo-900/50 hover:scale-105">
+                  <div className="flex justify-center mb-2">
+                    <BookOpen className="w-8 h-8 text-indigo-400" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-indigo-300 mb-2">Student Tutorial</h4>
+                  <p className="text-sm text-gray-400">See how to join classes, track your progress, and collect rewards</p>
+                </div>
+              </Link>
             </div>
           </motion.div>
         </div>

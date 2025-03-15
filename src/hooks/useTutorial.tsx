@@ -3,11 +3,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorialModal } from "@/components/tutorial/TutorialModal";
 import { TutorialStartDialog } from "@/components/tutorial/TutorialStartDialog";
+import { useNavigate } from "react-router-dom";
 
 export const useTutorial = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
   const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkTutorialStatus = async () => {
@@ -52,7 +54,11 @@ export const useTutorial = () => {
   }, []);
 
   const startTutorial = () => {
-    setShowTutorial(true);
+    if (userRole) {
+      navigate(`/tutorial/${userRole}`);
+    } else {
+      setShowTutorial(true);
+    }
     setShowTutorialPrompt(false);
   };
 

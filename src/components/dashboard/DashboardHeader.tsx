@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
 import { useTutorial } from "@/hooks/useTutorial";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardHeaderProps {
   userName: string | null;
@@ -12,6 +14,45 @@ interface DashboardHeaderProps {
 export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
   const navigate = useNavigate();
   const { startTutorial } = useTutorial();
+  const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
+
+  useEffect(() => {
+    const determineUserRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Determine user role
+      const { data: teacherData } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+        
+      if (teacherData) {
+        setUserRole('teacher');
+      } else {
+        const { data: studentData } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+          
+        if (studentData) {
+          setUserRole('student');
+        }
+      }
+    };
+
+    determineUserRole();
+  }, []);
+
+  const handleTutorialClick = () => {
+    if (userRole) {
+      navigate(`/tutorial/${userRole}`);
+    } else {
+      startTutorial();
+    }
+  };
 
   return (
     <div className="flex justify-between items-center mb-8">
@@ -33,7 +74,7 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
         <Button
           variant="outline"
           size="sm"
-          onClick={startTutorial}
+          onClick={handleTutorialClick}
           className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/30 mr-2"
         >
           <BookOpen className="w-4 h-4 mr-2" />
