@@ -1,13 +1,10 @@
 
 import React from 'react';
-import { BlockwardIntro } from '@/components/intro/BlockwardIntro';
+import { Navigate } from 'react-router-dom';
 
-interface IntroPageProps {
-  onEnter: () => void;
-}
-
-const IntroPage = ({ onEnter }: IntroPageProps) => {
-  return <BlockwardIntro onEnter={onEnter} />;
+// Intro page is removed, redirects to home
+const IntroPage = () => {
+  return <Navigate to="/" replace />;
 };
 
 export default IntroPage;

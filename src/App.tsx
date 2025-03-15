@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
@@ -24,30 +24,16 @@ import Settings from '@/pages/Settings';
 import StudentDashboard from '@/pages/StudentDashboard';
 import ViewTeacherDashboard from '@/pages/ViewTeacherDashboard';
 import TutorialPage from '@/pages/TutorialPage';
-import IntroPage from '@/pages/IntroPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import './App.css';
 
 function App() {
-  const [skipIntro, setSkipIntro] = useState(() => {
-    return localStorage.getItem('blockward-intro-skipped') === 'true';
-  });
-
-  const handleSkipIntro = () => {
-    localStorage.setItem('blockward-intro-skipped', 'true');
-    setSkipIntro(true);
-  };
-
   return (
     <Router>
       <div className="min-h-screen antialiased App">
         <Routes>
-          {/* Intro page route - shown only if intro hasn't been skipped */}
-          <Route 
-            path="/" 
-            element={skipIntro ? <Index /> : <IntroPage onEnter={handleSkipIntro} />} 
-          />
+          <Route path="/" element={<Index />} />
           <Route path="/home" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/reset-password-otp" element={<ResetPasswordOTP />} />
