@@ -8,18 +8,27 @@ import { WalletSection } from "@/components/student-dashboard/WalletSection";
 import { StudentNFTSection } from "@/components/student-dashboard/StudentNFTSection";
 import { JoinClassSection } from "@/components/classroom/JoinClassSection";
 import { useStudentData } from "@/components/student-dashboard/hooks/useStudentData";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const { 
-    studentEmail, 
-    studentPoints, 
-    studentName, 
-    nfts, 
-    loading, 
-    isAuthenticated, 
-    isDemo 
-  } = useStudentData();
+  const { loading, studentData, nfts, walletInfo } = useStudentData();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      // Demo mode is enabled if we're in the view route or no authenticated session
+      const isDemoMode = window.location.pathname.includes('view-student') || !session;
+      setIsDemo(isDemoMode);
+    };
+    
+    checkAuth();
+  }, []);
 
   const handleSignUp = () => {
     navigate('/auth');
@@ -37,9 +46,9 @@ const StudentDashboard = () => {
     <div className="space-y-6">
       {/* Student Info */}
       <StudentInfoCard 
-        studentName={studentName} 
-        studentEmail={studentEmail} 
-        studentPoints={studentPoints} 
+        studentName={studentData?.name || "Guest Student"} 
+        studentEmail={null} 
+        studentPoints={studentData?.points || 0} 
       />
 
       {/* Demo Banner (only shown in demo mode) */}
