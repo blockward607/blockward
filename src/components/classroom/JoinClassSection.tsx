@@ -53,14 +53,10 @@ export const JoinClassSection = () => {
         return;
       }
 
-      // Check if invitation exists and is valid
-      const { data: invitationData, error: inviteError } = await supabase
-        .from('class_invitations')
-        .select('id, classroom_id')
-        .eq('invitation_token', invitationCode)
-        .single();
-
-      if (inviteError || !invitationData) {
+      // Directly validate with AuthService
+      const { data: invitationData } = await AuthService.validateInvitationCode(invitationCode);
+      
+      if (!invitationData) {
         toast({
           variant: "destructive",
           title: "Invalid Invitation",
@@ -90,13 +86,11 @@ export const JoinClassSection = () => {
         return;
       }
 
-      // Enroll student in the class
-      const { error: enrollError } = await supabase
-        .from('classroom_students')
-        .insert({
-          classroom_id: invitationData.classroom_id,
-          student_id: studentData.id
-        });
+      // Enroll student using the AuthService
+      const { data: enrollmentData, error: enrollError } = await AuthService.enrollStudentInClassroom(
+        studentData.id, 
+        invitationData.classroom_id
+      );
 
       if (enrollError) {
         throw enrollError;
@@ -109,20 +103,16 @@ export const JoinClassSection = () => {
         .eq('id', invitationData.classroom_id)
         .single();
 
+      // Update invitation status
+      await supabase
+        .from('class_invitations')
+        .update({ status: 'accepted' })
+        .eq('invitation_token', invitationCode);
+
       toast({
         title: "Success",
         description: `You have successfully joined ${classroom?.name || 'the class'}`
       });
-
-      // Fix: Update invitation status instead of trying to set a non-existent 'used' field
-      const { error: updateError } = await supabase
-        .from('class_invitations')
-        .update({ status: 'accepted' })
-        .eq('id', invitationData.id);
-
-      if (updateError) {
-        console.error('Error marking invitation as used:', updateError);
-      }
 
       setInvitationCode("");
     } catch (error: any) {

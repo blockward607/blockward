@@ -76,36 +76,39 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
     setLoading(true);
     try {
       // Create invitation record
-      const { data } = await AuthService.createClassInvitation(classroomId, email);
+      const { data, error: inviteError } = await AuthService.createClassInvitation(classroomId, email);
 
-      if (data) {
-        setInvitationCode(data.invitation_token);
-        
-        // Fix: Use URLs from environment variables instead of accessing protected properties
-        const response = await fetch(`https://vuwowvhoiyzmnjuoawqz.supabase.co/functions/v1/send-verification`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1d293dmhvaXl6bW5qdW9hd3F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYyNjYxNTAsImV4cCI6MjA1MTg0MjE1MH0.CMCrS1XZiO91JapxorBTUBeD4AD_lSFfa1hIjM7CMeg`
-          },
-          body: JSON.stringify({
-            email: email,
-            verificationToken: data.invitation_token,
-            teacherName: teacherName,
-            className: classroomName
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to send email invitation');
-        }
-        
-        toast({
-          title: "Success",
-          description: "Invitation sent successfully",
-        });
-        setEmail("");
+      if (inviteError || !data) {
+        throw new Error(inviteError?.message || 'Failed to create invitation');
       }
+
+      setInvitationCode(data.invitation_token);
+      
+      // Send email using edge function
+      const response = await fetch("https://vuwowvhoiyzmnjuoawqz.supabase.co/functions/v1/send-verification", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1d293dmhvaXl6bW5qdW9hd3F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYyNjYxNTAsImV4cCI6MjA1MTg0MjE1MH0.CMCrS1XZiO91JapxorBTUBeD4AD_lSFfa1hIjM7CMeg`
+        },
+        body: JSON.stringify({
+          email: email,
+          verificationToken: data.invitation_token,
+          teacherName: teacherName,
+          className: classroomName
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send email invitation');
+      }
+      
+      toast({
+        title: "Success",
+        description: "Invitation sent successfully",
+      });
+      setEmail("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -120,16 +123,18 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      const { data } = await AuthService.createClassInvitation(classroomId);
+      const { data, error } = await AuthService.createClassInvitation(classroomId);
       
-      if (data) {
-        setInvitationCode(data.invitation_token);
-        
-        toast({
-          title: "Invitation Code Generated",
-          description: "Share this code with your students",
-        });
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to generate invitation code');
       }
+      
+      setInvitationCode(data.invitation_token);
+      
+      toast({
+        title: "Invitation Code Generated",
+        description: "Share this code with your students",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
