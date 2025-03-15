@@ -114,10 +114,10 @@ export const JoinClassSection = () => {
         description: `You have successfully joined ${classroom?.name || 'the class'}`
       });
 
-      // Mark invitation as used if email-specific
+      // Fix: Update invitation status instead of trying to set a non-existent 'used' field
       const { error: updateError } = await supabase
         .from('class_invitations')
-        .update({ used: true })
+        .update({ status: 'accepted' })
         .eq('id', invitationData.id);
 
       if (updateError) {

@@ -76,12 +76,12 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
       const { data } = await AuthService.createClassInvitation(classroom.id, studentEmail);
       
       if (data) {
-        // Send email invitation with more context
-        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/send-verification`, {
+        // Fix: Use hardcoded URLs instead of accessing protected properties
+        const response = await fetch(`https://vuwowvhoiyzmnjuoawqz.supabase.co/functions/v1/send-verification`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabase.supabaseKey}`
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1d293dmhvaXl6bW5qdW9hd3F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYyNjYxNTAsImV4cCI6MjA1MTg0MjE1MH0.CMCrS1XZiO91JapxorBTUBeD4AD_lSFfa1hIjM7CMeg`
           },
           body: JSON.stringify({
             email: studentEmail,

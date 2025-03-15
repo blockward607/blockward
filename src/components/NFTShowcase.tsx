@@ -364,12 +364,10 @@ export const BlockWardShowcase = () => {
         throw transactionError;
       }
 
-      const { error: updateError } = await supabase
-        .from('students')
-        .update({ 
-          points: supabase.rpc('increment', { row_id: studentId, value: blockWard.points })
-        })
-        .eq('id', studentId);
+      const { error: updateError } = await supabase.rpc('increment_student_points', {
+        student_id: studentId,
+        points_to_add: blockWard.points
+      });
 
       if (updateError) {
         console.error('Error updating student points:', updateError);
