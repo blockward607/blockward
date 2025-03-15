@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -25,10 +24,8 @@ import {
   ChartBar,
   Trophy,
   Wallet,
-  FileText,
   BarChart,
   MessageSquare,
-  Layers,
   LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -75,10 +72,8 @@ export function AppSidebar() {
     {
       name: "Teaching",
       items: [
-        { name: "Assignments", href: "/assignments", icon: FileText },
         { name: "Attendance", href: "/attendance", icon: Calendar },
         { name: "Behavior", href: "/behavior", icon: ChartBar },
-        { name: "Resources", href: "/resources", icon: Layers },
       ]
     },
     {
@@ -111,14 +106,12 @@ export function AppSidebar() {
       items: [
         { name: "Dashboard", href: "/dashboard", icon: Home },
         { name: "Classes", href: "/classes", icon: BookOpen },
-        { name: "Assignments", href: "/assignments", icon: FileText },
       ]
     },
     {
       name: "Learning",
       items: [
         { name: "Progress", href: "/progress", icon: ChartBar },
-        { name: "Resources", href: "/resources", icon: Layers },
       ]
     },
     {

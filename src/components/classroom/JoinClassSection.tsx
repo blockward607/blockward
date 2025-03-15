@@ -54,9 +54,13 @@ export const JoinClassSection = () => {
       }
 
       // Check if invitation exists and is valid
-      const { data: invitationData } = await AuthService.validateInvitationCode(invitationCode);
+      const { data: invitationData, error: inviteError } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id')
+        .eq('invitation_token', invitationCode)
+        .single();
 
-      if (!invitationData) {
+      if (inviteError || !invitationData) {
         toast({
           variant: "destructive",
           title: "Invalid Invitation",
@@ -66,39 +70,67 @@ export const JoinClassSection = () => {
         return;
       }
 
-      // Enroll student in the class
-      const { data: enrollmentData, alreadyEnrolled } = await AuthService.enrollStudentInClassroom(
-        studentData.id, 
-        invitationData.classroom_id
-      );
+      // Check if student is already enrolled
+      const { data: existingEnrollment } = await supabase
+        .from('classroom_students')
+        .select('id')
+        .match({
+          classroom_id: invitationData.classroom_id,
+          student_id: studentData.id
+        })
+        .single();
 
-      if (alreadyEnrolled) {
+      if (existingEnrollment) {
         toast({
           variant: "default",
           title: "Already Enrolled",
           description: "You are already enrolled in this class"
         });
-      } else {
-        toast({
-          title: "Success",
-          description: `You have successfully joined ${invitationData.classroom?.name || 'the class'}`
-        });
-        
-        // Update the invitation status
-        await supabase
-          .from('class_invitations')
-          .update({ status: 'accepted' })
-          .eq('invitation_token', invitationCode);
+        setLoading(false);
+        return;
       }
-      
-      // Reset form
+
+      // Enroll student in the class
+      const { error: enrollError } = await supabase
+        .from('classroom_students')
+        .insert({
+          classroom_id: invitationData.classroom_id,
+          student_id: studentData.id
+        });
+
+      if (enrollError) {
+        throw enrollError;
+      }
+
+      // Get class details to show in success message
+      const { data: classroom } = await supabase
+        .from('classrooms')
+        .select('name')
+        .eq('id', invitationData.classroom_id)
+        .single();
+
+      toast({
+        title: "Success",
+        description: `You have successfully joined ${classroom?.name || 'the class'}`
+      });
+
+      // Mark invitation as used if email-specific
+      const { error: updateError } = await supabase
+        .from('class_invitations')
+        .update({ used: true })
+        .eq('id', invitationData.id);
+
+      if (updateError) {
+        console.error('Error marking invitation as used:', updateError);
+      }
+
       setInvitationCode("");
     } catch (error: any) {
       console.error('Error joining class:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to join the class"
+        description: error.message || "Failed to join class"
       });
     } finally {
       setLoading(false);
@@ -106,47 +138,35 @@ export const JoinClassSection = () => {
   };
 
   return (
-    <Card className="p-6 bg-purple-900/30 backdrop-blur-md border border-purple-500/30 shadow-lg">
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-white">Join a Class</h2>
-        <p className="text-sm text-gray-300">
-          Enter the invitation code provided by your teacher to join their class.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Input
-            placeholder="Enter invitation code"
-            value={invitationCode}
-            onChange={(e) => setInvitationCode(e.target.value)}
-            className="flex-1 bg-black/50 border-purple-500/30 text-white"
-          />
-          <Button 
-            onClick={handleJoinClass}
-            disabled={loading || !invitationCode.trim()}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Joining...
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Join Class
-              </>
-            )}
-          </Button>
-        </div>
-
-        <div className="mt-4">
-          <h3 className="text-md font-medium mb-2 text-purple-300">How to Join a Class</h3>
-          <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300">
-            <li>Ask your teacher for the class invitation code</li>
-            <li>Enter the code in the field above</li>
-            <li>Click "Join Class" to access class resources and activities</li>
-          </ol>
-        </div>
+    <Card className="p-6 bg-purple-900/20 backdrop-blur-md border border-purple-500/30 mb-6">
+      <h3 className="text-lg font-semibold mb-3">Join a Class</h3>
+      <p className="text-sm text-gray-300 mb-4">
+        Enter the invitation code provided by your teacher to join their class.
+      </p>
+      <div className="flex gap-3">
+        <Input
+          value={invitationCode}
+          onChange={(e) => setInvitationCode(e.target.value)}
+          placeholder="Enter invitation code"
+          className="flex-1 bg-black/60 border-purple-500/30"
+        />
+        <Button
+          onClick={handleJoinClass}
+          disabled={loading}
+          className="bg-purple-700 hover:bg-purple-800"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Joining...
+            </>
+          ) : (
+            <>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Join Class
+            </>
+          )}
+        </Button>
       </div>
     </Card>
   );

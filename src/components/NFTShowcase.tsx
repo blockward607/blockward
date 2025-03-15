@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -122,10 +121,8 @@ export const BlockWardShowcase = () => {
 
       if (error) throw error;
       
-      // Create demo students if they don't exist
       const demoEmails = ["arya47332js@gmail.com", "youthinkofc@gmail.com"];
       
-      // Check if each demo student exists by name (email username)
       for (const email of demoEmails) {
         const username = email.split('@')[0];
         const { data: existingStudent } = await supabase
@@ -135,12 +132,10 @@ export const BlockWardShowcase = () => {
           .maybeSingle();
           
         if (!existingStudent) {
-          // Create user record for demo student if it doesn't exist
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             console.log(`Creating demo student: ${username}`);
             
-            // Create student record 
             const { data: newStudent, error: studentError } = await supabase
               .from('students')
               .insert({
@@ -159,7 +154,6 @@ export const BlockWardShowcase = () => {
         }
       }
       
-      // Fetch students again after potentially creating demo ones
       const { data: updatedData, error: refetchError } = await supabase
         .from('students')
         .select('*')
@@ -218,7 +212,6 @@ export const BlockWardShowcase = () => {
   }, []); 
   
   useEffect(() => {
-    // Combine default and custom BlockWards
     setBlockWards([...defaultBlockWards, ...dbBlockWards]);
   }, [dbBlockWards]);
 
@@ -264,16 +257,14 @@ export const BlockWardShowcase = () => {
 
       const userId = session.user.id;
 
-      // Get or create teacher's wallet
       let teacherWallet = await getOrCreateTeacherWallet(userId);
       if (!teacherWallet) {
         throw new Error('Failed to get or create teacher wallet');
       }
 
-      // Get student's wallet
       const { data: studentData } = await supabase
         .from('students')
-        .select('user_id')
+        .select('user_id, name')
         .eq('id', studentId)
         .single();
         
@@ -281,7 +272,6 @@ export const BlockWardShowcase = () => {
         throw new Error('Student not found');
       }
       
-      // If student has no user_id (demo student), create a wallet directly linked to student id
       const studentUserId = studentData.user_id || studentId;
       
       const { data: studentWallet, error: studentWalletError } = await supabase
@@ -290,12 +280,15 @@ export const BlockWardShowcase = () => {
         .eq('user_id', studentUserId)
         .maybeSingle();
 
-      if (studentWalletError) throw studentWalletError;
+      if (studentWalletError && !studentWalletError.message.includes('No rows found')) {
+        throw studentWalletError;
+      }
       
       let finalStudentWallet = studentWallet;
       
-      // Create wallet for student if not exists
       if (!studentWallet) {
+        console.log(`Creating wallet for student ${studentData.name} with user_id ${studentUserId}`);
+        
         const { data: newWallet, error: createError } = await supabase
           .from('wallets')
           .insert({
@@ -306,17 +299,25 @@ export const BlockWardShowcase = () => {
           .select()
           .single();
           
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating wallet:', createError);
+          throw createError;
+        }
+        
+        console.log('Created new wallet:', newWallet);
         finalStudentWallet = newWallet;
       }
 
-      // Create BlockWard
+      if (!finalStudentWallet) {
+        throw new Error('Failed to get or create student wallet');
+      }
+
       const { data: blockWardData, error: blockWardError } = await supabase
         .from('nfts')
         .insert({
           token_id: `award-${Date.now()}`,
           contract_address: "0x" + Math.random().toString(16).slice(2, 42),
-          metadata: {
+          metadata: JSON.stringify({
             name: blockWard.title,
             description: blockWard.description,
             points: blockWard.points,
@@ -332,7 +333,7 @@ export const BlockWardShowcase = () => {
                 value: blockWard.points.toString()
               }
             ]
-          },
+          }),
           image_url: blockWard.image,
           creator_wallet_id: teacherWallet.id,
           owner_wallet_id: finalStudentWallet.id,
@@ -341,9 +342,13 @@ export const BlockWardShowcase = () => {
         .select()
         .single();
 
-      if (blockWardError) throw blockWardError;
+      if (blockWardError) {
+        console.error('Error creating NFT:', blockWardError);
+        throw blockWardError;
+      }
 
-      // Create transaction record
+      console.log('Created NFT:', blockWardData);
+
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
@@ -354,20 +359,26 @@ export const BlockWardShowcase = () => {
           status: 'completed',
         });
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error('Error creating transaction:', transactionError);
+        throw transactionError;
+      }
 
-      // Call the increment_student_points function
-      const { error: incrementError } = await supabase
-        .rpc('increment_student_points', {
-          student_id: studentId,
-          points_to_add: blockWard.points
-        });
+      const { error: updateError } = await supabase
+        .from('students')
+        .update({ 
+          points: supabase.rpc('increment', { row_id: studentId, value: blockWard.points })
+        })
+        .eq('id', studentId);
 
-      if (incrementError) throw incrementError;
+      if (updateError) {
+        console.error('Error updating student points:', updateError);
+        throw updateError;
+      }
 
       toast({
         title: "Success",
-        description: `${blockWard.title} has been transferred successfully!`,
+        description: `${blockWard.title} has been transferred to ${studentData.name}!`,
       });
       
       await fetchStudents();
@@ -384,7 +395,6 @@ export const BlockWardShowcase = () => {
   };
 
   const getOrCreateTeacherWallet = async (userId: string) => {
-    // Try to get existing wallet
     const { data: existingWallet, error: getError } = await supabase
       .from('wallets')
       .select('*')
@@ -394,7 +404,6 @@ export const BlockWardShowcase = () => {
     if (getError) throw getError;
     if (existingWallet) return existingWallet;
 
-    // Create new wallet if none exists
     const { data: newWallet, error: createError } = await supabase
       .from('wallets')
       .insert({
@@ -411,7 +420,6 @@ export const BlockWardShowcase = () => {
 
   return (
     <section className="py-16 relative overflow-hidden">
-      {/* Enhanced background with animated gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(155,135,245,0.2),transparent_70%)]" />
       <motion.div 
         className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.1),transparent_50%)]"
@@ -465,7 +473,6 @@ export const BlockWardShowcase = () => {
                 backgroundImage: `radial-gradient(circle at bottom right, rgba(${index * 40}, ${100 + index * 20}, ${200 - index * 10}, 0.2), transparent)`,
               }}
             >
-              {/* Animated background glow */}
               <motion.div 
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 animate={{
@@ -542,5 +549,4 @@ export const BlockWardShowcase = () => {
   );
 };
 
-// Export with both names for backwards compatibility
 export const NFTShowcase = BlockWardShowcase;

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Copy, Users, Link2, Loader2 } from "lucide-react";
+import { Mail, Copy, Link2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { AuthService } from "@/services/AuthService";
@@ -81,13 +81,24 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
       if (data) {
         setInvitationCode(data.invitation_token);
         
-        // Send email invitation
-        await AuthService.sendEmailInvitation(
-          email, 
-          teacherName, 
-          classroomName, 
-          data.invitation_token
-        );
+        // Send email invitation with updated template
+        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/send-verification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabase.supabaseKey}`
+          },
+          body: JSON.stringify({
+            email: email,
+            verificationToken: data.invitation_token,
+            teacherName: teacherName,
+            className: classroomName
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to send email invitation');
+        }
         
         toast({
           title: "Success",

@@ -41,7 +41,7 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
 
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('id')
+        .select('id, full_name')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
@@ -70,19 +70,30 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
       }
 
       const classroom = classrooms[0];
-      const teacherName = session.user.user_metadata?.name || 'Your Teacher';
+      const teacherName = teacherProfile.full_name || session.user.user_metadata?.name || 'Your Teacher';
 
       // Create invitation
       const { data } = await AuthService.createClassInvitation(classroom.id, studentEmail);
       
       if (data) {
-        // Send email invitation
-        await AuthService.sendEmailInvitation(
-          studentEmail,
-          teacherName,
-          classroom.name,
-          data.invitation_token
-        );
+        // Send email invitation with more context
+        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/send-verification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabase.supabaseKey}`
+          },
+          body: JSON.stringify({
+            email: studentEmail,
+            verificationToken: data.invitation_token,
+            teacherName: teacherName,
+            className: classroom.name
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to send email invitation');
+        }
         
         toast({
           title: "Invitation Sent",
