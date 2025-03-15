@@ -1,16 +1,8 @@
-
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import { StudentCard } from "./StudentCard";
-
-export interface Student {
-  id: string;
-  name: string;
-  points: number;
-  created_at: string;
-  school?: string;
-}
+import { Student } from "@/hooks/use-student-management";
 
 interface StudentListProps {
   students: Student[];

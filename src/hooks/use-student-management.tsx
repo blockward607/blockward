@@ -10,6 +10,7 @@ export interface Student {
   points: number;
   created_at: string;
   school?: string;
+  user_id?: string;
 }
 
 export const useStudentManagement = () => {
@@ -18,7 +19,7 @@ export const useStudentManagement = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const addNewStudent = async (name: string, school: string) => {
+  const addNewStudent = async (name: string, school: string): Promise<void> => {
     if (!name.trim()) {
       toast({
         variant: "destructive",
@@ -46,8 +47,8 @@ export const useStudentManagement = () => {
         title: "Success",
         description: "Student added successfully"
       });
-
-      return data;
+      
+      // Return void instead of data
     } catch (error) {
       console.error('Error adding student:', error);
       toast({

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Student } from "@/components/nft/StudentSelectHelpers";
+import { Student } from "@/hooks/use-student-management";
 
 export const useStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
