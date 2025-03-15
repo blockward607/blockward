@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { 
   Save, 
   Shuffle, 
@@ -10,7 +11,8 @@ import {
   Trash, 
   MoveHorizontal,
   ArrowUp,
-  Users
+  Users,
+  ArrowsOutLineVertical
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +29,8 @@ interface Seat {
   id: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
   studentId?: string;
   studentName?: string;
 }
@@ -50,6 +54,12 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
   const [draggedStudent, setDraggedStudent] = useState<string | null>(null);
   const [isDraggingNewSeat, setIsDraggingNewSeat] = useState(false);
   const [newSeatPosition, setNewSeatPosition] = useState({ x: 0, y: 0 });
+  const [defaultSeatSize, setDefaultSeatSize] = useState({ width: 120, height: 120 });
+  const [resizingSeatId, setResizingSeatId] = useState<string | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeDirection, setResizeDirection] = useState<string | null>(null);
+  const [resizeStartPos, setResizeStartPos] = useState({ x: 0, y: 0 });
+  const [resizeStartSize, setResizeStartSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     fetchSeatingArrangement();
@@ -137,7 +147,13 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
 
       if (data) {
         const layout = data.layout as unknown as SeatingLayout;
-        setSeats(layout.seats || []);
+        // Add width and height to any seats that don't have them
+        const updatedSeats = (layout.seats || []).map(seat => ({
+          ...seat,
+          width: seat.width || defaultSeatSize.width,
+          height: seat.height || defaultSeatSize.height
+        }));
+        setSeats(updatedSeats);
       } else {
         await createDefaultSeatingArrangement();
       }
@@ -197,6 +213,20 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
     setDraggedSeatId(seatId);
   };
 
+  const handleResizeStart = (e: React.MouseEvent, seatId: string, direction: string) => {
+    e.stopPropagation();
+    if (!isEditing) return;
+    
+    const seat = seats.find(s => s.id === seatId);
+    if (!seat) return;
+    
+    setResizingSeatId(seatId);
+    setIsResizing(true);
+    setResizeDirection(direction);
+    setResizeStartPos({ x: e.clientX, y: e.clientY });
+    setResizeStartSize({ width: seat.width, height: seat.height });
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!containerRef.current) return;
     
@@ -216,6 +246,32 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
       );
     }
     
+    // Handle resizing seats
+    if (isEditing && isResizing && resizingSeatId && resizeDirection) {
+      const deltaX = e.clientX - resizeStartPos.x;
+      const deltaY = e.clientY - resizeStartPos.y;
+      const minSize = 80; // Minimum seat size
+
+      setSeats(prevSeats => 
+        prevSeats.map(seat => {
+          if (seat.id !== resizingSeatId) return seat;
+          
+          let newWidth = resizeStartSize.width;
+          let newHeight = resizeStartSize.height;
+          
+          if (resizeDirection === 'se' || resizeDirection === 'ne' || resizeDirection === 'e') {
+            newWidth = Math.max(minSize, resizeStartSize.width + deltaX);
+          }
+          
+          if (resizeDirection === 'se' || resizeDirection === 'sw' || resizeDirection === 's') {
+            newHeight = Math.max(minSize, resizeStartSize.height + deltaY);
+          }
+          
+          return { ...seat, width: newWidth, height: newHeight };
+        })
+      );
+    }
+    
     // Handle creating new seats
     if (isEditing && isDraggingNewSeat) {
       setNewSeatPosition({
@@ -227,13 +283,17 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
 
   const handleMouseUp = () => {
     setDraggedSeatId(null);
+    setIsResizing(false);
+    setResizingSeatId(null);
     
     if (isDraggingNewSeat) {
       // Add the new seat at the current position
       const newSeat: Seat = {
         id: `seat-${Date.now()}`,
         x: newSeatPosition.x,
-        y: newSeatPosition.y
+        y: newSeatPosition.y,
+        width: defaultSeatSize.width,
+        height: defaultSeatSize.height
       };
       
       setSeats(prevSeats => [...prevSeats, newSeat]);
@@ -327,6 +387,13 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
     });
   };
 
+  const handleSeatSizeChange = (value: number[]) => {
+    const newWidth = value[0];
+    const newHeight = value[0]; // keeping aspect ratio 1:1 for simplicity
+    
+    setDefaultSeatSize({ width: newWidth, height: newHeight });
+  };
+
   return (
     <Card className="p-6 glass-card">
       <div className="flex justify-between items-center mb-6">
@@ -370,6 +437,33 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
           </Button>
         </div>
       </div>
+
+      {isEditing && (
+        <div className="mb-6 bg-purple-900/10 p-4 rounded-lg">
+          <div className="flex items-center">
+            <div className="w-1/3">
+              <label className="text-sm font-medium mb-2 block">Default Seat Size</label>
+              <div className="flex items-center gap-2">
+                <ArrowsOutLineVertical className="w-4 h-4" />
+                <Slider 
+                  className="w-full" 
+                  defaultValue={[defaultSeatSize.width]}
+                  max={200} 
+                  min={80} 
+                  step={10}
+                  onValueChange={handleSeatSizeChange}
+                />
+                <span className="text-xs">{defaultSeatSize.width}px</span>
+              </div>
+            </div>
+            <div className="ml-8 text-sm text-gray-400">
+              <p>• Drag seats to position them</p>
+              <p>• Use corner handles to resize seats</p>
+              <p>• Drag students onto seats to assign them</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Student list (left panel) */}
@@ -417,7 +511,7 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
             {seats.map(seat => (
               <div
                 key={seat.id}
-                className={`absolute w-24 h-24 rounded-lg flex flex-col items-center justify-center 
+                className={`absolute rounded-lg flex flex-col items-center justify-center 
                   transition-colors
                   ${seat.studentId ? 'bg-purple-600' : 'bg-gray-700/50'}
                   ${isEditing ? 'cursor-move' : 'cursor-default'}
@@ -426,16 +520,18 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
                 style={{
                   left: `${seat.x}px`,
                   top: `${seat.y}px`,
+                  width: `${seat.width}px`,
+                  height: `${seat.height}px`,
                   transform: 'translate(-50%, -50%)'
                 }}
                 onMouseDown={(e) => handleMouseDown(e, seat.id)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDropOnSeat(e, seat.id)}
               >
-                <div className="text-center">
+                <div className="text-center overflow-hidden w-full px-2">
                   {seat.studentName ? (
                     <>
-                      <p className="font-medium text-sm">{seat.studentName}</p>
+                      <p className="font-medium text-sm truncate">{seat.studentName}</p>
                       {isEditing && (
                         <button 
                           onClick={() => handleRemoveStudentFromSeat(seat.id)}
@@ -450,12 +546,20 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
                   )}
                 </div>
                 {isEditing && (
-                  <button
-                    onClick={() => handleRemoveSeat(seat.id)}
-                    className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
-                  >
-                    <Trash className="w-3 h-3" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleRemoveSeat(seat.id)}
+                      className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
+                    >
+                      <Trash className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Resize handles */}
+                    <div 
+                      className="absolute bottom-0 right-0 w-4 h-4 bg-white/30 rounded-bl-md cursor-se-resize"
+                      onMouseDown={(e) => handleResizeStart(e, seat.id, 'se')}
+                    />
+                  </>
                 )}
               </div>
             ))}
@@ -463,10 +567,12 @@ export const DraggableSeatingChart = ({ classroomId }: DraggableSeatingChartProp
             {/* Visual indicator for new seat being created */}
             {isDraggingNewSeat && (
               <div
-                className="absolute w-24 h-24 rounded-lg bg-purple-500/50 border-2 border-dashed border-purple-300 flex items-center justify-center"
+                className="absolute rounded-lg bg-purple-500/50 border-2 border-dashed border-purple-300 flex items-center justify-center"
                 style={{
                   left: `${newSeatPosition.x}px`,
                   top: `${newSeatPosition.y}px`,
+                  width: `${defaultSeatSize.width}px`,
+                  height: `${defaultSeatSize.height}px`,
                   transform: 'translate(-50%, -50%)',
                   zIndex: 20
                 }}
