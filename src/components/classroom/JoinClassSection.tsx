@@ -87,13 +87,14 @@ export const JoinClassSection = () => {
       }
 
       // Enroll student using the AuthService
-      const { data: enrollmentData, error: enrollError } = await AuthService.enrollStudentInClassroom(
+      // The error here was trying to destructure an 'error' property that doesn't exist in the return type
+      const enrollmentResult = await AuthService.enrollStudentInClassroom(
         studentData.id, 
         invitationData.classroom_id
       );
 
-      if (enrollError) {
-        throw enrollError;
+      if (!enrollmentResult.data) {
+        throw new Error("Failed to enroll in the classroom");
       }
 
       // Get class details to show in success message
