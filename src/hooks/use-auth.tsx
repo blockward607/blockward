@@ -9,6 +9,8 @@ export function useAuth() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const setupUserAccount = useCallback(async (session) => {
     if (!session) return;
@@ -25,6 +27,7 @@ export function useAuth() {
       let userRole;
       let school = '';
       let subject = '';
+      let fullName = '';
       
       if (session.user.app_metadata?.provider === 'google' || 
           session.user.app_metadata?.provider === 'github' || 
@@ -38,6 +41,9 @@ export function useAuth() {
         // Try to get additional profile data
         school = session.user.user_metadata?.school || '';
         subject = session.user.user_metadata?.subject || '';
+        fullName = session.user.user_metadata?.full_name || 
+                  session.user.user_metadata?.name || 
+                  session.user.email.split('@')[0];
                   
         console.log('Determined role for social auth user:', userRole);
       } else {
@@ -45,9 +51,14 @@ export function useAuth() {
         userRole = session.user.user_metadata?.role || 'student';
         school = session.user.user_metadata?.school || '';
         subject = session.user.user_metadata?.subject || '';
+        fullName = session.user.user_metadata?.full_name || 
+                  session.user.user_metadata?.name || 
+                  session.user.email.split('@')[0];
         
         console.log('Determined role for email auth user:', userRole);
       }
+      
+      setUserRole(userRole);
       
       // Check if role exists
       const { data: existingRole, error: roleError } = await AuthService.checkUserRole(userId);
@@ -94,7 +105,7 @@ export function useAuth() {
         
         if (!existingProfile) {
           console.log('Creating teacher profile with school and subject');
-          await AuthService.createTeacherProfile(userId, school, subject);
+          await AuthService.createTeacherProfile(userId, school, subject, fullName);
           
           // Generate a unique class code
           const classCode = await AuthService.generateClassCode();
@@ -130,9 +141,7 @@ export function useAuth() {
         
         if (!existingStudent) {
           const email = session.user.email;
-          const name = session.user.user_metadata?.name || 
-                      session.user.user_metadata?.full_name || 
-                      email.split('@')[0];
+          const name = fullName || email.split('@')[0];
                       
           console.log('Creating student profile with name and school:', name, school);
           await AuthService.createStudentProfile(userId, email, name, school);
@@ -161,10 +170,26 @@ export function useAuth() {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
+        setUser(session.user);
+        
+        // Get the user role
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setUserRole(data.role);
+            }
+          });
+          
         console.log('Found existing session, navigating to dashboard');
         navigate('/dashboard');
       } else {
         console.log('No existing session found');
+        setUser(null);
+        setUserRole(null);
       }
     });
 
@@ -174,9 +199,14 @@ export function useAuth() {
       
       if (event === 'SIGNED_IN') {
         console.log('User signed in, setting up account');
+        setUser(session?.user || null);
         await setupUserAccount(session);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserRole(null);
       } else if (event === 'USER_UPDATED') {
         console.log('User updated');
+        setUser(session?.user || null);
       }
     });
 
@@ -185,5 +215,12 @@ export function useAuth() {
     };
   }, [navigate, setupUserAccount]);
 
-  return { loading, setLoading };
+  return { 
+    loading, 
+    setLoading, 
+    user, 
+    userRole, 
+    isTeacher: userRole === 'teacher',
+    isStudent: userRole === 'student'
+  };
 }

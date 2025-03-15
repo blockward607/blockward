@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthService } from "@/services/AuthService";
 
 export const JoinClassSection = () => {
   const [invitationCode, setInvitationCode] = useState("");
@@ -53,18 +54,7 @@ export const JoinClassSection = () => {
       }
 
       // Check if invitation exists and is valid
-      const { data: invitationData, error: invitationError } = await supabase
-        .from('class_invitations')
-        .select('*')
-        .eq('invitation_token', invitationCode)
-        .eq('status', 'pending')
-        .lt('expires_at', 'now()')
-        .maybeSingle();
-
-      if (invitationError) {
-        console.error('Error checking invitation:', invitationError);
-        throw new Error("Error verifying invitation code");
-      }
+      const { data: invitationData } = await AuthService.validateInvitationCode(invitationCode);
 
       if (!invitationData) {
         toast({
@@ -77,40 +67,32 @@ export const JoinClassSection = () => {
       }
 
       // Enroll student in the class
-      const { error: enrollError } = await supabase.rpc('enroll_student', {
-        invitation_token: invitationCode,
-        student_id: studentData.id
-      });
+      const { alreadyEnrolled } = await AuthService.enrollStudentInClassroom(
+        studentData.id, 
+        invitationData.classroom_id
+      );
 
-      if (enrollError) {
-        console.error('Error enrolling student:', enrollError);
-        
-        // Check if it's already enrolled
-        const { data: existingEnrollment } = await supabase
-          .from('classroom_students')
-          .select('*')
-          .eq('classroom_id', invitationData.classroom_id)
-          .eq('student_id', studentData.id)
-          .maybeSingle();
-
-        if (existingEnrollment) {
-          toast({
-            variant: "default",
-            title: "Already Enrolled",
-            description: "You are already enrolled in this class"
-          });
-        } else {
-          throw new Error("Failed to join the class");
-        }
+      if (alreadyEnrolled) {
+        toast({
+          variant: "default",
+          title: "Already Enrolled",
+          description: "You are already enrolled in this class"
+        });
       } else {
         toast({
           title: "Success",
-          description: "You have successfully joined the class"
+          description: `You have successfully joined ${invitationData.classroom?.name || 'the class'}`
         });
         
-        // Reset form
-        setInvitationCode("");
+        // Update the invitation status
+        await supabase
+          .from('class_invitations')
+          .update({ status: 'accepted' })
+          .eq('invitation_token', invitationCode);
       }
+      
+      // Reset form
+      setInvitationCode("");
     } catch (error: any) {
       console.error('Error joining class:', error);
       toast({

@@ -95,7 +95,7 @@ export const AuthService = {
   },
   
   // Create a teacher profile
-  createTeacherProfile: async (userId: string, school?: string, subject?: string) => {
+  createTeacherProfile: async (userId: string, school?: string, subject?: string, fullName?: string) => {
     console.log('Creating teacher profile for:', userId);
     const { data, error } = await supabase
       .from('teacher_profiles')
@@ -103,6 +103,7 @@ export const AuthService = {
         user_id: userId,
         school: school || '',
         subject: subject || '',
+        full_name: fullName || '',
         remaining_credits: 1000
       })
       .select()
@@ -167,5 +168,145 @@ export const AuthService = {
       code += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return code;
+  },
+  
+  // Validate an invitation code
+  validateInvitationCode: async (code: string) => {
+    console.log('Validating invitation code:', code);
+    const { data, error } = await supabase
+      .from('class_invitations')
+      .select('*, classroom:classrooms(*)')
+      .eq('invitation_token', code)
+      .eq('status', 'pending')
+      .lt('expires_at', 'now()')
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error validating invitation code:', error);
+      throw error;
+    }
+    
+    return { data, error };
+  },
+  
+  // Enroll a student in a classroom
+  enrollStudentInClassroom: async (studentId: string, classroomId: string) => {
+    console.log('Enrolling student in classroom:', { studentId, classroomId });
+    
+    // First check if student is already enrolled
+    const { data: existingEnrollment } = await supabase
+      .from('classroom_students')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('classroom_id', classroomId)
+      .maybeSingle();
+      
+    if (existingEnrollment) {
+      console.log('Student already enrolled in this classroom');
+      return { data: existingEnrollment, alreadyEnrolled: true };
+    }
+    
+    // If not enrolled, add the student to the classroom
+    const { data, error } = await supabase
+      .from('classroom_students')
+      .insert({
+        student_id: studentId,
+        classroom_id: classroomId
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error enrolling student:', error);
+      throw error;
+    }
+    
+    console.log('Student enrolled successfully:', data);
+    return { data, alreadyEnrolled: false };
+  },
+  
+  // Get all students for a teacher
+  getTeacherStudents: async (teacherId: string) => {
+    console.log('Getting students for teacher:', teacherId);
+    
+    // Get all classrooms for this teacher
+    const { data: classrooms, error: classroomsError } = await supabase
+      .from('classrooms')
+      .select('id')
+      .eq('teacher_id', teacherId);
+      
+    if (classroomsError) {
+      console.error('Error getting teacher classrooms:', classroomsError);
+      throw classroomsError;
+    }
+    
+    if (!classrooms || classrooms.length === 0) {
+      return { data: [] };
+    }
+    
+    // Get all students enrolled in these classrooms
+    const classroomIds = classrooms.map(c => c.id);
+    const { data: enrollments, error: enrollmentsError } = await supabase
+      .from('classroom_students')
+      .select('student_id')
+      .in('classroom_id', classroomIds);
+      
+    if (enrollmentsError) {
+      console.error('Error getting enrollments:', enrollmentsError);
+      throw enrollmentsError;
+    }
+    
+    if (!enrollments || enrollments.length === 0) {
+      return { data: [] };
+    }
+    
+    // Get the actual student data
+    const studentIds = [...new Set(enrollments.map(e => e.student_id))]; // Remove duplicates
+    const { data: students, error: studentsError } = await supabase
+      .from('students')
+      .select('*')
+      .in('id', studentIds);
+      
+    if (studentsError) {
+      console.error('Error getting students:', studentsError);
+      throw studentsError;
+    }
+    
+    return { data: students || [] };
+  },
+
+  // Generate and store classroom invitation
+  createClassInvitation: async (classroomId: string, email: string = 'general_invitation@blockward.app') => {
+    console.log('Creating class invitation:', { classroomId, email });
+    const token = await AuthService.generateClassCode();
+    
+    const { data, error } = await supabase
+      .from('class_invitations')
+      .insert({
+        classroom_id: classroomId,
+        email: email.toLowerCase(),
+        invitation_token: token
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating invitation:', error);
+      throw error;
+    }
+    
+    console.log('Invitation created successfully:', data);
+    return { data, error };
+  },
+
+  // Send email invitation to a student
+  sendEmailInvitation: async (email: string, teacherName: string, classroomName: string, invitationToken: string) => {
+    // This would integrate with an email service
+    console.log('Sending email invitation:', { email, teacherName, classroomName, invitationToken });
+    
+    // For now, we'll just log this. In a real implementation, you'd use an email service.
+    console.log(`Email would be sent to ${email} from ${teacherName} to join ${classroomName} with token ${invitationToken}`);
+    
+    return { success: true, message: 'Invitation sent successfully' };
   }
 };
