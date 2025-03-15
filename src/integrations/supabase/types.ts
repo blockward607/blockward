@@ -1015,6 +1015,36 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          compact_view: boolean | null
+          created_at: string | null
+          dark_mode: boolean | null
+          id: string
+          tutorial_completed: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          compact_view?: boolean | null
+          created_at?: string | null
+          dark_mode?: boolean | null
+          id?: string
+          tutorial_completed?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          compact_view?: boolean | null
+          created_at?: string | null
+          dark_mode?: boolean | null
+          id?: string
+          tutorial_completed?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

@@ -12,7 +12,7 @@ import {
 // Import our custom components
 import ProfileTab from "@/components/settings/ProfileTab";
 import NotificationsTab from "@/components/settings/NotificationsTab";
-import AppearanceTab from "@/components/settings/AppearanceTab";
+import { AppearanceTab } from "@/components/settings/AppearanceTab";
 import SecurityTab from "@/components/settings/SecurityTab";
 
 const Settings = () => {

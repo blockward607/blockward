@@ -14,7 +14,7 @@ export const AppearanceTab = () => {
     handleToggleCompactView 
   } = useAppearanceSettings();
   
-  const { startTutorial } = useTutorial();
+  const { resetTutorialStatus } = useTutorial();
 
   return (
     <div className="space-y-6">
@@ -60,7 +60,7 @@ export const AppearanceTab = () => {
           </span>
           <Button 
             variant="outline" 
-            onClick={startTutorial}
+            onClick={resetTutorialStatus}
             className="flex items-center gap-2 bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/30"
           >
             <RefreshCcw className="w-4 h-4" />
