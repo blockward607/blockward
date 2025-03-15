@@ -57,6 +57,9 @@ export const useProfileData = () => {
         if (profile) {
           setFullName(profile.name || '');
           setSchool(profile.school || '');
+          // Students don't have a subject field
+          // Since avatar_url might not exist in some database configurations
+          // Use optional chaining to safely access it
           setAvatarUrl(profile.avatar_url || null);
         }
       }
