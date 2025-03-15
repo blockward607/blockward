@@ -1,14 +1,7 @@
 
 import { User, Users, Medal, Star, Loader2, Trophy, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-export interface Student {
-  id: string;
-  name: string;
-  user_id: string;
-  points: number;
-  school?: string;
-}
+import { Student } from "@/hooks/use-student-management";
 
 export const getColorForPoints = (points: number) => {
   if (points >= 800) return "text-amber-400";
@@ -36,10 +29,10 @@ export const getAvatarBorderColor = (points: number) => {
 
 export const getDemoStudents = (): Student[] => {
   return [
-    { id: "1", name: "Alex Johnson", user_id: "user1", points: 750, school: "Lincoln High" },
-    { id: "2", name: "Maria Garcia", user_id: "user2", points: 520, school: "Washington Academy" },
-    { id: "3", name: "James Wilson", user_id: "user3", points: 890, school: "Jefferson Middle School" },
-    { id: "4", name: "Sophia Chen", user_id: "user4", points: 430, school: "Franklin Elementary" },
-    { id: "5", name: "Ethan Williams", user_id: "user5", points: 670, school: "Roosevelt High" },
+    { id: "1", name: "Alex Johnson", user_id: "user1", points: 750, school: "Lincoln High", created_at: new Date().toISOString() },
+    { id: "2", name: "Maria Garcia", user_id: "user2", points: 520, school: "Washington Academy", created_at: new Date().toISOString() },
+    { id: "3", name: "James Wilson", user_id: "user3", points: 890, school: "Jefferson Middle School", created_at: new Date().toISOString() },
+    { id: "4", name: "Sophia Chen", user_id: "user4", points: 430, school: "Franklin Elementary", created_at: new Date().toISOString() },
+    { id: "5", name: "Ethan Williams", user_id: "user5", points: 670, school: "Roosevelt High", created_at: new Date().toISOString() },
   ];
 };

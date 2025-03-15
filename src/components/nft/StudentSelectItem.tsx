@@ -3,7 +3,8 @@ import React from "react";
 import { SelectItem } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, Sparkles } from "lucide-react";
-import { Student, getColorForPoints, getBadgeForPoints, getAvatarBorderColor } from "./StudentSelectHelpers";
+import { Student } from "@/hooks/use-student-management";
+import { getColorForPoints, getBadgeForPoints, getAvatarBorderColor } from "./StudentSelectHelpers";
 
 interface StudentSelectItemProps {
   student: Student;
