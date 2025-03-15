@@ -8,6 +8,7 @@ import { AboutSection } from "@/components/about/AboutSection";
 import { ContactSection } from "@/components/contact/ContactSection";
 import { Footer } from "@/components/layout/Footer";
 import { ClassroomPreview } from "@/components/preview/ClassroomPreview";
+import { EasyToUse } from "@/components/EasyToUse";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -23,6 +24,9 @@ const Index = () => {
       
       {/* Hero section */}
       <Hero />
+      
+      {/* How easy to use section */}
+      <EasyToUse />
       
       {/* Preview section */}
       <ClassroomPreview />

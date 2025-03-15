@@ -16,7 +16,7 @@ export const ToolboxCard = ({ icon, title, description, action }: ToolboxCardPro
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 400, damping: 10 }}
     >
-      <Card className="p-4 hover:bg-navy-700/30 transition-all border border-purple-500/20 backdrop-blur-sm bg-navy-800/80">
+      <Card className="p-4 hover:bg-navy-700/30 transition-all border border-purple-500/20 backdrop-blur-sm bg-black/80">
         <div className="flex flex-col h-full">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 rounded-full bg-purple-600/20">

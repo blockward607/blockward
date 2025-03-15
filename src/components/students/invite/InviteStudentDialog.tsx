@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManualEntryTab } from "./ManualEntryTab";
 import { EmailInviteTab } from "./EmailInviteTab";
 import { InviteCodeTab } from "./InviteCodeTab";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface InviteStudentDialogProps {
   onAddStudent: (name: string, school: string) => Promise<void>;
@@ -14,9 +16,25 @@ interface InviteStudentDialogProps {
 
 export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) => {
   const [open, setOpen] = useState(false);
+  const { toast } = useToast();
 
   const handleCloseDialog = () => {
     setOpen(false);
+  };
+
+  // Custom onAddStudent handler to ensure proper error handling
+  const handleAddStudent = async (name: string, school: string) => {
+    try {
+      await onAddStudent(name, school);
+    } catch (error) {
+      console.error("Error in InviteStudentDialog:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add student, please try again."
+      });
+      throw error; // Re-throw to let the tab component handle it
+    }
   };
 
   return (
@@ -27,7 +45,7 @@ export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) 
           Add Student
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-navy-800 border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
+      <DialogContent className="sm:max-w-[500px] bg-black border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
         <DialogHeader>
           <DialogTitle className="text-xl text-center text-white">Add Student</DialogTitle>
         </DialogHeader>
@@ -41,7 +59,7 @@ export const InviteStudentDialog = ({ onAddStudent }: InviteStudentDialogProps) 
           
           <TabsContent value="manual">
             <ManualEntryTab 
-              onAddStudent={onAddStudent} 
+              onAddStudent={handleAddStudent} 
               onSuccess={handleCloseDialog} 
             />
           </TabsContent>

@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { GraduationCap, Sparkles, ArrowRight } from "lucide-react";
+import { GraduationCap, Sparkles, ArrowRight, BookOpen } from "lucide-react";
 
 export const Hero = () => {
   const handleLearnMore = () => {
@@ -88,7 +88,7 @@ export const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            Featuring Unique Educational BlockWard Awards!
+            Simple, Intuitive, and Powerful!
           </motion.p>
 
           <motion.div
@@ -119,7 +119,7 @@ export const Hero = () => {
               className="text-gray-400 hover:text-white transition-all duration-300 flex items-center gap-2"
               onClick={handleLearnMore}
             >
-              Learn More
+              How It Works <BookOpen className="w-4 h-4 ml-2" />
             </Button>
           </motion.div>
         </motion.div>
