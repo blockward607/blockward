@@ -168,6 +168,27 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
     });
   };
 
+  const shareViaGmail = () => {
+    const subject = encodeURIComponent(`Join my ${classroomName} class on Blockward`);
+    const body = encodeURIComponent(`Hello,
+
+I'd like to invite you to join my class ${classroomName} on Blockward. 
+
+Use this invitation code to join: ${invitationCode}
+
+You can enter this code after logging in to Blockward.
+
+Best regards,
+${teacherName}`);
+
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`, '_blank');
+    
+    toast({
+      title: "Gmail Opened",
+      description: "Compose window opened with invitation code"
+    });
+  };
+
   return (
     <Card className="p-4 bg-purple-900/30 backdrop-blur-md border border-purple-500/30 shadow-lg">
       <Tabs defaultValue="code" className="space-y-4">
@@ -193,6 +214,24 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
                   className="bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
                 >
                   <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={shareViaGmail}
+                  className="bg-purple-600 hover:bg-purple-700 w-full"
+                  variant="default"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Share via Gmail
+                </Button>
+                <Button
+                  onClick={generateInviteCode}
+                  className="bg-purple-600/50 hover:bg-purple-600 w-full"
+                  variant="outline"
+                >
+                  <Link2 className="w-4 h-4 mr-2" />
+                  Generate New Code
                 </Button>
               </div>
               <p className="text-xs text-gray-400">

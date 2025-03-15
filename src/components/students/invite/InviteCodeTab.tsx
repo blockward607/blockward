@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link2, Loader2, Copy } from "lucide-react";
+import { Link2, Loader2, Copy, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +27,7 @@ export const InviteCodeTab = () => {
 
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('id')
+        .select('id, full_name')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
@@ -43,7 +43,7 @@ export const InviteCodeTab = () => {
       // Get the first classroom of the teacher
       const { data: classrooms } = await supabase
         .from('classrooms')
-        .select('id')
+        .select('id, name')
         .eq('teacher_id', teacherProfile.id)
         .limit(1);
 
@@ -55,6 +55,9 @@ export const InviteCodeTab = () => {
         });
         return;
       }
+
+      const className = classrooms[0].name;
+      const teacherName = teacherProfile.full_name || session.user.user_metadata?.name || 'Your Teacher';
 
       // Create invitation in database
       const { data: invitation, error: inviteError } = await supabase
@@ -96,6 +99,27 @@ export const InviteCodeTab = () => {
     });
   };
 
+  const shareViaGmail = () => {
+    const subject = encodeURIComponent("Join my Blockward class");
+    const body = encodeURIComponent(`Hello,
+
+I'd like to invite you to join my class on Blockward. 
+
+Use this invitation code to join: ${invitationCode}
+
+You can enter this code after logging in to Blockward.
+
+Best regards,
+Your Teacher`);
+
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`, '_blank');
+    
+    toast({
+      title: "Gmail Opened",
+      description: "Compose window opened with invitation code"
+    });
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <div className="text-sm text-gray-300 mb-2">
@@ -115,8 +139,27 @@ export const InviteCodeTab = () => {
               size="icon" 
               onClick={copyToClipboard}
               className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/40"
+              title="Copy to clipboard"
             >
               <Copy className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              onClick={shareViaGmail}
+              className="bg-purple-700 hover:bg-purple-800 w-full"
+              variant="default"
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Share via Gmail
+            </Button>
+            <Button
+              onClick={generateInviteCode}
+              className="bg-purple-700/50 hover:bg-purple-700 w-full"
+              variant="outline"
+            >
+              <Link2 className="w-4 h-4 mr-2" />
+              Generate New Code
             </Button>
           </div>
           <p className="text-xs text-gray-400">
