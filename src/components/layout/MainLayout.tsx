@@ -146,7 +146,7 @@ export const MainLayout = () => {
   const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-black">
+    <div className="min-h-screen bg-gradient-to-b from-navy-800 to-navy-900">
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -157,7 +157,7 @@ export const MainLayout = () => {
         transition={{ duration: 0.2 }}
         className={cn(
           "fixed top-0 left-0 z-40 h-screen",
-          "bg-black/50 backdrop-blur-xl border-r border-white/10",
+          "bg-navy-900/90 backdrop-blur-xl border-r border-purple-500/10",
           "overflow-hidden"
         )}
       >
@@ -187,7 +187,7 @@ export const MainLayout = () => {
                         to={item.href}
                         className={cn(
                           "flex items-center px-4 py-3 rounded-lg",
-                          "text-gray-300 hover:bg-white/10",
+                          "text-gray-300 hover:bg-purple-600/10",
                           "transition-colors duration-200",
                           "group",
                           isActive && "bg-purple-600/20 text-purple-400"
@@ -206,12 +206,12 @@ export const MainLayout = () => {
       </motion.aside>
 
       {/* Top Navigation Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-2 p-4 bg-black/50 backdrop-blur-xl">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-2 p-4 bg-navy-900/90 backdrop-blur-xl border-b border-purple-500/10">
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="bg-black/50 backdrop-blur-xl"
+          className="bg-navy-800/50 hover:bg-purple-600/20"
         >
           {isSidebarOpen ? (
             <X className="h-6 w-6" />
@@ -224,7 +224,7 @@ export const MainLayout = () => {
           variant="ghost"
           size="icon"
           onClick={goToHome}
-          className="bg-black/50 backdrop-blur-xl"
+          className="bg-navy-800/50 hover:bg-purple-600/20"
         >
           <Home className="h-6 w-6" />
         </Button>

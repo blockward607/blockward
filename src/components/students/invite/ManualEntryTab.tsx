@@ -25,13 +25,13 @@ export const ManualEntryTab = ({ onAddStudent, onSuccess }: ManualEntryTabProps)
         placeholder="Student name"
         value={newStudentName}
         onChange={(e) => setNewStudentName(e.target.value)}
-        className="bg-black/60 border-purple-500/30 text-white"
+        className="bg-navy-800/80 border-purple-500/30 text-white"
       />
       <Input
         placeholder="School (optional)"
         value={newStudentSchool}
         onChange={(e) => setNewStudentSchool(e.target.value)}
-        className="bg-black/60 border-purple-500/30 text-white"
+        className="bg-navy-800/80 border-purple-500/30 text-white"
       />
       <Button 
         onClick={handleAddStudent} 
