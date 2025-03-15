@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,7 +125,7 @@ const Settings = () => {
             full_name: fullName,
             school: school,
             subject: subject,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString() // Convert Date to ISO string format
           })
           .eq('user_id', session.user.id);
           
