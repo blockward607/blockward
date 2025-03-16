@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
@@ -109,11 +110,14 @@ export const MainLayout = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  const isMainPage = location.pathname === "/";
+  // Check if on main page or routes like /auth that shouldn't have the dashboard layout
+  const isMainPage = location.pathname === "/" || location.pathname === "/auth";
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (!isMainPage) {
+      checkAuth();
+    }
+  }, [isMainPage]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -242,8 +246,8 @@ export const MainLayout = () => {
 
       <main
         className={cn(
-          "transition-all duration-300 p-8",
-          !isMainPage && "mt-16",
+          "transition-all duration-300",
+          !isMainPage && "p-8 mt-16",
           !isMainPage && (isSidebarOpen ? "lg:ml-72" : "ml-0")
         )}
       >

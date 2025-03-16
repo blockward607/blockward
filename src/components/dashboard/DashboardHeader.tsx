@@ -53,6 +53,14 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
       startTutorial();
     }
   };
+  
+  const handleBackClick = () => {
+    navigate('/');
+  };
+  
+  const handleNotificationsClick = () => {
+    navigate('/notifications');
+  };
 
   return (
     <div className="flex justify-between items-center mb-8">
@@ -60,7 +68,7 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={() => navigate('/')}
+          onClick={handleBackClick}
           className="hover:bg-purple-900/20"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -74,7 +82,7 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate('/notifications')}
+          onClick={handleNotificationsClick}
           className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/30"
         >
           <Bell className="w-4 h-4 mr-2" />

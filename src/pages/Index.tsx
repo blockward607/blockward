@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
@@ -10,10 +10,22 @@ import { Footer } from "@/components/layout/Footer";
 import { ClassroomPreview } from "@/components/preview/ClassroomPreview";
 import { EasyToUse } from "@/components/EasyToUse";
 import { BlockwardIntro } from '@/components/intro/BlockwardIntro';
+import { HowItWorks } from '@/components/HowItWorks';
 
 const Index = () => {
   const navigate = useNavigate();
   const [showIntro, setShowIntro] = useState(true);
+  
+  useEffect(() => {
+    // Add IDs to sections for navigation
+    const previewSection = document.getElementById('preview');
+    if (!previewSection) {
+      const classroomPreviewElement = document.querySelector('.classroom-preview');
+      if (classroomPreviewElement) {
+        classroomPreviewElement.id = 'preview';
+      }
+    }
+  }, []);
   
   const handleSignUp = () => {
     navigate('/auth');
@@ -28,18 +40,23 @@ const Index = () => {
   }
   
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Navigation */}
       <NavBar />
       
       {/* Hero section */}
       <Hero />
       
+      {/* How it works section */}
+      <HowItWorks />
+      
       {/* How easy to use section */}
       <EasyToUse />
       
       {/* Preview section */}
-      <ClassroomPreview />
+      <div id="preview" className="classroom-preview">
+        <ClassroomPreview />
+      </div>
       
       {/* About Section with ID for scrolling */}
       <div id="about">
