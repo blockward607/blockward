@@ -17,13 +17,10 @@ const Index = () => {
   const [showIntro, setShowIntro] = useState(true);
   
   useEffect(() => {
-    // Add IDs to sections for navigation
-    const previewSection = document.getElementById('preview');
-    if (!previewSection) {
-      const classroomPreviewElement = document.querySelector('.classroom-preview');
-      if (classroomPreviewElement) {
-        classroomPreviewElement.id = 'preview';
-      }
+    // Check if intro has been shown before
+    const introShown = localStorage.getItem('introShown');
+    if (introShown) {
+      setShowIntro(false);
     }
   }, []);
   
@@ -33,6 +30,7 @@ const Index = () => {
   
   const handleEnterSite = () => {
     setShowIntro(false);
+    localStorage.setItem('introShown', 'true');
   };
   
   if (showIntro) {
@@ -45,7 +43,9 @@ const Index = () => {
       <NavBar />
       
       {/* Hero section */}
-      <Hero />
+      <div id="home" className="pt-20">
+        <Hero />
+      </div>
       
       {/* How it works section */}
       <HowItWorks />
@@ -54,20 +54,24 @@ const Index = () => {
       <EasyToUse />
       
       {/* Preview section */}
-      <div id="preview" className="classroom-preview">
+      <div id="preview" className="classroom-preview scroll-mt-20">
         <ClassroomPreview />
       </div>
       
       {/* About Section with ID for scrolling */}
-      <div id="about">
+      <div id="about" className="scroll-mt-20">
         <AboutSection />
       </div>
       
       {/* Features section */}
-      <Features />
+      <div id="features" className="scroll-mt-20">
+        <Features />
+      </div>
       
       {/* Contact Section */}
-      <ContactSection />
+      <div id="contact" className="scroll-mt-20">
+        <ContactSection />
+      </div>
       
       {/* Footer */}
       <Footer />

@@ -12,21 +12,15 @@ export const Hero = () => {
   };
   
   const handleLearnMore = () => {
-    const aboutSection = document.getElementById('about');
-    if (aboutSection) {
-      aboutSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
   };
   
   const handleViewPreview = () => {
-    const previewSection = document.getElementById('preview');
-    if (previewSection) {
-      previewSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById('preview')?.scrollIntoView({ behavior: 'smooth' });
   };
   
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden py-16 bg-black">
+    <div className="relative min-h-[calc(100vh-5rem)] flex flex-col items-center justify-center overflow-hidden py-16 bg-black">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(155,135,245,0.1),rgba(30,27,38,0.3))] animate-pulse" />
       
