@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavBar } from "@/components/layout/NavBar";
 import { TutorialManager } from "@/components/tutorial/TutorialManager";
