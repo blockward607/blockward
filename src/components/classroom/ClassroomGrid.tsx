@@ -6,6 +6,7 @@ import { StudentCountIndicator } from "./StudentCountIndicator";
 import { ClassroomActions } from "./ClassroomActions";
 import { useClassroomData } from "./useClassroomData";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
@@ -16,6 +17,7 @@ interface ClassroomGridProps {
 
 export const ClassroomGrid = ({ classroom, onDelete = () => {} }: ClassroomGridProps) => {
   const { userRole, studentCount } = useClassroomData(classroom.id);
+  const { isTeacher, isStudent } = useAuth();
   const navigate = useNavigate();
 
   const handleCardClick = () => {
@@ -34,7 +36,7 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {} }: ClassroomGridP
             description={classroom.description}
             id={classroom.id}
             userRole={userRole}
-            onDelete={onDelete}
+            onDelete={isTeacher ? onDelete : undefined}
           />
           
           <div className="mt-auto">
