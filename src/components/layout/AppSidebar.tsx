@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -147,115 +146,94 @@ export function AppSidebar() {
   const mainNavItems = navGroups[0].items || [];
 
   return (
-    <Sidebar className={cn(
-      "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl fixed top-0 left-0 h-screen z-40 flex flex-col", 
-      isMinimized ? "w-16" : "w-64"
-    )}>
-      <div className="absolute top-4 right-0 z-10 transform translate-x-1/2">
+    <>
+      <div className={cn(
+        "fixed top-4 z-50 flex items-center justify-center",
+        isMinimized ? "left-4" : "left-[248px]",
+        "transition-all duration-300"
+      )}>
         <Button 
           size="icon" 
           variant="secondary" 
           onClick={handleToggleSidebar}
-          className="h-8 w-8 rounded-full bg-purple-900 border border-purple-500/30 hover:bg-purple-800"
+          className="h-8 w-8 rounded-full bg-purple-900 border border-purple-500/30 hover:bg-purple-800 shadow-lg"
         >
           {isMinimized ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
         </Button>
       </div>
-      
-      <div className="flex flex-col h-full w-full">
-        <SidebarHeader className="flex items-center px-6 py-6">
-          {!isMinimized && (
-            <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
-              Blockward
-            </div>
-          )}
-        </SidebarHeader>
-        
-        <SidebarContent className="flex-1 overflow-y-auto w-full">
-          <SidebarMenu className="px-2 mt-2 mb-6 w-full">
-            {mainNavItems.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive}
-                    tooltip={isMinimized ? item.name : undefined}
-                    className={cn(
-                      "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
-                      isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
-                    )}
-                  >
-                    <div 
-                      onClick={() => navigate(item.href)} 
+
+      <Sidebar className={cn(
+        "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl fixed top-0 left-0 h-screen z-40 flex flex-col", 
+        isMinimized ? "w-16" : "w-64"
+      )}>
+        <div className="flex flex-col h-full w-full">
+          <SidebarHeader className="flex items-center px-6 py-6">
+            {!isMinimized && (
+              <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
+                Blockward
+              </div>
+            )}
+          </SidebarHeader>
+          
+          <SidebarContent className="flex-1 overflow-y-auto w-full">
+            <SidebarMenu className="px-2 mt-2 mb-6 w-full">
+              {mainNavItems.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive}
+                      tooltip={isMinimized ? item.name : undefined}
                       className={cn(
-                        "cursor-pointer flex items-center w-full",
-                        isActive ? "text-white font-semibold" : "text-gray-300"
+                        "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
+                        isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
                       )}
                     >
-                      <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
-                      {!isMinimized && <span className="ml-3">{item.name}</span>}
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-          
-          {navGroups.slice(1).map((group) => (
-            <SidebarGroup key={group.name} className="w-full">
-              {!isMinimized && (
-                <SidebarGroupLabel className="text-gray-300 font-semibold px-4">{group.name}</SidebarGroupLabel>
-              )}
-              <SidebarGroupContent className="w-full">
-                <SidebarMenu className="w-full">
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <SidebarMenuItem key={item.name} className="w-full">
-                        <SidebarMenuButton 
-                          asChild 
-                          isActive={isActive}
-                          tooltip={isMinimized ? item.name : undefined}
-                          className={cn(
-                            "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
-                            isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
-                          )}
-                        >
-                          <div 
-                            onClick={() => navigate(item.href)} 
+                      <div 
+                        onClick={() => navigate(item.href)} 
+                        className={cn(
+                          "cursor-pointer flex items-center w-full",
+                          isActive ? "text-white font-semibold" : "text-gray-300"
+                        )}
+                      >
+                        <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
+                        {!isMinimized && <span className="ml-3">{item.name}</span>}
+                      </div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+            
+            {navGroups.slice(1).map((group) => (
+              <SidebarGroup key={group.name} className="w-full">
+                {!isMinimized && (
+                  <SidebarGroupLabel className="text-gray-300 font-semibold px-4">{group.name}</SidebarGroupLabel>
+                )}
+                <SidebarGroupContent className="w-full">
+                  <SidebarMenu className="w-full">
+                    {group.items.map((item) => {
+                      const isActive = location.pathname === item.href;
+                      return (
+                        <SidebarMenuItem key={item.name} className="w-full">
+                          <SidebarMenuButton 
+                            asChild 
+                            isActive={isActive}
+                            tooltip={isMinimized ? item.name : undefined}
                             className={cn(
-                              "cursor-pointer flex items-center w-full",
-                              isActive ? "text-white font-semibold" : "text-gray-300"
+                              "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
+                              isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
                             )}
                           >
-                            <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
-                            {!isMinimized && <span className="ml-3">{item.name}</span>}
-                          </div>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
-        </SidebarContent>
-        
-        <SidebarFooter className="p-4 w-full mt-auto">
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "w-full justify-start gap-2 text-gray-300 hover:text-white hover:bg-red-500/20",
-              isMinimized && "px-2 justify-center"
-            )}
-            onClick={handleLogout}
-          >
-            <LogOut className="h-5 w-5" />
-            {!isMinimized && <span className="text-base">Log Out</span>}
-          </Button>
-        </SidebarFooter>
-      </div>
-    </Sidebar>
-  );
-}
+                            <div 
+                              onClick={() => navigate(item.href)} 
+                              className={cn(
+                                "cursor-pointer flex items-center w-full",
+                                isActive ? "text-white font-semibold" : "text-gray-300"
+                              )}
+                            >
+                              <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
+                              {!isMinimized && <span className="ml-3">{item.name}</span>}
+                            </
+
