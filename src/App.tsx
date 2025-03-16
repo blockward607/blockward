@@ -18,7 +18,6 @@ import Notifications from '@/pages/Notifications';
 import Settings from '@/pages/Settings';
 import Analytics from '@/pages/Analytics';
 import ClassroomSeating from '@/pages/ClassroomSeating';
-import Behavior from '@/pages/Behavior';
 import Progress from '@/pages/Progress';
 import Assignments from '@/pages/Assignments';
 import Grades from "@/pages/Grades";
@@ -46,7 +45,7 @@ function App() {
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
         <Route path="/seating" element={<ProtectedRoute><ClassroomSeating /></ProtectedRoute>} />
-        <Route path="/behavior" element={<ProtectedRoute><Behavior /></ProtectedRoute>} />
+        <Route path="/behavior" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         <Route path="/assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
         <Route path="/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
