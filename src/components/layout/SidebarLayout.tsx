@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 export const SidebarLayout = () => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-b from-[#1A1F2C] to-black">
+      <div className="min-h-screen flex flex-col md:flex-row w-full bg-gradient-to-b from-[#1A1F2C] to-black">
         <AppSidebar />
         <SidebarInset className="p-8 transition-all duration-300 relative flex-1 overflow-auto">
           {/* Animated background elements */}

@@ -147,7 +147,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={cn(
-      "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl relative", 
+      "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl relative h-screen flex flex-col", 
       isMinimized ? "w-16" : "w-64"
     )}>
       <div className="absolute top-4 right-0 z-10 transform translate-x-1/2">
@@ -169,7 +169,7 @@ export function AppSidebar() {
         )}
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="flex-1 overflow-y-auto">
         {/* Main navigation items at the top */}
         <SidebarMenu className="px-2 mt-2 mb-6">
           {mainNavItems.map((item) => {
