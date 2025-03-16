@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
@@ -65,18 +66,18 @@ export const NavBar = () => {
             <span>Contact</span>
           </button>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-4">
             <Button 
               onClick={handleSignIn}
               variant="ghost"
-              className="text-purple-400 hover:text-purple-300"
+              className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
             >
               Sign In
             </Button>
             
             <Button 
               onClick={handleSignUp}
-              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
+              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 px-6 py-2"
             >
               Sign Up
             </Button>
@@ -128,7 +129,7 @@ export const NavBar = () => {
             <span>Contact</span>
           </button>
           
-          <div className="flex flex-col gap-3 pt-2 border-t border-purple-900/20">
+          <div className="flex flex-col gap-3 pt-4 border-t border-purple-900/20">
             <Button 
               onClick={handleSignIn}
               variant="ghost"

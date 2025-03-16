@@ -10,9 +10,8 @@ import { Footer } from "@/components/layout/Footer";
 import { ClassroomPreview } from "@/components/preview/ClassroomPreview";
 import { EasyToUse } from "@/components/EasyToUse";
 import { BlockwardIntro } from '@/components/intro/BlockwardIntro';
-import { LuxuryIntro } from '@/components/intro/LuxuryIntro';
 import { HowItWorks } from '@/components/HowItWorks';
-import { DemoBanner } from '@/components/student-dashboard/DemoBanner';
+import { DemoSection } from '@/components/demo/DemoSection'; 
 
 const Index = () => {
   const navigate = useNavigate();
@@ -60,9 +59,9 @@ const Index = () => {
         <ClassroomPreview />
       </div>
       
-      {/* Demo Banner */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <DemoBanner onSignUp={handleSignUp} />
+      {/* Demo Section */}
+      <div className="py-12">
+        <DemoSection />
       </div>
       
       {/* About Section with ID for scrolling */}
