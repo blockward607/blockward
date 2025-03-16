@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -67,7 +66,6 @@ export function AppSidebar() {
     setIsMinimized(!isMinimized);
   };
 
-  // Combine related routes into groups
   const teacherNavGroups = [
     {
       name: "Main",
@@ -142,12 +140,11 @@ export function AppSidebar() {
 
   const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
   
-  // Extract main navigation items and place them at the top
   const mainNavItems = navGroups[0].items || [];
 
   return (
     <Sidebar className={cn(
-      "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl fixed top-0 left-0 h-screen z-40", 
+      "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl fixed top-0 left-0 h-full z-40", 
       isMinimized ? "w-16" : "w-64"
     )}>
       <div className="absolute top-4 right-0 z-10 transform translate-x-1/2">
@@ -171,7 +168,6 @@ export function AppSidebar() {
         </SidebarHeader>
         
         <SidebarContent className="flex-1 overflow-y-auto w-full">
-          {/* Main navigation items at the top */}
           <SidebarMenu className="px-2 mt-2 mb-6 w-full">
             {mainNavItems.map((item) => {
               const isActive = location.pathname === item.href;
@@ -202,7 +198,6 @@ export function AppSidebar() {
             })}
           </SidebarMenu>
           
-          {/* Display rest of the navigation groups */}
           {navGroups.slice(1).map((group) => (
             <SidebarGroup key={group.name} className="w-full">
               {!isMinimized && (
