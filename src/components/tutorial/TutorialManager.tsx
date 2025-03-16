@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { TutorialModal } from "./TutorialModal";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 export const TutorialManager = () => {
   const [showTutorial, setShowTutorial] = useState(false);
