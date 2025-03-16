@@ -107,7 +107,7 @@ export const StudentDashboard = () => {
               <h3 className="text-lg font-semibold">Achievements</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">View your earned achievements and badges</p>
-            <Link to="/achievements" className="mt-auto text-purple-400 hover:text-purple-300">
+            <Link to="/wallet" className="mt-auto text-purple-400 hover:text-purple-300">
               View achievements →
             </Link>
           </div>
