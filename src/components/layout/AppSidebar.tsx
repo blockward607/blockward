@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -88,7 +87,6 @@ export function AppSidebar() {
     {
       name: "Rewards",
       items: [
-        // Removing standalone Achievements entry - it's now part of Wallet
         { name: "Rewards", href: "/rewards", icon: Award },
         { name: "NFT Wallet", href: "/wallet", icon: Wallet },
       ]
@@ -126,7 +124,6 @@ export function AppSidebar() {
     {
       name: "Rewards",
       items: [
-        // Removing standalone Achievements entry - it's now part of Wallet
         { name: "My NFTs", href: "/rewards", icon: Award },
         { name: "Wallet", href: "/wallet", icon: Wallet },
       ]

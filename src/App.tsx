@@ -1,6 +1,6 @@
 
 import { Suspense, lazy } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -57,7 +57,8 @@ function App() {
               <Route path="classes" element={<Classes />} />
               <Route path="students" element={<Students />} />
               <Route path="attendance" element={<Attendance />} />
-              {/* Removed Achievements route as it's now part of Wallet */}
+              {/* Redirect from achievements to wallet */}
+              <Route path="achievements" element={<Navigate to="/wallet" replace />} />
               <Route path="rewards" element={<Rewards />} />
               <Route path="wallet" element={<Wallet />} />
               <Route path="messages" element={<Messages />} />
