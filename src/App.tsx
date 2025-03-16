@@ -44,9 +44,10 @@ function App() {
               <Route path="reset-password" element={<ResetPassword />} />
               <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
               <Route path="invite/:inviteToken" element={<ClassroomInvite />} />
-              {/* Add tutorial route here */}
-              <Route path="tutorial/:role" element={<TutorialPage />} />
             </Route>
+            
+            {/* Tutorial route - standalone without sidebar or mainlayout */}
+            <Route path="tutorial/:role" element={<TutorialPage />} />
 
             {/* Class details route without sidebar */}
             <Route path="class/:classroomId" element={
