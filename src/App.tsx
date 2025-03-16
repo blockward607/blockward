@@ -28,6 +28,7 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const ResetPasswordOTP = lazy(() => import("@/pages/ResetPasswordOTP"));
 const ClassroomInvite = lazy(() => import("@/pages/ClassroomInvite"));
 const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
+const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
 
 function App() {
   return (
@@ -45,7 +46,14 @@ function App() {
               <Route path="invite/:inviteToken" element={<ClassroomInvite />} />
             </Route>
 
-            {/* Protected routes */}
+            {/* Class details route without sidebar */}
+            <Route path="class/:classroomId" element={
+              <ProtectedRoute>
+                <ClassDetails />
+              </ProtectedRoute>
+            } />
+
+            {/* Protected routes with sidebar */}
             <Route
               path="/"
               element={

@@ -5,6 +5,7 @@ import { ClassroomHeader } from "./ClassroomHeader";
 import { StudentCountIndicator } from "./StudentCountIndicator";
 import { ClassroomActions } from "./ClassroomActions";
 import { useClassroomData } from "./useClassroomData";
+import { useNavigate } from "react-router-dom";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
@@ -15,10 +16,18 @@ interface ClassroomGridProps {
 
 export const ClassroomGrid = ({ classroom, onDelete = () => {} }: ClassroomGridProps) => {
   const { userRole, studentCount } = useClassroomData(classroom.id);
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/class/${classroom.id}`);
+  };
 
   return (
     <div className="space-y-4">
-      <Card className="p-4 glass-card hover:bg-purple-900/10 transition-all">
+      <Card 
+        className="p-4 glass-card hover:bg-purple-900/10 transition-all cursor-pointer"
+        onClick={handleCardClick}
+      >
         <div className="flex flex-col h-full">
           <ClassroomHeader
             name={classroom.name}
