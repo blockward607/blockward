@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -41,7 +40,6 @@ const Dashboard = () => {
       return;
     }
 
-    // Get user role from teacher_profiles or students table directly
     const { data: teacherData } = await supabase
       .from('teacher_profiles')
       .select('full_name')
@@ -62,7 +60,6 @@ const Dashboard = () => {
         setUserRole('student');
         setUserName(studentData.name || session.user.email);
       } else {
-        // If no role is found, default to student
         setUserRole('student');
         setUserName(session.user.email);
       }
@@ -118,7 +115,7 @@ const Dashboard = () => {
       {TutorialPrompt}
       <DashboardHeader userName={userName} />
       
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto w-full">
         {userRole === 'student' ? (
           <StudentDashboard />
         ) : (
