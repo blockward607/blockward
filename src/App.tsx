@@ -6,15 +6,12 @@ import {
   Routes,
   Navigate,
 } from 'react-router-dom';
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from './integrations/supabase/client';
-import Home from './pages/Home';
+import Home from '@/pages/Home';
 import Classes from './pages/Classes';
 import Dashboard from './pages/Dashboard';
 import AuthPage from './pages/Auth';
-import { useToast } from "@/hooks/use-toast";
-import { Toast } from "@/components/ui/toast";
+import { Toaster } from "@/components/ui/toaster";
 import { BlockwardIntro } from './components/intro/BlockwardIntro';
 import TutorialPage from './pages/TutorialPage';
 import ClassroomSeating from './pages/ClassroomSeating';
@@ -23,7 +20,6 @@ import ClassroomInvite from './pages/ClassroomInvite';
 
 function App() {
   const [showIntro, setShowIntro] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     // Check if the user has already seen the intro
@@ -67,7 +63,7 @@ function App() {
           </Routes>
         )}
       </Router>
-      <Toast/>
+      <Toaster />
     </>
   );
 }
