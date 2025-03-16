@@ -1,26 +1,26 @@
 
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { GraduationCap, Sparkles, ArrowRight, BookOpen } from "lucide-react";
 
 export const Hero = () => {
+  const navigate = useNavigate();
+  
+  const handleGetStarted = () => {
+    navigate('/auth');
+  };
+  
   const handleLearnMore = () => {
-    const aboutSection = document.getElementById('about');
-    if (aboutSection) {
-      aboutSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
   };
   
   const handleViewPreview = () => {
-    const previewSection = document.getElementById('preview');
-    if (previewSection) {
-      previewSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById('preview')?.scrollIntoView({ behavior: 'smooth' });
   };
   
   return (
-    <div className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden py-24 bg-black">
+    <div className="relative min-h-[calc(100vh-5rem)] flex flex-col items-center justify-center overflow-hidden py-16 bg-black">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(155,135,245,0.1),rgba(30,27,38,0.3))] animate-pulse" />
       
@@ -95,16 +95,15 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="flex gap-4 justify-center"
+            className="flex flex-wrap gap-4 justify-center"
           >
-            <Link to="/auth">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-none modern-shadow transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
-              >
-                Get Started <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-none modern-shadow transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+              onClick={handleGetStarted}
+            >
+              Get Started <ArrowRight className="w-4 h-4" />
+            </Button>
             <Button 
               size="lg" 
               variant="outline"

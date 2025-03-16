@@ -1,5 +1,5 @@
 
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, Bell, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
@@ -53,6 +53,14 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
       startTutorial();
     }
   };
+  
+  const handleBackClick = () => {
+    navigate('/');
+  };
+  
+  const handleNotificationsClick = () => {
+    navigate('/notifications');
+  };
 
   return (
     <div className="flex justify-between items-center mb-8">
@@ -60,13 +68,13 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={() => navigate('/')}
+          onClick={handleBackClick}
           className="hover:bg-purple-900/20"
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold gradient-text">Blockward Dashboard</h1>
+          <h1 className="text-4xl font-bold gradient-text">Announcements</h1>
           <p className="text-gray-400">Welcome back, {userName || 'User'}</p>
         </div>
       </div>
@@ -74,11 +82,11 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
         <Button
           variant="outline"
           size="sm"
-          onClick={handleTutorialClick}
-          className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/30 mr-2"
+          onClick={handleNotificationsClick}
+          className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/30"
         >
-          <BookOpen className="w-4 h-4 mr-2" />
-          Tutorial
+          <Bell className="w-4 h-4 mr-2" />
+          All Notifications
         </Button>
         <WalletPanel />
       </div>

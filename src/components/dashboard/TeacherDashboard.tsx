@@ -1,14 +1,15 @@
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Clock, Award, Trophy, Wallet, BookOpen, ChartBar, Settings, Bell } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { ClassroomList } from "./ClassroomList";
-import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
-import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
-import { AchievementSystem } from "@/components/achievements/AchievementSystem";
-import { WalletPanel } from "@/components/wallet/WalletPanel";
-import { TeacherToolbox } from "@/components/teacher/TeacherToolbox";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Plus, Send, X } from "lucide-react";
 import type { Classroom } from "@/types/classroom";
+import type { Notification } from "@/types/notification";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface TeacherDashboardProps {
   classrooms: Partial<Classroom>[];
@@ -16,174 +17,210 @@ interface TeacherDashboardProps {
 }
 
 export const TeacherDashboard = ({ classrooms, selectedClassroom }: TeacherDashboardProps) => {
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [announcements, setAnnouncements] = useState<Notification[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const { toast } = useToast();
+
+  const handleCreateAnnouncement = async () => {
+    if (!title.trim() || !message.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please provide both a title and a message for your announcement"
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert({
+          title: title.trim(),
+          message: message.trim(),
+          created_by: session?.user.id,
+          type: 'announcement',
+          classroom_id: selectedClassroom
+        })
+        .select();
+
+      if (error) throw error;
+
+      toast({
+        title: "Announcement created",
+        description: "Your announcement has been published successfully"
+      });
+
+      // Clear the form
+      setTitle("");
+      setMessage("");
+      
+      // Close the form after successful submission
+      setShowForm(false);
+      
+      // Add the new announcement to the list
+      if (data && data.length > 0) {
+        setAnnouncements([data[0], ...announcements]);
+      }
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create announcement. Please try again."
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleForm = () => {
+    setShowForm(!showForm);
+    // Reset form when closing
+    if (showForm) {
+      setTitle("");
+      setMessage("");
+    }
+  };
+
   return (
-    <Tabs defaultValue="classrooms" className="space-y-4">
-      <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
-        <TabsTrigger value="classrooms" className="flex items-center gap-2">
-          <Users className="w-4 h-4" />
-          <span className="hidden md:inline">Classrooms</span>
-        </TabsTrigger>
-        
-        <TabsTrigger value="attendance" className="flex items-center gap-2">
-          <Clock className="w-4 h-4" />
-          <span className="hidden md:inline">Attendance</span>
-        </TabsTrigger>
-        
-        <TabsTrigger value="behavior" className="flex items-center gap-2">
-          <Award className="w-4 h-4" />
-          <span className="hidden md:inline">Behavior</span>
-        </TabsTrigger>
-        
-        <TabsTrigger value="achievements" className="flex items-center gap-2">
-          <Trophy className="w-4 h-4" />
-          <span className="hidden md:inline">Achievements</span>
-        </TabsTrigger>
-        
-        <TabsTrigger value="wallet" className="flex items-center gap-2">
-          <Wallet className="w-4 h-4" />
-          <span className="hidden md:inline">NFT Wallet</span>
-        </TabsTrigger>
-        
-        <TabsTrigger value="assignments" className="flex items-center gap-2">
-          <BookOpen className="w-4 h-4" />
-          <span className="hidden md:inline">Assignments</span>
-        </TabsTrigger>
-        
-        <TabsTrigger value="analytics" className="flex items-center gap-2">
-          <ChartBar className="w-4 h-4" />
-          <span className="hidden md:inline">Analytics</span>
-        </TabsTrigger>
-        
-        <TabsTrigger value="notifications" className="flex items-center gap-2">
-          <Bell className="w-4 h-4" />
-          <span className="hidden md:inline">Notifications</span>
-        </TabsTrigger>
-        
-        <TabsTrigger value="settings" className="flex items-center gap-2">
-          <Settings className="w-4 h-4" />
-          <span className="hidden md:inline">Settings</span>
-        </TabsTrigger>
-      </TabsList>
+    <div className="space-y-8">
+      <div className="flex justify-end mb-4">
+        <Button
+          onClick={toggleForm}
+          className={`rounded-full ${showForm ? "bg-red-600 hover:bg-red-700" : "bg-purple-600 hover:bg-purple-700"}`}
+          size="icon"
+        >
+          {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+        </Button>
+      </div>
 
-      <TabsContent value="classrooms">
-        <div className="space-y-6">
-          <TeacherToolbox />
-          <ClassroomList classrooms={classrooms} />
-        </div>
-      </TabsContent>
-
-      <TabsContent value="attendance">
-        {selectedClassroom ? (
-          <AttendanceTracker classroomId={selectedClassroom} />
-        ) : (
-          <Card className="p-6">
-            <p className="text-center text-gray-400">Please select or create a classroom first</p>
-          </Card>
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <Card className="p-6 bg-gradient-to-br from-purple-900/30 to-black border-purple-500/30 mb-8">
+              <h2 className="text-2xl font-bold mb-4">Create Announcement</h2>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium mb-1">
+                    Title
+                  </label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Announcement title"
+                    className="w-full bg-black/50 border-purple-500/30"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium mb-1">
+                    Message
+                  </label>
+                  <Textarea
+                    id="message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Write your announcement here..."
+                    className="w-full min-h-[120px] bg-black/50 border-purple-500/30"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={handleCreateAnnouncement} 
+                    disabled={isSubmitting || !title || !message}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Posting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Post Announcement
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
         )}
-      </TabsContent>
+      </AnimatePresence>
 
-      <TabsContent value="behavior">
-        {selectedClassroom ? (
-          <BehaviorTracker />
-        ) : (
-          <Card className="p-6">
-            <p className="text-center text-gray-400">Please select or create a classroom first</p>
-          </Card>
-        )}
-      </TabsContent>
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Recent Announcements</h2>
+        <AnnouncementsList />
+      </div>
+    </div>
+  );
+};
 
-      <TabsContent value="achievements">
-        <Card className="p-6">
-          <AchievementSystem />
-        </Card>
-      </TabsContent>
+const AnnouncementsList = () => {
+  const [announcements, setAnnouncements] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-      <TabsContent value="wallet">
-        <Card className="p-6 glass-card">
-          <WalletPanel expanded={true} />
-        </Card>
-      </TabsContent>
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
 
-      <TabsContent value="assignments">
-        <Card className="p-6">
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Assignments</h2>
-            <div className="grid gap-4">
-              {selectedClassroom ? (
-                <p className="text-center text-gray-400">No assignments yet. Create your first assignment!</p>
-              ) : (
-                <p className="text-center text-gray-400">Please select or create a classroom first</p>
-              )}
-            </div>
+  const fetchAnnouncements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('type', 'announcement')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAnnouncements(data || []);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      </div>
+    );
+  }
+
+  if (announcements.length === 0) {
+    return (
+      <Card className="p-6 text-center bg-black/50 border-purple-500/20">
+        <p className="text-gray-400">No announcements yet</p>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {announcements.map((announcement) => (
+        <Card key={announcement.id} className="p-6 bg-black/50 border-purple-500/30">
+          <h3 className="text-xl font-bold mb-2">{announcement.title}</h3>
+          <p className="text-gray-300 mb-4">{announcement.message}</p>
+          <div className="text-sm text-gray-400">
+            Posted on {new Date(announcement.created_at).toLocaleDateString()} at {new Date(announcement.created_at).toLocaleTimeString()}
           </div>
         </Card>
-      </TabsContent>
-
-      <TabsContent value="analytics">
-        <Card className="p-6">
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
-            {selectedClassroom ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-2">Attendance Rate</h3>
-                  <p className="text-2xl font-bold text-purple-400">95%</p>
-                </Card>
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-2">Average Points</h3>
-                  <p className="text-2xl font-bold text-purple-400">78</p>
-                </Card>
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-2">Active Students</h3>
-                  <p className="text-2xl font-bold text-purple-400">24</p>
-                </Card>
-              </div>
-            ) : (
-              <p className="text-center text-gray-400">Please select or create a classroom first</p>
-            )}
-          </div>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="notifications">
-        <Card className="p-6">
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Notifications</h2>
-            <div className="divide-y divide-gray-700">
-              <div className="py-4">
-                <p className="font-semibold">New Student Joined</p>
-                <p className="text-sm text-gray-400">John Doe joined Mathematics 101</p>
-              </div>
-              <div className="py-4">
-                <p className="font-semibold">Assignment Due Soon</p>
-                <p className="text-sm text-gray-400">Algebra Homework due in 2 days</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="settings">
-        <Card className="p-6">
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Settings</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Notification Preferences</h3>
-                <p className="text-sm text-gray-400">Configure how you receive notifications</p>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Account Settings</h3>
-                <p className="text-sm text-gray-400">Manage your account and profile information</p>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Privacy Settings</h3>
-                <p className="text-sm text-gray-400">Control your privacy and data settings</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </TabsContent>
-    </Tabs>
+      ))}
+    </div>
   );
 };

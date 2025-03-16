@@ -1,21 +1,21 @@
 
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Book, ChartBar, Award } from "lucide-react";
 import { StudentInfoCard } from "@/components/student-dashboard/StudentInfoCard";
 import { DemoBanner } from "@/components/student-dashboard/DemoBanner";
-import { DashboardCard } from "@/components/student-dashboard/DashboardCard";
-import { WalletSection } from "@/components/student-dashboard/WalletSection";
-import { StudentNFTSection } from "@/components/student-dashboard/StudentNFTSection";
-import { JoinClassSection } from "@/components/classroom/JoinClassSection";
 import { useStudentData } from "@/components/student-dashboard/hooks/useStudentData";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import type { Notification } from "@/types/notification";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const { loading, studentData, nfts, walletInfo } = useStudentData();
+  const { loading, studentData } = useStudentData();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
+  const [announcements, setAnnouncements] = useState<Notification[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,6 +29,29 @@ const StudentDashboard = () => {
     
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (!isDemo) {
+      fetchAnnouncements();
+    }
+  }, [isDemo]);
+
+  const fetchAnnouncements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('type', 'announcement')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAnnouncements(data || []);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+    } finally {
+      setLoadingAnnouncements(false);
+    }
+  };
 
   const handleSignUp = () => {
     navigate('/auth');
@@ -54,44 +77,32 @@ const StudentDashboard = () => {
       {/* Demo Banner (only shown in demo mode) */}
       {isDemo && <DemoBanner onSignUp={handleSignUp} />}
 
-      {/* Join Class Section (only for authenticated non-demo users) */}
-      {isAuthenticated && !isDemo && <JoinClassSection />}
-
-      {/* Dashboard Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <DashboardCard 
-          icon={<Book className="w-6 h-6 text-purple-400" />}
-          title="My Classes"
-          description="View your enrolled classes and assignments"
-          linkPath="/classes"
-          linkText="View classes"
-          isDemo={isDemo}
-        />
+      {/* Announcements Section */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold">Recent Announcements</h2>
         
-        <DashboardCard 
-          icon={<ChartBar className="w-6 h-6 text-purple-400" />}
-          title="My Progress"
-          description="Track your academic progress"
-          linkPath="/progress"
-          linkText="View progress"
-          isDemo={isDemo}
-        />
-        
-        <DashboardCard 
-          icon={<Award className="w-6 h-6 text-purple-400" />}
-          title="Achievements"
-          description="View your earned achievements and badges"
-          linkPath="/achievements"
-          linkText="View achievements"
-          isDemo={isDemo}
-        />
+        {loadingAnnouncements ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+          </div>
+        ) : announcements.length === 0 ? (
+          <Card className="p-6 text-center bg-black/50 border-purple-500/20">
+            <p className="text-gray-400">No announcements yet</p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {announcements.map((announcement) => (
+              <Card key={announcement.id} className="p-6 bg-black/50 border-purple-500/30">
+                <h3 className="text-xl font-bold mb-2">{announcement.title}</h3>
+                <p className="text-gray-300 mb-4">{announcement.message}</p>
+                <div className="text-sm text-gray-400">
+                  Posted on {new Date(announcement.created_at).toLocaleDateString()} at {new Date(announcement.created_at).toLocaleTimeString()}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* My Wallet */}
-      <WalletSection isDemo={isDemo} onSignUp={handleSignUp} />
-
-      {/* My NFTs */}
-      <StudentNFTSection nfts={nfts} isDemo={isDemo} onSignUp={handleSignUp} />
     </div>
   );
 };
