@@ -5,7 +5,7 @@ import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { CreateClassroomDialog } from "@/components/classroom/CreateClassroomDialog";
 import { EmptyClassState } from "@/components/classroom/EmptyClassState";
-import { JoinClassSection } from "@/components/classroom/JoinClassSection";
+import { JoinClassSection } from "@/components/classroom/join/JoinClassSection";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { useAuth } from "@/hooks/use-auth";
 

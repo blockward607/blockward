@@ -2,11 +2,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ToastType } from "@/hooks/use-toast";
 
-export const handleJoinClassWithCode = async (invitationCode: string, toast: ToastType) => {
+export const handleJoinClassWithCode = async (invitationCode: string, toast: { toast: Function }) => {
   console.log('Starting join class process with code:', invitationCode);
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    toast({
+    toast.toast({
       variant: "destructive",
       title: "Authentication Error",
       description: "You must be logged in to join a class"
@@ -107,7 +107,7 @@ export const handleJoinClassWithCode = async (invitationCode: string, toast: Toa
 
   if (existingEnrollment) {
     console.log('Student already enrolled in this classroom');
-    toast({
+    toast.toast({
       variant: "default",
       title: "Already Enrolled",
       description: "You are already enrolled in this class"
@@ -137,7 +137,7 @@ export const handleJoinClassWithCode = async (invitationCode: string, toast: Toa
     .eq('invitation_token', invitationCode);
 
   console.log('Enrollment successful');
-  toast({
+  toast.toast({
     title: "Success",
     description: `You have successfully joined ${invitationData.classroom?.name || 'the class'}`
   });

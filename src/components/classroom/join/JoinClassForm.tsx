@@ -30,7 +30,7 @@ export const JoinClassForm = ({
 
     setLoading(true);
     try {
-      await handleJoinClassWithCode(invitationCode, toast);
+      await handleJoinClassWithCode(invitationCode, { toast });
       setInvitationCode("");
       
       // Reload the page to show the newly joined class
