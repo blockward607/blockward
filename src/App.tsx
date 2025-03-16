@@ -1,88 +1,57 @@
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate
+} from "react-router-dom";
+import { Auth } from '@/pages/Auth';
+import { Dashboard } from '@/pages/Dashboard';
+import { Classes } from '@/pages/Classes';
+import { Students } from '@/pages/Students';
+import { Resources } from '@/pages/Resources';
+import { Attendance } from '@/pages/Attendance';
+import { Rewards } from '@/pages/Rewards';
+import { Wallet } from '@/pages/Wallet';
+import { Messages } from '@/pages/Messages';
+import { Notifications } from '@/pages/Notifications';
+import { Settings } from '@/pages/Settings';
+import { Analytics } from '@/pages/Analytics';
+import { Seating } from '@/pages/Seating';
+import { Behavior } from '@/pages/Behavior';
+import { Progress } from '@/pages/Progress';
+import { Assignments } from '@/pages/Assignments';
+import Grades from "@/pages/Grades";
+import { useAuth } from "@/hooks/use-auth";
 
-import { Suspense, lazy } from "react";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { ThemeProvider } from "@/components/ui/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { SidebarLayout } from "@/components/layout/SidebarLayout";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-
-// Lazy-loaded components
-const Home = lazy(() => import("@/pages/Home"));
-const Auth = lazy(() => import("@/pages/Auth"));
-const SignUp = lazy(() => import("@/pages/SignUp"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const Classes = lazy(() => import("@/pages/Classes"));
-const Students = lazy(() => import("@/pages/Students")); // Keep this import for accessing via Classes
-const Attendance = lazy(() => import("@/pages/Attendance"));
-// Removed Achievements import as it's now part of Wallet
-const Rewards = lazy(() => import("@/pages/Rewards"));
-const Wallet = lazy(() => import("@/pages/Wallet"));
-const Messages = lazy(() => import("@/pages/Messages"));
-const Notifications = lazy(() => import("@/pages/Notifications"));
-const Analytics = lazy(() => import("@/pages/Analytics"));
-const Settings = lazy(() => import("@/pages/Settings"));
-const Progress = lazy(() => import("@/pages/Progress"));
-const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
-const ResetPasswordOTP = lazy(() => import("@/pages/ResetPasswordOTP"));
-const ClassroomInvite = lazy(() => import("@/pages/ClassroomInvite"));
-const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
-const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
+function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const { isLoggedIn } = useAuth();
+  return isLoggedIn ? children : <Navigate to="/auth" />;
+}
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
-      <BrowserRouter>
-        <Suspense fallback={<LoadingSpinner />}>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<MainLayout />}>
-              <Route index element={<Home />} />
-              <Route path="auth" element={<Auth />} />
-              <Route path="signup" element={<SignUp />} />
-              <Route path="reset-password" element={<ResetPassword />} />
-              <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
-              <Route path="invite/:inviteToken" element={<ClassroomInvite />} />
-            </Route>
-
-            {/* Class details route without sidebar */}
-            <Route path="class/:classroomId" element={
-              <ProtectedRoute>
-                <ClassDetails />
-              </ProtectedRoute>
-            } />
-
-            {/* Protected routes with sidebar */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <SidebarLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="classes" element={<Classes />} />
-              <Route path="students" element={<Students />} />
-              <Route path="attendance" element={<Attendance />} />
-              {/* Add classroom seating route */}
-              <Route path="classroom/:classroomId/seating" element={<ClassroomSeating />} />
-              {/* Redirect from achievements to wallet */}
-              <Route path="achievements" element={<Navigate to="/wallet" replace />} />
-              <Route path="rewards" element={<Rewards />} />
-              <Route path="wallet" element={<Wallet />} />
-              <Route path="messages" element={<Messages />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="progress" element={<Progress />} />
-            </Route>
-          </Routes>
-        </Suspense>
-        <Toaster />
-      </BrowserRouter>
-    </ThemeProvider>
+    <Router>
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
+        <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+        <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+        <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+        <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+        <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/seating" element={<ProtectedRoute><Seating /></ProtectedRoute>} />
+        <Route path="/behavior" element={<ProtectedRoute><Behavior /></ProtectedRoute>} />
+        <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+        <Route path="/assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
+        <Route path="/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </Router>
   );
 }
 

@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -32,7 +31,8 @@ import {
   ChevronsRight,
   ChartBar,
   Megaphone,
-  Layers
+  Layers,
+  FileCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,6 @@ export function AppSidebar() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // Get user role
     const { data: roleData } = await supabase
       .from('user_roles')
       .select('role')
@@ -69,7 +68,7 @@ export function AppSidebar() {
 
   const handleToggleSidebar = () => {
     setIsMinimized(!isMinimized);
-    toggleSidebar(); // Use the shadcn sidebar toggle functionality
+    toggleSidebar();
   };
 
   const teacherNavGroups = [
@@ -86,6 +85,7 @@ export function AppSidebar() {
       items: [
         { name: "Attendance", href: "/attendance", icon: Calendar },
         { name: "Resources", href: "/resources", icon: Layers },
+        { name: "Grades", href: "/grades", icon: FileCheck },
       ]
     },
     {
@@ -124,6 +124,7 @@ export function AppSidebar() {
       name: "Learning",
       items: [
         { name: "Progress", href: "/progress", icon: ChartBar },
+        { name: "Grades", href: "/grades", icon: FileCheck },
       ]
     },
     {
