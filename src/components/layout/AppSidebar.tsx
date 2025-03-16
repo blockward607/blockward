@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -68,6 +69,10 @@ export function AppSidebar() {
   const handleToggleSidebar = () => {
     setIsMinimized(!isMinimized);
     toggleSidebar(); // Use the shadcn sidebar toggle functionality
+  };
+
+  const handleNavigation = (href: string) => {
+    navigate(href);
   };
 
   const teacherNavGroups = [
@@ -166,7 +171,10 @@ export function AppSidebar() {
         <div className="flex flex-col h-full w-full">
           <SidebarHeader className="flex items-center px-6 py-6">
             {!isMinimized && (
-              <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
+              <div 
+                className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 cursor-pointer" 
+                onClick={() => handleNavigation('/')}
+              >
                 BlockWard
               </div>
             )}
@@ -188,7 +196,7 @@ export function AppSidebar() {
                       )}
                     >
                       <div 
-                        onClick={() => navigate(item.href)} 
+                        onClick={() => handleNavigation(item.href)} 
                         className={cn(
                           "cursor-pointer flex items-center w-full",
                           isActive ? "text-white font-semibold" : "text-gray-300"
@@ -224,7 +232,7 @@ export function AppSidebar() {
                             )}
                           >
                             <div 
-                              onClick={() => navigate(item.href)} 
+                              onClick={() => handleNavigation(item.href)} 
                               className={cn(
                                 "cursor-pointer flex items-center w-full",
                                 isActive ? "text-white font-semibold" : "text-gray-300"
