@@ -52,7 +52,7 @@ const SignUp = () => {
             <GraduationCap className="h-12 w-12 text-purple-500" />
           </div>
           
-          <h2 className="text-2xl font-bold text-center mb-6">Create Your Account</h2>
+          <h2 className="text-2xl font-bold text-center mb-6 text-white">Create Your Account</h2>
           
           <div className="space-y-6">
             <div className="flex rounded-lg overflow-hidden">
@@ -95,7 +95,7 @@ const SignUp = () => {
               </div>
             )}
             
-            <p className="text-center text-sm text-gray-400">
+            <p className="text-center text-sm text-white">
               Already have an account?{" "}
               <button 
                 className="text-purple-400 hover:text-purple-300"
