@@ -3,13 +3,12 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/integrations/supabase/types";
-import { Users, Settings, Grid, Calendar, Bell, Award, Book, ChartBar, Trash2 } from "lucide-react";
+import { Users, Settings, Grid, Calendar, Trash2 } from "lucide-react";
 import { SeatingChart } from "@/components/seating/SeatingChart";
 import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
 import { InviteStudents } from "./InviteStudents";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +31,6 @@ interface ClassroomGridProps {
 export const ClassroomGrid = ({ classroom, onDelete }: ClassroomGridProps) => {
   const [showSeating, setShowSeating] = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
-  const [showBehavior, setShowBehavior] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState(0);
@@ -180,7 +178,7 @@ export const ClassroomGrid = ({ classroom, onDelete }: ClassroomGridProps) => {
             </div>
             
             {userRole === 'teacher' ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -202,15 +200,6 @@ export const ClassroomGrid = ({ classroom, onDelete }: ClassroomGridProps) => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => setShowBehavior(!showBehavior)}
-                  className={showBehavior ? "bg-purple-900/20" : ""}
-                >
-                  <ChartBar className="w-4 h-4 mr-2" />
-                  Behavior
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
                   onClick={() => setShowInvite(!showInvite)}
                   className={showInvite ? "bg-purple-900/20" : ""}
                 >
@@ -219,7 +208,7 @@ export const ClassroomGrid = ({ classroom, onDelete }: ClassroomGridProps) => {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -227,14 +216,6 @@ export const ClassroomGrid = ({ classroom, onDelete }: ClassroomGridProps) => {
                 >
                   <Grid className="w-4 h-4 mr-2" />
                   View Seating
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {}}
-                >
-                  <Award className="w-4 h-4 mr-2" />
-                  View Progress
                 </Button>
               </div>
             )}
@@ -257,12 +238,6 @@ export const ClassroomGrid = ({ classroom, onDelete }: ClassroomGridProps) => {
       {showSeating && (
         <Card className="p-4">
           <SeatingChart classroomId={classroom.id} />
-        </Card>
-      )}
-
-      {showBehavior && userRole === 'teacher' && (
-        <Card className="p-4">
-          <BehaviorTracker />
         </Card>
       )}
     </div>

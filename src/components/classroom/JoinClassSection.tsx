@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthService } from "@/services/AuthService";
 
 export const JoinClassSection = () => {
   const [invitationCode, setInvitationCode] = useState("");
@@ -36,24 +35,7 @@ export const JoinClassSection = () => {
         return;
       }
 
-      // Get the student's ID
-      const { data: studentData, error: studentError } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (studentError || !studentData) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not find your student profile"
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Validate invitation code
+      // First check if invitation code is valid
       const { data: invitationData, error: validationError } = await supabase
         .from('class_invitations')
         .select('classroom_id, classroom:classrooms(name)')
@@ -71,13 +53,60 @@ export const JoinClassSection = () => {
         return;
       }
 
+      // Get the student's ID or create student record if it doesn't exist
+      let studentId;
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (studentError || !studentData) {
+        // Create a student record if none exists
+        const username = session.user.email?.split('@')[0] || 'Student';
+        const { data: newStudent, error: createError } = await supabase
+          .from('students')
+          .insert({
+            user_id: session.user.id,
+            name: username,
+            school: '',
+            points: 0
+          })
+          .select('id')
+          .single();
+          
+        if (createError || !newStudent) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not create student profile"
+          });
+          setLoading(false);
+          return;
+        }
+        
+        studentId = newStudent.id;
+        
+        // Create user role as student if it doesn't exist
+        await supabase
+          .from('user_roles')
+          .insert({
+            user_id: session.user.id,
+            role: 'student'
+          })
+          .select()
+          .single();
+      } else {
+        studentId = studentData.id;
+      }
+
       // Check if student is already enrolled
       const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
         .from('classroom_students')
         .select('id')
         .match({
           classroom_id: invitationData.classroom_id,
-          student_id: studentData.id
+          student_id: studentId
         })
         .maybeSingle();
 
@@ -96,7 +125,7 @@ export const JoinClassSection = () => {
         .from('classroom_students')
         .insert({
           classroom_id: invitationData.classroom_id,
-          student_id: studentData.id
+          student_id: studentId
         });
 
       if (enrollError) {
@@ -115,6 +144,11 @@ export const JoinClassSection = () => {
       });
 
       setInvitationCode("");
+      
+      // Refresh the page to show the newly joined class
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error: any) {
       console.error('Error joining class:', error);
       toast({
