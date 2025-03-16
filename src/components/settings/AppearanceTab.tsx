@@ -7,6 +7,7 @@ import { useTutorial } from "@/hooks/useTutorial";
 import { RefreshCcw, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export const AppearanceTab = () => {
   const { 
@@ -18,9 +19,11 @@ export const AppearanceTab = () => {
   
   const { resetTutorialStatus } = useTutorial();
   const { toast } = useToast();
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleResetTutorial = async () => {
     try {
+      setIsResetting(true);
       await resetTutorialStatus();
       toast({
         title: "Tutorial Reset",
@@ -32,6 +35,8 @@ export const AppearanceTab = () => {
         title: "Error",
         description: "Failed to reset tutorial. Please try again."
       });
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -106,10 +111,11 @@ export const AppearanceTab = () => {
           <Button 
             variant="outline" 
             onClick={handleResetTutorial}
+            disabled={isResetting}
             className="flex items-center gap-2 bg-purple-900/40 border-purple-500/40 hover:bg-purple-800/50 transition-all duration-300 shadow-[0_5px_15px_rgba(147,51,234,0.3)]"
           >
-            <RefreshCcw className="w-4 h-4 text-purple-300" />
-            Restart Tutorial
+            <RefreshCcw className={`w-4 h-4 text-purple-300 ${isResetting ? 'animate-spin' : ''}`} />
+            {isResetting ? 'Restarting...' : 'Restart Tutorial'}
           </Button>
         </div>
       </motion.div>

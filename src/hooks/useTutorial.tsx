@@ -95,22 +95,30 @@ export const useTutorial = () => {
   const resetTutorialStatus = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await supabase
-          .from('user_preferences')
-          .upsert({
-            user_id: session.user.id,
-            tutorial_completed: false,
-          });
-        
-        if (userRole) {
-          navigate(`/tutorial/${userRole}`);
-        } else {
-          setShowTutorial(true);
-        }
+      if (!session) {
+        throw new Error("No active session found");
+      }
+      
+      // Update the user preference to mark tutorial as not completed
+      await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: session.user.id,
+          tutorial_completed: false,
+        });
+      
+      // Navigate to the appropriate tutorial page based on user role
+      if (userRole) {
+        navigate(`/tutorial/${userRole}`);
+        return true;
+      } else {
+        // If role can't be determined, show the tutorial modal
+        setShowTutorial(true);
+        return true;
       }
     } catch (error) {
       console.error("Error resetting tutorial status:", error);
+      throw error;
     }
   };
 

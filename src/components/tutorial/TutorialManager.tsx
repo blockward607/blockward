@@ -56,6 +56,7 @@ export const TutorialManager = () => {
         } else {
           setShowTutorial(shouldShowTutorial);
         }
+        
         setLoading(false);
       } catch (error) {
         console.error("Error checking tutorial status:", error);
@@ -65,24 +66,6 @@ export const TutorialManager = () => {
 
     checkTutorialStatus();
   }, [navigate, userRole]);
-
-  const handleResetTutorial = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: session.user.id,
-          tutorial_completed: false,
-        });
-      
-      if (userRole) {
-        navigate(`/tutorial/${userRole}`);
-      } else {
-        setShowTutorial(true);
-      }
-    }
-  };
 
   if (loading || !showTutorial) {
     return null;
