@@ -8,9 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface EmailInviteTabProps {
   onSuccess: () => void;
+  classroomId?: string;
 }
 
-export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
+export const EmailInviteTab = ({ onSuccess, classroomId }: EmailInviteTabProps) => {
   const [studentEmail, setStudentEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -53,23 +54,45 @@ export const EmailInviteTab = ({ onSuccess }: EmailInviteTabProps) => {
         return;
       }
 
-      // Get the first classroom of the teacher
-      const { data: classrooms } = await supabase
-        .from('classrooms')
-        .select('id, name')
-        .eq('teacher_id', teacherProfile.id)
-        .limit(1);
+      // Get the classroom - either the one provided as prop or the first classroom
+      let classroom;
+      if (classroomId) {
+        const { data: classroomData } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', classroomId)
+          .single();
+        
+        classroom = classroomData;
+      } else {
+        // Get the first classroom of the teacher
+        const { data: classrooms } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('teacher_id', teacherProfile.id)
+          .limit(1);
 
-      if (!classrooms || classrooms.length === 0) {
+        if (!classrooms || classrooms.length === 0) {
+          toast({
+            variant: "destructive",
+            title: "No Classroom",
+            description: "Please create a classroom first"
+          });
+          return;
+        }
+        
+        classroom = classrooms[0];
+      }
+      
+      if (!classroom) {
         toast({
           variant: "destructive",
-          title: "No Classroom",
-          description: "Please create a classroom first"
+          title: "Classroom Not Found",
+          description: "Please make sure the classroom exists"
         });
         return;
       }
 
-      const classroom = classrooms[0];
       const teacherName = teacherProfile.full_name || session.user.user_metadata?.name || 'Your Teacher';
 
       // Create invitation in database

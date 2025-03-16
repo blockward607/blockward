@@ -3,27 +3,41 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/integrations/supabase/types";
-import { Users, Settings, Grid, Calendar, Bell, Award, Book, ChartBar } from "lucide-react";
+import { Users, Settings, Grid, Calendar, Bell, Award, Book, ChartBar, Trash2 } from "lucide-react";
 import { SeatingChart } from "@/components/seating/SeatingChart";
 import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
 import { InviteStudents } from "./InviteStudents";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
 interface ClassroomGridProps {
   classroom: Classroom;
+  onDelete?: (classroomId: string) => void;
 }
 
-export const ClassroomGrid = ({ classroom }: ClassroomGridProps) => {
+export const ClassroomGrid = ({ classroom, onDelete }: ClassroomGridProps) => {
   const [showSeating, setShowSeating] = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
   const [showBehavior, setShowBehavior] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,6 +67,65 @@ export const ClassroomGrid = ({ classroom }: ClassroomGridProps) => {
     setStudentCount(count || 0);
   };
 
+  const handleDeleteClass = async () => {
+    if (!classroom.id) return;
+    
+    setIsDeleting(true);
+    try {
+      // Delete related records first (class_invitations)
+      await supabase
+        .from('class_invitations')
+        .delete()
+        .eq('classroom_id', classroom.id);
+
+      // Delete classroom_students records
+      await supabase
+        .from('classroom_students')
+        .delete()
+        .eq('classroom_id', classroom.id);
+
+      // Delete seating arrangements
+      await supabase
+        .from('seating_arrangements')
+        .delete()
+        .eq('classroom_id', classroom.id);
+
+      // Delete attendance records
+      await supabase
+        .from('attendance')
+        .delete()
+        .eq('classroom_id', classroom.id);
+      
+      // Finally, delete the classroom
+      const { error } = await supabase
+        .from('classrooms')
+        .delete()
+        .eq('id', classroom.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `${classroom.name} has been deleted`,
+      });
+      
+      // Call the onDelete callback if provided
+      if (onDelete) {
+        onDelete(classroom.id);
+      }
+    } catch (error: any) {
+      console.error("Error deleting classroom:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete classroom: " + error.message,
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card className="p-4 glass-card hover:bg-purple-900/10 transition-all">
@@ -63,9 +136,40 @@ export const ClassroomGrid = ({ classroom }: ClassroomGridProps) => {
               <p className="text-sm text-gray-400">{classroom.description}</p>
             </div>
             {userRole === 'teacher' && (
-              <Button variant="ghost" size="icon">
-                <Settings className="w-4 h-4" />
-              </Button>
+              <div className="flex space-x-2">
+                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-500/10">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-[#25293A] border border-purple-500/30">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {classroom.name}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the classroom 
+                        and all associated data including seating arrangements, invitations, and 
+                        student enrollments.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-transparent border-purple-500/30 hover:bg-purple-600/20 text-white">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteClass}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <Button variant="ghost" size="icon">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </div>
             )}
           </div>
           

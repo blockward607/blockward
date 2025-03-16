@@ -149,6 +149,16 @@ const Classes = () => {
     }
   };
 
+  const handleDeleteClass = (classroomId: string) => {
+    // Filter out the deleted classroom
+    setClassrooms(classrooms.filter(classroom => classroom.id !== classroomId));
+    
+    // If the deleted classroom was selected, clear the selection
+    if (selectedClassroom && selectedClassroom.id === classroomId) {
+      setSelectedClassroom(null);
+    }
+  };
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -279,7 +289,10 @@ const Classes = () => {
               transition={{ type: "spring", stiffness: 300, damping: 15 }}
               onClick={() => userRole === 'teacher' && setSelectedClassroom(classroom)}
             >
-              <ClassroomGrid classroom={classroom} />
+              <ClassroomGrid 
+                classroom={classroom} 
+                onDelete={handleDeleteClass} 
+              />
             </motion.div>
           ))
         )}
