@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { 
   Award, 
@@ -39,6 +40,7 @@ interface Assignment {
 }
 
 export const TeacherGradesView = () => {
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [classrooms, setClassrooms] = useState<ClassroomOption[]>([]);
