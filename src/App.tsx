@@ -48,18 +48,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/home" />} />
             <Route path="/home" element={<Home />} />
-            <Route
-              path="/auth"
-              element={
-                <AuthPage>
-                  <Auth
-                    supabaseClient={supabase}
-                    appearance={{ theme: ThemeSupa }}
-                    providers={['google', 'github']}
-                  />
-                </AuthPage>
-              }
-            />
+            <Route path="/auth" element={<AuthPage />} />
             <Route path="/classes" element={<Classes />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/tutorial/:role" element={<TutorialPage />} />
