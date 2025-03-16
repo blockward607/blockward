@@ -106,26 +106,28 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center h-full w-full">
         <div className="p-4">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full w-full flex flex-col">
       {TutorialComponent}
       {TutorialPrompt}
       <DashboardHeader userName={userName} />
       
-      {userRole === 'student' ? (
-        <StudentDashboard />
-      ) : (
-        <TeacherDashboard 
-          classrooms={classrooms} 
-          selectedClassroom={selectedClassroom}
-        />
-      )}
+      <div className="flex-1 overflow-y-auto">
+        {userRole === 'student' ? (
+          <StudentDashboard />
+        ) : (
+          <TeacherDashboard 
+            classrooms={classrooms} 
+            selectedClassroom={selectedClassroom}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -144,7 +145,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={cn(
-      "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl fixed top-0 left-0 h-full z-40", 
+      "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl fixed top-0 left-0 h-screen z-40 flex flex-col", 
       isMinimized ? "w-16" : "w-64"
     )}>
       <div className="absolute top-4 right-0 z-10 transform translate-x-1/2">
@@ -238,7 +239,7 @@ export function AppSidebar() {
           ))}
         </SidebarContent>
         
-        <SidebarFooter className="p-4 w-full">
+        <SidebarFooter className="p-4 w-full mt-auto">
           <Button 
             variant="ghost" 
             className={cn(
