@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Plus, Send, X } from "lucide-react";
 import type { Classroom } from "@/types/classroom";
 import type { Notification } from "@/types/notification";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface TeacherDashboardProps {
   classrooms: Partial<Classroom>[];
@@ -20,6 +21,7 @@ export const TeacherDashboard = ({ classrooms, selectedClassroom }: TeacherDashb
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [announcements, setAnnouncements] = useState<Notification[]>([]);
+  const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
 
   const handleCreateAnnouncement = async () => {
@@ -58,6 +60,9 @@ export const TeacherDashboard = ({ classrooms, selectedClassroom }: TeacherDashb
       setTitle("");
       setMessage("");
       
+      // Close the form after successful submission
+      setShowForm(false);
+      
       // Add the new announcement to the list
       if (data && data.length > 0) {
         setAnnouncements([data[0], ...announcements]);
@@ -74,56 +79,87 @@ export const TeacherDashboard = ({ classrooms, selectedClassroom }: TeacherDashb
     }
   };
 
+  const toggleForm = () => {
+    setShowForm(!showForm);
+    // Reset form when closing
+    if (showForm) {
+      setTitle("");
+      setMessage("");
+    }
+  };
+
   return (
     <div className="space-y-8">
-      <Card className="p-6 bg-gradient-to-br from-purple-900/30 to-black border-purple-500/30">
-        <h2 className="text-2xl font-bold mb-4">Create Announcement</h2>
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium mb-1">
-              Title
-            </label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Announcement title"
-              className="w-full bg-black/50 border-purple-500/30"
-            />
-          </div>
-          <div>
-            <label htmlFor="message" className="block text-sm font-medium mb-1">
-              Message
-            </label>
-            <Textarea
-              id="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Write your announcement here..."
-              className="w-full min-h-[120px] bg-black/50 border-purple-500/30"
-            />
-          </div>
-          <div className="flex justify-end">
-            <Button 
-              onClick={handleCreateAnnouncement} 
-              disabled={isSubmitting || !title || !message}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Posting...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Post Announcement
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </Card>
+      <div className="flex justify-end mb-4">
+        <Button
+          onClick={toggleForm}
+          className={`rounded-full ${showForm ? "bg-red-600 hover:bg-red-700" : "bg-purple-600 hover:bg-purple-700"}`}
+          size="icon"
+        >
+          {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+        </Button>
+      </div>
+
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <Card className="p-6 bg-gradient-to-br from-purple-900/30 to-black border-purple-500/30 mb-8">
+              <h2 className="text-2xl font-bold mb-4">Create Announcement</h2>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium mb-1">
+                    Title
+                  </label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Announcement title"
+                    className="w-full bg-black/50 border-purple-500/30"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium mb-1">
+                    Message
+                  </label>
+                  <Textarea
+                    id="message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Write your announcement here..."
+                    className="w-full min-h-[120px] bg-black/50 border-purple-500/30"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={handleCreateAnnouncement} 
+                    disabled={isSubmitting || !title || !message}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Posting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Post Announcement
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div>
         <h2 className="text-2xl font-bold mb-4">Recent Announcements</h2>
