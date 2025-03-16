@@ -93,15 +93,24 @@ export const useTutorial = () => {
   };
 
   const resetTutorialStatus = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: session.user.id,
-          tutorial_completed: false,
-        });
-      startTutorial();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase
+          .from('user_preferences')
+          .upsert({
+            user_id: session.user.id,
+            tutorial_completed: false,
+          });
+        
+        if (userRole) {
+          navigate(`/tutorial/${userRole}`);
+        } else {
+          setShowTutorial(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error resetting tutorial status:", error);
     }
   };
 

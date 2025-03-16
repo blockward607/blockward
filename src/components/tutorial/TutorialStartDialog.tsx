@@ -25,7 +25,7 @@ export const TutorialStartDialog = ({
   const handleSkipTutorial = async () => {
     setLoading(true);
     try {
-      onSkipTutorial();
+      await onSkipTutorial();
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving tutorial preference:", error);

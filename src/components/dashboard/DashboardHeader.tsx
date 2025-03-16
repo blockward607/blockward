@@ -18,28 +18,32 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
 
   useEffect(() => {
     const determineUserRole = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
 
-      // Determine user role
-      const { data: teacherData } = await supabase
-        .from('teacher_profiles')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .single();
-        
-      if (teacherData) {
-        setUserRole('teacher');
-      } else {
-        const { data: studentData } = await supabase
-          .from('students')
+        // Determine user role
+        const { data: teacherData } = await supabase
+          .from('teacher_profiles')
           .select('id')
           .eq('user_id', session.user.id)
           .single();
           
-        if (studentData) {
-          setUserRole('student');
+        if (teacherData) {
+          setUserRole('teacher');
+        } else {
+          const { data: studentData } = await supabase
+            .from('students')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .single();
+            
+          if (studentData) {
+            setUserRole('student');
+          }
         }
+      } catch (error) {
+        console.error("Error determining user role:", error);
       }
     };
 

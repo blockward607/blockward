@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useTutorial } from "@/hooks/useTutorial";
 import { RefreshCcw, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 export const AppearanceTab = () => {
   const { 
@@ -16,6 +17,23 @@ export const AppearanceTab = () => {
   } = useAppearanceSettings();
   
   const { resetTutorialStatus } = useTutorial();
+  const { toast } = useToast();
+
+  const handleResetTutorial = async () => {
+    try {
+      await resetTutorialStatus();
+      toast({
+        title: "Tutorial Reset",
+        description: "Tutorial has been reset successfully."
+      });
+    } catch (error) {
+      console.error("Error resetting tutorial:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reset tutorial. Please try again."
+      });
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -87,7 +105,7 @@ export const AppearanceTab = () => {
           </span>
           <Button 
             variant="outline" 
-            onClick={resetTutorialStatus}
+            onClick={handleResetTutorial}
             className="flex items-center gap-2 bg-purple-900/40 border-purple-500/40 hover:bg-purple-800/50 transition-all duration-300 shadow-[0_5px_15px_rgba(147,51,234,0.3)]"
           >
             <RefreshCcw className="w-4 h-4 text-purple-300" />
