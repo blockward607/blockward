@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -28,7 +29,8 @@ import {
   MessageSquare,
   LogOut,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  ChartBar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

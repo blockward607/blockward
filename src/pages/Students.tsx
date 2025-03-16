@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ChartBar } from "lucide-react";
+import { Sparkles, ChartBar, Users } from "lucide-react";
 import { useStudentManagement } from "@/hooks/use-student-management";
 import { StudentList } from "@/components/students/StudentList";
 import { StudentsHeader } from "@/components/students/StudentsHeader";
