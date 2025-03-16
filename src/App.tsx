@@ -14,7 +14,7 @@ const Auth = lazy(() => import("@/pages/Auth"));
 const SignUp = lazy(() => import("@/pages/SignUp"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Classes = lazy(() => import("@/pages/Classes"));
-const Students = lazy(() => import("@/pages/Students"));
+const Students = lazy(() => import("@/pages/Students")); // Keep this import for accessing via Classes
 const Attendance = lazy(() => import("@/pages/Attendance"));
 // Removed Achievements import as it's now part of Wallet
 const Rewards = lazy(() => import("@/pages/Rewards"));

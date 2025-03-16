@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -76,7 +75,6 @@ export function AppSidebar() {
       name: "Main",
       items: [
         { name: "Announcements", href: "/dashboard", icon: Megaphone },
-        { name: "Students", href: "/students", icon: Users },
         { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },
