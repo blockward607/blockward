@@ -36,7 +36,7 @@ const Index = () => {
   };
   
   if (showIntro) {
-    return <LuxuryIntro onEnter={handleEnterSite} />;
+    return <BlockwardIntro onEnter={handleEnterSite} />;
   }
   
   return (
