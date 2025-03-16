@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, AlertTriangle, Trophy } from "lucide-react";
+import { Wallet as WalletIcon, Plus, AlertTriangle, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -171,7 +171,7 @@ const Wallet = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4 mb-8">
         <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
-          <Wallet className="w-8 h-8 text-purple-300" />
+          <WalletIcon className="w-8 h-8 text-purple-300" />
         </div>
         <h1 className="text-4xl font-bold shimmer-text">
           BlockWard Wallet & Achievements
@@ -183,7 +183,7 @@ const Wallet = () => {
       <Tabs defaultValue="wallet" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-6">
           <TabsTrigger value="wallet" className="data-[state=active]:bg-purple-600">
-            <Wallet className="w-4 h-4 mr-2" />
+            <WalletIcon className="w-4 h-4 mr-2" />
             Wallet & NFTs
           </TabsTrigger>
           <TabsTrigger value="achievements" className="data-[state=active]:bg-purple-600">
