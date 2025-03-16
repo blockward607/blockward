@@ -10,8 +10,6 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../integrations/supabase/client';
 
 const AuthPage = () => {
@@ -26,7 +24,6 @@ const AuthPage = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [useCustomAuth, setUseCustomAuth] = useState(false);
   
   // Check for token errors in URL hash
   useEffect(() => {
@@ -84,77 +81,60 @@ const AuthPage = () => {
         className="w-full max-w-md"
       >
         <Card className="glass-card p-8">
-          {useCustomAuth ? (
-            showForgotPassword ? (
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold text-center mb-6">Reset Password</h2>
-                <ForgotPasswordForm
-                  email={email}
-                  setEmail={setEmail}
-                  setErrorMessage={setErrorMessage}
-                  setShowError={setShowError}
-                  setLoading={setLoading}
-                  onBackToSignIn={handleBackToSignIn}
-                />
-              </div>
-            ) : (
-              <>
-                <Tabs defaultValue="teacher" onValueChange={(value) => setRole(value as 'teacher' | 'student')}>
-                  <TabsList className="grid w-full grid-cols-2 mb-8">
-                    <TabsTrigger value="teacher">Teacher</TabsTrigger>
-                    <TabsTrigger value="student">Student</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-
-                <Tabs defaultValue="signin" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="signin">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="signin" className="space-y-4">
-                    <SignInForm
-                      email={email}
-                      setEmail={setEmail}
-                      password={password}
-                      setPassword={setPassword}
-                      setErrorMessage={setErrorMessage}
-                      setShowError={setShowError}
-                      setLoading={setLoading}
-                      onForgotPasswordClick={handleForgotPasswordClick}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="signup" className="space-y-4">
-                    <SignUpForm
-                      role={role}
-                      email={email}
-                      setEmail={setEmail}
-                      password={password}
-                      setPassword={setPassword}
-                      setErrorMessage={setErrorMessage}
-                      setShowError={setShowError}
-                      setLoading={setLoading}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </>
-            )
-          ) : (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-center mb-6">Sign In or Sign Up</h2>
-              <Auth
-                supabaseClient={supabase}
-                appearance={{ theme: ThemeSupa }}
-                providers={['google', 'github']}
+          {showForgotPassword ? (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-center mb-6">Reset Password</h2>
+              <ForgotPasswordForm
+                email={email}
+                setEmail={setEmail}
+                setErrorMessage={setErrorMessage}
+                setShowError={setShowError}
+                setLoading={setLoading}
+                onBackToSignIn={handleBackToSignIn}
               />
-              <button 
-                onClick={() => setUseCustomAuth(true)}
-                className="w-full text-sm text-gray-400 hover:text-gray-200 mt-4"
-              >
-                Switch to Custom Auth UI
-              </button>
             </div>
+          ) : (
+            <>
+              <Tabs defaultValue="teacher" onValueChange={(value) => setRole(value as 'teacher' | 'student')}>
+                <TabsList className="grid w-full grid-cols-2 mb-8">
+                  <TabsTrigger value="teacher">Teacher</TabsTrigger>
+                  <TabsTrigger value="student">Student</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <Tabs defaultValue="signin" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="signin">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="signin" className="space-y-4">
+                  <SignInForm
+                    email={email}
+                    setEmail={setEmail}
+                    password={password}
+                    setPassword={setPassword}
+                    setErrorMessage={setErrorMessage}
+                    setShowError={setShowError}
+                    setLoading={setLoading}
+                    onForgotPasswordClick={handleForgotPasswordClick}
+                  />
+                </TabsContent>
+
+                <TabsContent value="signup" className="space-y-4">
+                  <SignUpForm
+                    role={role}
+                    email={email}
+                    setEmail={setEmail}
+                    password={password}
+                    setPassword={setPassword}
+                    setErrorMessage={setErrorMessage}
+                    setShowError={setShowError}
+                    setLoading={setLoading}
+                  />
+                </TabsContent>
+              </Tabs>
+            </>
           )}
 
           {showError && (
