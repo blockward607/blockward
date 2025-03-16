@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -26,13 +27,16 @@ import {
   Wallet,
   BarChart,
   MessageSquare,
-  LogOut
+  LogOut,
+  ChevronsLeft,
+  ChevronsRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export function AppSidebar() {
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isMinimized, setIsMinimized] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -57,6 +61,10 @@ export function AppSidebar() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/auth');
+  };
+
+  const toggleSidebar = () => {
+    setIsMinimized(!isMinimized);
   };
 
   // Combine related routes into groups
@@ -135,16 +143,35 @@ export function AppSidebar() {
   const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
 
   return (
-    <Sidebar className="bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl">
+    <Sidebar className={cn(
+      "bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30 shadow-xl relative", 
+      isMinimized ? "w-16" : "w-64"
+    )}>
+      <div className="absolute top-4 right-0 z-10 transform translate-x-1/2">
+        <Button 
+          size="icon" 
+          variant="secondary" 
+          onClick={toggleSidebar}
+          className="h-8 w-8 rounded-full bg-purple-900 border border-purple-500/30 hover:bg-purple-800"
+        >
+          {isMinimized ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+        </Button>
+      </div>
+      
       <SidebarHeader className="flex items-center px-6 py-6">
-        <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
-          Blockward
-        </div>
+        {!isMinimized && (
+          <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
+            Blockward
+          </div>
+        )}
       </SidebarHeader>
+      
       <SidebarContent>
         {navGroups.map((group) => (
           <SidebarGroup key={group.name}>
-            <SidebarGroupLabel className="text-gray-300 font-semibold">{group.name}</SidebarGroupLabel>
+            {!isMinimized && (
+              <SidebarGroupLabel className="text-gray-300 font-semibold">{group.name}</SidebarGroupLabel>
+            )}
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
@@ -154,7 +181,7 @@ export function AppSidebar() {
                       <SidebarMenuButton 
                         asChild 
                         isActive={isActive}
-                        tooltip={item.name}
+                        tooltip={isMinimized ? item.name : undefined}
                         className={cn(
                           "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300",
                           isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
@@ -163,12 +190,12 @@ export function AppSidebar() {
                         <div 
                           onClick={() => navigate(item.href)} 
                           className={cn(
-                            "cursor-pointer text-lg",
+                            "cursor-pointer flex items-center",
                             isActive ? "text-white font-semibold" : "text-gray-300"
                           )}
                         >
-                          <item.icon className={cn("w-5 h-5 mr-3", isActive && "text-purple-300")} />
-                          <span>{item.name}</span>
+                          <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
+                          {!isMinimized && <span className="ml-3">{item.name}</span>}
                         </div>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -179,14 +206,18 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      
       <SidebarFooter className="p-4">
         <Button 
           variant="ghost" 
-          className="w-full justify-start gap-2 text-gray-300 hover:text-white hover:bg-red-500/20"
+          className={cn(
+            "w-full justify-start gap-2 text-gray-300 hover:text-white hover:bg-red-500/20",
+            isMinimized && "px-2 justify-center"
+          )}
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5" />
-          <span className="text-base">Log Out</span>
+          {!isMinimized && <span className="text-base">Log Out</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>
