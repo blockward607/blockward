@@ -141,6 +141,9 @@ export function AppSidebar() {
   ];
 
   const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
+  
+  // Extract main navigation items and place them at the top
+  const mainNavItems = navGroups[0].items || [];
 
   return (
     <Sidebar className={cn(
@@ -167,7 +170,39 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent>
-        {navGroups.map((group) => (
+        {/* Main navigation items at the top */}
+        <SidebarMenu className="px-2 mt-2 mb-6">
+          {mainNavItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <SidebarMenuItem key={item.name}>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={isActive}
+                  tooltip={isMinimized ? item.name : undefined}
+                  className={cn(
+                    "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300",
+                    isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
+                  )}
+                >
+                  <div 
+                    onClick={() => navigate(item.href)} 
+                    className={cn(
+                      "cursor-pointer flex items-center",
+                      isActive ? "text-white font-semibold" : "text-gray-300"
+                    )}
+                  >
+                    <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
+                    {!isMinimized && <span className="ml-3">{item.name}</span>}
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+        
+        {/* Display rest of the navigation groups */}
+        {navGroups.slice(1).map((group) => (
           <SidebarGroup key={group.name}>
             {!isMinimized && (
               <SidebarGroupLabel className="text-gray-300 font-semibold">{group.name}</SidebarGroupLabel>
