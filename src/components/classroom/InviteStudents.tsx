@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,11 +73,17 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
 
     setLoading(true);
     try {
+      // Generate invitation token
+      const invitationToken = Array.from({length: 8}, () => 
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
+      ).join('');
+      
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .insert({
           classroom_id: classroomId,
           email: email.toLowerCase(),
+          invitation_token: invitationToken,
           status: 'pending'
         })
         .select()
@@ -124,11 +131,17 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
   const generateInviteCode = async () => {
     setLoading(true);
     try {
+      // Generate invitation token
+      const invitationToken = Array.from({length: 8}, () => 
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
+      ).join('');
+      
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .insert({
           classroom_id: classroomId,
           email: 'general_invitation@blockward.app',
+          invitation_token: invitationToken,
           status: 'pending'
         })
         .select()

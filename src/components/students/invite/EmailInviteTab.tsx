@@ -36,6 +36,7 @@ export const EmailInviteTab = ({ onSuccess, classroomId }: EmailInviteTabProps) 
           title: "Error",
           description: "You must be logged in to send invitations"
         });
+        setLoading(false);
         return;
       }
 
@@ -51,6 +52,7 @@ export const EmailInviteTab = ({ onSuccess, classroomId }: EmailInviteTabProps) 
           title: "Error",
           description: "Teacher profile not found"
         });
+        setLoading(false);
         return;
       }
 
@@ -78,6 +80,7 @@ export const EmailInviteTab = ({ onSuccess, classroomId }: EmailInviteTabProps) 
             title: "No Classroom",
             description: "Please create a classroom first"
           });
+          setLoading(false);
           return;
         }
         
@@ -90,10 +93,16 @@ export const EmailInviteTab = ({ onSuccess, classroomId }: EmailInviteTabProps) 
           title: "Classroom Not Found",
           description: "Please make sure the classroom exists"
         });
+        setLoading(false);
         return;
       }
 
       const teacherName = teacherProfile.full_name || session.user.user_metadata?.name || 'Your Teacher';
+
+      // Generate a unique invitation token
+      const invitationToken = Array.from({length: 8}, () => 
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
+      ).join('');
 
       // Create invitation in database
       const { data: invitation, error: inviteError } = await supabase
@@ -101,6 +110,7 @@ export const EmailInviteTab = ({ onSuccess, classroomId }: EmailInviteTabProps) 
         .insert({
           classroom_id: classroom.id,
           email: studentEmail.toLowerCase(),
+          invitation_token: invitationToken,
           status: 'pending'
         })
         .select()

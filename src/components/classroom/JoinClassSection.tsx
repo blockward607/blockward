@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, QrCode, Scan } from "lucide-react";
+import { Loader2, UserPlus, QrCode } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -47,6 +48,7 @@ export const JoinClassSection = () => {
         return;
       }
 
+      // Get invitation details
       const { data: invitationData, error: validationError } = await supabase
         .from('class_invitations')
         .select('classroom_id, classroom:classrooms(name)')
@@ -64,6 +66,7 @@ export const JoinClassSection = () => {
         return;
       }
 
+      // Check or create student profile
       let studentId;
       const { data: studentData, error: studentError } = await supabase
         .from('students')
@@ -72,6 +75,7 @@ export const JoinClassSection = () => {
         .maybeSingle();
 
       if (studentError || !studentData) {
+        // Create new student profile if it doesn't exist
         const username = session.user.email?.split('@')[0] || 'Student';
         const { data: newStudent, error: createError } = await supabase
           .from('students')
@@ -96,18 +100,26 @@ export const JoinClassSection = () => {
         
         studentId = newStudent.id;
         
-        await supabase
+        // Also create user role as student if it doesn't exist
+        const { data: existingRole } = await supabase
           .from('user_roles')
-          .insert({
-            user_id: session.user.id,
-            role: 'student'
-          })
-          .select()
-          .single();
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+          
+        if (!existingRole) {
+          await supabase
+            .from('user_roles')
+            .insert({
+              user_id: session.user.id,
+              role: 'student'
+            });
+        }
       } else {
         studentId = studentData.id;
       }
 
+      // Check if student is already enrolled in this classroom
       const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
         .from('classroom_students')
         .select('id')
@@ -127,6 +139,7 @@ export const JoinClassSection = () => {
         return;
       }
 
+      // Enroll student in the classroom
       const { error: enrollError } = await supabase
         .from('classroom_students')
         .insert({
@@ -138,6 +151,7 @@ export const JoinClassSection = () => {
         throw new Error("Failed to enroll in the classroom");
       }
 
+      // Update invitation status
       await supabase
         .from('class_invitations')
         .update({ status: 'accepted' })
@@ -150,6 +164,7 @@ export const JoinClassSection = () => {
 
       setInvitationCode("");
       
+      // Reload page after short delay to show updated classes
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -169,6 +184,7 @@ export const JoinClassSection = () => {
     setScannerOpen(false);
     if (code) {
       try {
+        // Handle both direct codes and URLs with code parameter
         if (code.includes('?code=')) {
           const url = new URL(code);
           const codeParam = url.searchParams.get('code');
