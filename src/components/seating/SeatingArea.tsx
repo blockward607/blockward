@@ -35,7 +35,7 @@ export const SeatingArea: React.FC<SeatingAreaProps> = ({
       </div>
       
       <div 
-        className="bg-gray-800/30 rounded-lg p-4 min-h-[500px] mt-12 relative"
+        className="bg-gray-800/30 rounded-lg p-4 min-h-[500px] mt-12 relative will-change-auto"
         ref={setContainerRef}
         onDragOver={handleDragOver}
       >
@@ -50,7 +50,7 @@ export const SeatingArea: React.FC<SeatingAreaProps> = ({
         
         {isDraggingNewSeat && (
           <div
-            className="absolute rounded-lg bg-purple-500/50 border-2 border-dashed border-purple-300 flex items-center justify-center"
+            className="absolute rounded-lg bg-purple-500/50 border-2 border-dashed border-purple-300 flex items-center justify-center will-change-auto"
             style={{
               left: `${newSeatPosition.x}px`,
               top: `${newSeatPosition.y}px`,

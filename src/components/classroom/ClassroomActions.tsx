@@ -1,34 +1,38 @@
 
 import { Button } from "@/components/ui/button";
 import { Grid, Calendar, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ClassroomActionsProps {
   userRole: string | null;
-  showSeating: boolean;
-  showAttendance: boolean;
-  showInvite: boolean;
-  onToggleSeating: () => void;
-  onToggleAttendance: () => void;
-  onToggleInvite: () => void;
+  classroomId: string;
 }
 
 export const ClassroomActions = ({
   userRole,
-  showSeating,
-  showAttendance,
-  showInvite,
-  onToggleSeating,
-  onToggleAttendance,
-  onToggleInvite
+  classroomId
 }: ClassroomActionsProps) => {
+  const navigate = useNavigate();
+  
+  const handleSeatingClick = () => {
+    navigate(`/classroom/${classroomId}/seating`);
+  };
+  
+  const handleAttendanceClick = () => {
+    navigate(`/classroom/${classroomId}/attendance`);
+  };
+  
+  const handleInviteClick = () => {
+    navigate(`/classroom/${classroomId}/invite`);
+  };
+
   if (userRole === 'teacher') {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         <Button 
           variant="outline" 
           size="sm"
-          onClick={onToggleAttendance}
-          className={showAttendance ? "bg-purple-900/20" : ""}
+          onClick={handleAttendanceClick}
         >
           <Calendar className="w-4 h-4 mr-2" />
           Attendance
@@ -36,8 +40,7 @@ export const ClassroomActions = ({
         <Button 
           variant="outline" 
           size="sm"
-          onClick={onToggleSeating}
-          className={showSeating ? "bg-purple-900/20" : ""}
+          onClick={handleSeatingClick}
         >
           <Grid className="w-4 h-4 mr-2" />
           Seating
@@ -45,8 +48,7 @@ export const ClassroomActions = ({
         <Button 
           variant="outline" 
           size="sm"
-          onClick={onToggleInvite}
-          className={showInvite ? "bg-purple-900/20" : ""}
+          onClick={handleInviteClick}
         >
           <Users className="w-4 h-4 mr-2" />
           Invite
@@ -60,7 +62,7 @@ export const ClassroomActions = ({
       <Button 
         variant="outline" 
         size="sm"
-        onClick={onToggleSeating}
+        onClick={handleSeatingClick}
       >
         <Grid className="w-4 h-4 mr-2" />
         View Seating

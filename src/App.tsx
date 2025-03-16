@@ -1,70 +1,84 @@
-
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Index from '@/pages/Index';
-import Auth from '@/pages/Auth';
-import ResetPassword from '@/pages/ResetPassword';
-import ResetPasswordOTP from '@/pages/ResetPasswordOTP';
-import SignUp from '@/pages/SignUp';
-import Dashboard from '@/pages/Dashboard';
-import Classes from '@/pages/Classes';
-import Students from '@/pages/Students';
-import Attendance from '@/pages/Attendance';
-import Behavior from '@/pages/Behavior';
-import Assignments from '@/pages/Assignments';
-import Rewards from '@/pages/Rewards';
-import Achievements from '@/pages/Achievements';
-import Wallet from '@/pages/Wallet';
-import Messages from '@/pages/Messages';
-import Notifications from '@/pages/Notifications';
-import Analytics from '@/pages/Analytics';
-import Resources from '@/pages/Resources';
-import Progress from '@/pages/Progress';
-import Settings from '@/pages/Settings';
-import StudentDashboard from '@/pages/StudentDashboard';
-import ViewTeacherDashboard from '@/pages/ViewTeacherDashboard';
-import TutorialPage from '@/pages/TutorialPage';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from 'react-router-dom';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from './integrations/supabase/client';
+import Home from './pages/Home';
+import Classes from './pages/Classes';
+import Dashboard from './pages/Dashboard';
+import AuthPage from './pages/Auth';
+import { useToast } from "@/hooks/use-toast"
+import { Toast } from "@/components/ui/toast"
+import { BlockwardIntro } from './components/intro/BlockwardIntro';
+import TutorialPage from './pages/TutorialPage';
+import ClassroomSeating from './pages/ClassroomSeating';
+import ClassroomAttendance from './pages/ClassroomAttendance';
+import ClassroomInvite from './pages/ClassroomInvite';
 
 function App() {
+  const [showIntro, setShowIntro] = useState(true);
+  const { toast } = useToast()
+
+  useEffect(() => {
+    // Check if the user has already seen the intro
+    const hasSeenIntro = localStorage.getItem('hasSeenIntro');
+    if (hasSeenIntro) {
+      setShowIntro(false);
+    }
+  }, []);
+
+  const handleIntroComplete = () => {
+    // Set a flag in local storage so the intro is not shown again
+    localStorage.setItem('hasSeenIntro', 'true');
+    setShowIntro(false);
+  };
+
   return (
-    <Router>
-      <div className="min-h-screen antialiased App">
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/home" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/reset-password-otp" element={<ResetPasswordOTP />} />
-          <Route path="/auth/reset-password" element={<ResetPassword />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/tutorial/:role" element={<TutorialPage />} />
-          
-          {/* Protected routes with sidebar layout */}
-          <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<Dashboard />} />
+    <>
+      <Router>
+        {showIntro ? (
+          <BlockwardIntro onEnter={handleIntroComplete} />
+        ) : (
+          <Routes>
+            <Route path="/" element={<Navigate to="/home" />} />
+            <Route path="/home" element={<Home />} />
+            <Route
+              path="/auth"
+              element={
+                <AuthPage>
+                  <Auth
+                    supabaseClient={supabase}
+                    appearance={{ theme: ThemeSupa }}
+                    providers={['google', 'github']}
+                  />
+                </AuthPage>
+              }
+            />
             <Route path="/classes" element={<Classes />} />
-            <Route path="/students" element={<Students />} />
-            <Route path="/attendance" element={<Attendance />} />
-            <Route path="/behavior" element={<Behavior />} />
-            <Route path="/assignments" element={<Assignments />} />
-            <Route path="/rewards" element={<Rewards />} />
-            <Route path="/achievements" element={<Achievements />} />
-            <Route path="/wallet" element={<Wallet />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/resources" element={<Resources />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-          
-          <Route path="/view-student-dashboard" element={<StudentDashboard />} />
-          <Route path="/view-teacher-dashboard" element={<ViewTeacherDashboard />} />
-        </Routes>
-      </div>
-    </Router>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/tutorial/:role" element={<TutorialPage />} />
+            <Route
+              path="/classroom/:classroomId/seating"
+              element={<ClassroomSeating />}
+            />
+            <Route
+              path="/classroom/:classroomId/attendance"
+              element={<ClassroomAttendance />}
+            />
+            <Route
+              path="/classroom/:classroomId/invite"
+              element={<ClassroomInvite />}
+            />
+          </Routes>
+        )}
+      </Router>
+      <Toast/>
+    </>
   );
 }
 

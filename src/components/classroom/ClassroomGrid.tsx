@@ -1,10 +1,6 @@
 
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Database } from "@/integrations/supabase/types";
-import { SeatingChart } from "@/components/seating/SeatingChart";
-import { AttendanceTracker } from "@/components/attendance/AttendanceTracker";
-import { InviteStudents } from "./InviteStudents";
 import { ClassroomHeader } from "./ClassroomHeader";
 import { StudentCountIndicator } from "./StudentCountIndicator";
 import { ClassroomActions } from "./ClassroomActions";
@@ -18,14 +14,7 @@ interface ClassroomGridProps {
 }
 
 export const ClassroomGrid = ({ classroom, onDelete = () => {} }: ClassroomGridProps) => {
-  const [showSeating, setShowSeating] = useState(false);
-  const [showAttendance, setShowAttendance] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
   const { userRole, studentCount } = useClassroomData(classroom.id);
-
-  const toggleSeating = () => setShowSeating(!showSeating);
-  const toggleAttendance = () => setShowAttendance(!showAttendance);
-  const toggleInvite = () => setShowInvite(!showInvite);
 
   return (
     <div className="space-y-4">
@@ -44,34 +33,11 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {} }: ClassroomGridP
             
             <ClassroomActions 
               userRole={userRole}
-              showSeating={showSeating}
-              showAttendance={showAttendance}
-              showInvite={showInvite}
-              onToggleSeating={toggleSeating}
-              onToggleAttendance={toggleAttendance}
-              onToggleInvite={toggleInvite}
+              classroomId={classroom.id}
             />
           </div>
-
-          {showInvite && userRole === 'teacher' && (
-            <div className="mt-4 pt-4 border-t border-gray-700">
-              <InviteStudents classroomId={classroom.id} />
-            </div>
-          )}
         </div>
       </Card>
-
-      {showAttendance && userRole === 'teacher' && (
-        <Card className="p-4">
-          <AttendanceTracker classroomId={classroom.id} />
-        </Card>
-      )}
-
-      {showSeating && (
-        <Card className="p-4">
-          <SeatingChart classroomId={classroom.id} />
-        </Card>
-      )}
     </div>
   );
 };
