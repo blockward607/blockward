@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -235,5 +236,33 @@ export function AppSidebar() {
                             >
                               <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
                               {!isMinimized && <span className="ml-3">{item.name}</span>}
-                            </
+                            </div>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ))}
+          </SidebarContent>
+          
+          <SidebarFooter className="mt-auto px-4 py-4">
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "w-full flex items-center p-3 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-all duration-300",
+                !isMinimized && "justify-start"
+              )}
+              onClick={handleLogout}
+            >
+              <LogOut className="w-5 h-5" />
+              {!isMinimized && <span className="ml-3">Logout</span>}
+            </Button>
+          </SidebarFooter>
+        </div>
+      </Sidebar>
+    </>
+  );
+}
 
