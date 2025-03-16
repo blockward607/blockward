@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { SplashIntro } from "@/components/intro/SplashIntro";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Lazy-loaded components
 const Home = lazy(() => import("@/pages/Home"));
@@ -33,7 +33,7 @@ function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
       <BrowserRouter>
-        <Suspense fallback={<SplashIntro />}>
+        <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<MainLayout />}>
