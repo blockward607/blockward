@@ -27,6 +27,7 @@ const Progress = lazy(() => import("@/pages/Progress"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const ResetPasswordOTP = lazy(() => import("@/pages/ResetPasswordOTP"));
 const ClassroomInvite = lazy(() => import("@/pages/ClassroomInvite"));
+const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
 
 function App() {
   return (
@@ -57,6 +58,8 @@ function App() {
               <Route path="classes" element={<Classes />} />
               <Route path="students" element={<Students />} />
               <Route path="attendance" element={<Attendance />} />
+              {/* Add classroom seating route */}
+              <Route path="classroom/:classroomId/seating" element={<ClassroomSeating />} />
               {/* Redirect from achievements to wallet */}
               <Route path="achievements" element={<Navigate to="/wallet" replace />} />
               <Route path="rewards" element={<Rewards />} />
