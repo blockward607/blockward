@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
@@ -19,7 +18,8 @@ import {
   FileText,
   BarChart,
   MessageSquare,
-  Layers
+  Layers,
+  Megaphone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +30,7 @@ const teacherNavGroups = [
   {
     name: "Main",
     items: [
-      { name: "Dashboard", href: "/dashboard", icon: Home },
+      { name: "Announcements", href: "/dashboard", icon: Megaphone },
       { name: "Students", href: "/students", icon: Users },
       { name: "Classes", href: "/classes", icon: BookOpen },
     ]
@@ -72,7 +72,7 @@ const studentNavGroups = [
   {
     name: "Main",
     items: [
-      { name: "Dashboard", href: "/dashboard", icon: Home },
+      { name: "Announcements", href: "/dashboard", icon: Megaphone },
       { name: "Classes", href: "/classes", icon: BookOpen },
       { name: "Assignments", href: "/assignments", icon: FileText },
     ]

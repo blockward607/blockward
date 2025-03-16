@@ -29,7 +29,8 @@ import {
   LogOut,
   ChevronsLeft,
   ChevronsRight,
-  ChartBar
+  ChartBar,
+  Megaphone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export function AppSidebar() {
     {
       name: "Main",
       items: [
-        { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "Announcements", href: "/dashboard", icon: Megaphone },
         { name: "Students", href: "/students", icon: Users },
         { name: "Classes", href: "/classes", icon: BookOpen },
       ]
@@ -111,7 +112,7 @@ export function AppSidebar() {
     {
       name: "Main",
       items: [
-        { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "Announcements", href: "/dashboard", icon: Megaphone },
         { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },

@@ -1,5 +1,5 @@
 
-import { ArrowLeft, Bell } from "lucide-react";
+import { ArrowLeft, Bell, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
