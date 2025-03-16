@@ -37,6 +37,7 @@ export const JoinClassSection = () => {
 
     setLoading(true);
     try {
+      console.log('Starting join class process with code:', invitationCode);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -48,6 +49,7 @@ export const JoinClassSection = () => {
         return;
       }
 
+      console.log('Validating invitation code...');
       const { data: invitationData, error: validationError } = await supabase
         .from('class_invitations')
         .select('classroom_id, classroom:classrooms(name)')
@@ -55,7 +57,19 @@ export const JoinClassSection = () => {
         .eq('status', 'pending')
         .maybeSingle();
       
-      if (validationError || !invitationData) {
+      if (validationError) {
+        console.error('Invitation validation error:', validationError);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to validate invitation code"
+        });
+        setLoading(false);
+        return;
+      }
+      
+      if (!invitationData) {
+        console.log('Invalid or expired invitation code');
         toast({
           variant: "destructive",
           title: "Invalid Invitation",
@@ -65,6 +79,10 @@ export const JoinClassSection = () => {
         return;
       }
 
+      console.log('Invitation validated:', invitationData);
+      
+      // Get or create student record
+      console.log('Getting student ID for user:', session.user.id);
       let studentId;
       const { data: studentData, error: studentError } = await supabase
         .from('students')
@@ -72,7 +90,12 @@ export const JoinClassSection = () => {
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      if (studentError || !studentData) {
+      if (studentError) {
+        console.error('Error fetching student record:', studentError);
+      }
+
+      if (!studentData) {
+        console.log('Creating new student record for user');
         const username = session.user.email?.split('@')[0] || 'Student';
         const { data: newStudent, error: createError } = await supabase
           .from('students')
@@ -86,6 +109,7 @@ export const JoinClassSection = () => {
           .single();
           
         if (createError || !newStudent) {
+          console.error('Error creating student profile:', createError);
           toast({
             variant: "destructive",
             title: "Error",
@@ -97,6 +121,8 @@ export const JoinClassSection = () => {
         
         studentId = newStudent.id;
         
+        // Ensure user role is set to student
+        console.log('Ensuring user role is set to student');
         const { data: existingRole } = await supabase
           .from('user_roles')
           .select('id')
@@ -115,6 +141,10 @@ export const JoinClassSection = () => {
         studentId = studentData.id;
       }
 
+      console.log('Student ID:', studentId);
+      console.log('Checking if already enrolled in classroom:', invitationData.classroom_id);
+      
+      // Check if already enrolled
       const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
         .from('classroom_students')
         .select('id')
@@ -124,7 +154,12 @@ export const JoinClassSection = () => {
         })
         .maybeSingle();
 
+      if (enrollmentCheckError) {
+        console.error('Error checking enrollment:', enrollmentCheckError);
+      }
+
       if (existingEnrollment) {
+        console.log('Student already enrolled in this classroom');
         toast({
           variant: "default",
           title: "Already Enrolled",
@@ -134,6 +169,8 @@ export const JoinClassSection = () => {
         return;
       }
 
+      console.log('Enrolling student in classroom');
+      // Enroll student in classroom
       const { error: enrollError } = await supabase
         .from('classroom_students')
         .insert({
@@ -142,14 +179,18 @@ export const JoinClassSection = () => {
         });
 
       if (enrollError) {
+        console.error('Error enrolling in classroom:', enrollError);
         throw new Error("Failed to enroll in the classroom");
       }
 
+      console.log('Updating invitation status to accepted');
+      // Update invitation status
       await supabase
         .from('class_invitations')
         .update({ status: 'accepted' })
         .eq('invitation_token', invitationCode);
 
+      console.log('Enrollment successful');
       toast({
         title: "Success",
         description: `You have successfully joined ${invitationData.classroom?.name || 'the class'}`
@@ -157,6 +198,7 @@ export const JoinClassSection = () => {
 
       setInvitationCode("");
       
+      // Reload the page to show the newly joined class
       setTimeout(() => {
         window.location.reload();
       }, 1500);

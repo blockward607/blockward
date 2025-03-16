@@ -54,85 +54,10 @@ export const useClassroomManagement = () => {
 
       if (role === 'teacher') {
         console.log("Fetching teacher's classrooms");
-        // Fetch teacher's classrooms
-        const { data: teacherProfile, error: profileError } = await supabase
-          .from('teacher_profiles')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (profileError) {
-          console.error("Error fetching teacher profile:", profileError);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to load teacher profile"
-          });
-          setLoading(false);
-          return;
-        }
-
-        if (teacherProfile) {
-          const { data: classroomsData, error } = await supabase
-            .from('classrooms')
-            .select('*')
-            .eq('teacher_id', teacherProfile.id)
-            .order('created_at', { ascending: false });
-
-          if (error) {
-            console.error("Error fetching classrooms:", error);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to load classrooms"
-            });
-          } else {
-            console.log(`Fetched ${classroomsData?.length || 0} classrooms`);
-            setClassrooms(classroomsData || []);
-          }
-        }
+        await fetchTeacherClassrooms(session.user.id);
       } else if (role === 'student') {
         console.log("Fetching student's enrolled classrooms");
-        // Fetch student's enrolled classrooms
-        const { data: studentData, error: studentError } = await supabase
-          .from('students')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (studentError) {
-          console.error("Error fetching student profile:", studentError);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to load student profile"
-          });
-          setLoading(false);
-          return;
-        }
-
-        if (studentData) {
-          // Fix here: Make sure we're correctly extracting classrooms from the joined data
-          const { data: enrolledClassrooms, error } = await supabase
-            .from('classroom_students')
-            .select('classroom:classrooms(*)')
-            .eq('student_id', studentData.id);
-
-          if (error) {
-            console.error("Error fetching enrolled classrooms:", error);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to load enrolled classrooms"
-            });
-          } else {
-            console.log(`Fetched ${enrolledClassrooms?.length || 0} enrolled classrooms`);
-            // Fix the extraction of classroom data from the joined result
-            const extractedClassrooms = enrolledClassrooms?.map(ec => ec.classroom) || [];
-            console.log("Extracted classrooms:", extractedClassrooms);
-            setClassrooms(extractedClassrooms);
-          }
-        }
+        await fetchStudentClassrooms(session.user.id);
       }
     } catch (error: any) {
       console.error('Error in checkUserRoleAndFetchData:', error);
@@ -143,6 +68,109 @@ export const useClassroomManagement = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTeacherClassrooms = async (userId: string) => {
+    try {
+      // Fetch teacher's profile
+      const { data: teacherProfile, error: profileError } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Error fetching teacher profile:", profileError);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load teacher profile"
+        });
+        return;
+      }
+
+      if (teacherProfile) {
+        const { data: classroomsData, error } = await supabase
+          .from('classrooms')
+          .select('*')
+          .eq('teacher_id', teacherProfile.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error("Error fetching classrooms:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load classrooms"
+          });
+        } else {
+          console.log(`Fetched ${classroomsData?.length || 0} classrooms`);
+          setClassrooms(classroomsData || []);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching teacher classrooms:", error);
+      throw error;
+    }
+  };
+
+  const fetchStudentClassrooms = async (userId: string) => {
+    try {
+      // Get student's profile
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (studentError) {
+        console.error("Error fetching student profile:", studentError);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load student profile"
+        });
+        return;
+      }
+
+      if (studentData) {
+        console.log("Found student record:", studentData.id);
+        // Get enrolled classrooms
+        const { data: enrolledClassrooms, error } = await supabase
+          .from('classroom_students')
+          .select(`
+            classroom:classrooms(*)
+          `)
+          .eq('student_id', studentData.id);
+
+        if (error) {
+          console.error("Error fetching enrolled classrooms:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load enrolled classrooms"
+          });
+          return;
+        }
+
+        console.log(`Fetched ${enrolledClassrooms?.length || 0} enrolled classrooms`);
+        
+        // Extract classroom data from the joined result
+        if (enrolledClassrooms && enrolledClassrooms.length > 0) {
+          const extractedClassrooms = enrolledClassrooms
+            .map(ec => ec.classroom)
+            .filter(classroom => classroom !== null) as Classroom[];
+            
+          console.log("Extracted classrooms:", extractedClassrooms);
+          setClassrooms(extractedClassrooms);
+        } else {
+          setClassrooms([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching student classrooms:", error);
+      throw error;
     }
   };
 
