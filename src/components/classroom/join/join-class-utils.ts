@@ -14,10 +14,11 @@ export const handleJoinClassWithCode = async (invitationCode: string, toast: { t
     throw new Error("Authentication required");
   }
 
+  // First validate the invitation code
   console.log('Validating invitation code...');
   const { data: invitationData, error: validationError } = await supabase
     .from('class_invitations')
-    .select('classroom_id, classroom:classrooms(name)')
+    .select('id, classroom_id, classroom:classrooms(id, name)')
     .eq('invitation_token', invitationCode)
     .eq('status', 'pending')
     .maybeSingle();
@@ -45,6 +46,7 @@ export const handleJoinClassWithCode = async (invitationCode: string, toast: { t
 
   if (studentError) {
     console.error('Error fetching student record:', studentError);
+    throw new Error("Failed to retrieve student profile");
   }
 
   if (!studentData) {
@@ -103,6 +105,7 @@ export const handleJoinClassWithCode = async (invitationCode: string, toast: { t
 
   if (enrollmentCheckError) {
     console.error('Error checking enrollment:', enrollmentCheckError);
+    throw new Error("Failed to check existing enrollment");
   }
 
   if (existingEnrollment) {
@@ -112,7 +115,7 @@ export const handleJoinClassWithCode = async (invitationCode: string, toast: { t
       title: "Already Enrolled",
       description: "You are already enrolled in this class"
     });
-    throw new Error("Already enrolled");
+    return true; // Return true because it's technically a success
   }
 
   console.log('Enrolling student in classroom');

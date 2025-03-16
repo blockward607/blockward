@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Loader2 } from "lucide-react";
+import { AuthService } from "@/services/AuthService";
 
 interface EmailInviteTabProps {
   classroomId: string;
@@ -38,26 +39,14 @@ export const EmailInviteTab = ({ classroomId, teacherName, classroomName }: Emai
 
     setLoading(true);
     try {
-      // Generate invitation token
-      const invitationToken = Array.from({length: 8}, () => 
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
-      ).join('');
+      // Create invitation using AuthService
+      const { data: invitation, error } = await AuthService.createClassInvitation(classroomId, email);
       
-      const { data: invitation, error: inviteError } = await supabase
-        .from('class_invitations')
-        .insert({
-          classroom_id: classroomId,
-          email: email.toLowerCase(),
-          invitation_token: invitationToken,
-          status: 'pending'
-        })
-        .select()
-        .single();
-      
-      if (inviteError || !invitation) {
-        throw new Error(inviteError?.message || 'Failed to create invitation');
+      if (error || !invitation) {
+        throw new Error(error?.message || 'Failed to create invitation');
       }
 
+      // Send email
       const response = await fetch("https://vuwowvhoiyzmnjuoawqz.supabase.co/functions/v1/send-verification", {
         method: 'POST',
         headers: {

@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Copy, Link2, Loader2, QrCode } from "lucide-react";
 import { QRCodeDisplay } from "../QRCodeDisplay";
+import { AuthService } from "@/services/AuthService";
 
 interface InviteCodeTabProps {
   classroomId: string;
@@ -22,33 +23,16 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      // Generate invitation token
-      const invitationToken = Array.from({length: 8}, () => 
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
-      ).join('');
-      
-      const { data: invitation, error: inviteError } = await supabase
-        .from('class_invitations')
-        .insert({
-          classroom_id: classroomId,
-          email: 'general_invitation@blockward.app',
-          invitation_token: invitationToken,
-          status: 'pending'
-        })
-        .select()
-        .single();
-      
-      if (inviteError || !invitation) {
-        throw new Error(inviteError?.message || 'Failed to generate invitation code');
+      const response = await AuthService.createClassInvitation(classroomId);
+      if (response && response.data) {
+        setInvitationCode(response.data.invitation_token);
+        setShowQRCode(false);
+        
+        toast({
+          title: "Invitation Code Generated",
+          description: "Share this code with your students",
+        });
       }
-      
-      setInvitationCode(invitation.invitation_token);
-      setShowQRCode(false);
-      
-      toast({
-        title: "Invitation Code Generated",
-        description: "Share this code with your students",
-      });
     } catch (error: any) {
       toast({
         title: "Error",

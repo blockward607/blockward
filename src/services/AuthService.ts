@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { InviteUtils } from './InviteUtils';
 
 export const AuthService = {
   // Check if a user role exists
@@ -161,40 +162,12 @@ export const AuthService = {
   
   // Generate a unique class code for teacher
   generateClassCode: async () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return code;
+    return InviteUtils.generateInvitationToken();
   },
   
   // Validate an invitation code
   validateInvitationCode: async (code: string) => {
-    console.log('Validating invitation code:', code);
-    try {
-      const { data, error } = await supabase
-        .from('class_invitations')
-        .select('*, classroom:classrooms(*)')
-        .eq('invitation_token', code)
-        .eq('status', 'pending')
-        .maybeSingle();
-        
-      if (error) {
-        console.error('Error validating invitation code:', error);
-        throw error;
-      }
-      
-      if (!data) {
-        console.log('No valid invitation found with this code');
-        return { data: null };
-      }
-      
-      return { data };
-    } catch (error) {
-      console.error('Exception validating invitation code:', error);
-      throw error;
-    }
+    return InviteUtils.validateInvitationCode(code);
   },
   
   // Enroll a student in a classroom
@@ -295,46 +268,11 @@ export const AuthService = {
   
   // Generate and store classroom invitation
   createClassInvitation: async (classroomId: string, email: string = 'general_invitation@blockward.app') => {
-    console.log('Creating class invitation:', { classroomId, email });
-    try {
-      // Generate a unique code
-      const token = Array.from({length: 6}, () => 
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
-      ).join('');
-      
-      const { data, error } = await supabase
-        .from('class_invitations')
-        .insert({
-          classroom_id: classroomId,
-          email: email.toLowerCase(),
-          invitation_token: token,
-          status: 'pending'
-        })
-        .select()
-        .single();
-        
-      if (error) {
-        console.error('Error creating invitation:', error);
-        throw error;
-      }
-      
-      console.log('Invitation created successfully:', data);
-      return { data, error };
-    } catch (error) {
-      console.error('Exception creating invitation:', error);
-      throw error;
-    }
+    return InviteUtils.createInvitation(classroomId, email);
   },
   
   // Send email invitation to a student
   sendEmailInvitation: async (email: string, teacherName: string, classroomName: string, invitationToken: string) => {
-    // This would integrate with an email service in production
-    console.log('Sending email invitation:', { email, teacherName, classroomName, invitationToken });
-    
-    // For now, we'll just simulate a successful email sending
-    console.log(`Email would be sent to ${email} from ${teacherName} to join ${classroomName} with token ${invitationToken}`);
-    
-    // In a real implementation, you'd use an email service API
-    return { success: true, message: 'Invitation sent successfully' };
+    return InviteUtils.sendEmailInvitation(email, invitationToken, teacherName, classroomName);
   }
 };

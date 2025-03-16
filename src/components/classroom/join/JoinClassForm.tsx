@@ -30,13 +30,15 @@ export const JoinClassForm = ({
 
     setLoading(true);
     try {
-      await handleJoinClassWithCode(invitationCode, { toast });
-      setInvitationCode("");
-      
-      // Reload the page to show the newly joined class
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      const success = await handleJoinClassWithCode(invitationCode, { toast });
+      if (success) {
+        setInvitationCode("");
+        
+        // Reload the page after a short delay to show the newly joined class
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
     } catch (error: any) {
       console.error('Error joining class:', error);
       toast({
