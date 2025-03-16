@@ -1,12 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Copy, Link2, Loader2 } from "lucide-react";
+import { Mail, Copy, Link2, Loader2, QrCode } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 
 interface InviteStudentsProps {
   classroomId: string;
@@ -18,13 +18,12 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
   const [invitationCode, setInvitationCode] = useState("");
   const [teacherName, setTeacherName] = useState("");
   const [classroomName, setClassroomName] = useState("");
+  const [showQRCode, setShowQRCode] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Fetch classroom details
     const fetchClassroomDetails = async () => {
       try {
-        // Get classroom name
         const { data: classroom } = await supabase
           .from('classrooms')
           .select('name, teacher_id')
@@ -34,7 +33,6 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
         if (classroom) {
           setClassroomName(classroom.name);
           
-          // Get teacher name
           const { data: teacherProfile } = await supabase
             .from('teacher_profiles')
             .select('full_name')
@@ -74,7 +72,6 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
 
     setLoading(true);
     try {
-      // Create invitation record
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .insert({
@@ -89,7 +86,6 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
         throw new Error(inviteError?.message || 'Failed to create invitation');
       }
 
-      // Send email using edge function
       const response = await fetch("https://vuwowvhoiyzmnjuoawqz.supabase.co/functions/v1/send-verification", {
         method: 'POST',
         headers: {
@@ -128,7 +124,6 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      // Create invitation record
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .insert({
@@ -144,6 +139,7 @@ export const InviteStudents = ({ classroomId }: InviteStudentsProps) => {
       }
       
       setInvitationCode(invitation.invitation_token);
+      setShowQRCode(false);
       
       toast({
         title: "Invitation Code Generated",
@@ -189,6 +185,12 @@ ${teacherName}`);
     });
   };
 
+  const toggleQRCode = () => {
+    setShowQRCode(!showQRCode);
+  };
+
+  const joinUrl = `${window.location.origin}/classes?code=${invitationCode}`;
+
   return (
     <Card className="p-4 bg-purple-900/30 backdrop-blur-md border border-purple-500/30 shadow-lg">
       <Tabs defaultValue="code" className="space-y-4">
@@ -203,7 +205,7 @@ ${teacherName}`);
           </div>
           
           {invitationCode ? (
-            <div className="space-y-2">
+            <div className="space-y-4">
               <div className="flex gap-2">
                 <Input value={invitationCode} readOnly className="font-mono bg-black/50 border-purple-500/30" />
                 <Button 
@@ -216,6 +218,7 @@ ${teacherName}`);
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>
+              
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={shareViaGmail}
@@ -223,7 +226,15 @@ ${teacherName}`);
                   variant="default"
                 >
                   <Mail className="w-4 h-4 mr-2" />
-                  Share via Gmail
+                  Share via Email
+                </Button>
+                <Button
+                  onClick={toggleQRCode}
+                  className={`${showQRCode ? 'bg-purple-800' : 'bg-purple-600/50'} hover:bg-purple-700 w-full`}
+                  variant="outline"
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  {showQRCode ? 'Hide QR Code' : 'Show QR Code'}
                 </Button>
                 <Button
                   onClick={generateInviteCode}
@@ -231,9 +242,18 @@ ${teacherName}`);
                   variant="outline"
                 >
                   <Link2 className="w-4 h-4 mr-2" />
-                  Generate New Code
+                  New Code
                 </Button>
               </div>
+              
+              {showQRCode && (
+                <QRCodeDisplay 
+                  value={joinUrl}
+                  title={`Join ${classroomName}`}
+                  className="mt-4"
+                />
+              )}
+              
               <p className="text-xs text-gray-400">
                 This code expires in 7 days. Share it with your students.
               </p>
