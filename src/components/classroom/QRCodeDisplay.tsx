@@ -1,40 +1,43 @@
 
-import { QrCode } from "lucide-react";
-import { useEffect, useRef } from "react";
-import QRCodeStyling from "qr-code-styling";
+import { useEffect, useRef } from 'react';
+import QRCodeStyling from 'qr-code-styling';
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
 interface QRCodeDisplayProps {
   value: string;
   title?: string;
-  size?: number;
   className?: string;
 }
 
-export const QRCodeDisplay = ({ value, title, size = 200, className }: QRCodeDisplayProps) => {
+export const QRCodeDisplay = ({ value, title, className = "" }: QRCodeDisplayProps) => {
   const qrRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    if (!value || !qrRef.current) return;
+    if (!qrRef.current) return;
     
     const qrCode = new QRCodeStyling({
-      width: size,
-      height: size,
+      width: 200,
+      height: 200,
       data: value,
-      image: undefined,
       dotsOptions: {
         color: "#8b5cf6",
         type: "rounded"
       },
-      backgroundOptions: {
-        color: "#121212",
-      },
       cornersSquareOptions: {
-        color: "#6d28d9"
+        color: "#6d28d9",
+        type: "extra-rounded"
       },
       cornersDotOptions: {
-        color: "#4c1d95"
+        color: "#4c1d95",
       },
+      backgroundOptions: {
+        color: "#111111",
+      },
+      imageOptions: {
+        crossOrigin: "anonymous",
+        margin: 5
+      }
     });
     
     qrRef.current.innerHTML = '';
@@ -45,30 +48,21 @@ export const QRCodeDisplay = ({ value, title, size = 200, className }: QRCodeDis
         qrRef.current.innerHTML = '';
       }
     };
-  }, [value, size]);
+  }, [value]);
   
-  const downloadQRCode = () => {
-    const link = document.createElement('a');
-    link.download = `${title || 'class-invitation'}-qrcode.png`;
-    link.href = qrRef.current?.querySelector('canvas')?.toDataURL() || '';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = () => {
+    // Implement download functionality if needed
   };
-
+  
   return (
-    <Card className={`p-4 bg-black/40 flex flex-col items-center ${className || ''}`}>
-      {title && <h3 className="text-lg font-semibold mb-2">{title}</h3>}
-      <div ref={qrRef} className="my-2" />
-      {value && (
-        <button
-          onClick={downloadQRCode}
-          className="mt-2 text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1"
-        >
-          <QrCode className="w-4 h-4" />
-          Download QR Code
-        </button>
-      )}
+    <Card className={`p-4 flex flex-col items-center ${className} bg-black/40 border border-purple-500/30`}>
+      {title && <h3 className="text-lg font-medium mb-3 text-center text-white">{title}</h3>}
+      <div ref={qrRef} className="flex justify-center mb-3"></div>
+      <div className="flex justify-center w-full">
+        <Badge variant="outline" className="text-xs px-2 py-1 bg-purple-900/30 border-purple-500/30 text-purple-300">
+          Scan to join
+        </Badge>
+      </div>
     </Card>
   );
 };
