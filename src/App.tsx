@@ -49,8 +49,8 @@ function App() {
             
             {/* Wrap dashboard and classroom pages in SidebarLayout */}
             <Route element={<SidebarLayout />}>
-              <Route path="/classes" element={<Classes />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/classes" element={<Classes />} />
               <Route path="/tutorial/:role" element={<TutorialPage />} />
               <Route
                 path="/classroom/:classroomId/seating"
