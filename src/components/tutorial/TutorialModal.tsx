@@ -27,8 +27,12 @@ export const TutorialModal = ({ userRole, onClose }: TutorialModalProps) => {
       description: "This tutorial will guide you through the basic features of Blockward for teachers. You can always revisit this tutorial from the settings page."
     },
     {
-      title: "Add Students",
-      description: "You can add students manually, send email invitations, or generate an invite code for your classroom."
+      title: "Create Classes",
+      description: "Start by creating a classroom for your students. You can add details like grade level, subject, and a description."
+    },
+    {
+      title: "Invite Students",
+      description: "Generate invitation codes or send direct invitations to students to join your classroom."
     },
     {
       title: "Track Attendance",
@@ -37,6 +41,10 @@ export const TutorialModal = ({ userRole, onClose }: TutorialModalProps) => {
     {
       title: "Award NFTs",
       description: "Reward your students with unique digital NFT achievements for their accomplishments."
+    },
+    {
+      title: "Transfer Tokens",
+      description: "You can transfer tokens from your wallet to student wallets as rewards."
     },
     {
       title: "Analyze Progress",
@@ -64,6 +72,10 @@ export const TutorialModal = ({ userRole, onClose }: TutorialModalProps) => {
     {
       title: "View Your Wallet",
       description: "Access your digital wallet to see all your earned NFTs and certificates."
+    },
+    {
+      title: "Complete Assignments",
+      description: "Access and complete assignments given by your teacher."
     }
   ];
 

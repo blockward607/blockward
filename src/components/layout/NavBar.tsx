@@ -9,6 +9,14 @@ export const NavBar = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
+  const handleSignIn = () => {
+    navigate('/auth');
+  };
+  
+  const handleSignUp = () => {
+    navigate('/auth?signup=true');
+  };
+  
   const scrollToSection = (sectionId: string) => {
     const section = document.getElementById(sectionId);
     if (section) {
@@ -57,6 +65,23 @@ export const NavBar = () => {
             <Phone className="w-4 h-4" />
             <span>Contact</span>
           </button>
+          
+          <div className="flex items-center gap-3 ml-4">
+            <Button 
+              onClick={handleSignIn}
+              variant="ghost"
+              className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+            >
+              Sign In
+            </Button>
+            
+            <Button 
+              onClick={handleSignUp}
+              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 px-6 py-2"
+            >
+              Sign Up
+            </Button>
+          </div>
         </nav>
         
         {/* Mobile menu button */}
@@ -103,6 +128,23 @@ export const NavBar = () => {
             <Phone className="w-5 h-5" />
             <span>Contact</span>
           </button>
+          
+          <div className="flex flex-col gap-3 pt-4 border-t border-purple-900/20">
+            <Button 
+              onClick={handleSignIn}
+              variant="ghost"
+              className="text-purple-400 hover:text-purple-300 justify-start"
+            >
+              Sign In
+            </Button>
+            
+            <Button 
+              onClick={handleSignUp}
+              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
+            >
+              Sign Up
+            </Button>
+          </div>
         </div>
       )}
     </header>

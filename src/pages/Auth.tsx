@@ -109,7 +109,7 @@ const AuthPage = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Luxury Logo */}
+        {/* Logo */}
         <motion.div 
           className="flex justify-center mb-8"
           initial={{ scale: 0.8 }}
@@ -134,7 +134,7 @@ const AuthPage = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          Blockward Premium
+          Blockward
         </motion.h1>
 
         <Card className="glass-card p-8 border-purple-500/40 shadow-2xl backdrop-blur-xl bg-black/60 animate-pulse-glow">

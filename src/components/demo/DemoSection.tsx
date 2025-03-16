@@ -15,6 +15,10 @@ export const DemoSection = () => {
     }
   };
 
+  const handleSignUp = () => {
+    navigate('/auth');
+  };
+
   const handleTeacherDemo = () => {
     navigate('/view-teacher-dashboard');
   };
@@ -33,7 +37,7 @@ export const DemoSection = () => {
       >
         <h2 className="text-3xl font-bold mb-6 gradient-text">Try Blockward Today</h2>
         <p className="text-gray-300 mb-8 text-lg">
-          Experience our platform with full access to all NFT and educational features!
+          Experience our platform without registration or sign up now to get started with all features!
         </p>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
@@ -52,7 +56,14 @@ export const DemoSection = () => {
           </Button>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center justify-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Button
+            onClick={handleSignUp}
+            className="px-8 py-3 h-auto bg-gradient-to-r from-green-600 to-green-800 rounded-xl text-white font-bold text-lg hover:scale-105 hover:from-green-700 hover:to-green-900 flex items-center justify-center gap-2 transition-all duration-300 shadow-lg w-full sm:w-auto"
+          >
+            Sign Up Now <ArrowRight className="w-5 h-5" />
+          </Button>
+          
           <Button
             onClick={handleLearnMore}
             className="px-8 py-3 h-auto border-2 border-purple-400 text-purple-400 rounded-xl font-bold text-lg hover:bg-purple-400/10 hover:scale-105 flex items-center justify-center gap-2 transition-all duration-300 w-full sm:w-auto"
