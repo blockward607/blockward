@@ -57,7 +57,7 @@ const Classes = () => {
           {isTeacher ? (
             <CreateClassroomDialog onClassroomCreated={handleClassroomCreated} />
           ) : (
-            <JoinClassSection />
+            isStudent && showJoinSection && <JoinClassSection />
           )}
         </div>
       </div>

@@ -112,6 +112,7 @@ export const useClassroomManagement = () => {
         }
 
         if (studentData) {
+          // Fix here: Make sure we're correctly extracting classrooms from the joined data
           const { data: enrolledClassrooms, error } = await supabase
             .from('classroom_students')
             .select('classroom:classrooms(*)')
@@ -126,7 +127,10 @@ export const useClassroomManagement = () => {
             });
           } else {
             console.log(`Fetched ${enrolledClassrooms?.length || 0} enrolled classrooms`);
-            setClassrooms(enrolledClassrooms?.map(ec => ec.classroom) || []);
+            // Fix the extraction of classroom data from the joined result
+            const extractedClassrooms = enrolledClassrooms?.map(ec => ec.classroom) || [];
+            console.log("Extracted classrooms:", extractedClassrooms);
+            setClassrooms(extractedClassrooms);
           }
         }
       }
