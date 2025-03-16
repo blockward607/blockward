@@ -41,7 +41,12 @@ export const ClassroomsList = ({
   }
 
   return (
-    <motion.div variants={containerVariants} className="grid grid-cols-1 gap-6">
+    <motion.div 
+      variants={containerVariants} 
+      initial="hidden" 
+      animate="show" 
+      className="grid grid-cols-1 gap-6"
+    >
       {classrooms.map((classroom) => (
         <motion.div 
           key={classroom.id} 

@@ -20,7 +20,7 @@ const Classes = () => {
     setSelectedClassroom 
   } = useClassroomManagement();
   const { isTeacher, isStudent } = useAuth();
-  const [showJoinSection, setShowJoinSection] = useState(false);
+  const [showJoinSection, setShowJoinSection] = useState(true);
 
   // This would toggle the join class section visibility for students
   const handleToggleJoinSection = () => {
