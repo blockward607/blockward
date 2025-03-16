@@ -9,7 +9,7 @@ export const SidebarLayout = () => {
     <SidebarProvider>
       <div className="h-screen flex w-full bg-gradient-to-b from-[#1A1F2C] to-black overflow-hidden">
         <AppSidebar />
-        <SidebarInset className="flex-1 flex flex-col overflow-hidden">
+        <SidebarInset className="flex-1 flex flex-col overflow-hidden w-full">
           {/* Animated background elements */}
           <div className="absolute inset-0 -z-10 overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(147,51,234,0.2),transparent_40%)]"></div>

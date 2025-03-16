@@ -13,6 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   Home,
@@ -39,6 +40,7 @@ export function AppSidebar() {
   const [isMinimized, setIsMinimized] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { toggleSidebar } = useSidebar();
 
   useEffect(() => {
     checkAuth();
@@ -63,8 +65,9 @@ export function AppSidebar() {
     navigate('/auth');
   };
 
-  const toggleSidebar = () => {
+  const handleToggleSidebar = () => {
     setIsMinimized(!isMinimized);
+    toggleSidebar(); // Use the shadcn sidebar toggle functionality
   };
 
   const teacherNavGroups = [
@@ -152,7 +155,7 @@ export function AppSidebar() {
         <Button 
           size="icon" 
           variant="secondary" 
-          onClick={toggleSidebar}
+          onClick={handleToggleSidebar}
           className="h-8 w-8 rounded-full bg-purple-900 border border-purple-500/30 hover:bg-purple-800"
         >
           {isMinimized ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
