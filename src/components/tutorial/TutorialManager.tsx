@@ -83,22 +83,3 @@ export const TutorialManager = () => {
     />
   );
 };
-
-export const useTutorial = () => {
-  const [showTutorial, setShowTutorial] = useState(false);
-
-  const startTutorial = () => {
-    setShowTutorial(true);
-  };
-
-  return {
-    showTutorial,
-    startTutorial,
-    TutorialComponent: showTutorial ? (
-      <TutorialModal 
-        userRole={null} // Will be determined inside modal
-        onClose={() => setShowTutorial(false)} 
-      />
-    ) : null
-  };
-};

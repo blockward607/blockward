@@ -1,5 +1,5 @@
 
-import { ArrowLeft, Bell, Megaphone } from "lucide-react";
+import { ArrowLeft, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
@@ -79,6 +79,15 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
         </div>
       </div>
       <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleTutorialClick}
+          className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/30"
+        >
+          <Bell className="w-4 h-4 mr-2" />
+          View Tutorial
+        </Button>
         <Button
           variant="outline"
           size="sm"

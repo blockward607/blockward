@@ -75,6 +75,23 @@ export const useTutorial = () => {
     setShowTutorialPrompt(false);
   };
 
+  const skipTutorial = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase
+          .from('user_preferences')
+          .upsert({
+            user_id: session.user.id,
+            tutorial_completed: true,
+          });
+      }
+      setShowTutorialPrompt(false);
+    } catch (error) {
+      console.error("Error saving tutorial preference:", error);
+    }
+  };
+
   const resetTutorialStatus = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
@@ -93,6 +110,7 @@ export const useTutorial = () => {
     showTutorialPrompt,
     userRole,
     startTutorial,
+    skipTutorial,
     resetTutorialStatus,
     setShowTutorialPrompt,
     TutorialComponent: showTutorial ? (
@@ -107,6 +125,7 @@ export const useTutorial = () => {
         isOpen={showTutorialPrompt}
         onOpenChange={setShowTutorialPrompt}
         onStartTutorial={startTutorial}
+        onSkipTutorial={skipTutorial}
       />
     ) : null
   };

@@ -5,12 +5,14 @@ import { motion } from 'framer-motion';
 import { Diamond, Shield, GraduationCap, ArrowLeft, ChevronRight, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const TutorialPage = () => {
   const { role } = useParams<{ role: string }>();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   const isTeacher = role === 'teacher';
 
@@ -96,17 +98,31 @@ const TutorialPage = () => {
   const steps = isTeacher ? teacherSteps : studentSteps;
 
   useEffect(() => {
+    // Validate that the role parameter is valid
+    if (role !== 'teacher' && role !== 'student') {
+      navigate('/dashboard');
+      return;
+    }
+    
+    setLoading(false);
+  }, [role, navigate]);
+
+  useEffect(() => {
     // Mark tutorial as completed when the user finishes all steps
     const markTutorialCompleted = async () => {
       if (completed) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          await supabase
-            .from('user_preferences')
-            .upsert({
-              user_id: session.user.id,
-              tutorial_completed: true,
-            });
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            await supabase
+              .from('user_preferences')
+              .upsert({
+                user_id: session.user.id,
+                tutorial_completed: true,
+              });
+          }
+        } catch (error) {
+          console.error("Error marking tutorial as completed:", error);
         }
       }
     };
@@ -135,6 +151,10 @@ const TutorialPage = () => {
   const handleBack = () => {
     navigate(-1);
   };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
