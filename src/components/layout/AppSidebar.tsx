@@ -88,7 +88,7 @@ export function AppSidebar() {
     {
       name: "Rewards",
       items: [
-        { name: "Achievements", href: "/achievements", icon: Trophy },
+        // Removing standalone Achievements entry - it's now part of Wallet
         { name: "Rewards", href: "/rewards", icon: Award },
         { name: "NFT Wallet", href: "/wallet", icon: Wallet },
       ]
@@ -126,7 +126,7 @@ export function AppSidebar() {
     {
       name: "Rewards",
       items: [
-        { name: "Achievements", href: "/achievements", icon: Trophy },
+        // Removing standalone Achievements entry - it's now part of Wallet
         { name: "My NFTs", href: "/rewards", icon: Award },
         { name: "Wallet", href: "/wallet", icon: Wallet },
       ]
