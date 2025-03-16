@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
@@ -214,10 +215,11 @@ export const LuxuryIntro = ({ onEnter }: LuxuryIntroProps) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 2, duration: 1 }}
           >
-            The premium educational experience worth $12 million
+            The premium educational experience
           </motion.p>
         </motion.div>
       </motion.div>
     </motion.div>
   );
 };
+
