@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -103,7 +102,7 @@ const TutorialPage = () => {
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-[#1A1F2C] to-black">
-        <LoadingSpinner size="lg" />
+        <LoadingSpinner />
       </div>
     );
   }
@@ -184,7 +183,6 @@ const TutorialPage = () => {
   );
 };
 
-// Helper functions for content rendering
 function renderTeacherHeading(step: number): string {
   switch (step) {
     case 1: return "Welcome to BlockWard";
