@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { ClassroomGrid } from "./ClassroomGrid";
 import { EmptyClassState } from "./EmptyClassState";
@@ -7,7 +6,7 @@ import { Database } from "@/integrations/supabase/types";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
-interface ClassroomsListProps {
+export interface ClassroomsListProps {
   classrooms: Classroom[];
   userRole: string | null;
   onDelete: (classroomId: string) => void;

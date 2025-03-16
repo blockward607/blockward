@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
 import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
@@ -15,7 +15,9 @@ const Classes = () => {
     loading, 
     userRole,
     handleClassroomCreated, 
-    handleDeleteClassroom 
+    handleDeleteClassroom,
+    selectedClassroom,
+    setSelectedClassroom 
   } = useClassroomManagement();
   const { isTeacher, isStudent } = useAuth();
   const [showJoinSection, setShowJoinSection] = useState(false);
@@ -31,17 +33,23 @@ const Classes = () => {
 
   return (
     <div className="container mx-auto space-y-8 max-w-6xl">
-      <ClassesPageHeader />
+      <ClassesPageHeader 
+        userRole={userRole} 
+        onClassroomCreated={handleClassroomCreated} 
+      />
       
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="flex-1">
           {classrooms.length > 0 ? (
             <ClassroomsList 
-              classrooms={classrooms} 
-              onDeleteClassroom={handleDeleteClassroom}
+              classrooms={classrooms}
+              userRole={userRole}
+              onDelete={handleDeleteClassroom}
+              onSelect={setSelectedClassroom}
+              selectedClassroom={selectedClassroom}
             />
           ) : (
-            <EmptyClassState isTeacher={isTeacher} />
+            <EmptyClassState userRole={userRole} />
           )}
         </div>
         
@@ -49,10 +57,7 @@ const Classes = () => {
           {isTeacher ? (
             <CreateClassroomDialog onClassroomCreated={handleClassroomCreated} />
           ) : (
-            <JoinClassSection 
-              visible={true} 
-              onToggleVisibility={handleToggleJoinSection} 
-            />
+            <JoinClassSection />
           )}
         </div>
       </div>
