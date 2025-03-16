@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
@@ -32,7 +31,7 @@ export const NavBar = () => {
           <div className="w-10 h-10">
             <InteractiveLogo />
           </div>
-          <h1 className="text-3xl blockward-logo">Blockward</h1>
+          <h1 className="text-3xl blockward-logo">BlockWard</h1>
         </div>
         
         {/* Desktop menu */}

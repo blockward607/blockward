@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -168,7 +169,7 @@ export function AppSidebar() {
           <SidebarHeader className="flex items-center px-6 py-6">
             {!isMinimized && (
               <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
-                Blockward
+                BlockWard
               </div>
             )}
           </SidebarHeader>
