@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
-import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
+import StudentDashboard from "./StudentDashboard";
 import { useTutorial } from "@/hooks/useTutorial";
 import type { Classroom } from "@/types/classroom";
 import { Loader2 } from "lucide-react";
@@ -113,7 +113,7 @@ const Dashboard = () => {
       <div className="flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-purple-500" />
-          <p className="text-lg font-medium text-gray-300">Loading dashboard...</p>
+          <p className="text-lg font-medium text-gray-300">Loading announcements...</p>
         </div>
       </div>
     );
