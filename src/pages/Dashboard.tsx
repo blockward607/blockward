@@ -9,11 +9,12 @@ import StudentDashboard from "./StudentDashboard";
 import { useTutorial } from "@/hooks/useTutorial";
 import type { Classroom } from "@/types/classroom";
 import { Loader2 } from "lucide-react";
+import { TutorialManager } from "@/components/tutorial/TutorialManager";
 
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { TutorialComponent, TutorialPrompt } = useTutorial();
+  const { showTutorial, TutorialComponent, TutorialPrompt } = useTutorial();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [classrooms, setClassrooms] = useState<Partial<Classroom>[]>([]);
@@ -113,7 +114,7 @@ const Dashboard = () => {
       <div className="flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-purple-500" />
-          <p className="text-lg font-medium text-gray-300">Loading announcements...</p>
+          <p className="text-lg font-medium text-gray-300">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -121,8 +122,11 @@ const Dashboard = () => {
 
   return (
     <div className="h-full w-full flex flex-col">
+      {/* Tutorial components */}
       {TutorialComponent}
       {TutorialPrompt}
+      <TutorialManager />
+      
       <DashboardHeader userName={userName} />
       
       <div className="flex-1 overflow-y-auto w-full">

@@ -23,6 +23,7 @@ import Assignments from '@/pages/Assignments';
 import Grades from "@/pages/Grades";
 import { useAuth } from "@/hooks/use-auth";
 import Index from '@/pages/Index';
+import TutorialPage from '@/pages/TutorialPage';
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
@@ -51,6 +52,7 @@ function App() {
         <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         <Route path="/assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
         <Route path="/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
+        <Route path="/tutorial/:role" element={<ProtectedRoute><TutorialPage /></ProtectedRoute>} />
       </Routes>
     </Router>
   );
