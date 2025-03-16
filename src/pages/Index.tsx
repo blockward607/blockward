@@ -10,6 +10,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ClassroomPreview } from "@/components/preview/ClassroomPreview";
 import { EasyToUse } from "@/components/EasyToUse";
 import { BlockwardIntro } from '@/components/intro/BlockwardIntro';
+import { LuxuryIntro } from '@/components/intro/LuxuryIntro';
 import { HowItWorks } from '@/components/HowItWorks';
 
 const Index = () => {
@@ -34,7 +35,7 @@ const Index = () => {
   };
   
   if (showIntro) {
-    return <BlockwardIntro onEnter={handleEnterSite} />;
+    return <LuxuryIntro onEnter={handleEnterSite} />;
   }
   
   return (
