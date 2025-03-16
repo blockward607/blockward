@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
@@ -12,8 +13,8 @@ import Home from './pages/Home';
 import Classes from './pages/Classes';
 import Dashboard from './pages/Dashboard';
 import AuthPage from './pages/Auth';
-import { useToast } from "@/hooks/use-toast"
-import { Toast } from "@/components/ui/toast"
+import { useToast } from "@/hooks/use-toast";
+import { Toast } from "@/components/ui/toast";
 import { BlockwardIntro } from './components/intro/BlockwardIntro';
 import TutorialPage from './pages/TutorialPage';
 import ClassroomSeating from './pages/ClassroomSeating';
@@ -22,7 +23,7 @@ import ClassroomInvite from './pages/ClassroomInvite';
 
 function App() {
   const [showIntro, setShowIntro] = useState(true);
-  const { toast } = useToast()
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check if the user has already seen the intro
