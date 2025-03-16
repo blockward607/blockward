@@ -13,7 +13,7 @@ const ClassroomSeating = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl">
+    <div className="container px-4 py-6 max-w-6xl">
       <div className="mb-6 flex items-center">
         <Button 
           variant="ghost" 

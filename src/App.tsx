@@ -17,6 +17,7 @@ import TutorialPage from './pages/TutorialPage';
 import ClassroomSeating from './pages/ClassroomSeating';
 import ClassroomAttendance from './pages/ClassroomAttendance';
 import ClassroomInvite from './pages/ClassroomInvite';
+import { SidebarLayout } from './components/layout/SidebarLayout';
 
 function App() {
   const [showIntro, setShowIntro] = useState(true);
@@ -45,21 +46,25 @@ function App() {
             <Route path="/" element={<Navigate to="/home" />} />
             <Route path="/home" element={<Home />} />
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/classes" element={<Classes />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/tutorial/:role" element={<TutorialPage />} />
-            <Route
-              path="/classroom/:classroomId/seating"
-              element={<ClassroomSeating />}
-            />
-            <Route
-              path="/classroom/:classroomId/attendance"
-              element={<ClassroomAttendance />}
-            />
-            <Route
-              path="/classroom/:classroomId/invite"
-              element={<ClassroomInvite />}
-            />
+            
+            {/* Wrap dashboard and classroom pages in SidebarLayout */}
+            <Route element={<SidebarLayout />}>
+              <Route path="/classes" element={<Classes />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/tutorial/:role" element={<TutorialPage />} />
+              <Route
+                path="/classroom/:classroomId/seating"
+                element={<ClassroomSeating />}
+              />
+              <Route
+                path="/classroom/:classroomId/attendance"
+                element={<ClassroomAttendance />}
+              />
+              <Route
+                path="/classroom/:classroomId/invite"
+                element={<ClassroomInvite />}
+              />
+            </Route>
           </Routes>
         )}
       </Router>
