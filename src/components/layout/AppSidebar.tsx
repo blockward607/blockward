@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -23,7 +22,6 @@ import {
   Settings,
   Bell,
   Calendar,
-  ChartBar,
   Trophy,
   Wallet,
   BarChart,
@@ -83,7 +81,6 @@ export function AppSidebar() {
       name: "Teaching",
       items: [
         { name: "Attendance", href: "/attendance", icon: Calendar },
-        { name: "Behavior", href: "/behavior", icon: ChartBar },
       ]
     },
     {
@@ -265,4 +262,3 @@ export function AppSidebar() {
     </>
   );
 }
-
