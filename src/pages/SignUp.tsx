@@ -7,7 +7,7 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, ArrowLeft, BookOpen, User } from "lucide-react";
+import { GraduationCap, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const SignUp = () => {
@@ -52,40 +52,30 @@ const SignUp = () => {
             <GraduationCap className="h-12 w-12 text-purple-500" />
           </div>
           
-          <h2 className="text-2xl font-bold text-center mb-6 text-white">Create Your Account</h2>
+          <h2 className="text-2xl font-bold text-center mb-6">Create Your Account</h2>
           
           <div className="space-y-6">
-            <div className="mb-6">
-              <h3 className="text-white text-center mb-3 font-medium">I am a:</h3>
-              <div className="flex rounded-lg overflow-hidden">
-                <button
-                  className={`flex-1 py-3 px-4 text-center font-medium transition-all flex items-center justify-center ${
-                    role === 'teacher'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                  onClick={() => setRole('teacher')}
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Teacher
-                </button>
-                <button
-                  className={`flex-1 py-3 px-4 text-center font-medium transition-all flex items-center justify-center ${
-                    role === 'student'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                  onClick={() => setRole('student')}
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Student
-                </button>
-              </div>
-              <p className="text-xs text-gray-400 text-center mt-2">
-                {role === 'teacher' 
-                  ? "As a teacher, you'll be able to create classes and manage students." 
-                  : "As a student, you'll be able to join classes and earn rewards."}
-              </p>
+            <div className="flex rounded-lg overflow-hidden">
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'teacher'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('teacher')}
+              >
+                Teacher
+              </button>
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'student'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('student')}
+              >
+                Student
+              </button>
             </div>
 
             <SignUpForm
@@ -105,7 +95,7 @@ const SignUp = () => {
               </div>
             )}
             
-            <p className="text-center text-sm text-white">
+            <p className="text-center text-sm text-gray-400">
               Already have an account?{" "}
               <button 
                 className="text-purple-400 hover:text-purple-300"

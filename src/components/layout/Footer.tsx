@@ -11,7 +11,7 @@ export const Footer = () => {
             <div className="w-7 h-7">
               <InteractiveLogo />
             </div>
-            <h3 className="text-xl blockward-logo">BlockWard</h3>
+            <h3 className="text-xl blockward-logo">Blockward</h3>
           </div>
           
           <div className="flex gap-6">

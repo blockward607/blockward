@@ -9,62 +9,49 @@ export const useTutorial = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
   const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
-  const [hasCheckedTutorial, setHasCheckedTutorial] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkTutorialStatus = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          setHasCheckedTutorial(true);
-          return;
-        }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-        // Determine user role
-        const { data: teacherData } = await supabase
-          .from('teacher_profiles')
+      // Determine user role
+      const { data: teacherData } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+        
+      if (teacherData) {
+        setUserRole('teacher');
+      } else {
+        const { data: studentData } = await supabase
+          .from('students')
           .select('id')
           .eq('user_id', session.user.id)
           .single();
           
-        if (teacherData) {
-          setUserRole('teacher');
-        } else {
-          const { data: studentData } = await supabase
-            .from('students')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .single();
-            
-          if (studentData) {
-            setUserRole('student');
-          }
+        if (studentData) {
+          setUserRole('student');
         }
+      }
 
-        // Check if user has completed tutorial
-        const { data: preferences } = await supabase
-          .from('user_preferences')
-          .select('tutorial_completed')
-          .eq('user_id', session.user.id)
-          .single();
+      // Check if user has completed tutorial
+      const { data: preferences } = await supabase
+        .from('user_preferences')
+        .select('tutorial_completed')
+        .eq('user_id', session.user.id)
+        .single();
 
-        // If no preferences record or tutorial not completed, show tutorial prompt
-        if (!preferences || preferences.tutorial_completed !== true) {
-          setShowTutorialPrompt(true);
-        }
-        
-        setHasCheckedTutorial(true);
-      } catch (error) {
-        console.error("Error checking tutorial status:", error);
-        setHasCheckedTutorial(true);
+      // If no preferences record or tutorial not completed, show tutorial prompt
+      if (!preferences) {
+        setShowTutorialPrompt(true);
       }
     };
 
-    if (!hasCheckedTutorial) {
-      checkTutorialStatus();
-    }
-  }, [hasCheckedTutorial]);
+    checkTutorialStatus();
+  }, []);
 
   const startTutorial = () => {
     if (userRole) {

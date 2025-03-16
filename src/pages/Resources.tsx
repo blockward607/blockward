@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ResourceList } from "@/components/resources/ResourceList";
 import { UploadResourceDialog } from "@/components/resources/UploadResourceDialog";
 import { ResourcesService, Resource } from "@/services/ResourcesService";
-import { JoinClassSection } from "@/components/classroom/join/JoinClassSection";
+import { JoinClassSection } from "@/components/classroom/JoinClassSection";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

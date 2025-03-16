@@ -188,9 +188,4 @@ function useToast() {
   }
 }
 
-export type ToastType = {
-  toast: (props: any) => void;
-  dismiss: (toastId?: string) => void;
-};
-
 export { useToast, toast }

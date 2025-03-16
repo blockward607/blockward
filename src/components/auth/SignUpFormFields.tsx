@@ -75,7 +75,7 @@ export const SignUpFormFields = ({
         console.error("Signup error:", error);
       } else if (data) {
         toast({
-          title: `${role === 'teacher' ? 'Teacher' : 'Student'} account created`,
+          title: "Account created",
           description: "Please check your email to confirm your account.",
         });
       }
@@ -92,7 +92,7 @@ export const SignUpFormFields = ({
   return (
     <form onSubmit={handleSignup} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="signup-name" className="text-white">Full Name</Label>
+        <Label htmlFor="signup-name">Full Name</Label>
         <Input 
           id="signup-name"
           type="text"
@@ -100,12 +100,11 @@ export const SignUpFormFields = ({
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="glass-input text-white"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="signup-email" className="text-white">Email</Label>
+        <Label htmlFor="signup-email">Email</Label>
         <Input 
           id="signup-email"
           type="email"
@@ -113,12 +112,11 @@ export const SignUpFormFields = ({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="glass-input text-white"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="signup-password" className="text-white">Password</Label>
+        <Label htmlFor="signup-password">Password</Label>
         <Input 
           id="signup-password"
           type="password"
@@ -126,12 +124,11 @@ export const SignUpFormFields = ({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="glass-input text-white"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="signup-school" className="text-white">School Name</Label>
+        <Label htmlFor="signup-school">School Name</Label>
         <Input 
           id="signup-school"
           type="text"
@@ -139,12 +136,11 @@ export const SignUpFormFields = ({
           value={schoolName}
           onChange={(e) => setSchoolName(e.target.value)}
           required
-          className="glass-input text-white"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="signup-country" className="text-white">Country</Label>
+        <Label htmlFor="signup-country">Country</Label>
         <Input 
           id="signup-country"
           type="text"
@@ -152,7 +148,6 @@ export const SignUpFormFields = ({
           value={country}
           onChange={(e) => setCountry(e.target.value)}
           required
-          className="glass-input text-white"
         />
       </div>
       
@@ -160,10 +155,10 @@ export const SignUpFormFields = ({
         {emailLoading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Creating {role === 'teacher' ? 'Teacher' : 'Student'} Account...
+            Creating Account...
           </>
         ) : (
-          `Create ${role === 'teacher' ? 'Teacher' : 'Student'} Account`
+          "Create Account"
         )}
       </Button>
     </form>

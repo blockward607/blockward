@@ -5,16 +5,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
-import StudentDashboard from "./StudentDashboard";
+import StudentDashboard from "@/pages/StudentDashboard";
 import { useTutorial } from "@/hooks/useTutorial";
 import type { Classroom } from "@/types/classroom";
-import { Loader2 } from "lucide-react";
-import { TutorialManager } from "@/components/tutorial/TutorialManager";
 
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { showTutorial, TutorialComponent, TutorialPrompt } = useTutorial();
+  const { TutorialComponent, TutorialPrompt } = useTutorial();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [classrooms, setClassrooms] = useState<Partial<Classroom>[]>([]);
@@ -32,45 +30,42 @@ const Dashboard = () => {
   }, [userRole]);
 
   const checkAuth = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Not authenticated",
-          description: "Please log in to access the dashboard"
-        });
-        navigate('/auth');
-        return;
-      }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        variant: "destructive",
+        title: "Not authenticated",
+        description: "Please log in to access the dashboard"
+      });
+      navigate('/auth');
+      return;
+    }
 
-      const { data: teacherData } = await supabase
-        .from('teacher_profiles')
-        .select('full_name')
+    // Get user role from teacher_profiles or students table directly
+    const { data: teacherData } = await supabase
+      .from('teacher_profiles')
+      .select('full_name')
+      .eq('user_id', session.user.id)
+      .single();
+    
+    if (teacherData) {
+      setUserRole('teacher');
+      setUserName(teacherData.full_name || session.user.email);
+    } else {
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('name')
         .eq('user_id', session.user.id)
         .single();
-      
-      if (teacherData) {
-        setUserRole('teacher');
-        setUserName(teacherData.full_name || session.user.email);
+        
+      if (studentData) {
+        setUserRole('student');
+        setUserName(studentData.name || session.user.email);
       } else {
-        const { data: studentData } = await supabase
-          .from('students')
-          .select('name')
-          .eq('user_id', session.user.id)
-          .single();
-          
-        if (studentData) {
-          setUserRole('student');
-          setUserName(studentData.name || session.user.email);
-        } else {
-          setUserRole('student');
-          setUserName(session.user.email);
-        }
+        // If no role is found, default to student
+        setUserRole('student');
+        setUserName(session.user.email);
       }
-    } catch (error) {
-      console.error('Error in checkAuth:', error);
-      setLoading(false);
     }
   };
 
@@ -111,34 +106,26 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full w-full">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-500" />
-          <p className="text-lg font-medium text-gray-300">Loading dashboard...</p>
-        </div>
+      <div className="flex items-center justify-center">
+        <div className="p-4">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="h-full w-full flex flex-col">
-      {/* Tutorial components */}
+    <div className="space-y-6">
       {TutorialComponent}
       {TutorialPrompt}
-      <TutorialManager />
-      
       <DashboardHeader userName={userName} />
       
-      <div className="flex-1 overflow-y-auto w-full">
-        {userRole === 'student' ? (
-          <StudentDashboard />
-        ) : (
-          <TeacherDashboard 
-            classrooms={classrooms} 
-            selectedClassroom={selectedClassroom}
-          />
-        )}
-      </div>
+      {userRole === 'student' ? (
+        <StudentDashboard />
+      ) : (
+        <TeacherDashboard 
+          classrooms={classrooms} 
+          selectedClassroom={selectedClassroom}
+        />
+      )}
     </div>
   );
 };

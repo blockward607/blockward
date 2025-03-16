@@ -1,59 +1,69 @@
 
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate
-} from "react-router-dom";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
+import ResetPassword from '@/pages/ResetPassword';
+import ResetPasswordOTP from '@/pages/ResetPasswordOTP';
+import SignUp from '@/pages/SignUp';
 import Dashboard from '@/pages/Dashboard';
 import Classes from '@/pages/Classes';
 import Students from '@/pages/Students';
-import Resources from '@/pages/Resources';
 import Attendance from '@/pages/Attendance';
+import Behavior from '@/pages/Behavior';
+import Assignments from '@/pages/Assignments';
 import Rewards from '@/pages/Rewards';
+import Achievements from '@/pages/Achievements';
 import Wallet from '@/pages/Wallet';
 import Messages from '@/pages/Messages';
 import Notifications from '@/pages/Notifications';
-import Settings from '@/pages/Settings';
 import Analytics from '@/pages/Analytics';
-import ClassroomSeating from '@/pages/ClassroomSeating';
+import Resources from '@/pages/Resources';
 import Progress from '@/pages/Progress';
-import Assignments from '@/pages/Assignments';
-import Grades from "@/pages/Grades";
-import { useAuth } from "@/hooks/use-auth";
-import Index from '@/pages/Index';
+import Settings from '@/pages/Settings';
+import StudentDashboard from '@/pages/StudentDashboard';
+import ViewTeacherDashboard from '@/pages/ViewTeacherDashboard';
 import TutorialPage from '@/pages/TutorialPage';
-
-function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { user } = useAuth();
-  return user ? children : <Navigate to="/auth" />;
-}
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { SidebarLayout } from '@/components/layout/SidebarLayout';
+import './App.css';
 
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
-        <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
-        <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
-        <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
-        <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
-        <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
-        <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-        <Route path="/seating" element={<ProtectedRoute><ClassroomSeating /></ProtectedRoute>} />
-        <Route path="/behavior" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
-        <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
-        <Route path="/assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
-        <Route path="/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
-        <Route path="/tutorial/:role" element={<ProtectedRoute><TutorialPage /></ProtectedRoute>} />
-      </Routes>
+      <div className="min-h-screen antialiased App">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/home" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/reset-password-otp" element={<ResetPasswordOTP />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/tutorial/:role" element={<TutorialPage />} />
+          
+          {/* Protected routes with sidebar layout */}
+          <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/classes" element={<Classes />} />
+            <Route path="/students" element={<Students />} />
+            <Route path="/attendance" element={<Attendance />} />
+            <Route path="/behavior" element={<Behavior />} />
+            <Route path="/assignments" element={<Assignments />} />
+            <Route path="/rewards" element={<Rewards />} />
+            <Route path="/achievements" element={<Achievements />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+          
+          <Route path="/view-student-dashboard" element={<StudentDashboard />} />
+          <Route path="/view-teacher-dashboard" element={<ViewTeacherDashboard />} />
+        </Routes>
+      </div>
     </Router>
   );
 }

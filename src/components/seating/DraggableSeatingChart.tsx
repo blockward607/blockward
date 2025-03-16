@@ -205,7 +205,6 @@ const DraggableSeatingChartContent = ({ classroomId }: DraggableSeatingChartProp
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className="will-change-auto" // Add this to prevent blurry icons
       >
         <SeatingControls
           onAddSeat={handleAddSeat}

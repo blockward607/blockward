@@ -1,13 +1,11 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ChartBar, Users } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useStudentManagement } from "@/hooks/use-student-management";
 import { StudentList } from "@/components/students/StudentList";
 import { StudentsHeader } from "@/components/students/StudentsHeader";
 import { DeleteStudentDialog } from "@/components/students/DeleteStudentDialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
 
 const Students = () => {
   const {
@@ -19,7 +17,6 @@ const Students = () => {
     initiateDeleteStudent,
     confirmDeleteStudent
   } = useStudentManagement();
-  const [activeTab, setActiveTab] = useState("list");
 
   // Animation variants
   const containerVariants = {
@@ -56,30 +53,10 @@ const Students = () => {
       className="space-y-8 relative z-10"
     >
       <StudentsHeader onAddStudent={addNewStudent} />
-      
-      <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-6">
-          <TabsTrigger value="list" className="data-[state=active]:bg-purple-600">
-            <Users className="w-4 h-4 mr-2" />
-            Students List
-          </TabsTrigger>
-          <TabsTrigger value="behavior" className="data-[state=active]:bg-purple-600">
-            <ChartBar className="w-4 h-4 mr-2" />
-            Behavior
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="list" className="mt-0">
-          <StudentList 
-            students={students} 
-            onDeleteStudent={initiateDeleteStudent} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="behavior" className="mt-0">
-          <BehaviorTracker />
-        </TabsContent>
-      </Tabs>
+      <StudentList 
+        students={students} 
+        onDeleteStudent={initiateDeleteStudent} 
+      />
       
       {/* Confirmation Dialog for Delete */}
       <DeleteStudentDialog 
