@@ -10,10 +10,9 @@ interface EmptyClassStateProps {
 export const EmptyClassState = ({ userRole }: EmptyClassStateProps) => {
   return (
     <motion.div 
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-      }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
     >
       <Card className="p-8 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
         <div className="text-center text-gray-300 space-y-4">
@@ -26,7 +25,7 @@ export const EmptyClassState = ({ userRole }: EmptyClassStateProps) => {
             <>
               <Users className="w-16 h-16 mx-auto text-purple-400 opacity-50" />
               <p className="text-xl">You're not enrolled in any classes yet.</p>
-              <p className="text-gray-400">Use the form above to join a class with an invitation code.</p>
+              <p className="text-gray-400">Join a class with an invitation code to get started.</p>
             </>
           )}
         </div>

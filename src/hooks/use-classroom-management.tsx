@@ -14,37 +14,63 @@ export const useClassroomManagement = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("useClassroomManagement hook initialized");
     checkUserRoleAndFetchData();
   }, []);
 
   const checkUserRoleAndFetchData = async () => {
     try {
+      console.log("Checking user session...");
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Not authenticated",
-          description: "Please log in to view classes"
-        });
+        console.log("No active session found");
+        setLoading(false);
         return;
       }
 
+      console.log("Session found, checking user role");
       // Get user role
-      const { data: roleData } = await supabase
+      const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      setUserRole(roleData?.role || null);
+      if (roleError) {
+        console.error("Error fetching user role:", roleError);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to get user role"
+        });
+        setLoading(false);
+        return;
+      }
 
-      if (roleData?.role === 'teacher') {
+      const role = roleData?.role || null;
+      console.log("User role:", role);
+      setUserRole(role);
+
+      if (role === 'teacher') {
+        console.log("Fetching teacher's classrooms");
         // Fetch teacher's classrooms
-        const { data: teacherProfile } = await supabase
+        const { data: teacherProfile, error: profileError } = await supabase
           .from('teacher_profiles')
           .select('id')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Error fetching teacher profile:", profileError);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load teacher profile"
+          });
+          setLoading(false);
+          return;
+        }
 
         if (teacherProfile) {
           const { data: classroomsData, error } = await supabase
@@ -53,16 +79,37 @@ export const useClassroomManagement = () => {
             .eq('teacher_id', teacherProfile.id)
             .order('created_at', { ascending: false });
 
-          if (error) throw error;
-          setClassrooms(classroomsData || []);
+          if (error) {
+            console.error("Error fetching classrooms:", error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to load classrooms"
+            });
+          } else {
+            console.log(`Fetched ${classroomsData?.length || 0} classrooms`);
+            setClassrooms(classroomsData || []);
+          }
         }
-      } else {
+      } else if (role === 'student') {
+        console.log("Fetching student's enrolled classrooms");
         // Fetch student's enrolled classrooms
-        const { data: studentData } = await supabase
+        const { data: studentData, error: studentError } = await supabase
           .from('students')
           .select('id')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
+
+        if (studentError) {
+          console.error("Error fetching student profile:", studentError);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load student profile"
+          });
+          setLoading(false);
+          return;
+        }
 
         if (studentData) {
           const { data: enrolledClassrooms, error } = await supabase
@@ -70,16 +117,25 @@ export const useClassroomManagement = () => {
             .select('classroom:classrooms(*)')
             .eq('student_id', studentData.id);
 
-          if (error) throw error;
-          setClassrooms(enrolledClassrooms?.map(ec => ec.classroom) || []);
+          if (error) {
+            console.error("Error fetching enrolled classrooms:", error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to load enrolled classrooms"
+            });
+          } else {
+            console.log(`Fetched ${enrolledClassrooms?.length || 0} enrolled classrooms`);
+            setClassrooms(enrolledClassrooms?.map(ec => ec.classroom) || []);
+          }
         }
       }
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('Error in checkUserRoleAndFetchData:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load classes"
+        description: "Failed to load classes. Please try again."
       });
     } finally {
       setLoading(false);
@@ -89,6 +145,10 @@ export const useClassroomManagement = () => {
   const handleClassroomCreated = (newClassroom: Classroom) => {
     setClassrooms([newClassroom, ...classrooms]);
     setSelectedClassroom(newClassroom);
+    toast({
+      title: "Success",
+      description: `Classroom "${newClassroom.name}" created successfully`
+    });
   };
 
   const handleDeleteClassroom = (classroomId: string) => {
@@ -99,6 +159,11 @@ export const useClassroomManagement = () => {
     if (selectedClassroom && selectedClassroom.id === classroomId) {
       setSelectedClassroom(null);
     }
+    
+    toast({
+      title: "Success",
+      description: "Classroom deleted successfully"
+    });
   };
 
   return {

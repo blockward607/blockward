@@ -7,6 +7,7 @@ import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
 import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
+import { useToast } from "@/hooks/use-toast";
 
 const Classes = () => {
   const { 
@@ -18,6 +19,13 @@ const Classes = () => {
     handleClassroomCreated,
     handleDeleteClassroom
   } = useClassroomManagement();
+  
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Log information to help debugging
+    console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
+  }, [userRole, loading, classrooms]);
 
   if (loading) {
     return <ClassesLoading />;
@@ -39,7 +47,7 @@ const Classes = () => {
       initial="hidden"
       animate="show"
       variants={containerVariants}
-      className="space-y-8"
+      className="space-y-8 container px-4 sm:px-6 mx-auto max-w-6xl"
     >
       <ClassesPageHeader 
         userRole={userRole} 

@@ -9,10 +9,11 @@ export const ClassesLoading = () => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="p-4 flex items-center gap-3"
+        className="p-4 flex flex-col items-center gap-3"
       >
-        <Sparkles className="w-6 h-6 text-purple-400 animate-pulse" />
-        <span className="text-xl">Loading classes...</span>
+        <Sparkles className="w-8 h-8 text-purple-400 animate-pulse" />
+        <span className="text-xl font-medium">Loading your classes...</span>
+        <div className="mt-2 w-16 h-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse" />
       </motion.div>
     </div>
   );
