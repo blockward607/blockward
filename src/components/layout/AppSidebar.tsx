@@ -161,7 +161,7 @@ export function AppSidebar() {
         </Button>
       </div>
       
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full w-full">
         <SidebarHeader className="flex items-center px-6 py-6">
           {!isMinimized && (
             <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
@@ -170,9 +170,9 @@ export function AppSidebar() {
           )}
         </SidebarHeader>
         
-        <SidebarContent className="flex-1 overflow-y-auto">
+        <SidebarContent className="flex-1 overflow-y-auto w-full">
           {/* Main navigation items at the top */}
-          <SidebarMenu className="px-2 mt-2 mb-6">
+          <SidebarMenu className="px-2 mt-2 mb-6 w-full">
             {mainNavItems.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -182,14 +182,14 @@ export function AppSidebar() {
                     isActive={isActive}
                     tooltip={isMinimized ? item.name : undefined}
                     className={cn(
-                      "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300",
+                      "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
                       isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
                     )}
                   >
                     <div 
                       onClick={() => navigate(item.href)} 
                       className={cn(
-                        "cursor-pointer flex items-center",
+                        "cursor-pointer flex items-center w-full",
                         isActive ? "text-white font-semibold" : "text-gray-300"
                       )}
                     >
@@ -204,29 +204,29 @@ export function AppSidebar() {
           
           {/* Display rest of the navigation groups */}
           {navGroups.slice(1).map((group) => (
-            <SidebarGroup key={group.name}>
+            <SidebarGroup key={group.name} className="w-full">
               {!isMinimized && (
-                <SidebarGroupLabel className="text-gray-300 font-semibold">{group.name}</SidebarGroupLabel>
+                <SidebarGroupLabel className="text-gray-300 font-semibold px-4">{group.name}</SidebarGroupLabel>
               )}
-              <SidebarGroupContent>
-                <SidebarMenu>
+              <SidebarGroupContent className="w-full">
+                <SidebarMenu className="w-full">
                   {group.items.map((item) => {
                     const isActive = location.pathname === item.href;
                     return (
-                      <SidebarMenuItem key={item.name}>
+                      <SidebarMenuItem key={item.name} className="w-full">
                         <SidebarMenuButton 
                           asChild 
                           isActive={isActive}
                           tooltip={isMinimized ? item.name : undefined}
                           className={cn(
-                            "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300",
+                            "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
                             isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
                           )}
                         >
                           <div 
                             onClick={() => navigate(item.href)} 
                             className={cn(
-                              "cursor-pointer flex items-center",
+                              "cursor-pointer flex items-center w-full",
                               isActive ? "text-white font-semibold" : "text-gray-300"
                             )}
                           >
@@ -243,7 +243,7 @@ export function AppSidebar() {
           ))}
         </SidebarContent>
         
-        <SidebarFooter className="p-4">
+        <SidebarFooter className="p-4 w-full">
           <Button 
             variant="ghost" 
             className={cn(
