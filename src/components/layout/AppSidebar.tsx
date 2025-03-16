@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -30,7 +31,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ChartBar,
-  Megaphone
+  Megaphone,
+  Layers
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -76,12 +78,14 @@ export function AppSidebar() {
       items: [
         { name: "Announcements", href: "/dashboard", icon: Megaphone },
         { name: "Classes", href: "/classes", icon: BookOpen },
+        { name: "Students", href: "/students", icon: Users },
       ]
     },
     {
       name: "Teaching",
       items: [
         { name: "Attendance", href: "/attendance", icon: Calendar },
+        { name: "Resources", href: "/resources", icon: Layers },
       ]
     },
     {
@@ -113,6 +117,7 @@ export function AppSidebar() {
       items: [
         { name: "Announcements", href: "/dashboard", icon: Megaphone },
         { name: "Classes", href: "/classes", icon: BookOpen },
+        { name: "Resources", href: "/resources", icon: Layers },
       ]
     },
     {
