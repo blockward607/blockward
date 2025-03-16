@@ -8,7 +8,6 @@ import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { useToast } from "@/hooks/use-toast";
-import { TeacherToolbox } from "@/components/teacher/TeacherToolbox";
 
 const Classes = () => {
   const { 
@@ -54,15 +53,6 @@ const Classes = () => {
         userRole={userRole} 
         onClassroomCreated={handleClassroomCreated} 
       />
-
-      {userRole === 'teacher' && (
-        <motion.div variants={{
-          hidden: { opacity: 0, y: 20 },
-          show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-        }}>
-          <TeacherToolbox />
-        </motion.div>
-      )}
 
       {userRole === 'student' && classrooms.length === 0 && (
         <motion.div variants={{
