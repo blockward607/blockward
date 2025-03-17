@@ -75,7 +75,7 @@ export const SignUpFormFields = ({
         console.error("Signup error:", error);
       } else if (data) {
         toast({
-          title: `${role === 'teacher' ? 'Teacher' : 'Student'} account created`,
+          title: "Account created",
           description: "Please check your email to confirm your account.",
         });
       }
@@ -160,10 +160,10 @@ export const SignUpFormFields = ({
         {emailLoading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Creating {role === 'teacher' ? 'Teacher' : 'Student'} Account...
+            Creating Account...
           </>
         ) : (
-          `Create ${role === 'teacher' ? 'Teacher' : 'Student'} Account`
+          "Create Account"
         )}
       </Button>
     </form>

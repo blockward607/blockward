@@ -1,12 +1,12 @@
 
-import { BookOpen } from "lucide-react";
+import { BookOpen, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { CreateClassroomDialog } from "./CreateClassroomDialog";
 import { Database } from "@/integrations/supabase/types";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
-export interface ClassesPageHeaderProps {
+interface ClassesPageHeaderProps {
   userRole: string | null;
   onClassroomCreated: (newClassroom: Classroom) => void;
 }

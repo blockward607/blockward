@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ClassroomGrid } from "./ClassroomGrid";
 import { EmptyClassState } from "./EmptyClassState";
@@ -6,7 +7,7 @@ import { Database } from "@/integrations/supabase/types";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
-export interface ClassroomsListProps {
+interface ClassroomsListProps {
   classrooms: Classroom[];
   userRole: string | null;
   onDelete: (classroomId: string) => void;
@@ -41,12 +42,7 @@ export const ClassroomsList = ({
   }
 
   return (
-    <motion.div 
-      variants={containerVariants} 
-      initial="hidden" 
-      animate="show" 
-      className="grid grid-cols-1 gap-6"
-    >
+    <motion.div variants={containerVariants} className="grid grid-cols-1 gap-6">
       {classrooms.map((classroom) => (
         <motion.div 
           key={classroom.id} 

@@ -75,50 +75,16 @@ export const useTutorial = () => {
     setShowTutorialPrompt(false);
   };
 
-  const skipTutorial = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await supabase
-          .from('user_preferences')
-          .upsert({
-            user_id: session.user.id,
-            tutorial_completed: true,
-          });
-      }
-      setShowTutorialPrompt(false);
-    } catch (error) {
-      console.error("Error saving tutorial preference:", error);
-    }
-  };
-
   const resetTutorialStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("No active session found");
-      }
-      
-      // Update the user preference to mark tutorial as not completed
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
       await supabase
         .from('user_preferences')
         .upsert({
           user_id: session.user.id,
           tutorial_completed: false,
         });
-      
-      // Navigate to the appropriate tutorial page based on user role
-      if (userRole) {
-        navigate(`/tutorial/${userRole}`);
-        return true;
-      } else {
-        // If role can't be determined, show the tutorial modal
-        setShowTutorial(true);
-        return true;
-      }
-    } catch (error) {
-      console.error("Error resetting tutorial status:", error);
-      throw error;
+      startTutorial();
     }
   };
 
@@ -127,7 +93,6 @@ export const useTutorial = () => {
     showTutorialPrompt,
     userRole,
     startTutorial,
-    skipTutorial,
     resetTutorialStatus,
     setShowTutorialPrompt,
     TutorialComponent: showTutorial ? (
@@ -142,7 +107,6 @@ export const useTutorial = () => {
         isOpen={showTutorialPrompt}
         onOpenChange={setShowTutorialPrompt}
         onStartTutorial={startTutorial}
-        onSkipTutorial={skipTutorial}
       />
     ) : null
   };

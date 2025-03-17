@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, Trophy, Star, Medal, Crown, Brain, Award, BookOpen, Calendar } from "lucide-react";
+import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,15 @@ interface BlockWard {
 }
 
 const defaultBlockWards: BlockWard[] = [
+  {
+    id: "academic-1",
+    title: "Academic Excellence Trophy",
+    description: "Awarded for outstanding academic achievement",
+    icon: Trophy,
+    gradient: "from-yellow-400 to-orange-500",
+    points: 1000,
+    image: "https://images.unsplash.com/photo-1673548917471-3113dedda9a5?q=80&w=1000",
+  },
   {
     id: "innovation-1",
     title: "Innovation Star",
@@ -67,37 +76,10 @@ const defaultBlockWards: BlockWard[] = [
     image: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=3024",
   },
   {
-    id: "attendance-1",
-    title: "Perfect Attendance",
-    description: "Recognition for outstanding attendance record",
-    icon: Calendar,
-    gradient: "from-teal-400 to-green-500",
-    points: 600,
-    image: "https://images.unsplash.com/photo-1506784365847-bbad939e9335?q=80&w=2068",
-  },
-  {
-    id: "reading-1",
-    title: "Reading Champion",
-    description: "Exceptional achievement in literature and reading",
-    icon: BookOpen,
-    gradient: "from-amber-400 to-orange-500",
-    points: 750,
-    image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=2733",
-  },
-  {
-    id: "certificate-1",
-    title: "Certificate of Excellence",
-    description: "Outstanding overall academic performance",
-    icon: Award,
-    gradient: "from-yellow-400 to-amber-500",
-    points: 900,
-    image: "https://images.unsplash.com/photo-1456953180671-730de08edaa7?q=80&w=2942",
-  },
-  {
-    id: "progress-1",
-    title: "Most Improved",
-    description: "Recognition for significant progress and improvement",
-    icon: Award,
+    id: "special-1",
+    title: "Special Achievement",
+    description: "Recognition for exceptional accomplishment",
+    icon: Sparkles,
     gradient: "from-indigo-400 to-violet-500",
     points: 700,
     image: "https://images.unsplash.com/photo-1581574919402-5b7d688a0583?q=80&w=2576",
@@ -200,29 +182,21 @@ export const BlockWardShowcase = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const customBlockWards = data
-          .filter(nft => {
-            const metadata = typeof nft.metadata === 'string' 
-              ? JSON.parse(nft.metadata) 
-              : nft.metadata;
+        const customBlockWards = data.map(nft => {
+          const metadata = typeof nft.metadata === 'string' 
+            ? JSON.parse(nft.metadata) 
+            : nft.metadata;
             
-            return nft.image_url || (metadata && metadata.image);
-          })
-          .map(nft => {
-            const metadata = typeof nft.metadata === 'string' 
-              ? JSON.parse(nft.metadata) 
-              : nft.metadata;
-              
-            return {
-              id: nft.id,
-              title: metadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
-              description: metadata.description || "Educational achievement BlockWard",
-              icon: getIconForType(metadata.type || 'academic'),
-              gradient: getGradientForType(metadata.type || 'academic'),
-              points: metadata.points || 100,
-              image: nft.image_url || metadata.image
-            };
-          });
+          return {
+            id: nft.id,
+            title: metadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
+            description: metadata.description || "Educational achievement BlockWard",
+            icon: getIconForType(metadata.type || 'academic'),
+            gradient: getGradientForType(metadata.type || 'academic'),
+            points: metadata.points || 100,
+            image: nft.image_url
+          };
+        });
         
         setDbBlockWards(customBlockWards);
       }
@@ -248,10 +222,7 @@ export const BlockWardShowcase = () => {
       case 'leadership': return Crown;
       case 'stem': return Brain;
       case 'sports': return Medal;
-      case 'attendance': return Calendar;
-      case 'reading': return BookOpen;
-      case 'certificate': return Award;
-      default: return Award;
+      default: return Sparkles;
     }
   };
   
@@ -262,9 +233,6 @@ export const BlockWardShowcase = () => {
       case 'leadership': return "from-blue-400 to-cyan-500";
       case 'stem': return "from-green-400 to-emerald-500";
       case 'sports': return "from-red-400 to-rose-500";
-      case 'attendance': return "from-teal-400 to-green-500";
-      case 'reading': return "from-amber-400 to-orange-500";
-      case 'certificate': return "from-yellow-400 to-amber-500";
       default: return "from-indigo-400 to-violet-500";
     }
   };

@@ -2,13 +2,11 @@
 import { useState, useEffect } from "react";
 import { TutorialModal } from "./TutorialModal";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 export const TutorialManager = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const checkTutorialStatus = async () => {
@@ -50,13 +48,7 @@ export const TutorialManager = () => {
 
         // If no preferences record or tutorial not completed, show tutorial
         const shouldShowTutorial = !preferences || preferences.tutorial_completed !== true;
-        
-        if (shouldShowTutorial && userRole) {
-          navigate(`/tutorial/${userRole}`);
-        } else {
-          setShowTutorial(shouldShowTutorial);
-        }
-        
+        setShowTutorial(shouldShowTutorial);
         setLoading(false);
       } catch (error) {
         console.error("Error checking tutorial status:", error);
@@ -65,7 +57,20 @@ export const TutorialManager = () => {
     };
 
     checkTutorialStatus();
-  }, [navigate, userRole]);
+  }, []);
+
+  const handleResetTutorial = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: session.user.id,
+          tutorial_completed: false,
+        });
+      setShowTutorial(true);
+    }
+  };
 
   if (loading || !showTutorial) {
     return null;
@@ -77,4 +82,23 @@ export const TutorialManager = () => {
       onClose={() => setShowTutorial(false)} 
     />
   );
+};
+
+export const useTutorial = () => {
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  const startTutorial = () => {
+    setShowTutorial(true);
+  };
+
+  return {
+    showTutorial,
+    startTutorial,
+    TutorialComponent: showTutorial ? (
+      <TutorialModal 
+        userRole={null} // Will be determined inside modal
+        onClose={() => setShowTutorial(false)} 
+      />
+    ) : null
+  };
 };

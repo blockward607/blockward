@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 interface TutorialStartDialogProps {
@@ -9,15 +10,13 @@ interface TutorialStartDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onStartTutorial: () => void;
-  onSkipTutorial: () => void;
 }
 
 export const TutorialStartDialog = ({ 
   userRole, 
   isOpen, 
   onOpenChange,
-  onStartTutorial,
-  onSkipTutorial
+  onStartTutorial
 }: TutorialStartDialogProps) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -25,7 +24,15 @@ export const TutorialStartDialog = ({
   const handleSkipTutorial = async () => {
     setLoading(true);
     try {
-      await onSkipTutorial();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase
+          .from('user_preferences')
+          .upsert({
+            user_id: session.user.id,
+            tutorial_completed: true,
+          });
+      }
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving tutorial preference:", error);
