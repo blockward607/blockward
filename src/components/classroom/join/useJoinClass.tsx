@@ -4,7 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useJoinClassContext } from "./JoinClassContext";
-import { AuthService } from "@/services/AuthService";
+import { ClassJoinService } from "@/services/ClassJoinService";
+import { findClassroomByPrefix, findClassroomByCaseInsensitive } from "@/utils/classCodeMatcher";
+import { StudentProfileService } from "@/services/StudentProfileService";
 
 export const useJoinClass = () => {
   const { invitationCode, setLoading, setError } = useJoinClassContext();
@@ -41,148 +43,16 @@ export const useJoinClass = () => {
 
       console.log("User authenticated, checking student profile");
       
-      // Check if student profile exists
-      const { data: student, error: studentError } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-        
-      console.log("Student profile check result:", { student, studentError });
-
-      let studentId = student?.id;
-
-      // If no student profile, we need to create one and set role
-      if (!student) {
-        console.log("Creating student profile for user:", session.user.id);
-        
-        // Create student profile
-        const { data: newStudent, error: createError } = await supabase
-          .from('students')
-          .insert([{
-            user_id: session.user.id,
-            name: session.user.email?.split('@')[0] || 'Student'
-          }])
-          .select()
-          .single();
-
-        if (createError) {
-          console.error("Error creating student profile:", createError);
-          setError("Error creating student profile");
-          return;
-        }
-        
-        studentId = newStudent.id;
-        console.log("Student profile created:", newStudent);
-
-        // Set user role as student
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert([{
-            user_id: session.user.id,
-            role: 'student'
-          }]);
-
-        if (roleError) {
-          console.error("Error setting user role:", roleError);
-          setError("Error setting user role");
-          return;
-        }
-      }
-
-      // Different search strategies for class codes
-      // Strategy 1: Check for invitation in class_invitations table with exact match
-      const { data: exactInvitation, error: invitationError } = await supabase
-        .from('class_invitations')
-        .select('*, classroom:classrooms(*)')
-        .eq('invitation_token', invitationCode)
-        .eq('status', 'pending')
-        .maybeSingle();
-
-      if (invitationError) {
-        console.error("Error looking up invitation:", invitationError);
-        setError("Error verifying invitation code");
+      // Check if student profile exists or create one
+      const studentId = await ensureStudentProfile(session);
+      if (!studentId) {
+        setError("Error creating student profile");
         return;
       }
 
-      // Initialize a variable to store the matched invitation
-      let matchedInvitation = exactInvitation;
-      let classroomForEnrollment = null;
-      let classroomName = "";
-
-      // Strategy 2: If no exact match, try case-insensitive search for invitation
-      if (!matchedInvitation) {
-        console.log("No exact match, trying case-insensitive search");
-        
-        const { data: caseInsensitiveInvitation } = await supabase
-          .from('class_invitations')
-          .select('*, classroom:classrooms(*)')
-          .ilike('invitation_token', invitationCode)
-          .eq('status', 'pending')
-          .maybeSingle();
-          
-        if (caseInsensitiveInvitation) {
-          console.log("Found invitation through case-insensitive search:", caseInsensitiveInvitation);
-          matchedInvitation = caseInsensitiveInvitation;
-        }
-      }
-      
-      // Strategy 3: Try directly with classroom ID 
-      // (This is for classrooms that show the ID directly as in your screenshot)
-      if (!matchedInvitation) {
-        console.log("Trying direct classroom ID lookup:", invitationCode);
-        
-        // First try exact match with classroom ID
-        let { data: classroom } = await supabase
-          .from('classrooms')
-          .select('*')
-          .eq('id', invitationCode)
-          .maybeSingle();
-        
-        // If that fails, try with just the first part of the ID (6 chars as shown in your UI)
-        if (!classroom) {
-          console.log("No exact ID match, trying with ID prefix");
-          const { data: classroomsByPrefix } = await supabase
-            .from('classrooms')
-            .select('*');
-            
-          if (classroomsByPrefix) {
-            // Find classroom where ID starts with the given code
-            classroom = classroomsByPrefix.find(c => 
-              c.id.toLowerCase().startsWith(invitationCode.toLowerCase())
-            );
-          }
-        }
-        
-        // If still no match, try case insensitive search for classroom ID
-        if (!classroom) {
-          console.log("Trying case-insensitive classroom ID search");
-          const { data: classrooms } = await supabase
-            .from('classrooms')
-            .select('*');
-            
-          if (classrooms) {
-            // Find matching classroom through case-insensitive comparison
-            classroom = classrooms.find(c => 
-              c.id.toLowerCase() === invitationCode.toLowerCase() ||
-              c.id.toLowerCase().includes(invitationCode.toLowerCase())
-            );
-          }
-        }
-          
-        if (classroom) {
-          console.log("Found classroom by ID (or partial ID):", classroom);
-          classroomForEnrollment = classroom;
-          classroomName = classroom.name;
-        }
-      }
-      
-      // If we found a valid invitation, use its classroom
-      if (matchedInvitation?.classroom) {
-        console.log("Using invitation's classroom for enrollment");
-        classroomForEnrollment = matchedInvitation.classroom;
-        classroomName = matchedInvitation.classroom.name;
-      }
+      // Try to find the classroom using different strategies
+      const { classroomForEnrollment, classroomName, matchedInvitation } = 
+        await findClassroomWithCode(invitationCode);
       
       // If no classroom found after all attempts, show error
       if (!classroomForEnrollment) {
@@ -193,7 +63,7 @@ export const useJoinClass = () => {
       
       // Enroll student in the classroom
       console.log("Enrolling student in classroom:", { studentId, classroomId: classroomForEnrollment.id });
-      const { data: enrollment, error: enrollError } = await joinClassroom(studentId, classroomForEnrollment.id);
+      const { error: enrollError } = await joinClassroom(studentId, classroomForEnrollment.id);
       
       if (enrollError) {
         console.error("Error enrolling student:", enrollError);
@@ -203,10 +73,7 @@ export const useJoinClass = () => {
 
       // If we used an invitation, update its status
       if (matchedInvitation) {
-        await supabase
-          .from('class_invitations')
-          .update({ status: 'accepted' })
-          .eq('id', matchedInvitation.id);
+        await ClassJoinService.acceptInvitation(matchedInvitation.id);
       }
       
       // Success!
@@ -221,16 +88,126 @@ export const useJoinClass = () => {
     }
   };
 
+  // Helper function to ensure student profile and return student ID
+  const ensureStudentProfile = async (session: any) => {
+    // Check if student profile exists
+    const { data: student, error: studentError } = await StudentProfileService.getStudentProfile(session.user.id);
+        
+    console.log("Student profile check result:", { student, studentError });
+
+    if (student?.id) {
+      return student.id;
+    }
+
+    // If no student profile, we need to create one and set role
+    console.log("Creating student profile for user:", session.user.id);
+    
+    // Create student profile
+    const { data: newStudent, error: createError } = await StudentProfileService.createStudentProfile(
+      session.user.id, 
+      session.user.email?.split('@')[0] || 'Student'
+    );
+
+    if (createError) {
+      console.error("Error creating student profile:", createError);
+      return null;
+    }
+    
+    console.log("Student profile created:", newStudent);
+
+    // Set user role as student
+    const { error: roleError } = await StudentProfileService.setUserRole(session.user.id, 'student');
+
+    if (roleError) {
+      console.error("Error setting user role:", roleError);
+      return null;
+    }
+
+    return newStudent.id;
+  };
+
+  // Helper function to find classroom with different matching strategies
+  const findClassroomWithCode = async (code: string) => {
+    // Initialize variables to store the results
+    let matchedInvitation = null;
+    let classroomForEnrollment = null;
+    let classroomName = "";
+
+    // Strategy 1: Check for invitation in class_invitations table with exact match
+    const { data: exactInvitation, error: invitationError } = await ClassJoinService.getExactInvitation(code);
+
+    if (invitationError) {
+      console.error("Error looking up invitation:", invitationError);
+      setError("Error verifying invitation code");
+      return { classroomForEnrollment: null, classroomName: "", matchedInvitation: null };
+    }
+
+    // Set matchedInvitation to exact match if found
+    matchedInvitation = exactInvitation;
+
+    // Strategy 2: If no exact match, try case-insensitive search for invitation
+    if (!matchedInvitation) {
+      console.log("No exact match, trying case-insensitive search");
+      
+      const { data: caseInsensitiveInvitation } = await ClassJoinService.getCaseInsensitiveInvitation(code);
+        
+      if (caseInsensitiveInvitation) {
+        console.log("Found invitation through case-insensitive search:", caseInsensitiveInvitation);
+        matchedInvitation = caseInsensitiveInvitation;
+      }
+    }
+    
+    // Strategy 3: Try directly with classroom ID 
+    if (!matchedInvitation) {
+      console.log("Trying direct classroom ID lookup:", code);
+      
+      // First try exact match with classroom ID
+      let { data: classroom } = await ClassJoinService.getClassroomByExactId(code);
+      
+      // If that fails, try with just the first part of the ID (6 chars as shown in your UI)
+      if (!classroom) {
+        console.log("No exact ID match, trying with ID prefix");
+        const { data: classroomsByPrefix } = await ClassJoinService.getAllClassrooms();
+        
+        if (classroomsByPrefix) {
+          // Find classroom where ID starts with the given code
+          classroom = findClassroomByPrefix(classroomsByPrefix, code);
+        }
+      }
+      
+      // If still no match, try case insensitive search for classroom ID
+      if (!classroom) {
+        console.log("Trying case-insensitive classroom ID search");
+        const { data: classrooms } = await ClassJoinService.getAllClassrooms();
+        
+        if (classrooms) {
+          // Find matching classroom through case-insensitive comparison
+          classroom = findClassroomByCaseInsensitive(classrooms, code);
+        }
+      }
+        
+      if (classroom) {
+        console.log("Found classroom by ID (or partial ID):", classroom);
+        classroomForEnrollment = classroom;
+        classroomName = classroom.name;
+      }
+    }
+    
+    // If we found a valid invitation, use its classroom
+    if (matchedInvitation?.classroom) {
+      console.log("Using invitation's classroom for enrollment");
+      classroomForEnrollment = matchedInvitation.classroom;
+      classroomName = matchedInvitation.classroom.name;
+    }
+    
+    return { classroomForEnrollment, classroomName, matchedInvitation };
+  };
+
   // Helper function to check enrollment and join classroom
   const joinClassroom = async (studentId: string, classroomId: string) => {
     // Check if already enrolled
-    console.log("Checking if already enrolled in classroom:", classroomId);
-    const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
-      .from('classroom_students')
-      .select('*')
-      .eq('classroom_id', classroomId)
-      .eq('student_id', studentId)
-      .maybeSingle();
+    const { data: existingEnrollment, error: enrollmentCheckError } = 
+      await ClassJoinService.checkEnrollment(studentId, classroomId);
 
     if (enrollmentCheckError) {
       console.error("Error checking enrollment:", enrollmentCheckError);
@@ -248,16 +225,7 @@ export const useJoinClass = () => {
     }
 
     // Enroll the student
-    console.log("Enrolling student in classroom:", { studentId, classroomId });
-    const { data: enrollmentData, error: enrollError } = await supabase
-      .from('classroom_students')
-      .insert([{
-        classroom_id: classroomId,
-        student_id: studentId
-      }])
-      .select();
-
-    return { data: enrollmentData, error: enrollError };
+    return await ClassJoinService.enrollStudent(studentId, classroomId);
   };
 
   // Helper function to handle successful join
