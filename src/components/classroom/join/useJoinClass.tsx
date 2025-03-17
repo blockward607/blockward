@@ -93,7 +93,7 @@ export const useJoinClass = () => {
       // Look up the invitation code in the class_invitations table
       console.log("Looking up invitation code:", invitationCode);
       
-      let { data: invitation, error: invitationError } = await supabase
+      const { data: exactInvitation, error: invitationError } = await supabase
         .from('class_invitations')
         .select('*, classroom:classrooms(*)')
         .eq('invitation_token', invitationCode)
@@ -106,7 +106,10 @@ export const useJoinClass = () => {
         return;
       }
 
-      if (!invitation) {
+      // Initialize a variable to store the matched invitation
+      let matchedInvitation = exactInvitation;
+
+      if (!matchedInvitation) {
         // Try with case insensitive search
         console.log("No exact match, trying case-insensitive search");
         
@@ -178,20 +181,20 @@ export const useJoinClass = () => {
         }
         
         // Found invitation by case-insensitive search
-        invitation = caseInsensitiveInvitation;
+        matchedInvitation = caseInsensitiveInvitation;
       }
       
       // We found a valid invitation, enroll the student
-      console.log("Found valid invitation:", invitation);
+      console.log("Found valid invitation:", matchedInvitation);
       
-      if (!invitation.classroom) {
+      if (!matchedInvitation.classroom) {
         console.error("Invitation doesn't have associated classroom data");
         setError("Invalid invitation code");
         return;
       }
       
       // Enroll student in the classroom
-      const { data: enrollment, error: enrollError } = await joinClassroom(studentId, invitation.classroom.id);
+      const { data: enrollment, error: enrollError } = await joinClassroom(studentId, matchedInvitation.classroom.id);
       
       if (enrollError) {
         console.error("Error enrolling student:", enrollError);
@@ -203,9 +206,9 @@ export const useJoinClass = () => {
       await supabase
         .from('class_invitations')
         .update({ status: 'accepted' })
-        .eq('id', invitation.id);
+        .eq('id', matchedInvitation.id);
       
-      handleSuccessfulJoin(invitation.classroom.name);
+      handleSuccessfulJoin(matchedInvitation.classroom.name);
       
     } catch (error: any) {
       console.error("Error joining class:", error);
