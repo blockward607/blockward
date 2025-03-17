@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface JoinClassContextType {
@@ -59,10 +58,10 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Format invitation code on change - uppercase and trim
+  // Format invitation code on change - preserve case but trim whitespace
   const handleSetInvitationCode = (code: string) => {
-    // Convert to uppercase and trim whitespace
-    const normalizedCode = code.trim().toUpperCase();
+    // Keep original case but trim whitespace
+    const normalizedCode = code.trim();
     setInvitationCode(normalizedCode);
   };
 

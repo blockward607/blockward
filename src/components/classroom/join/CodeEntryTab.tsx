@@ -75,7 +75,7 @@ export const CodeEntryTab = () => {
           className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg tracking-wider"
           autoComplete="off"
           disabled={loading}
-          maxLength={8}
+          maxLength={10}
         />
         <Button
           onClick={handleJoinClass}
@@ -99,7 +99,7 @@ export const CodeEntryTab = () => {
       <p className="text-xs text-gray-400 mt-2">
         Enter the class code provided by your teacher.
         <br />
-        <span className="font-semibold">The code is the classroom ID (example: ABC123).</span>
+        <span className="font-semibold">Class codes may contain letters and numbers (example: A67680).</span>
       </p>
     </div>
   );

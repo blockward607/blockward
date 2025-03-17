@@ -90,8 +90,8 @@ export const useJoinClass = () => {
         }
       }
 
-      // Look for classroom with this ID directly - important: The code IS the classroom ID
-      console.log("Looking for classroom with ID:", invitationCode);
+      // First try to find the classroom directly by ID
+      console.log("Trying to find classroom with ID:", invitationCode);
       
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
@@ -105,63 +105,55 @@ export const useJoinClass = () => {
         return;
       }
       
+      // If not found by ID, try with case-insensitive search
       if (!classroom) {
-        console.error("No classroom found with ID:", invitationCode);
-        setError("Invalid invitation code. No matching classroom found.");
+        console.log("No exact match, trying case-insensitive search");
+        
+        const { data: classroomByILike, error: iLikeError } = await supabase
+          .from('classrooms')
+          .select('*')
+          .ilike('id', invitationCode)
+          .maybeSingle();
+          
+        if (iLikeError) {
+          console.error("Error in case-insensitive search:", iLikeError);
+          setError("Error finding classroom. Please try again.");
+          return;
+        }
+        
+        if (!classroomByILike) {
+          console.error("No classroom found with ID:", invitationCode);
+          setError("Invalid class code. No matching classroom found.");
+          return;
+        }
+        
+        console.log("Found classroom with case-insensitive match:", classroomByILike);
+        
+        // Use the classroom found by case-insensitive search
+        const { data: enrolledClassroom, error: enrollError } = await joinClassroom(studentId, classroomByILike.id);
+        
+        if (enrollError) {
+          console.error("Error enrolling student:", enrollError);
+          setError("Error joining classroom");
+          return;
+        }
+        
+        handleSuccessfulJoin(classroomByILike.name);
         return;
       }
       
-      console.log("Found classroom:", classroom);
+      console.log("Found classroom with exact ID match:", classroom);
       
-      // Check if already enrolled
-      console.log("Checking if already enrolled in classroom:", classroom.id);
-      const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
-        .from('classroom_students')
-        .select('*')
-        .eq('classroom_id', classroom.id)
-        .eq('student_id', studentId)
-        .maybeSingle();
-
-      if (enrollmentCheckError) {
-        console.error("Error checking enrollment:", enrollmentCheckError);
-        setError("Error checking enrollment status");
-        return;
-      }
-
-      if (existingEnrollment) {
-        console.log("Student already enrolled in this classroom");
-        toast({
-          title: "Already enrolled",
-          description: "You are already enrolled in this classroom"
-        });
-        navigate('/classes');
-        return;
-      }
-
-      // Enroll the student
-      console.log("Enrolling student in classroom:", { studentId, classroomId: classroom.id });
-      const { error: enrollError } = await supabase
-        .from('classroom_students')
-        .insert([{
-          classroom_id: classroom.id,
-          student_id: studentId
-        }]);
-
+      // Found classroom with exact ID match, proceed with enrollment
+      const { data: enrolledClassroom, error: enrollError } = await joinClassroom(studentId, classroom.id);
+      
       if (enrollError) {
-        console.error("Error enrolling in classroom:", enrollError);
+        console.error("Error enrolling student:", enrollError);
         setError("Error joining classroom");
         return;
       }
-
-      // Success
-      console.log("Successfully joined classroom:", classroom.name);
-      toast({
-        title: "Success!",
-        description: `You've joined ${classroom.name || 'the classroom'}`
-      });
       
-      // Redirect to classes page
-      navigate('/classes');
+      handleSuccessfulJoin(classroom.name);
       
     } catch (error: any) {
       console.error("Error joining class:", error);
@@ -170,6 +162,57 @@ export const useJoinClass = () => {
       setIsJoining(false);
       setLoading(false);
     }
+  };
+
+  // Helper function to check enrollment and join classroom
+  const joinClassroom = async (studentId: string, classroomId: string) => {
+    // Check if already enrolled
+    console.log("Checking if already enrolled in classroom:", classroomId);
+    const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
+      .from('classroom_students')
+      .select('*')
+      .eq('classroom_id', classroomId)
+      .eq('student_id', studentId)
+      .maybeSingle();
+
+    if (enrollmentCheckError) {
+      console.error("Error checking enrollment:", enrollmentCheckError);
+      throw new Error("Error checking enrollment status");
+    }
+
+    if (existingEnrollment) {
+      console.log("Student already enrolled in this classroom");
+      toast({
+        title: "Already enrolled",
+        description: "You are already enrolled in this classroom"
+      });
+      navigate('/classes');
+      return { data: existingEnrollment, error: null };
+    }
+
+    // Enroll the student
+    console.log("Enrolling student in classroom:", { studentId, classroomId });
+    const { data: enrollmentData, error: enrollError } = await supabase
+      .from('classroom_students')
+      .insert([{
+        classroom_id: classroomId,
+        student_id: studentId
+      }])
+      .select();
+
+    return { data: enrollmentData, error: enrollError };
+  };
+
+  // Helper function to handle successful join
+  const handleSuccessfulJoin = (classroomName: string) => {
+    console.log("Successfully joined classroom:", classroomName);
+    toast({
+      title: "Success!",
+      description: `You've joined ${classroomName || 'the classroom'}`
+    });
+    
+    // Redirect to classes page
+    navigate('/classes');
   };
 
   return { handleJoinClass };
