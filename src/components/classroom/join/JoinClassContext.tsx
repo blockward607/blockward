@@ -16,13 +16,23 @@ const JoinClassContext = createContext<JoinClassContextType | undefined>(undefin
 
 export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
   // Extract code from URL if present
-  const urlParams = new URLSearchParams(window.location.search);
-  const initialCode = urlParams.get('code') || '';
+  const getCodeFromURL = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('code') || '';
+  };
   
-  const [invitationCode, setInvitationCode] = useState<string>(initialCode.toUpperCase());
+  const [invitationCode, setInvitationCode] = useState<string>(getCodeFromURL().toUpperCase());
   const [loading, setLoading] = useState<boolean>(false);
   const [scannerOpen, setScannerOpen] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update code if URL changes
+  useEffect(() => {
+    const code = getCodeFromURL();
+    if (code) {
+      setInvitationCode(code.toUpperCase());
+    }
+  }, [window.location.search]);
 
   // Log context state for debugging
   useEffect(() => {

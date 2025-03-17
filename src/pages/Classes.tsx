@@ -19,7 +19,8 @@ const Classes = () => {
     selectedClassroom, 
     setSelectedClassroom,
     handleClassroomCreated,
-    handleDeleteClassroom
+    handleDeleteClassroom,
+    refreshClassrooms
   } = useClassroomManagement();
   
   const { toast } = useToast();
@@ -27,7 +28,10 @@ const Classes = () => {
   useEffect(() => {
     // Log information to help debugging
     console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
-  }, [userRole, loading, classrooms]);
+    
+    // Refresh classrooms when the page loads
+    refreshClassrooms();
+  }, [userRole]);
 
   if (loading) {
     return <ClassesLoading />;

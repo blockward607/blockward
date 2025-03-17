@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useJoinClassContext } from "./JoinClassContext";
+import { AuthService } from "@/services/AuthService";
 
 export const useJoinClass = () => {
   const { invitationCode, setLoading, setError } = useJoinClassContext();
@@ -49,22 +50,20 @@ export const useJoinClass = () => {
         
       console.log("Student profile check result:", { student, studentError });
 
-      if (studentError) {
-        console.error("Error checking student profile:", studentError);
-        setError("Error checking student profile");
-        return;
-      }
+      let studentId = student?.id;
 
       // If no student profile, we need to create one and set role
       if (!student) {
         console.log("Creating student profile for user:", session.user.id);
+        
+        // Create student profile
         const { data: newStudent, error: createError } = await supabase
           .from('students')
           .insert([{
             user_id: session.user.id,
             name: session.user.email?.split('@')[0] || 'Student'
           }])
-          .select('id')
+          .select()
           .single();
 
         if (createError) {
@@ -72,6 +71,9 @@ export const useJoinClass = () => {
           setError("Error creating student profile");
           return;
         }
+        
+        studentId = newStudent.id;
+        console.log("Student profile created:", newStudent);
 
         // Set user role as student
         const { error: roleError } = await supabase
@@ -86,16 +88,14 @@ export const useJoinClass = () => {
           setError("Error setting user role");
           return;
         }
-        
-        console.log("Student profile created:", newStudent);
       }
 
-      // Get classroom by invitation code (first 6 chars of uuid)
+      // Get classroom by invitation code (check partial match at beginning)
       console.log("Looking for classroom with code:", invitationCode);
       const { data: classrooms, error: classroomError } = await supabase
         .from('classrooms')
         .select('*')
-        .filter('id', 'ilike', `${invitationCode}%`);
+        .ilike('id', `${invitationCode}%`);
 
       if (classroomError) {
         console.error("Error fetching classroom:", classroomError);
@@ -112,25 +112,12 @@ export const useJoinClass = () => {
       const classroom = classrooms[0];
       console.log("Classroom found:", classroom);
 
-      // Now fetch the student ID again (in case it was just created)
-      const { data: studentData, error: fetchError } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (fetchError) {
-        console.error("Error fetching student ID:", fetchError);
-        setError("Error retrieving student information");
-        return;
-      }
-
       // Check if already enrolled
       const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
         .from('classroom_students')
         .select('*')
         .eq('classroom_id', classroom.id)
-        .eq('student_id', studentData.id)
+        .eq('student_id', studentId)
         .maybeSingle();
 
       if (enrollmentCheckError) {
@@ -150,12 +137,12 @@ export const useJoinClass = () => {
       }
 
       // Enroll the student
-      console.log("Enrolling student in classroom");
+      console.log("Enrolling student in classroom:", { studentId, classroomId: classroom.id });
       const { error: enrollError } = await supabase
         .from('classroom_students')
         .insert([{
           classroom_id: classroom.id,
-          student_id: studentData.id
+          student_id: studentId
         }]);
 
       if (enrollError) {

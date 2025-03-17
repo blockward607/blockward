@@ -6,6 +6,7 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { useJoinClass } from "./useJoinClass";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useEffect } from "react";
 
 export const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, loading, error } = useJoinClassContext();
@@ -22,6 +23,22 @@ export const CodeEntryTab = () => {
       handleJoinClass();
     }
   };
+
+  // Try to join with code from URL query param if present
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code && code.trim() && !loading) {
+      console.log("Auto-joining with code from URL:", code);
+      // Small delay to ensure context is fully set up
+      const timer = setTimeout(() => {
+        handleJoinClass();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   return (
     <div className="space-y-3">
@@ -40,6 +57,7 @@ export const CodeEntryTab = () => {
           placeholder="Enter invitation code"
           className="flex-1 bg-black/60 border-purple-500/30"
           autoComplete="off"
+          disabled={loading}
         />
         <Button
           onClick={handleJoinClass}
@@ -59,6 +77,10 @@ export const CodeEntryTab = () => {
           )}
         </Button>
       </div>
+      
+      <p className="text-xs text-gray-400 mt-2">
+        Enter the 6-character invitation code provided by your teacher.
+      </p>
     </div>
   );
 };
