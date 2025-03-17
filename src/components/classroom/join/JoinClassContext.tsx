@@ -19,7 +19,8 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code') || '';
-      const normalizedCode = code.trim().toUpperCase();
+      // Preserve original case but trim whitespace
+      const normalizedCode = code.trim();
       console.log("Got code from URL:", normalizedCode);
       return normalizedCode;
     } catch (e) {

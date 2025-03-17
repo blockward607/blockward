@@ -23,7 +23,7 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
     setLoading(true);
     try {
       // Generate a simple, readable alphanumeric code
-      const invitationToken = Array.from({length: 8}, () => 
+      const invitationToken = Array.from({length: 6}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       

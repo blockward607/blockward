@@ -25,7 +25,7 @@ export const useJoinClass = () => {
 
       setIsJoining(true);
       setLoading(true);
-      console.log("Joining class with code:", invitationCode);
+      console.log("Joining class with invitation code:", invitationCode);
 
       // Check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
@@ -90,70 +90,122 @@ export const useJoinClass = () => {
         }
       }
 
-      // First try to find the classroom directly by ID
-      console.log("Trying to find classroom with ID:", invitationCode);
+      // Look up the invitation code in the class_invitations table
+      console.log("Looking up invitation code:", invitationCode);
       
-      const { data: classroom, error: classroomError } = await supabase
-        .from('classrooms')
-        .select('*')
-        .eq('id', invitationCode)
+      const { data: invitation, error: invitationError } = await supabase
+        .from('class_invitations')
+        .select('*, classroom:classrooms(*)')
+        .eq('invitation_token', invitationCode)
+        .eq('status', 'pending')
         .maybeSingle();
-      
-      if (classroomError) {
-        console.error("Error finding classroom:", classroomError);
-        setError("Error finding classroom. Please try again.");
+
+      if (invitationError) {
+        console.error("Error looking up invitation:", invitationError);
+        setError("Error verifying invitation code");
         return;
       }
-      
-      // If not found by ID, try with case-insensitive search
-      if (!classroom) {
+
+      if (!invitation) {
+        // Try with case insensitive search
         console.log("No exact match, trying case-insensitive search");
         
-        const { data: classroomByILike, error: iLikeError } = await supabase
-          .from('classrooms')
-          .select('*')
-          .ilike('id', invitationCode)
+        const { data: caseInsensitiveInvitation, error: caseError } = await supabase
+          .from('class_invitations')
+          .select('*, classroom:classrooms(*)')
+          .ilike('invitation_token', invitationCode)
+          .eq('status', 'pending')
           .maybeSingle();
           
-        if (iLikeError) {
-          console.error("Error in case-insensitive search:", iLikeError);
-          setError("Error finding classroom. Please try again.");
+        if (caseError) {
+          console.error("Error in case-insensitive search:", caseError);
+          setError("Error verifying invitation code");
           return;
         }
         
-        if (!classroomByILike) {
-          console.error("No classroom found with ID:", invitationCode);
-          setError("Invalid class code. No matching classroom found.");
+        if (!caseInsensitiveInvitation) {
+          // If still no match, try using the code as a classroom ID (legacy approach)
+          console.log("No invitation found, trying as classroom ID (legacy):", invitationCode);
+          
+          const { data: classroom, error: classroomError } = await supabase
+            .from('classrooms')
+            .select('*')
+            .eq('id', invitationCode)
+            .maybeSingle();
+            
+          if (classroomError) {
+            console.error("Error finding classroom by ID:", classroomError);
+          }
+          
+          if (!classroom) {
+            // Try case-insensitive search for classroom ID
+            const { data: caseClassroom, error: caseClassError } = await supabase
+              .from('classrooms')
+              .select('*')
+              .ilike('id', invitationCode)
+              .maybeSingle();
+              
+            if (caseClassError || !caseClassroom) {
+              console.error("No classroom or invitation found with code:", invitationCode);
+              setError("Invalid class code. No matching classroom found.");
+              return;
+            }
+            
+            // Use the classroom found by case-insensitive search
+            const { data: enrolledClassroom, error: enrollError } = await joinClassroom(studentId, caseClassroom.id);
+            
+            if (enrollError) {
+              console.error("Error enrolling student:", enrollError);
+              setError("Error joining classroom");
+              return;
+            }
+            
+            handleSuccessfulJoin(caseClassroom.name);
+            return;
+          }
+          
+          // Found classroom by ID
+          const { data: enrolledClassroom, error: enrollError } = await joinClassroom(studentId, classroom.id);
+          
+          if (enrollError) {
+            console.error("Error enrolling student:", enrollError);
+            setError("Error joining classroom");
+            return;
+          }
+          
+          handleSuccessfulJoin(classroom.name);
           return;
         }
         
-        console.log("Found classroom with case-insensitive match:", classroomByILike);
-        
-        // Use the classroom found by case-insensitive search
-        const { data: enrolledClassroom, error: enrollError } = await joinClassroom(studentId, classroomByILike.id);
-        
-        if (enrollError) {
-          console.error("Error enrolling student:", enrollError);
-          setError("Error joining classroom");
-          return;
-        }
-        
-        handleSuccessfulJoin(classroomByILike.name);
+        // Found invitation by case-insensitive search
+        invitation = caseInsensitiveInvitation;
+      }
+      
+      // We found a valid invitation, enroll the student
+      console.log("Found valid invitation:", invitation);
+      
+      if (!invitation.classroom) {
+        console.error("Invitation doesn't have associated classroom data");
+        setError("Invalid invitation code");
         return;
       }
       
-      console.log("Found classroom with exact ID match:", classroom);
-      
-      // Found classroom with exact ID match, proceed with enrollment
-      const { data: enrolledClassroom, error: enrollError } = await joinClassroom(studentId, classroom.id);
+      // Enroll student in the classroom
+      const { data: enrollment, error: enrollError } = await joinClassroom(studentId, invitation.classroom.id);
       
       if (enrollError) {
         console.error("Error enrolling student:", enrollError);
         setError("Error joining classroom");
         return;
       }
+
+      // Update invitation status to 'accepted'
+      await supabase
+        .from('class_invitations')
+        .update({ status: 'accepted' })
+        .eq('id', invitation.id);
       
-      handleSuccessfulJoin(classroom.name);
+      handleSuccessfulJoin(invitation.classroom.name);
       
     } catch (error: any) {
       console.error("Error joining class:", error);

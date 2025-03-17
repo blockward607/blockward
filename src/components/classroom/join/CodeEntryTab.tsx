@@ -75,7 +75,7 @@ export const CodeEntryTab = () => {
           className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg tracking-wider"
           autoComplete="off"
           disabled={loading}
-          maxLength={10}
+          maxLength={20}
         />
         <Button
           onClick={handleJoinClass}
