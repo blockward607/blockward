@@ -89,8 +89,12 @@ export const useJoinClass = () => {
       console.log("Found classroom to join:", { classroomId, classroomName });
       
       // Check if already enrolled
-      const { data: existingEnrollment } = 
+      const { data: existingEnrollment, error: enrollmentError } = 
         await ClassJoinService.checkEnrollment(studentId, classroomId);
+      
+      if (enrollmentError) {
+        console.error("Error checking enrollment:", enrollmentError);
+      }
         
       if (existingEnrollment) {
         console.log("Student already enrolled in this classroom");
@@ -104,7 +108,7 @@ export const useJoinClass = () => {
       
       // Enroll the student
       console.log("Enrolling student in classroom:", { studentId, classroomId });
-      const { error: enrollError } = await ClassJoinService.enrollStudent(studentId, classroomId);
+      const { data: enrollData, error: enrollError } = await ClassJoinService.enrollStudent(studentId, classroomId);
       
       if (enrollError) {
         console.error("Error enrolling student:", enrollError);
