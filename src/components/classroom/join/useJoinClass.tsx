@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useJoinClassContext } from "./JoinClassContext";
-import { ClassJoinService } from "@/services/ClassJoinService";
+import { ClassJoinService } from "@/services/class-join";
 import { StudentProfileService } from "@/services/StudentProfileService";
 
 export const useJoinClass = () => {
