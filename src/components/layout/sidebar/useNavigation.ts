@@ -18,7 +18,10 @@ export const useNavigation = () => {
 
   const handleNavigation = (href: string) => {
     console.log("Navigating to:", href);
-    navigate(href);
+    // Add a small delay to prevent any potential race conditions
+    setTimeout(() => {
+      navigate(href);
+    }, 10);
   };
 
   const isActiveRoute = (href: string) => {

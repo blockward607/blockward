@@ -16,7 +16,7 @@ export const SidebarNavItem: FC<SidebarNavItemProps> = ({ item, isMinimized }) =
   
   // Fix: Use type assertion to correctly access the icon component from Lucide
   const IconComponent = item.icon ? 
-    (LucideIcons[item.icon as keyof typeof LucideIcons] as React.ComponentType<any>) : 
+    (LucideIcons[item.icon as keyof typeof LucideIcons] as React.FC<React.SVGProps<SVGSVGElement>>) : 
     null;
 
   return (
