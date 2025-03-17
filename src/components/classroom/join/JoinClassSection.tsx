@@ -10,7 +10,7 @@ export const JoinClassSection = () => {
   const [activeTab, setActiveTab] = useState('code');
   const { invitationCode } = useJoinClassContext();
 
-  // Always default to code tab for simplicity
+  // Always default to code tab
   useEffect(() => {
     console.log("JoinClassSection: Tab set to code entry");
   }, []);

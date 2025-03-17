@@ -6,15 +6,16 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { useJoinClass } from "./useJoinClass";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, loading, error } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
   const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Convert to uppercase and remove spaces - handled by context
+    // Set the code in context, which will handle normalization
     setInvitationCode(e.target.value);
   };
 
@@ -23,6 +24,13 @@ export const CodeEntryTab = () => {
       handleJoinClass();
     }
   };
+
+  // Focus the input field when component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   // Try to join with code from URL query param if present
   useEffect(() => {
@@ -35,10 +43,10 @@ export const CodeEntryTab = () => {
           console.log("Auto-joining with code from URL:", code);
           setAutoJoinAttempted(true);
           
-          // Give a small delay to ensure context is fully set up
+          // Small delay to ensure context is fully set up
           setTimeout(() => {
             handleJoinClass();
-          }, 1000);
+          }, 500);
         }
       } catch (error) {
         console.error("Error in auto-join:", error);
@@ -49,7 +57,7 @@ export const CodeEntryTab = () => {
   }, [invitationCode, loading, autoJoinAttempted]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {error && (
         <Alert variant="destructive" className="bg-red-900/20 border-red-800 text-red-300">
           <AlertCircle className="h-4 w-4" />
@@ -59,6 +67,7 @@ export const CodeEntryTab = () => {
       
       <div className="flex gap-3">
         <Input
+          ref={inputRef}
           value={invitationCode}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -88,9 +97,9 @@ export const CodeEntryTab = () => {
       </div>
       
       <p className="text-xs text-gray-400 mt-2">
-        Enter the classroom code provided by your teacher.
+        Enter the class code provided by your teacher.
         <br />
-        <span className="font-semibold">The code should be 3-8 letters and numbers, like "ABC123".</span>
+        <span className="font-semibold">The code is the classroom ID (example: ABC123).</span>
       </p>
     </div>
   );

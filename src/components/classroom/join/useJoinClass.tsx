@@ -90,16 +90,13 @@ export const useJoinClass = () => {
         }
       }
 
-      // Use a simpler, more direct approach to find classrooms by code
-      console.log("Looking for classroom with code:", invitationCode);
+      // Look for classroom with this ID directly - important: The code IS the classroom ID
+      console.log("Looking for classroom with ID:", invitationCode);
       
-      const cleanCode = invitationCode.trim().toUpperCase();
-      
-      // First try a direct match against classroom ID
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
         .select('*')
-        .eq('id', cleanCode)
+        .eq('id', invitationCode)
         .maybeSingle();
       
       if (classroomError) {
@@ -109,8 +106,8 @@ export const useJoinClass = () => {
       }
       
       if (!classroom) {
-        console.error("No classroom found with code:", cleanCode);
-        setError("Invalid invitation code. Please check and try again.");
+        console.error("No classroom found with ID:", invitationCode);
+        setError("Invalid invitation code. No matching classroom found.");
         return;
       }
       

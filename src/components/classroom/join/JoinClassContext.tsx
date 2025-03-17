@@ -59,9 +59,9 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Format invitation code on change
+  // Format invitation code on change - uppercase and trim
   const handleSetInvitationCode = (code: string) => {
-    // Convert to uppercase and remove spaces
+    // Convert to uppercase and trim whitespace
     const normalizedCode = code.trim().toUpperCase();
     setInvitationCode(normalizedCode);
   };
