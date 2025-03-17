@@ -14,8 +14,10 @@ export const SidebarNavItem: FC<SidebarNavItemProps> = ({ item, isMinimized }) =
   const { handleNavigation, isActiveRoute } = useNavigation();
   const isActive = isActiveRoute(item.href);
   
-  // Properly type and access the icon component from Lucide
-  const IconComponent = item.icon && (LucideIcons[item.icon as keyof typeof LucideIcons] as React.ComponentType<any>);
+  // Fix: Use type assertion to correctly access the icon component from Lucide
+  const IconComponent = item.icon ? 
+    (LucideIcons[item.icon as keyof typeof LucideIcons] as React.ComponentType<any>) : 
+    null;
 
   return (
     <SidebarMenuItem>

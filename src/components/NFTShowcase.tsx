@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, Trophy, Star, Medal, Crown, Brain, Award, Certificate, BookOpen, Calendar } from "lucide-react";
+import { Sparkles, Trophy, Star, Medal, Crown, Brain, Award, BookOpen, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,7 +88,7 @@ const defaultBlockWards: BlockWard[] = [
     id: "certificate-1",
     title: "Certificate of Excellence",
     description: "Outstanding overall academic performance",
-    icon: Certificate,
+    icon: Award,
     gradient: "from-yellow-400 to-amber-500",
     points: 900,
     image: "https://images.unsplash.com/photo-1456953180671-730de08edaa7?q=80&w=2942",
@@ -250,7 +250,7 @@ export const BlockWardShowcase = () => {
       case 'sports': return Medal;
       case 'attendance': return Calendar;
       case 'reading': return BookOpen;
-      case 'certificate': return Certificate;
+      case 'certificate': return Award;
       default: return Award;
     }
   };
