@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface JoinClassContextType {
@@ -14,7 +15,7 @@ interface JoinClassContextType {
 const JoinClassContext = createContext<JoinClassContextType | undefined>(undefined);
 
 export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
-  // Extract code from URL if present - normalize to uppercase and trim whitespace
+  // Extract code from URL if present
   const getCodeFromURL = () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -61,9 +62,14 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
 
   // Format invitation code on change - preserve case but trim whitespace
   const handleSetInvitationCode = (code: string) => {
-    // Keep original case but trim whitespace
+    // Preserve original case but trim whitespace
     const normalizedCode = code.trim();
     setInvitationCode(normalizedCode);
+    
+    // Clear error when code changes
+    if (error) {
+      setError(null);
+    }
   };
 
   // Log context state for debugging

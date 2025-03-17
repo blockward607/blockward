@@ -22,12 +22,33 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      // Generate a simple, readable alphanumeric code
-      const invitationToken = Array.from({length: 6}, () => 
+      // Generate a simple, readable alphanumeric code (all uppercase for easier reading)
+      const invitationToken = Array.from({length: 8}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       
       console.log("Generating invitation code:", invitationToken, "for classroom:", classroomId);
+      
+      // Check if code already exists (avoid duplicates)
+      const { data: existingInvitation, error: checkError } = await supabase
+        .from('class_invitations')
+        .select('invitation_token')
+        .eq('invitation_token', invitationToken)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error("Error checking existing invitation:", checkError);
+        throw new Error("Error checking existing invitations");
+      }
+      
+      // If code already exists, try again
+      if (existingInvitation) {
+        console.log("Invitation token already exists, generating a new one");
+        setTimeout(() => {
+          generateInviteCode();
+        }, 100);
+        return;
+      }
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
@@ -36,7 +57,8 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
           classroom_id: classroomId,
           email: 'general_invitation@blockward.app', // Marker for general invitations
           invitation_token: invitationToken,
-          status: 'pending'
+          status: 'pending',
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
         })
         .select()
         .single();
@@ -109,7 +131,11 @@ ${teacherName}`);
       {invitationCode ? (
         <div className="space-y-4">
           <div className="flex gap-2">
-            <Input value={invitationCode} readOnly className="font-mono bg-black/50 border-purple-500/30" />
+            <Input 
+              value={invitationCode} 
+              readOnly 
+              className="font-mono bg-black/50 border-purple-500/30 text-lg"
+            />
             <Button 
               variant="outline" 
               size="icon" 

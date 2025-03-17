@@ -93,7 +93,7 @@ export const useJoinClass = () => {
       // Look up the invitation code in the class_invitations table
       console.log("Looking up invitation code:", invitationCode);
       
-      const { data: invitation, error: invitationError } = await supabase
+      let { data: invitation, error: invitationError } = await supabase
         .from('class_invitations')
         .select('*, classroom:classrooms(*)')
         .eq('invitation_token', invitationCode)
