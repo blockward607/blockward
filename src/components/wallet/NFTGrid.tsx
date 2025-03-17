@@ -73,10 +73,13 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
     }).format(date);
   };
 
+  // Filter out NFTs without images
+  const filteredNFTs = nfts.filter(nft => nft.image_url || nft.metadata.image);
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {nfts.map((nft) => (
+        {filteredNFTs.map((nft) => (
           <Dialog key={nft.id}>
             <DialogTrigger asChild>
               <Card 

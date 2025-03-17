@@ -20,6 +20,12 @@ export const NFTAwardForm = ({ formData, onChange }: NFTAwardFormProps) => {
     { value: "academic", label: "Academic Achievement" },
     { value: "behavior", label: "Behavior Recognition" },
     { value: "attendance", label: "Attendance Award" },
+    { value: "leadership", label: "Leadership Excellence" },
+    { value: "innovation", label: "Innovation Award" },
+    { value: "stem", label: "STEM Achievement" },
+    { value: "sports", label: "Sports Excellence" },
+    { value: "reading", label: "Reading Champion" },
+    { value: "certificate", label: "Certificate of Excellence" },
     { value: "special", label: "Special Achievement" },
     { value: "custom", label: "Custom Award" },
   ];

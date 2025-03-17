@@ -15,7 +15,7 @@ export const SidebarNavItem: FC<SidebarNavItemProps> = ({ item, isMinimized }) =
   const isActive = isActiveRoute(item.href);
   
   // Properly type and access the icon component from Lucide
-  const IconComponent = item.icon && LucideIcons[item.icon as keyof typeof LucideIcons];
+  const IconComponent = item.icon && (LucideIcons[item.icon as keyof typeof LucideIcons] as React.ComponentType<any>);
 
   return (
     <SidebarMenuItem>
@@ -35,7 +35,7 @@ export const SidebarNavItem: FC<SidebarNavItemProps> = ({ item, isMinimized }) =
             isActive ? "text-white font-semibold" : "text-gray-300"
           )}
         >
-          {IconComponent && React.createElement(IconComponent, { className: cn("w-5 h-5", isActive && "text-purple-300") })}
+          {IconComponent && <IconComponent className={cn("w-5 h-5", isActive && "text-purple-300")} />}
           {!isMinimized && <span className="ml-3">{item.name}</span>}
         </div>
       </SidebarMenuButton>
