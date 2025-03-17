@@ -57,7 +57,7 @@ export const useJoinClass = () => {
       
       if (matchError || !matchData) {
         console.error("Error finding classroom or invitation:", matchError);
-        setError(matchError?.message || "Error finding classroom. Please try again.");
+        setError(matchError?.message || "Invalid code. Please try another code or contact your teacher.");
         return;
       }
       
@@ -82,6 +82,8 @@ export const useJoinClass = () => {
         setError("Invalid data returned. Please try again.");
         return;
       }
+      
+      console.log("Found classroom to join:", { classroomId, classroomName });
       
       // Check if already enrolled
       const { data: existingEnrollment } = 

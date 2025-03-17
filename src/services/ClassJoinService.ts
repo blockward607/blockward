@@ -48,46 +48,102 @@ export const ClassJoinService = {
   // Find classroom directly by ID
   async findClassroomById(classroomId: string): Promise<JoinClassroomResult> {
     console.log("Looking for classroom with ID:", classroomId);
-    const { data, error } = await supabase
-      .from('classrooms')
-      .select('*')
-      .eq('id', classroomId)
-      .maybeSingle();
     
-    return { data, error };
+    try {
+      // Try direct match first
+      const { data, error } = await supabase
+        .from('classrooms')
+        .select('*')
+        .eq('id', classroomId)
+        .maybeSingle();
+      
+      if (data) {
+        console.log("Found classroom by direct ID match:", data);
+        return { data, error };
+      }
+      
+      // If no direct match, try a substring match on UUID
+      if (!data && !error) {
+        console.log("No direct match, trying substring match");
+        const { data: allClassrooms } = await supabase
+          .from('classrooms')
+          .select('*');
+          
+        if (allClassrooms?.length) {
+          // Try partial ID match (for shortened IDs)
+          const partialMatch = allClassrooms.find(c => 
+            c.id.includes(classroomId) || classroomId.includes(c.id.substring(0, 8))
+          );
+          
+          if (partialMatch) {
+            console.log("Found classroom by partial ID match:", partialMatch);
+            return { data: partialMatch, error: null };
+          }
+        }
+      }
+      
+      return { data, error };
+    } catch (err) {
+      console.error("Error in findClassroomById:", err);
+      return { data: null, error: { message: "Error finding classroom by ID" } };
+    }
   },
 
   // Find active invitation by token
   async findInvitationByToken(invitationToken: string): Promise<JoinClassroomResult> {
     console.log("Looking for invitation with token:", invitationToken);
     
-    // Try exact match first
-    const { data: exactMatch, error: exactError } = await supabase
-      .from('class_invitations')
-      .select('*, classroom:classrooms(*)')
-      .eq('invitation_token', invitationToken)
-      .eq('status', 'pending')
-      .maybeSingle();
-    
-    if (exactMatch) {
-      console.log("Found exact invitation match:", exactMatch);
-      return { data: exactMatch, error: null };
+    try {
+      // Try exact match first
+      const { data: exactMatch, error: exactError } = await supabase
+        .from('class_invitations')
+        .select('*, classroom:classrooms(*)')
+        .eq('invitation_token', invitationToken)
+        .eq('status', 'pending')
+        .maybeSingle();
+      
+      if (exactMatch) {
+        console.log("Found exact invitation match:", exactMatch);
+        return { data: exactMatch, error: null };
+      }
+      
+      // Try case-insensitive match
+      const { data: caseMatch, error: caseError } = await supabase
+        .from('class_invitations')
+        .select('*, classroom:classrooms(*)')
+        .ilike('invitation_token', invitationToken)
+        .eq('status', 'pending')
+        .maybeSingle();
+      
+      if (caseMatch) {
+        console.log("Found case-insensitive invitation match:", caseMatch);
+        return { data: caseMatch, error: null };
+      }
+      
+      // Try substring match for partial tokens
+      const { data: allInvitations } = await supabase
+        .from('class_invitations')
+        .select('*, classroom:classrooms(*)')
+        .eq('status', 'pending');
+        
+      if (allInvitations?.length) {
+        // Try to find partial matches
+        const partialMatch = allInvitations.find(inv => 
+          inv.invitation_token.includes(invitationToken) || 
+          invitationToken.includes(inv.invitation_token.substring(0, 6))
+        );
+        
+        if (partialMatch) {
+          console.log("Found invitation by partial token match:", partialMatch);
+          return { data: partialMatch, error: null };
+        }
+      }
+      
+      return { data: null, error: { message: "No matching invitation found" } };
+    } catch (err) {
+      console.error("Error in findInvitationByToken:", err);
+      return { data: null, error: { message: "Error finding invitation" } };
     }
-    
-    // Try case-insensitive match
-    const { data: caseMatch, error: caseError } = await supabase
-      .from('class_invitations')
-      .select('*, classroom:classrooms(*)')
-      .ilike('invitation_token', invitationToken)
-      .eq('status', 'pending')
-      .maybeSingle();
-    
-    if (caseMatch) {
-      console.log("Found case-insensitive invitation match:", caseMatch);
-      return { data: caseMatch, error: null };
-    }
-    
-    return { data: null, error: { message: "No matching invitation found" } };
   },
 
   // Try all possible ways to find a classroom or invitation
@@ -134,13 +190,25 @@ export const ClassJoinService = {
       
       // Try to find by substring
       const substringMatch = allClassrooms.find(c => 
-        c.id.toLowerCase().includes(cleanCode.toLowerCase())
+        c.id.toLowerCase().includes(cleanCode.toLowerCase()) ||
+        cleanCode.toLowerCase().includes(c.id.substring(0, 8).toLowerCase())
       );
       
       if (substringMatch) {
         console.log("Found classroom by ID substring:", substringMatch);
         return { data: { classroom: substringMatch }, error: null };
       }
+    }
+    
+    // As a last resort, check if code might be a class name
+    const { data: nameMatches } = await supabase
+      .from('classrooms')
+      .select('*')
+      .ilike('name', `%${cleanCode}%`);
+      
+    if (nameMatches && nameMatches.length > 0) {
+      console.log("Found classroom by name match:", nameMatches[0]);
+      return { data: { classroom: nameMatches[0] }, error: null };
     }
     
     // No matches found
