@@ -8,6 +8,7 @@ import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { useToast } from "@/hooks/use-toast";
+import { EmptyClassState } from "@/components/classroom/EmptyClassState";
 
 const Classes = () => {
   const { 
@@ -54,7 +55,7 @@ const Classes = () => {
         onClassroomCreated={handleClassroomCreated} 
       />
 
-      {userRole === 'student' && classrooms.length === 0 && (
+      {userRole === 'student' && (
         <motion.div variants={{
           hidden: { opacity: 0, y: 20 },
           show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
@@ -75,13 +76,17 @@ const Classes = () => {
         </motion.div>
       )}
 
-      <ClassroomsList 
-        classrooms={classrooms} 
-        userRole={userRole} 
-        onDelete={handleDeleteClassroom}
-        onSelect={setSelectedClassroom}
-        selectedClassroom={selectedClassroom}
-      />
+      {classrooms.length > 0 ? (
+        <ClassroomsList 
+          classrooms={classrooms} 
+          userRole={userRole} 
+          onDelete={handleDeleteClassroom}
+          onSelect={setSelectedClassroom}
+          selectedClassroom={selectedClassroom}
+        />
+      ) : (
+        <EmptyClassState userRole={userRole} />
+      )}
       
       {/* Decorative elements */}
       <div className="hidden md:block">

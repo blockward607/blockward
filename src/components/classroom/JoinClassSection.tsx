@@ -148,6 +148,7 @@ export const JoinClassSection = () => {
         });
 
       if (enrollError) {
+        console.error("Enrollment error:", enrollError);
         throw new Error("Failed to enroll in the classroom");
       }
 
