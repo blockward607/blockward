@@ -26,7 +26,7 @@ const AuthPage = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [useCustomAuth, setUseCustomAuth] = useState(false);
+  const [useCustomAuth, setUseCustomAuth] = useState(true); // Set to true by default to show custom auth UI
   
   // Check for token errors in URL hash
   useEffect(() => {
@@ -146,7 +146,7 @@ const AuthPage = () => {
               <Auth
                 supabaseClient={supabase}
                 appearance={{ theme: ThemeSupa }}
-                providers={['google', 'github']}
+                providers={[]} // Removed Google and GitHub providers
               />
               <button 
                 onClick={() => setUseCustomAuth(true)}
