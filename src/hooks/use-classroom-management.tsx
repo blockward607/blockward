@@ -87,9 +87,12 @@ export const useClassroomManagement = () => {
               description: "Failed to load classrooms"
             });
           } else {
-            console.log(`Fetched ${classroomsData?.length || 0} classrooms`);
+            console.log(`Fetched ${classroomsData?.length || 0} classrooms`, classroomsData);
             setClassrooms(classroomsData || []);
           }
+        } else {
+          console.log("No teacher profile found");
+          setClassrooms([]);
         }
       } else if (role === 'student') {
         console.log("Fetching student's enrolled classrooms");
@@ -125,10 +128,21 @@ export const useClassroomManagement = () => {
               description: "Failed to load enrolled classrooms"
             });
           } else {
-            console.log(`Fetched ${enrolledClassrooms?.length || 0} enrolled classrooms`);
-            setClassrooms(enrolledClassrooms?.map(ec => ec.classroom) || []);
+            console.log(`Fetched ${enrolledClassrooms?.length || 0} enrolled classrooms`, enrolledClassrooms);
+            // Make sure we handle potentially null classrooms safely
+            const validClassrooms = enrolledClassrooms
+              ?.map(ec => ec.classroom)
+              .filter(classroom => classroom !== null) || [];
+            
+            setClassrooms(validClassrooms as Classroom[]);
           }
+        } else {
+          console.log("No student profile found");
+          setClassrooms([]);
         }
+      } else {
+        console.log("User role not recognized:", role);
+        setClassrooms([]);
       }
     } catch (error: any) {
       console.error('Error in checkUserRoleAndFetchData:', error);
@@ -137,6 +151,7 @@ export const useClassroomManagement = () => {
         title: "Error",
         description: "Failed to load classes. Please try again."
       });
+      setClassrooms([]);
     } finally {
       setLoading(false);
     }
@@ -173,6 +188,7 @@ export const useClassroomManagement = () => {
     selectedClassroom,
     setSelectedClassroom,
     handleClassroomCreated,
-    handleDeleteClassroom
+    handleDeleteClassroom,
+    refreshClassrooms: checkUserRoleAndFetchData
   };
 };

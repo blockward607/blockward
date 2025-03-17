@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { ClassroomGrid } from "./ClassroomGrid";
 import { EmptyClassState } from "./EmptyClassState";
@@ -37,12 +36,22 @@ export const ClassroomsList = ({
     show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
   };
 
+  console.log("ClassroomsList rendering with:", { 
+    classroomsCount: classrooms.length,
+    classrooms: classrooms
+  });
+
   if (classrooms.length === 0) {
     return <EmptyClassState userRole={userRole} />;
   }
 
   return (
-    <motion.div variants={containerVariants} className="grid grid-cols-1 gap-6">
+    <motion.div 
+      variants={containerVariants} 
+      initial="hidden"
+      animate="show"
+      className="grid grid-cols-1 gap-6"
+    >
       {classrooms.map((classroom) => (
         <motion.div 
           key={classroom.id} 
@@ -50,6 +59,7 @@ export const ClassroomsList = ({
           whileHover={{ scale: 1.01 }}
           transition={{ type: "spring", stiffness: 300, damping: 15 }}
           onClick={() => userRole === 'teacher' && onSelect(classroom)}
+          className="shadow-lg"
         >
           <ClassroomGrid 
             classroom={classroom} 
