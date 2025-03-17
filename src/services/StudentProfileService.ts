@@ -16,10 +16,10 @@ export const StudentProfileService = {
   async createStudentProfile(userId: string, name: string) {
     return await supabase
       .from('students')
-      .insert([{
+      .insert({
         user_id: userId,
         name: name || 'Student'
-      }])
+      })
       .select()
       .single();
   },

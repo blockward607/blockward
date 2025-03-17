@@ -41,6 +41,7 @@ export const CodeEntryTab = () => {
         
         if (code && code.trim() && !loading && !autoJoinAttempted) {
           console.log("Auto-joining with code from URL:", code);
+          setInvitationCode(code.trim());
           setAutoJoinAttempted(true);
           
           // Small delay to ensure context is fully set up

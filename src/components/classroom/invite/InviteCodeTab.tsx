@@ -23,32 +23,11 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
     setLoading(true);
     try {
       // Generate a simple, readable alphanumeric code (all uppercase for easier reading)
-      const invitationToken = Array.from({length: 8}, () => 
+      const invitationToken = Array.from({length: 6}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       
       console.log("Generating invitation code:", invitationToken, "for classroom:", classroomId);
-      
-      // Check if code already exists (avoid duplicates)
-      const { data: existingInvitation, error: checkError } = await supabase
-        .from('class_invitations')
-        .select('invitation_token')
-        .eq('invitation_token', invitationToken)
-        .maybeSingle();
-        
-      if (checkError) {
-        console.error("Error checking existing invitation:", checkError);
-        throw new Error("Error checking existing invitations");
-      }
-      
-      // If code already exists, try again
-      if (existingInvitation) {
-        console.log("Invitation token already exists, generating a new one");
-        setTimeout(() => {
-          generateInviteCode();
-        }, 100);
-        return;
-      }
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase

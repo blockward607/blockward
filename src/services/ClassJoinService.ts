@@ -25,10 +25,10 @@ export const ClassJoinService = {
     console.log("Enrolling student in classroom:", { studentId, classroomId });
     const { data, error } = await supabase
       .from('classroom_students')
-      .insert([{
+      .insert({
         classroom_id: classroomId,
         student_id: studentId
-      }])
+      })
       .select();
 
     return { data, error };

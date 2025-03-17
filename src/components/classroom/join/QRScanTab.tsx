@@ -29,14 +29,14 @@ export const QRScanTab = () => {
       console.log("QR Code scanned:", code);
       
       // Process the scanned code - handle both direct codes and URLs
-      let inviteCode = code.trim().toUpperCase();
+      let inviteCode = code.trim();
       
       if (code.includes('?code=')) {
         try {
           const url = new URL(code);
           const codeParam = url.searchParams.get('code');
           if (codeParam) {
-            inviteCode = codeParam.trim().toUpperCase();
+            inviteCode = codeParam.trim();
             console.log("Extracted code from URL:", inviteCode);
           }
         } catch (error) {
