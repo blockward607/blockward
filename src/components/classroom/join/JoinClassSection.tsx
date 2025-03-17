@@ -10,12 +10,9 @@ export const JoinClassSection = () => {
   const [activeTab, setActiveTab] = useState('code');
   const { invitationCode } = useJoinClassContext();
 
-  // Determine initial tab based on whether there's a code in the URL
+  // Always default to code tab for simplicity
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const codeFromUrl = urlParams.get('code');
-    setActiveTab(codeFromUrl ? 'code' : 'code'); // Always default to code tab for now
-    console.log("JoinClassSection: Initial tab set to", activeTab);
+    console.log("JoinClassSection: Tab set to code entry");
   }, []);
 
   return (

@@ -15,13 +15,14 @@ interface JoinClassContextType {
 const JoinClassContext = createContext<JoinClassContextType | undefined>(undefined);
 
 export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
-  // Extract code from URL if present
+  // Extract code from URL if present - normalize to uppercase and trim whitespace
   const getCodeFromURL = () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code') || '';
-      console.log("Got code from URL:", code);
-      return code.trim().toUpperCase();
+      const normalizedCode = code.trim().toUpperCase();
+      console.log("Got code from URL:", normalizedCode);
+      return normalizedCode;
     } catch (e) {
       console.error("Error getting code from URL:", e);
       return '';
@@ -58,6 +59,13 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  // Format invitation code on change
+  const handleSetInvitationCode = (code: string) => {
+    // Convert to uppercase and remove spaces
+    const normalizedCode = code.trim().toUpperCase();
+    setInvitationCode(normalizedCode);
+  };
+
   // Log context state for debugging
   useEffect(() => {
     console.log("JoinClassContext state:", { 
@@ -72,7 +80,7 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
     <JoinClassContext.Provider
       value={{
         invitationCode,
-        setInvitationCode,
+        setInvitationCode: handleSetInvitationCode,
         loading,
         setLoading,
         scannerOpen,

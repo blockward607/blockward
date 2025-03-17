@@ -14,9 +14,8 @@ export const CodeEntryTab = () => {
   const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Convert to uppercase and remove spaces
-    const cleanedCode = e.target.value.toUpperCase().replace(/\s+/g, '');
-    setInvitationCode(cleanedCode);
+    // Convert to uppercase and remove spaces - handled by context
+    setInvitationCode(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -47,7 +46,7 @@ export const CodeEntryTab = () => {
     };
     
     attemptAutoJoin();
-  }, [invitationCode, loading]);
+  }, [invitationCode, loading, autoJoinAttempted]);
 
   return (
     <div className="space-y-3">
@@ -63,10 +62,11 @@ export const CodeEntryTab = () => {
           value={invitationCode}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Enter invitation code"
-          className="flex-1 bg-black/60 border-purple-500/30"
+          placeholder="Enter classroom code"
+          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg tracking-wider"
           autoComplete="off"
           disabled={loading}
+          maxLength={8}
         />
         <Button
           onClick={handleJoinClass}
@@ -81,16 +81,16 @@ export const CodeEntryTab = () => {
           ) : (
             <>
               <UserPlus className="w-4 h-4 mr-2" />
-              Join Class
+              Join
             </>
           )}
         </Button>
       </div>
       
       <p className="text-xs text-gray-400 mt-2">
-        Enter the invitation code provided by your teacher.
+        Enter the classroom code provided by your teacher.
         <br />
-        <span className="font-semibold">Note: The code is the classroom ID from your teacher.</span>
+        <span className="font-semibold">The code should be 3-8 letters and numbers, like "ABC123".</span>
       </p>
     </div>
   );
