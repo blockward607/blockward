@@ -6,11 +6,12 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { useJoinClass } from "./useJoinClass";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, loading, error } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
+  const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Convert to uppercase and remove spaces
@@ -26,19 +27,27 @@ export const CodeEntryTab = () => {
 
   // Try to join with code from URL query param if present
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
+    const attemptAutoJoin = async () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code && code.trim() && !loading && !autoJoinAttempted) {
+          console.log("Auto-joining with code from URL:", code);
+          setAutoJoinAttempted(true);
+          
+          // Give a small delay to ensure context is fully set up
+          setTimeout(() => {
+            handleJoinClass();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error("Error in auto-join:", error);
+      }
+    };
     
-    if (code && code.trim() && !loading) {
-      console.log("Auto-joining with code from URL:", code);
-      // Small delay to ensure context is fully set up
-      const timer = setTimeout(() => {
-        handleJoinClass();
-      }, 800); // Increased timeout to ensure everything is loaded
-      
-      return () => clearTimeout(timer);
-    }
-  }, []);
+    attemptAutoJoin();
+  }, [invitationCode, loading]);
 
   return (
     <div className="space-y-3">
@@ -79,9 +88,9 @@ export const CodeEntryTab = () => {
       </div>
       
       <p className="text-xs text-gray-400 mt-2">
-        Enter the 6-character invitation code provided by your teacher.
+        Enter the invitation code provided by your teacher.
         <br />
-        <span className="font-semibold">Note: The code must exactly match your teacher's classroom ID.</span>
+        <span className="font-semibold">Note: The code is the classroom ID from your teacher.</span>
       </p>
     </div>
   );

@@ -90,92 +90,60 @@ export const useJoinClass = () => {
         }
       }
 
-      // FIXED: Get classroom by exact invitation code as class ID
-      console.log("Looking for classroom with code:", invitationCode);
-      const { data: classroom, error: classroomError } = await supabase
+      // Try multiple approaches to find the classroom
+      console.log("Looking for classroom with exact ID:", invitationCode);
+      
+      // Approach 1: Try direct ID match first
+      const { data: exactClassroom, error: exactError } = await supabase
         .from('classrooms')
         .select('*')
         .eq('id', invitationCode)
         .maybeSingle();
-
-      if (classroomError) {
-        console.error("Error fetching classroom:", classroomError);
-        setError("Error finding classroom");
-        return;
+        
+      if (exactError) {
+        console.error("Error in exact classroom lookup:", exactError);
       }
+      
+      // Approach 2: Try case-insensitive search
+      const { data: caseInsensitiveClassrooms, error: caseError } = await supabase
+        .from('classrooms')
+        .select('*')
+        .ilike('id', invitationCode)
+        .maybeSingle();
+        
+      if (caseError) {
+        console.error("Error in case-insensitive classroom lookup:", caseError);
+      }
+      
+      // Approach 3: Try partial match with wildcard
+      const { data: partialMatchClassrooms, error: partialError } = await supabase
+        .from('classrooms')
+        .select('*')
+        .ilike('id', `%${invitationCode}%`);
+        
+      if (partialError) {
+        console.error("Error in partial classroom lookup:", partialError);
+      }
+      
+      // Find the best matching classroom
+      const classroom = exactClassroom || caseInsensitiveClassrooms || 
+        (partialMatchClassrooms && partialMatchClassrooms.length > 0 ? partialMatchClassrooms[0] : null);
+      
+      console.log("Classroom lookup results:", { 
+        exactMatch: exactClassroom, 
+        caseInsensitive: caseInsensitiveClassrooms,
+        partialMatches: partialMatchClassrooms,
+        selected: classroom
+      });
 
       if (!classroom) {
-        console.log("No classroom found with code:", invitationCode);
-        
-        // Try finding with partial match as fallback
-        const { data: classrooms, error } = await supabase
-          .from('classrooms')
-          .select('*')
-          .ilike('id', `${invitationCode}%`);
-          
-        console.log("Fallback search results:", { classrooms, error });
-        
-        if (!classrooms || classrooms.length === 0) {
-          setError("Invalid invitation code. Please check and try again.");
-          return;
-        }
-        
-        // Use the first result from partial match
-        const foundClassroom = classrooms[0];
-        console.log("Found classroom via partial match:", foundClassroom);
-        
-        // Check if already enrolled
-        const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
-          .from('classroom_students')
-          .select('*')
-          .eq('classroom_id', foundClassroom.id)
-          .eq('student_id', studentId)
-          .maybeSingle();
-
-        if (enrollmentCheckError) {
-          console.error("Error checking enrollment:", enrollmentCheckError);
-          setError("Error checking enrollment status");
-          return;
-        }
-
-        if (existingEnrollment) {
-          console.log("Student already enrolled in this classroom");
-          toast({
-            title: "Already enrolled",
-            description: "You are already enrolled in this classroom"
-          });
-          navigate('/classes');
-          return;
-        }
-
-        // Enroll the student
-        console.log("Enrolling student in classroom:", { studentId, classroomId: foundClassroom.id });
-        const { error: enrollError } = await supabase
-          .from('classroom_students')
-          .insert([{
-            classroom_id: foundClassroom.id,
-            student_id: studentId
-          }]);
-
-        if (enrollError) {
-          console.error("Error enrolling in classroom:", enrollError);
-          setError("Error joining classroom");
-          return;
-        }
-
-        // Success
-        console.log("Successfully joined classroom");
-        toast({
-          title: "Success!",
-          description: `You've joined ${foundClassroom.name || 'the classroom'}`
-        });
-        
-        // Redirect to classes page
-        navigate('/classes');
+        console.error("No classroom found with any search method");
+        setError("Invalid invitation code. No matching classroom found.");
         return;
       }
-
-      // Continue with direct match - check if already enrolled
+      
+      // Check if already enrolled
+      console.log("Checking if already enrolled in classroom:", classroom.id);
       const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
         .from('classroom_students')
         .select('*')
@@ -215,7 +183,7 @@ export const useJoinClass = () => {
       }
 
       // Success
-      console.log("Successfully joined classroom");
+      console.log("Successfully joined classroom:", classroom.name);
       toast({
         title: "Success!",
         description: `You've joined ${classroom.name || 'the classroom'}`

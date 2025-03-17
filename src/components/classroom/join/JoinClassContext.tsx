@@ -21,7 +21,7 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code') || '';
       console.log("Got code from URL:", code);
-      return code.toUpperCase();
+      return code.trim().toUpperCase();
     } catch (e) {
       console.error("Error getting code from URL:", e);
       return '';
@@ -35,16 +35,28 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
 
   // Update code if URL changes
   useEffect(() => {
-    try {
-      const code = getCodeFromURL();
-      if (code) {
-        console.log("URL changed, updating code to:", code);
-        setInvitationCode(code);
+    const handleUrlChange = () => {
+      try {
+        const code = getCodeFromURL();
+        if (code) {
+          console.log("URL changed, updating code to:", code);
+          setInvitationCode(code);
+        }
+      } catch (e) {
+        console.error("Error updating code from URL:", e);
       }
-    } catch (e) {
-      console.error("Error updating code from URL:", e);
-    }
-  }, [window.location.search]);
+    };
+
+    // Call immediately on mount
+    handleUrlChange();
+    
+    // Set up listener for URL changes
+    window.addEventListener('popstate', handleUrlChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, []);
 
   // Log context state for debugging
   useEffect(() => {
