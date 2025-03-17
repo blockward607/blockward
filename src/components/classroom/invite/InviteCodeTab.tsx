@@ -27,6 +27,8 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       
+      console.log("Generating invitation code:", invitationToken, "for classroom:", classroomId);
+      
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
@@ -40,15 +42,18 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
         .single();
       
       if (inviteError || !invitation) {
+        console.error("Error generating invitation:", inviteError);
         throw new Error(inviteError?.message || 'Failed to generate invitation code');
       }
       
+      console.log("Invitation created successfully:", invitation);
       setInvitationCode(invitation.invitation_token);
       toast({
         title: "Invitation Code Generated",
         description: "Share this code with your students",
       });
     } catch (error: any) {
+      console.error("Error in generateInviteCode:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate invitation code",

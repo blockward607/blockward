@@ -14,6 +14,7 @@ export const useJoinClass = () => {
     const codeParam = params.get('code');
     if (codeParam) {
       setInvitationCode(codeParam);
+      console.log("Found invitation code in URL:", codeParam);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [setInvitationCode]);
@@ -30,6 +31,7 @@ export const useJoinClass = () => {
 
     // Clean the invitation code (remove whitespace, etc.)
     const cleanCode = invitationCode.trim().toUpperCase();
+    console.log("Attempting to join class with code:", cleanCode);
 
     setLoading(true);
     try {
@@ -62,6 +64,8 @@ export const useJoinClass = () => {
         setLoading(false);
         return;
       }
+
+      console.log("Found valid invitation:", invitationData);
 
       // Check or create student profile
       let studentId;
@@ -96,6 +100,7 @@ export const useJoinClass = () => {
           return;
         }
         
+        console.log("Created new student profile:", newStudent);
         studentId = newStudent.id;
         
         // Also create user role as student if it doesn't exist
@@ -112,9 +117,11 @@ export const useJoinClass = () => {
               user_id: session.user.id,
               role: 'student'
             });
+          console.log("Created new student role");
         }
       } else {
         studentId = studentData.id;
+        console.log("Using existing student profile:", studentId);
       }
 
       // Check if student is already enrolled in this classroom
@@ -149,6 +156,8 @@ export const useJoinClass = () => {
         console.error("Enrollment error:", enrollError);
         throw new Error("Failed to enroll in the classroom");
       }
+
+      console.log("Successfully enrolled in classroom");
 
       // Update invitation status
       await supabase

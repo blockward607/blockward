@@ -37,32 +37,48 @@ interface NFTGridProps {
 export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
 
-  // If no NFTs and not loading, show some demo NFTs
-  const displayNfts = nfts.length === 0 && !isLoading ? [
+  // Demo NFTs with high-quality images
+  const demoNfts = nfts.length === 0 && !isLoading ? [
     {
       id: 'demo-1',
       metadata: {
         name: 'Academic Excellence',
-        description: 'Outstanding achievement in academics',
+        description: 'Outstanding achievement in academics. This award recognizes your exceptional dedication to learning and academic growth.',
         attributes: [
           { trait_type: 'Type', value: 'Academic' },
-          { trait_type: 'Points', value: '500' }
+          { trait_type: 'Points', value: '500' },
+          { trait_type: 'Rarity', value: 'Rare' }
         ]
       },
-      image_url: 'https://images.unsplash.com/photo-1642427749670-f20e2e76ed8c?q=80&w=2080',
+      image_url: 'https://images.unsplash.com/photo-1607462525137-6ec8b5a75920?q=80&w=2127&auto=format&fit=crop',
       created_at: new Date().toISOString()
     },
     {
       id: 'demo-2',
       metadata: {
         name: 'Innovation Star',
-        description: 'Exceptional creative thinking',
+        description: 'Exceptional creative thinking and problem-solving skills demonstrated in your project work and classroom participation.',
         attributes: [
           { trait_type: 'Type', value: 'Innovation' },
-          { trait_type: 'Points', value: '750' }
+          { trait_type: 'Points', value: '750' },
+          { trait_type: 'Rarity', value: 'Epic' }
         ]
       },
-      image_url: 'https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?q=80&w=2070',
+      image_url: 'https://images.unsplash.com/photo-1633613286991-611fe299c4be?q=80&w=2070&auto=format&fit=crop',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'demo-3',
+      metadata: {
+        name: 'Leadership Award',
+        description: 'Recognizing your outstanding leadership qualities and positive influence on peers in group settings.',
+        attributes: [
+          { trait_type: 'Type', value: 'Leadership' },
+          { trait_type: 'Points', value: '600' },
+          { trait_type: 'Rarity', value: 'Uncommon' }
+        ]
+      },
+      image_url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=2070&auto=format&fit=crop',
       created_at: new Date().toISOString()
     }
   ] : nfts;
@@ -83,7 +99,7 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
     );
   }
 
-  if (displayNfts.length === 0) {
+  if (demoNfts.length === 0) {
     return (
       <Card className="p-6 text-center bg-purple-900/10">
         <Trophy className="mx-auto h-10 w-10 text-purple-400 mb-2 opacity-50" />
@@ -107,7 +123,7 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {displayNfts.map((nft, index) => (
+        {demoNfts.map((nft, index) => (
           <Dialog key={nft.id}>
             <DialogTrigger asChild>
               <motion.div

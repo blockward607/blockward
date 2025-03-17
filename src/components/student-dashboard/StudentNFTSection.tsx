@@ -21,11 +21,11 @@ interface StudentNFTSectionProps {
 }
 
 export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionProps) => {
-  // For demo purposes, show some fake NFTs
+  // For demo purposes, show some high-quality NFTs with better images
   const demoNfts = isDemo && nfts.length === 0 ? [
     {
       id: 'demo-1',
-      image_url: 'https://images.unsplash.com/photo-1642427749670-f20e2e76ed8c?q=80&w=2080',
+      image_url: 'https://images.unsplash.com/photo-1607462525137-6ec8b5a75920?q=80&w=2127&auto=format&fit=crop',
       metadata: {
         name: 'Academic Excellence',
         description: 'Outstanding achievement in academics'
@@ -33,10 +33,18 @@ export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionP
     },
     {
       id: 'demo-2',
-      image_url: 'https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?q=80&w=2070',
+      image_url: 'https://images.unsplash.com/photo-1633613286991-611fe299c4be?q=80&w=2070&auto=format&fit=crop',
       metadata: {
         name: 'Innovation Star',
         description: 'Exceptional creative thinking'
+      }
+    },
+    {
+      id: 'demo-3',
+      image_url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=2070&auto=format&fit=crop',
+      metadata: {
+        name: 'Leadership Award',
+        description: 'Recognizing outstanding leadership qualities'
       }
     }
   ] : nfts;
