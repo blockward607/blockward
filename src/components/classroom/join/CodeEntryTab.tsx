@@ -103,7 +103,8 @@ export const CodeEntryTab = () => {
       <p className="text-xs text-gray-400 mt-2">
         Enter the class code provided by your teacher.
         <br />
-        <span className="font-semibold">The code could be a short invitation code (like "91AO66") or a class ID.</span>
+        <span className="font-semibold">The code could be a 6-character invitation code (like "WF8PKW") 
+        or the class ID (or a shortened version of it).</span>
       </p>
     </div>
   );

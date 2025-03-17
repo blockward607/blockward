@@ -51,9 +51,12 @@ export const useJoinClass = () => {
         return;
       }
 
-      // Find classroom or invitation using our improved service
+      // Find classroom or invitation
+      console.log("Looking for classroom or invitation with code:", code);
       const { data: matchData, error: matchError } = 
         await ClassJoinService.findClassroomOrInvitation(code);
+      
+      console.log("Match result:", matchData, matchError);
       
       if (matchError || !matchData) {
         console.error("Error finding classroom or invitation:", matchError);
@@ -100,6 +103,7 @@ export const useJoinClass = () => {
       }
       
       // Enroll the student
+      console.log("Enrolling student in classroom:", { studentId, classroomId });
       const { error: enrollError } = await ClassJoinService.enrollStudent(studentId, classroomId);
       
       if (enrollError) {
