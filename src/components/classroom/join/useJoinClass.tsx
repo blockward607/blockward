@@ -51,29 +51,35 @@ export const useJoinClass = () => {
         return;
       }
 
-      // Find matching invitation or classroom using our simplified service
-      const { data: invitationData, error: invitationError } = 
-        await ClassJoinService.findInvitation(code);
+      // Find classroom or invitation using our improved service
+      const { data: matchData, error: matchError } = 
+        await ClassJoinService.findClassroomOrInvitation(code);
       
-      if (invitationError || !invitationData) {
-        console.error("Error finding invitation:", invitationError);
-        setError(invitationError?.message || "Invalid class code. Please check and try again.");
+      if (matchError || !matchData) {
+        console.error("Error finding classroom or invitation:", matchError);
+        setError(matchError?.message || "Error finding classroom. Please try again.");
         return;
       }
       
       // Determine the classroom to join
-      let classroomId, classroomName;
+      let classroomId, classroomName, invitationId;
       
-      if (invitationData.classroom) {
-        // If we matched an invitation with classroom data
-        classroomId = invitationData.classroom.id;
-        classroomName = invitationData.classroom.name;
-      } else if (invitationData.classroom_id) {
+      if (matchData.classroom) {
+        // If we matched a classroom directly or via an invitation
+        classroomId = matchData.classroom.id;
+        classroomName = matchData.classroom.name;
+        
+        // If this came from an invitation, store its ID
+        if (matchData.id) {
+          invitationId = matchData.id;
+        }
+      } else if (matchData.classroom_id) {
         // If we have just the classroom ID from an invitation
-        classroomId = invitationData.classroom_id;
+        classroomId = matchData.classroom_id;
         classroomName = "the classroom";
+        invitationId = matchData.id;
       } else {
-        setError("Invalid invitation data");
+        setError("Invalid data returned. Please try again.");
         return;
       }
       
@@ -87,7 +93,7 @@ export const useJoinClass = () => {
           title: "Already enrolled",
           description: "You are already enrolled in this classroom"
         });
-        navigate('/classes');
+        navigate(`/class/${classroomId}`);
         return;
       }
       
@@ -101,8 +107,8 @@ export const useJoinClass = () => {
       }
 
       // If we used an invitation with ID, update its status
-      if (invitationData.id) {
-        await ClassJoinService.acceptInvitation(invitationData.id);
+      if (invitationId) {
+        await ClassJoinService.acceptInvitation(invitationId);
       }
       
       // Success!
@@ -112,8 +118,8 @@ export const useJoinClass = () => {
         description: `You've joined ${classroomName || 'the classroom'}`
       });
       
-      // Redirect to classes page
-      navigate('/classes');
+      // Redirect to class details page
+      navigate(`/class/${classroomId}`);
       
     } catch (error: any) {
       console.error("Error joining class:", error);

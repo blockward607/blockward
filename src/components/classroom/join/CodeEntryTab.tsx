@@ -15,15 +15,8 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Format and set the code in context
-    let value = e.target.value;
-    
-    // Remove spaces and special characters
-    value = value.replace(/[^a-zA-Z0-9]/g, '');
-    
-    // Limit to 20 characters max
-    value = value.substring(0, 20);
-    
+    // Set the code in context - minimal formatting to preserve potential case-sensitivity
+    let value = e.target.value.trim();
     setInvitationCode(value);
   };
 
@@ -50,15 +43,15 @@ export const CodeEntryTab = () => {
         if (code && code.trim() && !loading && !autoJoinAttempted) {
           console.log("Auto-joining with code from URL:", code);
           
-          // Format and clean the code
-          const cleanCode = code.trim().replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+          // Preserve original code formatting
+          const cleanCode = code.trim();
           setInvitationCode(cleanCode);
           setAutoJoinAttempted(true);
           
           // Small delay to ensure context is fully set up
           setTimeout(() => {
             handleJoinClass();
-          }, 500);
+          }, 300);
         }
       } catch (error) {
         console.error("Error in auto-join:", error);
@@ -84,10 +77,9 @@ export const CodeEntryTab = () => {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter classroom code"
-          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg tracking-wider uppercase"
+          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg"
           autoComplete="off"
           disabled={loading}
-          maxLength={20}
         />
         <Button
           onClick={handleJoinClass}
@@ -111,7 +103,7 @@ export const CodeEntryTab = () => {
       <p className="text-xs text-gray-400 mt-2">
         Enter the class code provided by your teacher.
         <br />
-        <span className="font-semibold">Code should be 6-8 characters, like "A67B80" or "XY123Z".</span>
+        <span className="font-semibold">The code could be a short invitation code (like "91AO66") or a class ID.</span>
       </p>
     </div>
   );
