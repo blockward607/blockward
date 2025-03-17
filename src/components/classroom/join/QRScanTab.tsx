@@ -20,6 +20,7 @@ export const QRScanTab = () => {
           const url = new URL(code);
           const codeParam = url.searchParams.get('code');
           if (codeParam) {
+            console.log("Extracted code from URL:", codeParam);
             setInvitationCode(codeParam);
             // Auto-join class after scan
             setTimeout(() => handleJoinClass(), 500);
@@ -28,10 +29,12 @@ export const QRScanTab = () => {
         }
         
         // If we couldn't parse it as a URL, use the raw code
+        console.log("Using raw code:", code);
         setInvitationCode(code);
         // Auto-join class after scan
         setTimeout(() => handleJoinClass(), 500);
       } catch (error) {
+        console.error("Error processing QR code:", error);
         // If there's an error parsing as URL, use the code directly
         setInvitationCode(code);
         // Auto-join class after scan

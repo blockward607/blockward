@@ -13,7 +13,7 @@ export const CodeEntryTab = () => {
     <div className="flex gap-3">
       <Input
         value={invitationCode}
-        onChange={(e) => setInvitationCode(e.target.value)}
+        onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
         placeholder="Enter invitation code"
         className="flex-1 bg-black/60 border-purple-500/30"
       />

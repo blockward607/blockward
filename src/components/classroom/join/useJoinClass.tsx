@@ -54,8 +54,13 @@ export const useJoinClass = () => {
         .eq('status', 'pending')
         .maybeSingle();
       
-      if (validationError || !invitationData) {
+      if (validationError) {
         console.error("Invitation validation error:", validationError);
+        throw new Error(validationError.message);
+      }
+      
+      if (!invitationData) {
+        console.error("No invitation found with code:", cleanCode);
         toast({
           variant: "destructive",
           title: "Invalid Invitation",
@@ -75,26 +80,51 @@ export const useJoinClass = () => {
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      if (studentError || !studentData) {
+      if (studentError) {
+        console.error("Error fetching student profile:", studentError);
+        throw new Error(studentError.message);
+      }
+
+      if (!studentData) {
         // Create new student profile if it doesn't exist
         const username = session.user.email?.split('@')[0] || 'Student';
+        console.log("Creating new student profile for user:", session.user.id, "with name:", username);
+        
+        // Check user role first
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        // If no role, create one as student
+        if (!roleData) {
+          console.log("Creating student role for user:", session.user.id);
+          await supabase
+            .from('user_roles')
+            .insert({
+              user_id: session.user.id,
+              role: 'student'
+            });
+        }
+        
+        // Now create student profile
         const { data: newStudent, error: createError } = await supabase
           .from('students')
           .insert({
             user_id: session.user.id,
             name: username,
-            school: '',
-            points: 0
+            school: ''
           })
           .select('id')
           .single();
           
-        if (createError || !newStudent) {
+        if (createError) {
           console.error("Error creating student profile:", createError);
           toast({
             variant: "destructive",
             title: "Error",
-            description: "Could not create student profile"
+            description: "Could not create student profile: " + createError.message
           });
           setLoading(false);
           return;
@@ -102,23 +132,6 @@ export const useJoinClass = () => {
         
         console.log("Created new student profile:", newStudent);
         studentId = newStudent.id;
-        
-        // Also create user role as student if it doesn't exist
-        const { data: existingRole } = await supabase
-          .from('user_roles')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-          
-        if (!existingRole) {
-          await supabase
-            .from('user_roles')
-            .insert({
-              user_id: session.user.id,
-              role: 'student'
-            });
-          console.log("Created new student role");
-        }
       } else {
         studentId = studentData.id;
         console.log("Using existing student profile:", studentId);
@@ -134,6 +147,11 @@ export const useJoinClass = () => {
         })
         .maybeSingle();
 
+      if (enrollmentCheckError) {
+        console.error("Error checking enrollment:", enrollmentCheckError);
+        throw new Error(enrollmentCheckError.message);
+      }
+
       if (existingEnrollment) {
         toast({
           variant: "default",
@@ -145,6 +163,11 @@ export const useJoinClass = () => {
       }
 
       // Enroll student in the classroom
+      console.log("Enrolling student in classroom:", {
+        classroom_id: invitationData.classroom_id,
+        student_id: studentId
+      });
+      
       const { error: enrollError } = await supabase
         .from('classroom_students')
         .insert({
@@ -154,7 +177,7 @@ export const useJoinClass = () => {
 
       if (enrollError) {
         console.error("Enrollment error:", enrollError);
-        throw new Error("Failed to enroll in the classroom");
+        throw new Error("Failed to enroll in the classroom: " + enrollError.message);
       }
 
       console.log("Successfully enrolled in classroom");
