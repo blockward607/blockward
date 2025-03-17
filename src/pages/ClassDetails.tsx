@@ -79,6 +79,9 @@ const ClassDetails = () => {
     return null;
   }
 
+  // Get the shortened class code (first 6 characters of the ID)
+  const shortClassCode = classroomId?.substring(0, 6).toLowerCase();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-black p-6">
       {/* Background elements */}
@@ -164,7 +167,7 @@ const ClassDetails = () => {
             <h2 className="text-xl font-semibold mb-4">Class Code</h2>
             <div className="bg-purple-900/30 p-3 rounded-md text-center">
               <span className="text-2xl font-mono font-semibold text-purple-300">
-                {classroomId.substring(0, 6)}
+                {shortClassCode}
               </span>
             </div>
             <p className="text-sm text-gray-400 mt-2">
