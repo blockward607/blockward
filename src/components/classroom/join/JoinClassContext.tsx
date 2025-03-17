@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface JoinClassContextType {
   invitationCode: string;
@@ -13,25 +13,31 @@ interface JoinClassContextType {
 const JoinClassContext = createContext<JoinClassContextType | undefined>(undefined);
 
 export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
-  const [invitationCode, setInvitationCode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [scannerOpen, setScannerOpen] = useState(false);
+  // Extract code from URL if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialCode = urlParams.get('code') || '';
+  
+  const [invitationCode, setInvitationCode] = useState<string>(initialCode.toUpperCase());
+  const [loading, setLoading] = useState<boolean>(false);
+  const [scannerOpen, setScannerOpen] = useState<boolean>(false);
 
   return (
-    <JoinClassContext.Provider value={{
-      invitationCode,
-      setInvitationCode,
-      loading,
-      setLoading,
-      scannerOpen,
-      setScannerOpen
-    }}>
+    <JoinClassContext.Provider
+      value={{
+        invitationCode,
+        setInvitationCode,
+        loading,
+        setLoading,
+        scannerOpen,
+        setScannerOpen
+      }}
+    >
       {children}
     </JoinClassContext.Provider>
   );
 };
 
-export const useJoinClassContext = () => {
+export const useJoinClassContext = (): JoinClassContextType => {
   const context = useContext(JoinClassContext);
   if (context === undefined) {
     throw new Error("useJoinClassContext must be used within a JoinClassProvider");

@@ -9,17 +9,31 @@ export const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, loading } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Convert to uppercase and remove spaces
+    const cleanedCode = e.target.value.toUpperCase().replace(/\s+/g, '');
+    setInvitationCode(cleanedCode);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && invitationCode.trim()) {
+      handleJoinClass();
+    }
+  };
+
   return (
     <div className="flex gap-3">
       <Input
         value={invitationCode}
-        onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
         placeholder="Enter invitation code"
         className="flex-1 bg-black/60 border-purple-500/30"
+        autoComplete="off"
       />
       <Button
         onClick={handleJoinClass}
-        disabled={loading}
+        disabled={loading || !invitationCode.trim()}
         className="bg-purple-700 hover:bg-purple-800"
       >
         {loading ? (

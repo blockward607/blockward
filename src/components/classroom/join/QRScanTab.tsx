@@ -5,41 +5,57 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { QRCodeScanner } from "../QRCodeScanner";
 import { useJoinClassContext } from "./JoinClassContext";
 import { useJoinClass } from "./useJoinClass";
+import { useToast } from "@/hooks/use-toast";
 
 export const QRScanTab = () => {
   const { setInvitationCode, scannerOpen, setScannerOpen, loading } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
+  const { toast } = useToast();
 
   const handleQRCodeScanned = (code: string) => {
     setScannerOpen(false);
-    if (code) {
-      try {
-        // Process the scanned code
-        // Handle both direct codes and URLs with code parameter
-        if (code.includes('?code=')) {
+    if (!code) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Empty QR code scanned"
+      });
+      return;
+    }
+    
+    try {
+      console.log("QR Code scanned:", code);
+      
+      // Process the scanned code - handle both direct codes and URLs
+      let inviteCode = code.trim().toUpperCase();
+      
+      if (code.includes('?code=')) {
+        try {
           const url = new URL(code);
           const codeParam = url.searchParams.get('code');
           if (codeParam) {
-            console.log("Extracted code from URL:", codeParam);
-            setInvitationCode(codeParam);
-            // Auto-join class after scan
-            setTimeout(() => handleJoinClass(), 500);
-            return;
+            inviteCode = codeParam.trim().toUpperCase();
+            console.log("Extracted code from URL:", inviteCode);
           }
+        } catch (error) {
+          console.error("Error parsing QR code URL:", error);
+          // Continue with original code if URL parsing fails
         }
-        
-        // If we couldn't parse it as a URL, use the raw code
-        console.log("Using raw code:", code);
-        setInvitationCode(code);
-        // Auto-join class after scan
-        setTimeout(() => handleJoinClass(), 500);
-      } catch (error) {
-        console.error("Error processing QR code:", error);
-        // If there's an error parsing as URL, use the code directly
-        setInvitationCode(code);
-        // Auto-join class after scan
-        setTimeout(() => handleJoinClass(), 500);
       }
+      
+      // Set code and attempt to join
+      setInvitationCode(inviteCode);
+      console.log("Setting invitation code to:", inviteCode);
+      
+      // Auto-join class after scan with short delay
+      setTimeout(() => handleJoinClass(), 300);
+    } catch (error) {
+      console.error("Error processing QR code:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to process QR code"
+      });
     }
   };
 
