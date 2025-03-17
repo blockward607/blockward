@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { motion } from "framer-motion";
 
 interface NFTMetadata {
   name: string;
@@ -36,6 +37,36 @@ interface NFTGridProps {
 export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
 
+  // If no NFTs and not loading, show some demo NFTs
+  const displayNfts = nfts.length === 0 && !isLoading ? [
+    {
+      id: 'demo-1',
+      metadata: {
+        name: 'Academic Excellence',
+        description: 'Outstanding achievement in academics',
+        attributes: [
+          { trait_type: 'Type', value: 'Academic' },
+          { trait_type: 'Points', value: '500' }
+        ]
+      },
+      image_url: 'https://images.unsplash.com/photo-1642427749670-f20e2e76ed8c?q=80&w=2080',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'demo-2',
+      metadata: {
+        name: 'Innovation Star',
+        description: 'Exceptional creative thinking',
+        attributes: [
+          { trait_type: 'Type', value: 'Innovation' },
+          { trait_type: 'Points', value: '750' }
+        ]
+      },
+      image_url: 'https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?q=80&w=2070',
+      created_at: new Date().toISOString()
+    }
+  ] : nfts;
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -52,7 +83,7 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
     );
   }
 
-  if (nfts.length === 0) {
+  if (displayNfts.length === 0) {
     return (
       <Card className="p-6 text-center bg-purple-900/10">
         <Trophy className="mx-auto h-10 w-10 text-purple-400 mb-2 opacity-50" />
@@ -76,50 +107,56 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {nfts.map((nft) => (
+        {displayNfts.map((nft, index) => (
           <Dialog key={nft.id}>
             <DialogTrigger asChild>
-              <Card 
-                className="overflow-hidden cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]"
-                onClick={() => setSelectedNFT(nft)}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
               >
-                <div className="relative h-48 overflow-hidden">
-                  {nft.image_url || nft.metadata.image ? (
-                    <img 
-                      src={nft.image_url || nft.metadata.image}
-                      alt={nft.metadata.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full bg-gradient-to-br from-purple-600/20 to-indigo-600/20">
-                      <Trophy className="h-16 w-16 text-purple-500/60" />
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                    <h3 className="text-lg font-semibold text-white truncate">
-                      {nft.metadata.name}
-                    </h3>
-                  </div>
-                </div>
-                <div className="p-4 space-y-1">
-                  <p className="text-sm text-gray-400 line-clamp-2">
-                    {nft.metadata.description}
-                  </p>
-                  <div className="flex justify-between items-center pt-2 text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{formatDate(nft.created_at)}</span>
-                    </div>
-                    {nft.metadata.attributes?.find(a => a.trait_type === "Points") && (
-                      <div className="px-2 py-1 rounded-full bg-purple-500/10 text-purple-400 font-medium">
-                        {nft.metadata.attributes.find(a => a.trait_type === "Points")?.value || "0"} Points
+                <Card 
+                  className="overflow-hidden cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]"
+                  onClick={() => setSelectedNFT(nft)}
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    {nft.image_url || nft.metadata.image ? (
+                      <img 
+                        src={nft.image_url || nft.metadata.image}
+                        alt={nft.metadata.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full bg-gradient-to-br from-purple-600/20 to-indigo-600/20">
+                        <Trophy className="h-16 w-16 text-purple-500/60" />
                       </div>
                     )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                      <h3 className="text-lg font-semibold text-white truncate">
+                        {nft.metadata.name}
+                      </h3>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                  <div className="p-4 space-y-1">
+                    <p className="text-sm text-gray-400 line-clamp-2">
+                      {nft.metadata.description}
+                    </p>
+                    <div className="flex justify-between items-center pt-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatDate(nft.created_at)}</span>
+                      </div>
+                      {nft.metadata.attributes?.find(a => a.trait_type === "Points") && (
+                        <div className="px-2 py-1 rounded-full bg-purple-500/10 text-purple-400 font-medium">
+                          {nft.metadata.attributes.find(a => a.trait_type === "Points")?.value || "0"} Points
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-[#25293A] border border-purple-500/30">
               <DialogHeader>
                 <DialogTitle>BlockWard Details</DialogTitle>
               </DialogHeader>

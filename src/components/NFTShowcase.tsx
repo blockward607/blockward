@@ -1,5 +1,6 @@
+
 import { motion } from "framer-motion";
-import { Sparkles, Trophy, Star, Medal, Crown, Brain } from "lucide-react";
+import { Sparkles, Trophy, Star, Medal, Crown, Brain, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +38,7 @@ const defaultBlockWards: BlockWard[] = [
     icon: Trophy,
     gradient: "from-yellow-400 to-orange-500",
     points: 1000,
-    image: "https://images.unsplash.com/photo-1673548917471-3113dedda9a5?q=80&w=1000",
+    image: "https://images.unsplash.com/photo-1642427749670-f20e2e76ed8c?q=80&w=2080",
   },
   {
     id: "innovation-1",
@@ -46,7 +47,7 @@ const defaultBlockWards: BlockWard[] = [
     icon: Star,
     gradient: "from-purple-400 to-pink-500",
     points: 750,
-    image: "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2874",
+    image: "https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?q=80&w=2070",
   },
   {
     id: "leadership-1", 
@@ -55,7 +56,7 @@ const defaultBlockWards: BlockWard[] = [
     icon: Crown,
     gradient: "from-blue-400 to-cyan-500",
     points: 850,
-    image: "https://images.unsplash.com/photo-1551818255-e6e10975bc17?q=80&w=3024",
+    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071",
   },
   {
     id: "stem-1",
@@ -64,7 +65,7 @@ const defaultBlockWards: BlockWard[] = [
     icon: Brain,
     gradient: "from-green-400 to-emerald-500",
     points: 900,
-    image: "https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?q=80&w=2970",
+    image: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?q=80&w=2070",
   },
   {
     id: "sports-1",
@@ -73,7 +74,7 @@ const defaultBlockWards: BlockWard[] = [
     icon: Medal,
     gradient: "from-red-400 to-rose-500",
     points: 800,
-    image: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=3024",
+    image: "https://images.unsplash.com/photo-1565992441121-4367c2967103?q=80&w=2023",
   },
   {
     id: "special-1",
@@ -82,7 +83,7 @@ const defaultBlockWards: BlockWard[] = [
     icon: Sparkles,
     gradient: "from-indigo-400 to-violet-500",
     points: 700,
-    image: "https://images.unsplash.com/photo-1581574919402-5b7d688a0583?q=80&w=2576",
+    image: "https://images.unsplash.com/photo-1553356084-58ef4a67b2a7?q=80&w=1974",
   },
 ];
 
@@ -121,7 +122,8 @@ export const BlockWardShowcase = () => {
 
       if (error) throw error;
       
-      const demoEmails = ["arya47332js@gmail.com", "youthinkofc@gmail.com"];
+      // Create demo students if they don't exist
+      const demoEmails = ["student1@example.com", "student2@example.com", "arya47332js@gmail.com", "youthinkofc@gmail.com"];
       
       for (const email of demoEmails) {
         const username = email.split('@')[0];
@@ -272,6 +274,7 @@ export const BlockWardShowcase = () => {
         throw new Error('Student not found');
       }
       
+      // Use student ID if user_id is missing (for demo students)
       const studentUserId = studentData.user_id || studentId;
       
       const { data: studentWallet, error: studentWalletError } = await supabase

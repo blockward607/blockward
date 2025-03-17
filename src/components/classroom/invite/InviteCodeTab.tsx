@@ -22,16 +22,17 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      // Generate invitation token
+      // Generate a simple, readable alphanumeric code
       const invitationToken = Array.from({length: 8}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       
+      // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .insert({
           classroom_id: classroomId,
-          email: 'general_invitation@blockward.app',
+          email: 'general_invitation@blockward.app', // Marker for general invitations
           invitation_token: invitationToken,
           status: 'pending'
         })
@@ -43,8 +44,6 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
       }
       
       setInvitationCode(invitation.invitation_token);
-      setShowQRCode(false);
-      
       toast({
         title: "Invitation Code Generated",
         description: "Share this code with your students",
@@ -93,6 +92,7 @@ ${teacherName}`);
     setShowQRCode(!showQRCode);
   };
 
+  // Create a URL that will automatically apply the code when clicked
   const joinUrl = `${window.location.origin}/classes?code=${invitationCode}`;
 
   return (

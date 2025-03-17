@@ -1,5 +1,7 @@
 
 import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { Trophy } from "lucide-react";
 
 interface NFTCardProps {
   id: string;
@@ -10,18 +12,36 @@ interface NFTCardProps {
 
 export const NFTCard = ({ id, imageUrl, name, description }: NFTCardProps) => {
   return (
-    <Card key={id} className="p-3 hover:bg-purple-900/10 transition-all">
-      <img 
-        src={imageUrl || '/placeholder.svg'} 
-        alt="NFT" 
-        className="w-full h-32 object-cover rounded-md mb-2"
-      />
-      <p className="font-medium truncate">
-        {name || 'Achievement NFT'}
-      </p>
-      <p className="text-xs text-gray-400 truncate">
-        {description || 'Digital achievement'}
-      </p>
-    </Card>
+    <motion.div
+      whileHover={{ scale: 1.03, y: -5 }}
+      transition={{ duration: 0.2 }}
+    >
+      <Card key={id} className="p-3 hover:bg-purple-900/10 transition-all overflow-hidden border border-purple-500/20">
+        <div className="relative h-32 mb-2 rounded-md overflow-hidden">
+          {imageUrl ? (
+            <img 
+              src={imageUrl} 
+              alt={name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-purple-500/20 to-indigo-500/20">
+              <Trophy className="w-10 h-10 text-purple-400/60" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
+            <p className="text-white text-xs font-medium">View details</p>
+          </div>
+        </div>
+        <div>
+          <p className="font-medium truncate text-sm">
+            {name || 'Achievement NFT'}
+          </p>
+          <p className="text-xs text-gray-400 truncate">
+            {description || 'Digital achievement'}
+          </p>
+        </div>
+      </Card>
+    </motion.div>
   );
 };

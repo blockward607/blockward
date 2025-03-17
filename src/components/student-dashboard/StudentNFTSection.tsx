@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NFTCard } from "./NFTCard";
+import { motion } from "framer-motion";
 
 interface NFT {
   id: string;
@@ -20,6 +21,26 @@ interface StudentNFTSectionProps {
 }
 
 export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionProps) => {
+  // For demo purposes, show some fake NFTs
+  const demoNfts = isDemo && nfts.length === 0 ? [
+    {
+      id: 'demo-1',
+      image_url: 'https://images.unsplash.com/photo-1642427749670-f20e2e76ed8c?q=80&w=2080',
+      metadata: {
+        name: 'Academic Excellence',
+        description: 'Outstanding achievement in academics'
+      }
+    },
+    {
+      id: 'demo-2',
+      image_url: 'https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?q=80&w=2070',
+      metadata: {
+        name: 'Innovation Star',
+        description: 'Exceptional creative thinking'
+      }
+    }
+  ] : nfts;
+  
   return (
     <Card className="p-6 glass-card">
       <div className="flex items-center justify-between mb-4">
@@ -29,7 +50,7 @@ export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionP
         </Link>
       </div>
       
-      {isDemo && nfts.length === 0 ? (
+      {isDemo && nfts.length === 0 && !demoNfts.length ? (
         <div className="text-center py-4">
           <p className="text-gray-400 mb-4">Sign up to start earning NFT achievements for your academic success.</p>
           <Button
@@ -39,16 +60,22 @@ export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionP
             Create Account
           </Button>
         </div>
-      ) : nfts.length > 0 ? (
+      ) : demoNfts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {nfts.map((nft) => (
-            <NFTCard 
+          {demoNfts.map((nft, index) => (
+            <motion.div
               key={nft.id}
-              id={nft.id}
-              imageUrl={nft.image_url || '/placeholder.svg'}
-              name={nft.metadata?.name || 'Achievement NFT'}
-              description={nft.metadata?.description || 'Digital achievement'}
-            />
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <NFTCard 
+                id={nft.id}
+                imageUrl={nft.image_url || '/placeholder.svg'}
+                name={nft.metadata?.name || 'Achievement NFT'}
+                description={nft.metadata?.description || 'Digital achievement'}
+              />
+            </motion.div>
           ))}
         </div>
       ) : (

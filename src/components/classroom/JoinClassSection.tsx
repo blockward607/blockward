@@ -17,6 +17,7 @@ export const JoinClassSection = () => {
   const { toast } = useToast();
   
   useEffect(() => {
+    // Check for invitation code in URL parameters
     const params = new URLSearchParams(window.location.search);
     const codeParam = params.get('code');
     if (codeParam) {
@@ -35,6 +36,9 @@ export const JoinClassSection = () => {
       return;
     }
 
+    // Clean the invitation code (remove whitespace, etc.)
+    const cleanCode = invitationCode.trim().toUpperCase();
+
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -52,11 +56,12 @@ export const JoinClassSection = () => {
       const { data: invitationData, error: validationError } = await supabase
         .from('class_invitations')
         .select('classroom_id, classroom:classrooms(name)')
-        .eq('invitation_token', invitationCode)
+        .eq('invitation_token', cleanCode)
         .eq('status', 'pending')
         .maybeSingle();
       
       if (validationError || !invitationData) {
+        console.error("Invitation validation error:", validationError);
         toast({
           variant: "destructive",
           title: "Invalid Invitation",
@@ -89,6 +94,7 @@ export const JoinClassSection = () => {
           .single();
           
         if (createError || !newStudent) {
+          console.error("Error creating student profile:", createError);
           toast({
             variant: "destructive",
             title: "Error",
@@ -156,7 +162,7 @@ export const JoinClassSection = () => {
       await supabase
         .from('class_invitations')
         .update({ status: 'accepted' })
-        .eq('invitation_token', invitationCode);
+        .eq('invitation_token', cleanCode);
 
       toast({
         title: "Success",
@@ -185,6 +191,7 @@ export const JoinClassSection = () => {
     setScannerOpen(false);
     if (code) {
       try {
+        // Process the scanned code
         // Handle both direct codes and URLs with code parameter
         if (code.includes('?code=')) {
           const url = new URL(code);
@@ -194,8 +201,11 @@ export const JoinClassSection = () => {
             return;
           }
         }
+        
+        // If we couldn't parse it as a URL, use the raw code
         setInvitationCode(code);
       } catch (error) {
+        // If there's an error parsing as URL, use the code directly
         setInvitationCode(code);
       }
     }
