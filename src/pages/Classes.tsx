@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { InviteStudents } from "@/components/classroom/InviteStudents";
-import { JoinClassSection } from "@/components/classroom/JoinClassSection";
+import { JoinClassSection } from "@/components/classroom/join/JoinClassSection";
 import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
 import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
