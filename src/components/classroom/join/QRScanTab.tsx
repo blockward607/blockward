@@ -1,12 +1,14 @@
 
 import { Button } from "@/components/ui/button";
-import { QrCode } from "lucide-react";
+import { QrCode, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { QRCodeScanner } from "../QRCodeScanner";
 import { useJoinClassContext } from "./JoinClassContext";
+import { useJoinClass } from "./useJoinClass";
 
 export const QRScanTab = () => {
-  const { setInvitationCode, scannerOpen, setScannerOpen } = useJoinClassContext();
+  const { setInvitationCode, scannerOpen, setScannerOpen, loading } = useJoinClassContext();
+  const { handleJoinClass } = useJoinClass();
 
   const handleQRCodeScanned = (code: string) => {
     setScannerOpen(false);
@@ -19,15 +21,21 @@ export const QRScanTab = () => {
           const codeParam = url.searchParams.get('code');
           if (codeParam) {
             setInvitationCode(codeParam);
+            // Auto-join class after scan
+            setTimeout(() => handleJoinClass(), 500);
             return;
           }
         }
         
         // If we couldn't parse it as a URL, use the raw code
         setInvitationCode(code);
+        // Auto-join class after scan
+        setTimeout(() => handleJoinClass(), 500);
       } catch (error) {
         // If there's an error parsing as URL, use the code directly
         setInvitationCode(code);
+        // Auto-join class after scan
+        setTimeout(() => handleJoinClass(), 500);
       }
     }
   };
@@ -37,9 +45,19 @@ export const QRScanTab = () => {
       <Button
         onClick={() => setScannerOpen(true)}
         className="bg-purple-700 hover:bg-purple-800 mx-auto"
+        disabled={loading}
       >
-        <QrCode className="w-4 h-4 mr-2" />
-        Scan QR Code
+        {loading ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <QrCode className="w-4 h-4 mr-2" />
+            Scan QR Code
+          </>
+        )}
       </Button>
       
       <p className="text-xs text-gray-400 mt-2">

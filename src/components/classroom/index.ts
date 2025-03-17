@@ -5,7 +5,7 @@ export * from "./ClassroomActions";
 export * from "./DeleteClassroomDialog";
 export * from "./StudentCountIndicator";
 export * from "./InviteStudents";
-export * from "./join/JoinClassSection";
+export * from "./JoinClassSection";
 export * from "./QRCodeDisplay";
 export * from "./QRCodeScanner";
 export * from "./invite/ClassroomInvite";
