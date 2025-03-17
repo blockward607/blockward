@@ -6,9 +6,11 @@ import { QRCodeScanner } from "../QRCodeScanner";
 import { useJoinClassContext } from "./JoinClassContext";
 import { useJoinClass } from "./useJoinClass";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export const QRScanTab = () => {
-  const { setInvitationCode, scannerOpen, setScannerOpen, loading } = useJoinClassContext();
+  const { setInvitationCode, scannerOpen, setScannerOpen, loading, error } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
   const { toast } = useToast();
 
@@ -60,7 +62,14 @@ export const QRScanTab = () => {
   };
 
   return (
-    <div className="text-center">
+    <div className="text-center space-y-3">
+      {error && (
+        <Alert variant="destructive" className="bg-red-900/20 border-red-800 text-red-300">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <Button
         onClick={() => setScannerOpen(true)}
         className="bg-purple-700 hover:bg-purple-800 mx-auto"

@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface JoinClassContextType {
   invitationCode: string;
@@ -8,6 +8,8 @@ interface JoinClassContextType {
   setLoading: (loading: boolean) => void;
   scannerOpen: boolean;
   setScannerOpen: (open: boolean) => void;
+  error: string | null;
+  setError: (error: string | null) => void;
 }
 
 const JoinClassContext = createContext<JoinClassContextType | undefined>(undefined);
@@ -20,6 +22,17 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
   const [invitationCode, setInvitationCode] = useState<string>(initialCode.toUpperCase());
   const [loading, setLoading] = useState<boolean>(false);
   const [scannerOpen, setScannerOpen] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Log context state for debugging
+  useEffect(() => {
+    console.log("JoinClassContext state:", { 
+      invitationCode, 
+      loading, 
+      scannerOpen,
+      error
+    });
+  }, [invitationCode, loading, scannerOpen, error]);
 
   return (
     <JoinClassContext.Provider
@@ -29,7 +42,9 @@ export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
         loading,
         setLoading,
         scannerOpen,
-        setScannerOpen
+        setScannerOpen,
+        error,
+        setError
       }}
     >
       {children}
