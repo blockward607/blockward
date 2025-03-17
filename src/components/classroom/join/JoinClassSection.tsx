@@ -16,7 +16,7 @@ export const JoinClassSection = () => {
   return (
     <Card className="p-4 bg-black/40 border border-purple-500/30">
       <h2 className="text-xl font-semibold mb-4 text-white">Join a Class</h2>
-      <Tabs defaultValue={getInitialTab()} className="w-full">
+      <Tabs defaultValue="code" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 bg-black/60 border border-purple-500/30">
           <TabsTrigger value="code">Enter Code</TabsTrigger>
           <TabsTrigger value="scan">Scan QR</TabsTrigger>

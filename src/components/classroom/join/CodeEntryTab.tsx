@@ -34,7 +34,7 @@ export const CodeEntryTab = () => {
       // Small delay to ensure context is fully set up
       const timer = setTimeout(() => {
         handleJoinClass();
-      }, 500);
+      }, 800); // Increased timeout to ensure everything is loaded
       
       return () => clearTimeout(timer);
     }
@@ -80,6 +80,8 @@ export const CodeEntryTab = () => {
       
       <p className="text-xs text-gray-400 mt-2">
         Enter the 6-character invitation code provided by your teacher.
+        <br />
+        <span className="font-semibold">Note: The code must exactly match your teacher's classroom ID.</span>
       </p>
     </div>
   );
