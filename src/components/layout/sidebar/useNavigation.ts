@@ -17,6 +17,7 @@ export const useNavigation = () => {
   const location = useLocation();
 
   const handleNavigation = (href: string) => {
+    console.log("Navigating to:", href);
     navigate(href);
   };
 

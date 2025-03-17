@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { useAppearanceSettings } from "@/hooks/useAppearanceSettings";
 import { Button } from "@/components/ui/button";
 import { useTutorial } from "@/hooks/useTutorial";
-import { RefreshCcw, Sparkles } from "lucide-react";
+import { RefreshCcw, Sparkles, Moon, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -27,7 +27,7 @@ export const AppearanceTab = () => {
       await resetTutorialStatus();
       toast({
         title: "Tutorial Reset",
-        description: "Tutorial has been reset successfully."
+        description: "Tutorial has been reset successfully. You'll be redirected shortly."
       });
     } catch (error) {
       console.error("Error resetting tutorial:", error);
@@ -49,7 +49,7 @@ export const AppearanceTab = () => {
         className="space-y-4 glass-card p-6"
       >
         <h3 className="text-lg font-medium gradient-text flex items-center gap-2">
-          <Sparkles className="w-4 h-4" />
+          <Moon className="w-4 h-4" />
           Theme
         </h3>
         <div className="flex items-center justify-between bg-black/40 p-4 rounded-lg border border-purple-500/30">
@@ -75,7 +75,7 @@ export const AppearanceTab = () => {
         className="space-y-4 glass-card p-6"
       >
         <h3 className="text-lg font-medium gradient-text flex items-center gap-2">
-          <Sparkles className="w-4 h-4" />
+          <LayoutGrid className="w-4 h-4" />
           Layout
         </h3>
         <div className="flex items-center justify-between bg-black/40 p-4 rounded-lg border border-purple-500/30">

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ArrowRight, ArrowLeft, Check, FileText, Lightbulb, Target, Award, Wallet, BookOpen } from "lucide-react";
 
 const TutorialPage = () => {
   const { role } = useParams<{ role: string }>();
@@ -13,50 +15,51 @@ const TutorialPage = () => {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const totalSteps = role === "teacher" ? 5 : 4;
+  const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          toast.error("Please log in to view the tutorial");
-          navigate("/auth");
-          return;
-        }
-        
-        // Load user data
-        const { data: userData } = await supabase
-          .from('user_roles')
-          .select('role, user_id')
-          .eq('user_id', session.user.id)
-          .single();
-          
-        setUserData(userData);
-        
-        // Validate the role parameter
-        if (role !== "teacher" && role !== "student") {
-          toast.error("Invalid tutorial type");
-          navigate("/dashboard");
-        }
-        
-        // Verify user has correct role for this tutorial
-        if (userData?.role && userData.role !== role) {
-          toast.error(`This tutorial is for ${role}s only`);
-          navigate(`/tutorial/${userData.role}`);
-        }
-        
-      } catch (error) {
-        console.error("Tutorial authentication error:", error);
-        toast.error("Error loading tutorial");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     checkAuth();
-  }, [navigate, role]);
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Please log in to view the tutorial");
+        navigate("/auth");
+        return;
+      }
+      
+      // Load user data
+      const { data: userData } = await supabase
+        .from('user_roles')
+        .select('role, user_id')
+        .eq('user_id', session.user.id)
+        .single();
+          
+      setUserData(userData);
+      
+      // Validate the role parameter
+      if (role !== "teacher" && role !== "student") {
+        toast.error("Invalid tutorial type");
+        navigate("/dashboard");
+      }
+      
+      // Verify user has correct role for this tutorial
+      if (userData?.role && userData.role !== role) {
+        toast.error(`This tutorial is for ${role}s only`);
+        navigate(`/tutorial/${userData.role}`);
+      }
+      
+    } catch (error) {
+      console.error("Tutorial authentication error:", error);
+      toast.error("Error loading tutorial");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const completeTutorial = async () => {
     try {
@@ -70,7 +73,7 @@ const TutorialPage = () => {
           tutorial_completed: true
         });
         
-      toast.success("Tutorial completed!");
+      toast.success("Tutorial completed! You're ready to start using BlockWard");
       navigate("/dashboard");
     } catch (error) {
       console.error("Error completing tutorial:", error);
@@ -79,23 +82,52 @@ const TutorialPage = () => {
   };
 
   const nextStep = () => {
+    if (animating) return;
+    
+    setAnimating(true);
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
       completeTutorial();
     }
+    setTimeout(() => setAnimating(false), 400);
   };
 
   const prevStep = () => {
+    if (animating) return;
+    
+    setAnimating(true);
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
+    setTimeout(() => setAnimating(false), 400);
   };
 
   const skipTutorial = async () => {
     const confirmed = window.confirm("Are you sure you want to skip the tutorial? You can always restart it from Settings.");
     if (confirmed) {
       await completeTutorial();
+    }
+  };
+
+  const getStepIcon = () => {
+    if (role === 'teacher') {
+      switch (currentStep) {
+        case 1: return <FileText className="w-12 h-12 text-purple-400" />;
+        case 2: return <BookOpen className="w-12 h-12 text-blue-400" />;
+        case 3: return <Target className="w-12 h-12 text-green-400" />;
+        case 4: return <Lightbulb className="w-12 h-12 text-yellow-400" />;
+        case 5: return <Award className="w-12 h-12 text-rose-400" />;
+        default: return null;
+      }
+    } else {
+      switch (currentStep) {
+        case 1: return <FileText className="w-12 h-12 text-purple-400" />;
+        case 2: return <Target className="w-12 h-12 text-green-400" />;
+        case 3: return <Award className="w-12 h-12 text-yellow-400" />;
+        case 4: return <Wallet className="w-12 h-12 text-blue-400" />;
+        default: return null;
+      }
     }
   };
 
@@ -135,13 +167,28 @@ const TutorialPage = () => {
           transition={{ duration: 0.3 }}
           className="bg-black/60 backdrop-blur-lg border border-purple-500/20 rounded-lg p-8 shadow-xl"
         >
-          <div className="mb-4 text-sm text-gray-400">
-            Step {currentStep} of {totalSteps}
+          <div className="mb-4 flex justify-between items-center">
+            <div className="text-sm text-gray-400">
+              Step {currentStep} of {totalSteps}
+            </div>
+            <div className="flex space-x-2">
+              {Array.from({ length: totalSteps }).map((_, index) => (
+                <div 
+                  key={index} 
+                  className={`w-2 h-2 rounded-full ${currentStep > index ? 'bg-purple-500' : 'bg-gray-600'}`}
+                />
+              ))}
+            </div>
           </div>
           
-          <h2 className="text-2xl font-bold mb-6 text-white">
-            {role === "teacher" ? renderTeacherHeading(currentStep) : renderStudentHeading(currentStep)}
-          </h2>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="bg-black/40 p-3 rounded-full border border-purple-500/30">
+              {getStepIcon()}
+            </div>
+            <h2 className="text-2xl font-bold text-white">
+              {role === "teacher" ? renderTeacherHeading(currentStep) : renderStudentHeading(currentStep)}
+            </h2>
+          </div>
           
           <div className="prose prose-invert max-w-none mb-8">
             {role === "teacher" 
@@ -155,17 +202,29 @@ const TutorialPage = () => {
               variant="outline"
               onClick={prevStep}
               disabled={currentStep === 1}
+              className="flex items-center gap-2"
             >
+              <ArrowLeft className="w-4 h-4" />
               Previous
             </Button>
             
             <div className="flex space-x-2">
               <Button
                 variant="default"
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
                 onClick={nextStep}
               >
-                {currentStep === totalSteps ? "Complete Tutorial" : "Next"}
+                {currentStep === totalSteps ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Complete Tutorial
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -220,6 +279,11 @@ function renderTeacherContent(step: number) {
             <li>Communicate with students and parents</li>
           </ul>
           <p className="mt-4">Let's get started with creating your first classroom!</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Getting Started Tip:</p>
+            <p className="text-white">After this tutorial, you'll find all your tools in the sidebar on the left. You can minimize it by clicking the toggle button for a more focused view.</p>
+          </div>
         </div>
       );
     case 2:
@@ -227,15 +291,21 @@ function renderTeacherContent(step: number) {
         <div>
           <p>Creating a classroom in BlockWard is simple and straightforward:</p>
           <ol className="list-decimal pl-6 mt-4 space-y-2">
-            <li>Navigate to the "Classes" section from the sidebar</li>
+            <li>Navigate to the <span className="inline-flex items-center bg-purple-900/40 px-2 py-1 rounded text-purple-300"><BookOpen className="w-4 h-4 mr-1" /> Classes</span> section from the sidebar</li>
             <li>Click the "Create Classroom" button</li>
             <li>Fill in your classroom details (name, subject, grade level)</li>
             <li>Click "Create" to set up your new virtual classroom</li>
           </ol>
           <p className="mt-4">Your classroom will immediately be available for inviting students and managing your teaching activities.</p>
-          <div className="mt-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
-            <p className="font-semibold">Pro Tip:</p>
-            <p>You can create multiple classrooms for different subjects or periods you teach.</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Pro Tip:</p>
+            <p className="text-white">You can create multiple classrooms for different subjects or periods you teach. Each classroom will have its own unique join code for students.</p>
+          </div>
+          
+          <div className="mt-6 bg-black/50 p-4 rounded-lg border border-gray-700">
+            <h4 className="text-white font-medium mb-2">Try It Now:</h4>
+            <p className="text-gray-300">After completing this tutorial, go to the Classes section to create your first classroom.</p>
           </div>
         </div>
       );
@@ -255,9 +325,19 @@ function renderTeacherContent(step: number) {
             <li>Monitor which students have joined your classroom</li>
           </ol>
           <p className="mt-4">Students will receive instructions to create their BlockWard accounts and join your classroom.</p>
-          <div className="mt-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
-            <p className="font-semibold">Pro Tip:</p>
-            <p>The QR code method works great for in-person classes where students can quickly scan with their devices.</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Pro Tip:</p>
+            <p className="text-white">The QR code method works great for in-person classes where students can quickly scan with their devices.</p>
+          </div>
+          
+          <div className="mt-6 bg-black/50 p-4 rounded-lg border border-gray-700">
+            <h4 className="text-white font-medium mb-2">Key Benefits:</h4>
+            <ul className="text-gray-300 list-inside list-disc space-y-1">
+              <li>Students join with a single click or scan</li>
+              <li>Each classroom has a unique join code</li>
+              <li>Real-time updates when students join</li>
+            </ul>
           </div>
         </div>
       );
@@ -266,15 +346,21 @@ function renderTeacherContent(step: number) {
         <div>
           <p>Taking attendance in BlockWard is quick and efficient:</p>
           <ol className="list-decimal pl-6 mt-4 space-y-2">
-            <li>Navigate to the "Attendance" section from the sidebar</li>
+            <li>Navigate to the <span className="inline-flex items-center bg-purple-900/40 px-2 py-1 rounded text-purple-300"><Lightbulb className="w-4 h-4 mr-1" /> Attendance</span> section from the sidebar</li>
             <li>Select the classroom and date</li>
             <li>Mark students as present, absent, or tardy with a single click</li>
             <li>Save the attendance record</li>
           </ol>
           <p className="mt-4">BlockWard automatically maintains attendance history and generates reports for your reference.</p>
-          <div className="mt-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
-            <p className="font-semibold">Pro Tip:</p>
-            <p>You can also leave notes for individual students when taking attendance, such as reasons for absence or tardiness.</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Pro Tip:</p>
+            <p className="text-white">You can also leave notes for individual students when taking attendance, such as reasons for absence or tardiness.</p>
+          </div>
+          
+          <div className="mt-6 bg-black/50 p-4 rounded-lg border border-gray-700">
+            <h4 className="text-white font-medium mb-2">How It Helps You:</h4>
+            <p className="text-gray-300">BlockWard's attendance system saves you time and eliminates paperwork, while providing accurate, blockchain-verified records that can't be tampered with.</p>
           </div>
         </div>
       );
@@ -283,7 +369,7 @@ function renderTeacherContent(step: number) {
         <div>
           <p>One of BlockWard's unique features is the ability to reward students with NFTs:</p>
           <ol className="list-decimal pl-6 mt-4 space-y-2">
-            <li>Go to the "Rewards" section in the sidebar</li>
+            <li>Go to the <span className="inline-flex items-center bg-purple-900/40 px-2 py-1 rounded text-purple-300"><Award className="w-4 h-4 mr-1" /> Rewards</span> section in the sidebar</li>
             <li>Click "Create New Reward"</li>
             <li>Design your NFT reward:
               <ul className="list-disc pl-6 mt-2">
@@ -296,10 +382,17 @@ function renderTeacherContent(step: number) {
             <li>Issue the NFT reward</li>
           </ol>
           <p className="mt-4">Students will receive a notification about their new NFT achievement that they can showcase in their digital wallet.</p>
-          <div className="mt-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
-            <p className="font-semibold">Pro Tip:</p>
-            <p>Create different NFTs for various achievements like perfect attendance, completing assignments, or exceptional participation.</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Pro Tip:</p>
+            <p className="text-white">Create different NFTs for various achievements like perfect attendance, completing assignments, or exceptional participation.</p>
           </div>
+          
+          <div className="mt-6 bg-black/50 p-4 rounded-lg border border-gray-700">
+            <h4 className="text-white font-medium mb-2">Why NFTs Matter:</h4>
+            <p className="text-gray-300">Unlike traditional rewards, NFTs are unique digital assets that students truly own. They're permanent, verifiable achievements that can be displayed in their digital portfolios.</p>
+          </div>
+          
           <p className="mt-6 font-semibold">Congratulations! You've completed the BlockWard teacher tutorial.</p>
           <p>You're now ready to manage your virtual classroom with blockchain technology!</p>
         </div>
@@ -325,6 +418,11 @@ function renderStudentContent(step: number) {
             <li>Communicate with your teachers</li>
           </ul>
           <p className="mt-4">Let's get started with joining your first classroom!</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Getting Started Tip:</p>
+            <p className="text-white">After this tutorial, you'll find all your tools in the sidebar on the left. You can minimize it by clicking the toggle button for a more focused view.</p>
+          </div>
         </div>
       );
     case 2:
@@ -343,10 +441,16 @@ function renderStudentContent(step: number) {
             <li>Enter the join code or scan the QR code provided by your teacher</li>
             <li>Confirm by clicking "Join"</li>
           </ol>
-          <p className="mt-4">Once joined, you'll see the classroom in your Classes section.</p>
-          <div className="mt-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
-            <p className="font-semibold">Pro Tip:</p>
-            <p>You can join multiple classrooms from different teachers - each will appear in your Classes list.</p>
+          <p className="mt-4">Once joined, you'll see the classroom in your <span className="inline-flex items-center bg-purple-900/40 px-2 py-1 rounded text-purple-300"><BookOpen className="w-4 h-4 mr-1" /> Classes</span> section.</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Pro Tip:</p>
+            <p className="text-white">You can join multiple classrooms from different teachers - each will appear in your Classes list.</p>
+          </div>
+          
+          <div className="mt-6 bg-black/50 p-4 rounded-lg border border-gray-700">
+            <h4 className="text-white font-medium mb-2">Try It Now:</h4>
+            <p className="text-gray-300">After completing this tutorial, go to the Classes section to join your classroom with the code provided by your teacher.</p>
           </div>
         </div>
       );
@@ -356,14 +460,20 @@ function renderStudentContent(step: number) {
           <p>One of the exciting features of BlockWard is earning NFT rewards:</p>
           <ol className="list-decimal pl-6 mt-4 space-y-2">
             <li>Your teachers can award you with NFTs for achievements</li>
-            <li>To view your rewards, go to the "Rewards" section in the sidebar</li>
+            <li>To view your rewards, go to the <span className="inline-flex items-center bg-purple-900/40 px-2 py-1 rounded text-purple-300"><Award className="w-4 h-4 mr-1" /> Rewards</span> section in the sidebar</li>
             <li>You'll see all your earned NFTs displayed in your collection</li>
             <li>Click on any NFT to view details about the achievement</li>
           </ol>
           <p className="mt-4">Each NFT is unique and stored on the blockchain as proof of your achievement!</p>
-          <div className="mt-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
-            <p className="font-semibold">Pro Tip:</p>
-            <p>You can showcase your NFT achievements to friends and family by sharing your profile link.</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Pro Tip:</p>
+            <p className="text-white">You can showcase your NFT achievements to friends and family by sharing your profile link.</p>
+          </div>
+          
+          <div className="mt-6 bg-black/50 p-4 rounded-lg border border-gray-700">
+            <h4 className="text-white font-medium mb-2">Why NFTs Are Special:</h4>
+            <p className="text-gray-300">Unlike traditional digital badges, NFTs are unique digital assets that you truly own. They can't be duplicated, and they stay with you forever as proof of your accomplishments.</p>
           </div>
         </div>
       );
@@ -372,16 +482,23 @@ function renderStudentContent(step: number) {
         <div>
           <p>Managing your BlockWard wallet is easy:</p>
           <ol className="list-decimal pl-6 mt-4 space-y-2">
-            <li>Go to the "Wallet" section in the sidebar</li>
+            <li>Go to the <span className="inline-flex items-center bg-purple-900/40 px-2 py-1 rounded text-purple-300"><Wallet className="w-4 h-4 mr-1" /> Wallet</span> section in the sidebar</li>
             <li>View your NFT collection and digital assets</li>
             <li>See detailed information about each NFT's creation and history</li>
             <li>Organize your collection by class, date, or type</li>
           </ol>
           <p className="mt-4">Your wallet securely stores all your digital achievements throughout your educational journey.</p>
-          <div className="mt-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/30">
-            <p className="font-semibold">Pro Tip:</p>
-            <p>Your NFT achievements can be a great addition to your academic portfolio to showcase your accomplishments.</p>
+          
+          <div className="mt-6 p-5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg border border-purple-500/30 shadow-lg">
+            <p className="font-semibold text-lg text-purple-300">Pro Tip:</p>
+            <p className="text-white">Your NFT achievements can be a great addition to your academic portfolio to showcase your accomplishments.</p>
           </div>
+          
+          <div className="mt-6 bg-black/50 p-4 rounded-lg border border-gray-700">
+            <h4 className="text-white font-medium mb-2">Future Benefits:</h4>
+            <p className="text-gray-300">As you progress through school, your growing collection of achievement NFTs creates a verifiable record of your skills and accomplishments that can be shared with future schools or employers.</p>
+          </div>
+          
           <p className="mt-6 font-semibold">Congratulations! You've completed the BlockWard student tutorial.</p>
           <p>You're now ready to start earning and collecting achievement NFTs in your classes!</p>
         </div>
