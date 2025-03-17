@@ -15,8 +15,16 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Set the code in context, which will handle normalization
-    setInvitationCode(e.target.value);
+    // Format and set the code in context
+    let value = e.target.value;
+    
+    // Remove spaces and special characters
+    value = value.replace(/[^a-zA-Z0-9]/g, '');
+    
+    // Limit to 20 characters max
+    value = value.substring(0, 20);
+    
+    setInvitationCode(value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -41,7 +49,10 @@ export const CodeEntryTab = () => {
         
         if (code && code.trim() && !loading && !autoJoinAttempted) {
           console.log("Auto-joining with code from URL:", code);
-          setInvitationCode(code.trim());
+          
+          // Format and clean the code
+          const cleanCode = code.trim().replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+          setInvitationCode(cleanCode);
           setAutoJoinAttempted(true);
           
           // Small delay to ensure context is fully set up
@@ -73,7 +84,7 @@ export const CodeEntryTab = () => {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter classroom code"
-          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg tracking-wider"
+          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg tracking-wider uppercase"
           autoComplete="off"
           disabled={loading}
           maxLength={20}
@@ -100,7 +111,7 @@ export const CodeEntryTab = () => {
       <p className="text-xs text-gray-400 mt-2">
         Enter the class code provided by your teacher.
         <br />
-        <span className="font-semibold">Class codes may contain letters and numbers (example: A67680).</span>
+        <span className="font-semibold">Code should be 6-8 characters, like "A67B80" or "XY123Z".</span>
       </p>
     </div>
   );

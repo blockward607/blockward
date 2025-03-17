@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Enums } from "@/integrations/supabase/types";
 
 export const StudentProfileService = {
   // Get student profile by user_id
@@ -25,7 +24,7 @@ export const StudentProfileService = {
   },
   
   // Set user role
-  async setUserRole(userId: string, role: Enums<"user_role">) {
+  async setUserRole(userId: string, role: 'teacher' | 'student') {
     return await supabase
       .from('user_roles')
       .upsert({

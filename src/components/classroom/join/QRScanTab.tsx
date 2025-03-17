@@ -31,6 +31,7 @@ export const QRScanTab = () => {
       // Process the scanned code - handle both direct codes and URLs
       let inviteCode = code.trim();
       
+      // Handle various URL formats
       if (code.includes('?code=')) {
         try {
           const url = new URL(code);
@@ -42,6 +43,17 @@ export const QRScanTab = () => {
         } catch (error) {
           console.error("Error parsing QR code URL:", error);
           // Continue with original code if URL parsing fails
+        }
+      } else if (code.includes('/classes/join/')) {
+        // Handle direct join URLs
+        try {
+          const parts = code.split('/classes/join/');
+          if (parts.length > 1) {
+            inviteCode = parts[1].trim();
+            console.log("Extracted code from join URL:", inviteCode);
+          }
+        } catch (error) {
+          console.error("Error parsing join URL:", error);
         }
       }
       

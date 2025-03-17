@@ -45,46 +45,74 @@ export const ClassJoinService = {
     return { data, error };
   },
 
-  // Get exact invitation match
-  async getExactInvitation(invitationCode: string): Promise<JoinClassroomResult> {
-    const { data, error } = await supabase
+  // Try all possible invitation matches
+  async findInvitation(invitationCode: string): Promise<JoinClassroomResult> {
+    console.log("Looking for invitation with code:", invitationCode);
+    
+    // First try exact match
+    const { data: exactMatch, error: exactError } = await supabase
       .from('class_invitations')
       .select('*, classroom:classrooms(*)')
       .eq('invitation_token', invitationCode)
       .eq('status', 'pending')
       .maybeSingle();
-      
-    return { data, error };
-  },
-
-  // Get case-insensitive invitation match
-  async getCaseInsensitiveInvitation(invitationCode: string): Promise<JoinClassroomResult> {
-    const { data, error } = await supabase
+    
+    if (exactMatch) {
+      console.log("Found exact invitation match:", exactMatch);
+      return { data: exactMatch, error: null };
+    }
+    
+    // Then try case-insensitive match
+    const { data: caseMatch, error: caseError } = await supabase
       .from('class_invitations')
       .select('*, classroom:classrooms(*)')
       .ilike('invitation_token', invitationCode)
       .eq('status', 'pending')
       .maybeSingle();
-      
-    return { data, error };
-  },
-
-  // Get classroom by exact ID
-  async getClassroomByExactId(classroomId: string): Promise<JoinClassroomResult> {
-    const { data, error } = await supabase
+    
+    if (caseMatch) {
+      console.log("Found case-insensitive invitation match:", caseMatch);
+      return { data: caseMatch, error: null };
+    }
+    
+    // If no invitation matches, try direct classroom ID match
+    const { data: classroom, error: classroomError } = await supabase
       .from('classrooms')
       .select('*')
-      .eq('id', classroomId)
+      .eq('id', invitationCode)
       .maybeSingle();
-      
-    return { data, error };
-  },
-
-  // Get all classrooms (for prefix/partial matching)
-  async getAllClassrooms(): Promise<JoinClassroomResult> {
-    const { data, error } = await supabase
+    
+    if (classroom) {
+      console.log("Found direct classroom match:", classroom);
+      return { data: { classroom }, error: null };
+    }
+    
+    // Try prefix match as last resort
+    const { data: allClassrooms, error: allError } = await supabase
       .from('classrooms')
       .select('*');
+    
+    if (allClassrooms && allClassrooms.length > 0) {
+      for (const c of allClassrooms) {
+        if (c.id.toLowerCase().startsWith(invitationCode.toLowerCase()) ||
+            c.id.toLowerCase().includes(invitationCode.toLowerCase())) {
+          console.log("Found classroom by ID prefix/contains:", c);
+          return { data: { classroom: c }, error: null };
+        }
+      }
+    }
+
+    console.log("No invitation or classroom match found for:", invitationCode);
+    return { data: null, error: { message: "Invalid invitation code" } };
+  },
+
+  // Get invitation by direct ID
+  async getInvitationById(invitationId: string): Promise<JoinClassroomResult> {
+    const { data, error } = await supabase
+      .from('class_invitations')
+      .select('*, classroom:classrooms(*)')
+      .eq('id', invitationId)
+      .maybeSingle();
       
     return { data, error };
   }
