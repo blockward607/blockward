@@ -50,7 +50,6 @@ export function AppSidebar() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // Get user role
     const { data: roleData } = await supabase
       .from('user_roles')
       .select('role')
@@ -73,7 +72,7 @@ export function AppSidebar() {
     {
       name: "Main",
       items: [
-        { name: "Announcements", href: "/dashboard", icon: Megaphone },
+        { name: "Dashboard", href: "/dashboard", icon: Megaphone },
         { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },
@@ -110,7 +109,7 @@ export function AppSidebar() {
     {
       name: "Main",
       items: [
-        { name: "Announcements", href: "/dashboard", icon: Megaphone },
+        { name: "Dashboard", href: "/dashboard", icon: Megaphone },
         { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },
