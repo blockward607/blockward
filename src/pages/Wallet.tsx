@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Wallet as WalletIcon, Plus, AlertTriangle } from "lucide-react";
@@ -170,7 +169,9 @@ const Wallet = () => {
         </h1>
       </div>
       
-      <WalletPanel expanded={false} />
+      <div className="bg-purple-900/10 p-6 rounded-lg">
+        <WalletPanel expanded={false} />
+      </div>
       
       <div className="w-full">
         <div className="grid gap-6 md:grid-cols-[300px_1fr]">

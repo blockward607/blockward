@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, Copy, ExternalLink, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,7 +129,7 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
   };
 
   return (
-    <Card className="glass-card p-6">
+    <div>
       <div className="flex items-center gap-2 mb-4">
         <Wallet className="w-5 h-5 text-purple-400" />
         <div>
@@ -199,6 +198,6 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
