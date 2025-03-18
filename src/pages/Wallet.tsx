@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Wallet as WalletIcon, Plus, AlertTriangle, Trophy } from "lucide-react";
+import { Wallet as WalletIcon, Plus, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,6 @@ import { TransferForm } from "@/components/wallet/TransferForm";
 import { NFTGrid } from "@/components/wallet/NFTGrid";
 import { NFTDisclaimer } from "@/components/wallet/NFTDisclaimer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AchievementSystem } from "@/components/achievements/AchievementSystem";
 
 interface NFTMetadata {
   name: string;
@@ -59,7 +58,6 @@ const Wallet = () => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null);
-  const [activeTab, setActiveTab] = useState("wallet");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -174,60 +172,43 @@ const Wallet = () => {
           <WalletIcon className="w-8 h-8 text-purple-300" />
         </div>
         <h1 className="text-4xl font-bold shimmer-text">
-          BlockWard Wallet & Achievements
+          BlockWard Wallet
         </h1>
       </div>
       
       <WalletPanel expanded={false} />
       
-      <Tabs defaultValue="wallet" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-6">
-          <TabsTrigger value="wallet" className="data-[state=active]:bg-purple-600">
-            <WalletIcon className="w-4 h-4 mr-2" />
-            Wallet & NFTs
-          </TabsTrigger>
-          <TabsTrigger value="achievements" className="data-[state=active]:bg-purple-600">
-            <Trophy className="w-4 h-4 mr-2" />
-            Achievements Store
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="wallet" className="mt-0">
-          <div className="grid gap-6 md:grid-cols-[300px_1fr]">
-            <div className="space-y-6">
-              <BalanceCard 
-                balance={balance} 
-                walletAddress={wallet?.address} 
-                isLoading={isLoading} 
-              />
-              
+      <div className="w-full">
+        <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+          <div className="space-y-6">
+            <BalanceCard 
+              balance={balance} 
+              walletAddress={wallet?.address} 
+              isLoading={isLoading} 
+            />
+            
+            {userRole === 'teacher' && (
+              <TransferForm disabled={isLoading} />
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Your BlockWards</h2>
               {userRole === 'teacher' && (
-                <TransferForm disabled={isLoading} />
+                <Button size="sm" variant="outline" onClick={() => navigate('/rewards')}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create BlockWard
+                </Button>
               )}
             </div>
-
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Your BlockWards</h2>
-                {userRole === 'teacher' && (
-                  <Button size="sm" variant="outline" onClick={() => navigate('/rewards')}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create BlockWard
-                  </Button>
-                )}
-              </div>
-              
-              <NFTGrid nfts={nfts} isLoading={isLoading} />
-              
-              <NFTDisclaimer />
-            </div>
+            
+            <NFTGrid nfts={nfts} isLoading={isLoading} />
+            
+            <NFTDisclaimer />
           </div>
-        </TabsContent>
-        
-        <TabsContent value="achievements" className="mt-0">
-          <AchievementSystem />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 };

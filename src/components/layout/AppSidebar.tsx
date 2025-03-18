@@ -19,11 +19,9 @@ import {
   Home,
   Users,
   BookOpen,
-  Award,
   Settings,
   Bell,
   Calendar,
-  Trophy,
   Wallet,
   BarChart,
   MessageSquare,
@@ -84,9 +82,8 @@ export function AppSidebar() {
       ]
     },
     {
-      name: "Rewards",
+      name: "Wallet",
       items: [
-        { name: "Rewards", href: "/rewards", icon: Award },
         { name: "NFT Wallet", href: "/wallet", icon: Wallet },
       ]
     },
@@ -121,10 +118,9 @@ export function AppSidebar() {
       ]
     },
     {
-      name: "Rewards",
+      name: "Wallet",
       items: [
-        { name: "My NFTs", href: "/rewards", icon: Award },
-        { name: "Wallet", href: "/wallet", icon: Wallet },
+        { name: "NFT Wallet", href: "/wallet", icon: Wallet },
       ]
     },
     {
