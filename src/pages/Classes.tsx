@@ -10,7 +10,6 @@ import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { EmptyClassState } from "@/components/classroom/EmptyClassState";
 import { JoinClassProvider } from "@/components/classroom/join/JoinClassContext";
-import { toast } from "sonner";
 
 const Classes = () => {
   const { 
@@ -27,7 +26,9 @@ const Classes = () => {
   const location = useLocation();
   
   useEffect(() => {
-    console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
+    // Verify we're on the Classes page
+    console.log("Classes page mounted, current path:", location.pathname);
+    
     // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
     
@@ -36,10 +37,9 @@ const Classes = () => {
     const inviteCode = queryParams.get('code');
     if (inviteCode) {
       console.log("Found invitation code in URL:", inviteCode);
-      toast.info("Processing invitation code...");
       // The JoinClassContext will pick this up automatically
     }
-  }, [refreshClassrooms, location.search]);
+  }, [refreshClassrooms, location.search, location.pathname]);
 
   if (loading) {
     return <ClassesLoading />;

@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -64,7 +65,14 @@ export function AppSidebar() {
 
   const handleNavigate = (path: string) => {
     console.log(`Navigating to: ${path}`);
-    navigate(path);
+    // Prevent any default behavior that might cause redirects
+    if (path === '/classes') {
+      // Force route to classes without any redirects
+      window.history.pushState({}, '', path);
+      navigate(path, { replace: true });
+    } else {
+      navigate(path);
+    }
   };
 
   const toggleSidebarAndMinimize = () => {
@@ -72,6 +80,7 @@ export function AppSidebar() {
     setIsMinimized(!isMinimized);
   };
 
+  // Move classes to its own navigation group
   const teacherNavGroups = [
     {
       name: "Main",
@@ -207,7 +216,11 @@ export function AppSidebar() {
                             )}
                           >
                             <div 
-                              onClick={() => handleNavigate(item.href)} 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleNavigate(item.href);
+                              }} 
                               className={cn(
                                 "cursor-pointer flex items-center w-full",
                                 isActive ? "text-white font-semibold" : "text-gray-300"

@@ -155,7 +155,12 @@ export function useAuth() {
         description: "You have successfully signed in.",
       });
       
-      navigate('/dashboard');
+      // Instead of forcing redirect, allow the navigation to happen naturally
+      // We'll still redirect on first login
+      const currentPath = window.location.pathname;
+      if (currentPath === '/auth') {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error("Unexpected error during account setup:", error);
       toast({
@@ -185,7 +190,12 @@ export function useAuth() {
           });
           
         console.log('Found existing session, navigating to dashboard');
-        navigate('/dashboard');
+        
+        // Don't automatically navigate to dashboard if we're already on another page
+        const currentPath = window.location.pathname;
+        if (currentPath === '/' || currentPath === '/auth') {
+          navigate('/dashboard');
+        }
       } else {
         console.log('No existing session found');
         setUser(null);
