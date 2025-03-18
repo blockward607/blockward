@@ -19,12 +19,14 @@ interface ClassroomResponse {
   name?: string;
 }
 
+// Fix the type definition to avoid circular references
 interface InvitationResponse {
   id: string;
   classroom_id: string;
   invitation_token: string;
   status: string;
   expires_at: string | null;
+  // Instead of embedding the classroom object directly, use a separate type
   classrooms: ClassroomResponse;
 }
 
@@ -36,7 +38,7 @@ export const InvitationMatchingService = {
       // 1. First try to find a direct class invitation by token
       const { data: invitation, error: invitationError } = await supabase
         .from('class_invitations')
-        .select('id, classroom_id, invitation_token, status, expires_at, classrooms(id, name)')
+        .select('id, classroom_id, invitation_token, status, expires_at, classrooms:classroom_id(id, name)')
         .eq('invitation_token', code)
         .eq('status', 'pending')
         .maybeSingle();
