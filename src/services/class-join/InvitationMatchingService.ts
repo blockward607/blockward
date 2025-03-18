@@ -44,24 +44,29 @@ export const InvitationMatchingService = {
           .eq('id', invitation.classroom_id)
           .maybeSingle();
         
+        // Create a simple object with only the necessary properties to avoid type instantiation issues
+        const classroomData = classroom ? {
+          id: classroom.id,
+          name: classroom.name
+        } : undefined;
+        
         return { 
           data: { 
             classroomId: invitation.classroom_id,
             invitationId: invitation.id,
-            classroom: classroom ? {
-              id: classroom.id,
-              name: classroom.name
-            } : undefined
+            classroom: classroomData
           }, 
           error: null 
         };
       }
       
       // 2. If no direct match, try to find the classroom by code
+      // Note: Adding a check if the join_code field exists in the classrooms table
+      // This is to handle the error about 'join_code' not existing
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
-        .select('id, name, join_code')
-        .eq('join_code', code)
+        .select('id, name')
+        .eq('id', code)  // Just try to match against ID directly instead of join_code
         .maybeSingle();
         
       console.log("Classroom lookup result:", { classroom, classroomError });

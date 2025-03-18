@@ -190,10 +190,10 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
                   Create BlockWard Award
                 </Button>
               </Link>
-              <Link to="/students">
+              <Link to="/wallet">
                 <Button variant="outline" className="w-full">
                   <Send className="w-4 h-4 mr-2" />
-                  Send Points to Students
+                  Send Points & BlockWards
                 </Button>
               </Link>
             </div>
