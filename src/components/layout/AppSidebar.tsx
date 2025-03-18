@@ -68,9 +68,10 @@ export function AppSidebar() {
     if (path === '/classes') {
       window.location.href = path;
       toast.success("Redirecting to classes...");
-    } else {
-      navigate(path);
+      return;
     }
+    
+    navigate(path);
   };
 
   const toggleSidebarAndMinimize = () => {
@@ -172,7 +173,7 @@ export function AppSidebar() {
             {!isMinimized && (
               <div 
                 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 cursor-pointer" 
-                onClick={() => navigate('/dashboard')}
+                onClick={() => handleNavigate('/dashboard')}
               >
                 BlockWard
               </div>
@@ -190,6 +191,38 @@ export function AppSidebar() {
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.href;
                       const Icon = item.icon;
+                      
+                      if (item.href === '/classes') {
+                        return (
+                          <SidebarMenuItem key={item.name}>
+                            <SidebarMenuButton 
+                              asChild 
+                              isActive={isActive}
+                              tooltip={isMinimized ? item.name : undefined}
+                              className={cn(
+                                "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
+                                isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
+                              )}
+                            >
+                              <a 
+                                href="/classes"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleNavigate('/classes');
+                                }}
+                                className={cn(
+                                  "cursor-pointer flex items-center w-full",
+                                  isActive ? "text-white font-semibold" : "text-gray-300"
+                                )}
+                              >
+                                <Icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
+                                {!isMinimized && <span className="ml-3">{item.name}</span>}
+                              </a>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      }
+                      
                       return (
                         <SidebarMenuItem key={item.name}>
                           <SidebarMenuButton 
