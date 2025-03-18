@@ -47,13 +47,6 @@ function App() {
               <Route path="invite/:inviteToken" element={<ClassroomInvite />} />
             </Route>
 
-            {/* Class details route without sidebar */}
-            <Route path="class/:classroomId" element={
-              <ProtectedRoute>
-                <ClassDetails />
-              </ProtectedRoute>
-            } />
-
             {/* Protected routes with sidebar */}
             <Route
               path="/"
@@ -79,6 +72,7 @@ function App() {
               <Route path="analytics" element={<Analytics />} />
               <Route path="settings" element={<Settings />} />
               <Route path="progress" element={<Progress />} />
+              <Route path="class/:classroomId" element={<ClassDetails />} />
               <Route path="class/:classroomId/grades" element={<Grades />} />
               <Route path="auth/wallet-verify" element={<WalletVerify />} />
             </Route>
