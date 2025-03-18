@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, ImagePlus, Loader2, LayoutTemplate, Link as LinkIcon } from "lucide-react";
+import { Trophy, ImagePlus, Loader2, LayoutTemplate, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NFTImageUpload } from "./NFTImageUpload";
@@ -9,7 +9,6 @@ import { StudentSelect } from "./StudentSelect";
 import { NFTAwardForm } from "./NFTAwardForm";
 import { TemplateSelector } from "./TemplateSelector";
 import { blockchainService } from '@/blockchain/services/BlockchainService';
-import { BlockchainWalletPanel } from "../wallet/BlockchainWalletPanel";
 
 export const CreateNFTAward = () => {
   const { toast } = useToast();
@@ -19,7 +18,6 @@ export const CreateNFTAward = () => {
   const [useTemplate, setUseTemplate] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [isBlockchainMinting, setIsBlockchainMinting] = useState(false);
-  const [walletConnected, setWalletConnected] = useState(false);
   const [studentWalletAddress, setStudentWalletAddress] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -147,12 +145,12 @@ export const CreateNFTAward = () => {
     setIsBlockchainMinting(true);
     
     try {
-      const initialized = await blockchainService.initialize('teacher');
+      const initialized = await blockchainService.initialize('teacher', false);
       if (!initialized) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to initialize blockchain connection. Please ensure MetaMask is installed."
+          description: "Failed to initialize blockchain connection."
         });
         return;
       }
@@ -178,11 +176,13 @@ export const CreateNFTAward = () => {
 
       const result = await blockchainService.mintBlockWard(studentWalletAddress, metadata);
       
-      console.log("BlockWard minted on blockchain:", result);
+      console.log("BlockWard simulated on blockchain:", result);
+      
+      await handleSaveToDatabase(result);
       
       toast({
         title: "Success",
-        description: "BlockWard successfully minted on the blockchain!",
+        description: "BlockWard successfully created and will be transferred to the student's blockchain wallet!",
       });
       
       setFormData({ title: "", description: "", points: 100, nftType: "academic" });
@@ -194,11 +194,100 @@ export const CreateNFTAward = () => {
       console.error("Error minting BlockWard on blockchain:", error);
       toast({
         variant: "destructive",
-        title: "Blockchain Minting Failed",
-        description: error.message || "Failed to mint BlockWard on blockchain"
+        title: "Blockchain Processing Failed",
+        description: error.message || "Failed to process BlockWard"
       });
     } finally {
       setIsBlockchainMinting(false);
+    }
+  };
+
+  const handleSaveToDatabase = async (blockchainResult: any) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in to create BlockWards");
+      }
+      
+      const { data: teacherWallet, error: walletError } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (walletError) {
+        throw walletError;
+      }
+      
+      const { data: studentWallet, error: studentWalletError } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', selectedStudent)
+        .single();
+        
+      if (studentWalletError) {
+        throw studentWalletError;
+      }
+      
+      const metadata = {
+        name: formData.title,
+        description: formData.description,
+        points: formData.points,
+        type: formData.nftType,
+        image: imageUrl,
+        created_at: new Date().toISOString(),
+        attributes: [
+          {
+            trait_type: "Type",
+            value: formData.nftType
+          },
+          {
+            trait_type: "Points",
+            value: formData.points.toString()
+          }
+        ]
+      };
+      
+      const { data: nft, error: nftError } = await supabase
+        .from('nfts')
+        .insert({
+          token_id: blockchainResult.tokenId || `award-${Date.now()}`,
+          contract_address: BLOCKWARD_NFT_CONTRACT_ADDRESS,
+          metadata,
+          creator_wallet_id: teacherWallet.id,
+          image_url: imageUrl,
+          owner_wallet_id: studentWallet.id,
+          network: "testnet",
+        })
+        .select()
+        .single();
+
+      if (nftError) throw nftError;
+      
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          nft_id: nft.id,
+          from_wallet_id: teacherWallet.id,
+          to_wallet_id: studentWallet.id,
+          transaction_hash: blockchainResult.tokenId || "simulated-" + Date.now(),
+          status: 'completed',
+        });
+
+      if (transactionError) throw transactionError;
+      
+      const { error: incrementError } = await supabase
+        .rpc('increment_student_points', {
+          student_id: selectedStudent,
+          points_to_add: formData.points
+        });
+
+      if (incrementError) throw incrementError;
+      
+      return true;
+    } catch (error) {
+      console.error("Error saving NFT to database:", error);
+      throw error;
     }
   };
 
@@ -217,152 +306,7 @@ export const CreateNFTAward = () => {
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "You must be logged in to create BlockWards"
-        });
-        return;
-      }
-      
-      const { data: walletData, error: walletError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (walletError) {
-        console.error('Error getting wallet:', walletError);
-        
-        if (walletError.message.includes('No rows found')) {
-          const { data: newWallet, error: createError } = await supabase
-            .from('wallets')
-            .insert({
-              user_id: session.user.id,
-              address: 'wallet_' + crypto.randomUUID().substring(0, 8),
-              type: 'admin'
-            })
-            .select('*')
-            .single();
-            
-          if (createError) throw createError;
-          console.log('Created new wallet:', newWallet);
-          
-          const metadata = {
-            name: formData.title,
-            description: formData.description,
-            points: formData.points,
-            type: formData.nftType,
-            image: imageUrl,
-            created_at: new Date().toISOString(),
-            attributes: [
-              {
-                trait_type: "Type",
-                value: formData.nftType
-              },
-              {
-                trait_type: "Points",
-                value: formData.points.toString()
-              }
-            ]
-          };
-
-          const { data: nft, error: nftError } = await supabase
-            .from('nfts')
-            .insert({
-              token_id: `award-${Date.now()}`,
-              contract_address: "0x" + Math.random().toString(16).slice(2, 42),
-              metadata,
-              creator_wallet_id: newWallet.id,
-              image_url: imageUrl,
-              owner_wallet_id: selectedStudent || null,
-              network: "testnet",
-            })
-            .select()
-            .single();
-
-          if (nftError) throw nftError;
-        } else {
-          throw walletError;
-        }
-      } else {
-        const metadata = {
-          name: formData.title,
-          description: formData.description,
-          points: formData.points,
-          type: formData.nftType,
-          image: imageUrl,
-          created_at: new Date().toISOString(),
-          attributes: [
-            {
-              trait_type: "Type",
-              value: formData.nftType
-            },
-            {
-              trait_type: "Points",
-              value: formData.points.toString()
-            }
-          ]
-        };
-
-        const { data: nft, error: nftError } = await supabase
-          .from('nfts')
-          .insert({
-            token_id: `award-${Date.now()}`,
-            contract_address: "0x" + Math.random().toString(16).slice(2, 42),
-            metadata,
-            creator_wallet_id: walletData.id,
-            image_url: imageUrl,
-            owner_wallet_id: selectedStudent || null,
-            network: "testnet",
-          })
-          .select()
-          .single();
-
-        if (nftError) throw nftError;
-        
-        if (selectedStudent) {
-          const { data: studentWallet, error: studentWalletError } = await supabase
-            .from('wallets')
-            .select('*')
-            .eq('user_id', selectedStudent)
-            .single();
-            
-          if (studentWalletError) throw studentWalletError;
-          
-          const { error: transactionError } = await supabase
-            .from('transactions')
-            .insert({
-              nft_id: nft.id,
-              from_wallet_id: walletData.id,
-              to_wallet_id: studentWallet.id,
-              transaction_hash: "0x" + Math.random().toString(16).slice(2, 62),
-              status: 'completed',
-            });
-
-          if (transactionError) throw transactionError;
-          
-          const { error: incrementError } = await supabase
-            .rpc('increment_student_points', {
-              student_id: selectedStudent,
-              points_to_add: formData.points
-            });
-
-          if (incrementError) throw incrementError;
-        }
-      }
-
-      toast({
-        title: "Success",
-        description: "BlockWard Award created successfully",
-      });
-
-      setFormData({ title: "", description: "", points: 100, nftType: "academic" });
-      setImageUrl(null);
-      setSelectedStudent("");
-      setSelectedTemplate("");
+      await handleBlockchainMint();
     } catch (error: any) {
       console.error('Error creating BlockWard:', error);
       toast({
@@ -373,11 +317,6 @@ export const CreateNFTAward = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleWalletConnect = (address: string) => {
-    console.log("Wallet connected:", address);
-    setWalletConnected(true);
   };
 
   return (
@@ -452,40 +391,23 @@ export const CreateNFTAward = () => {
         </div>
 
         <div className="border border-dashed border-purple-500/30 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-3 text-purple-300">Blockchain Wallet Connection</h3>
+          <h3 className="text-lg font-semibold mb-3 text-purple-300">Blockchain Integration</h3>
           <p className="text-sm text-gray-400 mb-4">
-            Connect your blockchain wallet to mint this BlockWard as an NFT on Polygon.
+            BlockWard NFTs will be created and stored in our system, ready to be transferred to blockchain wallets when funded with gas fees.
           </p>
-          <BlockchainWalletPanel onConnect={handleWalletConnect} accountType="teacher" />
           
-          {walletConnected && (
-            <div className="mt-4">
-              <Button 
-                type="button"
-                onClick={handleBlockchainMint}
-                disabled={isBlockchainMinting || !formData.title || !formData.description || !imageUrl || !selectedStudent}
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
-              >
-                {isBlockchainMinting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Minting on Blockchain...
-                  </>
-                ) : (
-                  <>
-                    <LinkIcon className="w-4 h-4 mr-2" />
-                    Mint as Blockchain NFT
-                  </>
-                )}
-              </Button>
+          <div className="bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/30 flex items-center mt-2">
+            <Shield className="h-5 w-5 text-indigo-400 mr-3" />
+            <div className="text-sm text-indigo-300">
+              Simulated blockchain mint will process NFTs within our system without requiring MetaMask or gas fees.
             </div>
-          )}
+          </div>
         </div>
 
         <div className="flex justify-end">
           <Button 
             type="submit" 
-            disabled={loading || !formData.title || !formData.description || !imageUrl}
+            disabled={loading || !formData.title || !formData.description || !imageUrl || !selectedStudent}
             className="bg-purple-600 hover:bg-purple-700"
           >
             {loading ? (
@@ -505,3 +427,5 @@ export const CreateNFTAward = () => {
     </Card>
   );
 };
+
+const BLOCKWARD_NFT_CONTRACT_ADDRESS = '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1';

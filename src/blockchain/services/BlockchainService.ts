@@ -42,29 +42,44 @@ class BlockchainService {
   private contract: ethers.Contract | null = null;
   private isInitialized = false;
   private walletType: 'teacher' | 'student' | null = null;
+  private useMetaMask = true;
   
   // Initialize the blockchain service
-  async initialize(accountType?: 'teacher' | 'student') {
-    if (!window.ethereum) {
-      console.error('MetaMask or another web3 wallet is required');
-      return false;
-    }
+  async initialize(accountType?: 'teacher' | 'student', useMetaMask = true) {
+    this.useMetaMask = useMetaMask;
     
     try {
-      // Request account access
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
-      // Create provider and signer
-      this.provider = new ethers.providers.Web3Provider(window.ethereum);
-      this.signer = this.provider.getSigner();
-      
-      // Check if we're on the correct network
-      const network = await this.provider.getNetwork();
-      if (network.chainId !== NETWORK_CONFIG.chainId) {
-        console.log(`Not on Polygon Mumbai. Current network: ${network.name} (${network.chainId})`);
-        console.log('Switching to Polygon Mumbai...');
-        // Prompt user to switch to Polygon Mumbai
-        await this.switchToPolygonMumbai();
+      if (useMetaMask) {
+        // Use MetaMask if available and requested
+        if (!window.ethereum) {
+          console.error('MetaMask or another web3 wallet is required when useMetaMask is true');
+          return false;
+        }
+        
+        // Request account access
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        
+        // Create provider and signer
+        this.provider = new ethers.providers.Web3Provider(window.ethereum);
+        this.signer = this.provider.getSigner();
+        
+        // Check if we're on the correct network
+        const network = await this.provider.getNetwork();
+        if (network.chainId !== NETWORK_CONFIG.chainId) {
+          console.log(`Not on Polygon Mumbai. Current network: ${network.name} (${network.chainId})`);
+          console.log('Switching to Polygon Mumbai...');
+          // Prompt user to switch to Polygon Mumbai
+          await this.switchToPolygonMumbai();
+        }
+      } else {
+        // Use a JSON RPC provider instead of MetaMask
+        console.log('Using JSON RPC provider instead of MetaMask');
+        this.provider = new ethers.providers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
+        
+        // For local wallets, we'll need to use a private key
+        // In this case, we'll use a dummy private key (will be replaced with real wallet management)
+        const dummyWallet = ethers.Wallet.createRandom().connect(this.provider);
+        this.signer = dummyWallet;
       }
       
       // Create contract instance
@@ -77,10 +92,15 @@ class BlockchainService {
       // Determine wallet type if not provided
       if (!accountType) {
         try {
-          const address = await this.getWalletAddress();
-          const isTeacher = await this.contract.isTeacher(address);
-          this.walletType = isTeacher ? 'teacher' : 'student';
-          console.log(`Wallet type determined as: ${this.walletType}`);
+          if (this.useMetaMask) {
+            const address = await this.getWalletAddress();
+            const isTeacher = await this.contract.isTeacher(address);
+            this.walletType = isTeacher ? 'teacher' : 'student';
+            console.log(`Wallet type determined as: ${this.walletType}`);
+          } else {
+            // For non-MetaMask usage, we need to explicitly set the wallet type
+            this.walletType = 'teacher'; // Default to teacher for non-MetaMask
+          }
         } catch (error) {
           console.error('Error determining wallet type:', error);
           // Default to student if we can't determine
@@ -95,6 +115,48 @@ class BlockchainService {
       return true;
     } catch (error) {
       console.error('Error initializing blockchain service:', error);
+      return false;
+    }
+  }
+  
+  // Method to switch to Polygon Mumbai network (used by initialize)
+  async switchToPolygonMumbai() {
+    if (!window.ethereum) return false;
+    
+    try {
+      // Try to switch to Polygon Mumbai
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: `0x${NETWORK_CONFIG.chainId.toString(16)}` }],
+      });
+      return true;
+    } catch (switchError: any) {
+      // This error code indicates that the chain has not been added to MetaMask
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: `0x${NETWORK_CONFIG.chainId.toString(16)}`,
+                chainName: NETWORK_CONFIG.name,
+                rpcUrls: [NETWORK_CONFIG.rpcUrl],
+                blockExplorerUrls: [NETWORK_CONFIG.blockExplorerUrl],
+                nativeCurrency: {
+                  name: 'MATIC',
+                  symbol: 'MATIC',
+                  decimals: 18,
+                },
+              },
+            ],
+          });
+          return true;
+        } catch (addError) {
+          console.error('Error adding Polygon Mumbai to MetaMask:', addError);
+          return false;
+        }
+      }
+      console.error('Error switching to Polygon Mumbai:', switchError);
       return false;
     }
   }
@@ -168,9 +230,45 @@ class BlockchainService {
     return true;
   }
   
+  // Create a simulated blockchain NFT without actually minting on chain
+  async simulateMintBlockWard(studentAddress: string, metadata: any) {
+    console.log('Simulating blockchain mint without using MetaMask');
+    
+    try {
+      // Generate a random token ID (in a real implementation this would come from the blockchain)
+      const tokenId = `simulated-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+      
+      // Create a structured metadata object similar to what would be on-chain
+      const tokenMetadata = {
+        name: metadata.name || 'BlockWard Award',
+        description: metadata.description || 'Educational achievement award',
+        image: metadata.image || '',
+        attributes: metadata.attributes || [],
+        created_at: new Date().toISOString(),
+      };
+      
+      // Return similar structure to what the real mint would return
+      return {
+        tokenId,
+        tokenURI: `data:application/json,${encodeURIComponent(JSON.stringify(tokenMetadata))}`,
+        success: true,
+        simulated: true
+      };
+    } catch (error: any) {
+      console.error('Error in simulateMintBlockWard:', error);
+      throw new Error(`Simulated BlockWard minting failed: ${error.message}`);
+    }
+  }
+  
   // Mint a new BlockWard NFT to a student
   async mintBlockWard(studentAddress: string, metadata: any) {
     if (!this.isInitialized) await this.initialize();
+    
+    // If not using MetaMask, use the simulate method instead
+    if (!this.useMetaMask) {
+      return await this.simulateMintBlockWard(studentAddress, metadata);
+    }
+    
     if (!this.contract) throw new Error('Contract not initialized');
     
     // Check if current wallet is a teacher
