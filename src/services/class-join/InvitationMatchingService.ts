@@ -48,7 +48,10 @@ export const InvitationMatchingService = {
           data: { 
             classroomId: invitation.classroom_id,
             invitationId: invitation.id,
-            classroom: classroom || undefined
+            classroom: classroom ? {
+              id: classroom.id,
+              name: classroom.name
+            } : undefined
           }, 
           error: null 
         };

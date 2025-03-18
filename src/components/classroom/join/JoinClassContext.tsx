@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { ClassJoinService } from '@/services/class-join';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const joinClassWithCode = async (classCode: string) => {
+  const joinClassWithCode = useCallback(async (classCode: string) => {
     if (!user) {
       setError('You must be logged in to join a class');
       toast({
@@ -122,6 +122,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       // Reset form state
       setInvitationCode('');
+      window.location.href = `/class/${foundClass.classroomId}`;
       
     } catch (err: any) {
       console.error('Exception in joinClassWithCode:', err);
@@ -134,7 +135,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const contextValue: JoinClassContextType = {
     invitationCode,
