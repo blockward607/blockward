@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, ChevronDown, ChevronUp, Plus, Send, Award, Copy, ExternalLink } from "lucide-react";
+import { Wallet, Copy, ExternalLink, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +12,6 @@ interface WalletPanelProps {
 
 export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
   const { toast } = useToast();
-  const [isExpanded, setIsExpanded] = useState(expanded);
   const [walletType, setWalletType] = useState<'user' | 'admin'>('user');
   const [isTeacher, setIsTeacher] = useState(false);
   const [nftCount, setNftCount] = useState(0);
@@ -131,88 +130,75 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
   };
 
   return (
-    <Card className={`glass-card transition-all ${isExpanded ? 'p-6' : 'p-2'}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-purple-400" />
-          {isExpanded && (
-            <div>
-              <h3 className="font-semibold">BlockWard Wallet</h3>
-              <p className="text-sm text-gray-400">{isTeacher ? 'Teacher Admin Wallet' : 'Student Wallet'}</p>
-            </div>
-          )}
+    <Card className="glass-card p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Wallet className="w-5 h-5 text-purple-400" />
+        <div>
+          <h3 className="font-semibold">BlockWard Wallet</h3>
+          <p className="text-sm text-gray-400">{isTeacher ? 'Teacher Admin Wallet' : 'Student Wallet'}</p>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </Button>
       </div>
 
-      {isExpanded && (
-        <div className="mt-4 space-y-4">
-          {address && (
-            <div className="p-3 bg-purple-900/20 rounded-lg">
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-xs text-gray-400">Wallet Address</p>
-                <div className="flex gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6" 
-                    onClick={copyAddressToClipboard}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6" 
-                    onClick={openExternalWalletViewer}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                </div>
+      <div className="space-y-4">
+        {address && (
+          <div className="p-3 bg-purple-900/20 rounded-lg">
+            <div className="flex justify-between items-center mb-1">
+              <p className="text-xs text-gray-400">Wallet Address</p>
+              <div className="flex gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6" 
+                  onClick={copyAddressToClipboard}
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6" 
+                  onClick={openExternalWalletViewer}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
               </div>
-              <p className="text-sm font-mono truncate">{address}</p>
-              <p className="text-xs text-gray-500 mt-1">Use this address to sign in to your account</p>
             </div>
-          )}
-          
-          <div className="p-4 bg-purple-900/20 rounded-lg">
-            <div className="flex justify-between mb-2">
-              <h4 className="font-medium">Balance</h4>
-              <span className="font-bold text-purple-400">{balance} points</span>
-            </div>
-            <div className="flex justify-between">
-              <h4 className="font-medium">BlockWards</h4>
-              <span className="font-bold text-purple-400">{nftCount}</span>
-            </div>
+            <p className="text-sm font-mono truncate">{address}</p>
+            <p className="text-xs text-gray-500 mt-1">Use this address to sign in to your account</p>
           </div>
-          
-          {isTeacher ? (
-            <div className="space-y-2">
-              <Link to="/wallet">
-                <Button variant="outline" className="w-full">
-                  <Send className="w-4 h-4 mr-2" />
-                  Send Points & BlockWards
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Link to="/wallet">
-                <Button className="w-full">
-                  <Wallet className="w-4 h-4 mr-2" />
-                  View My BlockWards
-                </Button>
-              </Link>
-            </div>
-          )}
+        )}
+        
+        <div className="p-4 bg-purple-900/20 rounded-lg">
+          <div className="flex justify-between mb-2">
+            <h4 className="font-medium">Balance</h4>
+            <span className="font-bold text-purple-400">{balance} points</span>
+          </div>
+          <div className="flex justify-between">
+            <h4 className="font-medium">BlockWards</h4>
+            <span className="font-bold text-purple-400">{nftCount}</span>
+          </div>
         </div>
-      )}
+        
+        {isTeacher ? (
+          <div className="space-y-2">
+            <Link to="/wallet">
+              <Button variant="outline" className="w-full">
+                <Send className="w-4 h-4 mr-2" />
+                Send Points & BlockWards
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Link to="/wallet">
+              <Button className="w-full">
+                <Wallet className="w-4 h-4 mr-2" />
+                View My BlockWards
+              </Button>
+            </Link>
+          </div>
+        )}
+      </div>
     </Card>
   );
 };
