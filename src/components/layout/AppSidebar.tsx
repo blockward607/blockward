@@ -64,7 +64,11 @@ export function AppSidebar() {
 
   const handleNavigate = (path: string) => {
     console.log(`Navigating to: ${path}`);
-    navigate(path);
+    if (location.pathname === path) {
+      window.location.href = path;
+    } else {
+      navigate(path);
+    }
   };
 
   const teacherNavGroups = [

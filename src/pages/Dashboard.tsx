@@ -19,6 +19,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     checkAuth();
+    console.log("Dashboard component mounted");
   }, []);
 
   const checkAuth = async () => {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ export const TeacherDashboard = () => {
   const [announcements, setAnnouncements] = useState<Notification[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
+  const [classrooms, setClassrooms] = useState<any[]>([]);
   const { toast } = useToast();
 
   // Fetch classroom data on component mount
@@ -42,6 +42,7 @@ export const TeacherDashboard = () => {
           if (error) throw error;
           
           if (data && data.length > 0) {
+            setClassrooms(data);
             setSelectedClassroom(data[0].id);
           }
         }
