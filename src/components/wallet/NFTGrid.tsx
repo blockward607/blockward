@@ -2,7 +2,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
-import { Trophy, Calendar } from "lucide-react";
+import { Trophy, Calendar, Award, Star, Tag } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -85,9 +85,9 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (
-          <Card key={i} className="overflow-hidden">
+          <Card key={i} className="overflow-hidden border-purple-500/20">
             <Skeleton className="h-48 w-full" />
             <div className="p-4 space-y-2">
               <Skeleton className="h-4 w-3/4" />
@@ -101,11 +101,11 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
 
   if (demoNfts.length === 0) {
     return (
-      <Card className="p-6 text-center bg-purple-900/10">
-        <Trophy className="mx-auto h-10 w-10 text-purple-400 mb-2 opacity-50" />
-        <h3 className="text-lg font-medium mb-1">No BlockWards Yet</h3>
-        <p className="text-sm text-gray-400">
-          You haven't earned any BlockWards yet. Complete tasks and achievements to earn them!
+      <Card className="p-6 text-center bg-gradient-to-br from-purple-900/10 to-indigo-900/10 border-purple-500/20">
+        <Trophy className="mx-auto h-12 w-12 text-purple-400 mb-3 opacity-60" />
+        <h3 className="text-xl font-medium mb-2">No BlockWards Yet</h3>
+        <p className="text-sm text-gray-400 max-w-md mx-auto">
+          You haven't earned any BlockWards yet. Complete tasks and achievements to earn digital recognition of your educational progress!
         </p>
       </Card>
     );
@@ -120,9 +120,17 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
     }).format(date);
   };
 
+  // Array of different icons for visual variety
+  const icons = [
+    <Trophy className="h-16 w-16 text-purple-500/60" />,
+    <Award className="h-16 w-16 text-purple-500/60" />,
+    <Star className="h-16 w-16 text-purple-500/60" />,
+    <Tag className="h-16 w-16 text-purple-500/60" />
+  ];
+
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {demoNfts.map((nft, index) => (
           <Dialog key={nft.id}>
             <DialogTrigger asChild>
@@ -132,7 +140,7 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
                 transition={{ delay: index * 0.1 }}
               >
                 <Card 
-                  className="overflow-hidden cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]"
+                  className="overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] border-purple-500/20 group"
                   onClick={() => setSelectedNFT(nft)}
                 >
                   <div className="relative h-48 overflow-hidden">
@@ -140,20 +148,21 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
                       <img 
                         src={nft.image_url || nft.metadata.image}
                         alt={nft.metadata.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full bg-gradient-to-br from-purple-600/20 to-indigo-600/20">
-                        <Trophy className="h-16 w-16 text-purple-500/60" />
+                      <div className="flex items-center justify-center h-full bg-gradient-to-br from-purple-600/20 via-indigo-600/20 to-purple-600/20">
+                        {icons[index % icons.length]}
                       </div>
                     )}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <h3 className="text-lg font-semibold text-white truncate">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-3 transform transition-transform duration-300">
+                      <h3 className="text-lg font-semibold text-white">
                         {nft.metadata.name}
                       </h3>
                     </div>
                   </div>
-                  <div className="p-4 space-y-1">
+                  <div className="p-4 space-y-2 bg-gradient-to-br from-purple-900/5 to-indigo-900/5">
                     <p className="text-sm text-gray-400 line-clamp-2">
                       {nft.metadata.description}
                     </p>
@@ -172,13 +181,16 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
                 </Card>
               </motion.div>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-[#25293A] border border-purple-500/30">
+            <DialogContent className="sm:max-w-lg bg-gradient-to-br from-[#25293A] to-[#1D2032] border border-purple-500/30">
               <DialogHeader>
-                <DialogTitle>BlockWard Details</DialogTitle>
+                <DialogTitle className="text-xl flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-purple-400" />
+                  BlockWard Details
+                </DialogTitle>
               </DialogHeader>
               {selectedNFT && selectedNFT.id === nft.id && (
-                <div className="space-y-4">
-                  <div className="relative rounded-lg overflow-hidden h-60">
+                <div className="space-y-6">
+                  <div className="relative rounded-lg overflow-hidden h-60 bg-gradient-to-br from-purple-900/20 to-indigo-900/20">
                     {nft.image_url || nft.metadata.image ? (
                       <img 
                         src={nft.image_url || nft.metadata.image}
@@ -186,24 +198,24 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full bg-gradient-to-br from-purple-600/20 to-indigo-600/20">
-                        <Trophy className="h-20 w-20 text-purple-500/60" />
+                      <div className="flex items-center justify-center h-full">
+                        {icons[index % icons.length]}
                       </div>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">{nft.metadata.name}</h3>
-                    <p className="text-sm text-gray-400 mt-1">{nft.metadata.description}</p>
+                    <h3 className="text-2xl font-bold mb-2">{nft.metadata.name}</h3>
+                    <p className="text-gray-400">{nft.metadata.description}</p>
                     
-                    <div className="grid grid-cols-2 gap-2 mt-4">
+                    <div className="grid grid-cols-2 gap-3 mt-6">
                       {nft.metadata.attributes?.map((attr, i) => (
-                        <div key={i} className="bg-purple-900/10 rounded-lg p-2">
-                          <p className="text-xs text-gray-400">{attr.trait_type}</p>
+                        <div key={i} className="bg-purple-900/10 backdrop-blur-sm rounded-lg p-3 border border-purple-500/10">
+                          <p className="text-xs text-gray-400 mb-1">{attr.trait_type}</p>
                           <p className="font-medium">{attr.value}</p>
                         </div>
                       ))}
-                      <div className="bg-purple-900/10 rounded-lg p-2">
-                        <p className="text-xs text-gray-400">Issued On</p>
+                      <div className="bg-purple-900/10 backdrop-blur-sm rounded-lg p-3 border border-purple-500/10">
+                        <p className="text-xs text-gray-400 mb-1">Issued On</p>
                         <p className="font-medium">{formatDate(nft.created_at)}</p>
                       </div>
                     </div>

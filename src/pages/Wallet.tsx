@@ -1,6 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Wallet as WalletIcon, Plus, AlertTriangle } from "lucide-react";
+import { 
+  Wallet as WalletIcon, 
+  Trophy, 
+  Send, 
+  Plus, 
+  AlertTriangle,
+  ShieldCheck,
+  ArrowRight,
+  Tag 
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +20,7 @@ import { TransferForm } from "@/components/wallet/TransferForm";
 import { NFTGrid } from "@/components/wallet/NFTGrid";
 import { NFTDisclaimer } from "@/components/wallet/NFTDisclaimer";
 import { BlockwardTemplateCreator } from "@/components/wallet/BlockwardTemplateCreator";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface NFTMetadata {
   name: string;
@@ -47,7 +58,7 @@ interface Wallet {
   type: 'user' | 'admin';
 }
 
-const Wallet = () => {
+const WalletPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -154,49 +165,116 @@ const Wallet = () => {
   }, [navigate, toast]);
 
   if (!isAuthenticated) {
-    return <div className="p-8 text-center">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="p-8 text-center animate-pulse">
+          <WalletIcon className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+          <p className="text-lg">Authenticating...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
-          <WalletIcon className="w-8 h-8 text-purple-300" />
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/50 to-indigo-900/50 p-8 shadow-lg">
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rotate-12 bg-purple-500/10 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-32 w-32 -rotate-12 bg-indigo-500/10 blur-3xl"></div>
+        
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
+              <WalletIcon className="w-8 h-8 text-purple-300" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold shimmer-text">
+                BlockWard Wallet
+              </h1>
+              <p className="text-gray-400">
+                {userRole === 'teacher' ? 'Teacher Admin Wallet' : 'Student Rewards Wallet'}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Card className="bg-purple-900/20 border-purple-500/20">
+              <CardContent className="p-3 flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-purple-400" />
+                <span className="text-sm">
+                  {wallet?.address?.substring(0, 6)}...{wallet?.address?.substring(wallet.address.length - 4)}
+                </span>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        <h1 className="text-4xl font-bold shimmer-text">
-          BlockWard Wallet
-        </h1>
       </div>
-      
-      <div className="w-full">
-        <div className="grid gap-6 md:grid-cols-[300px_1fr]">
-          <div className="space-y-6">
-            <BalanceCard 
-              balance={balance} 
-              walletAddress={wallet?.address} 
-              isLoading={isLoading} 
-            />
-            
-            {userRole === 'teacher' && (
-              <TransferForm disabled={isLoading} />
-            )}
-          </div>
 
-          <div className="space-y-6">
-            {userRole === 'teacher' ? (
-              <BlockwardTemplateCreator />
-            ) : (
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Your BlockWards</h2>
+      {/* Main Content */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        {/* Left Sidebar */}
+        <div className="md:col-span-3 space-y-6">
+          <BalanceCard 
+            balance={balance} 
+            walletAddress={wallet?.address} 
+            isLoading={isLoading} 
+          />
+          
+          {userRole === 'teacher' && (
+            <Card className="overflow-hidden border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+              <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Send className="h-5 w-5 text-purple-400" />
+                  Teacher Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <TransferForm disabled={isLoading} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+        
+        {/* Main Content Area */}
+        <div className="md:col-span-9 space-y-6">
+          {userRole === 'teacher' ? (
+            <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+              <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Plus className="h-5 w-5 text-purple-400" />
+                  Create BlockWard Templates
+                </CardTitle>
+                <CardDescription>
+                  Design custom BlockWards to award to your students
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <BlockwardTemplateCreator />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+              <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Trophy className="h-5 w-5 text-purple-400" />
+                  Your BlockWards
+                </CardTitle>
+                <CardDescription>
+                  Collect these digital achievements to showcase your educational progress
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
                 <NFTGrid nfts={nfts} isLoading={isLoading} />
-                <NFTDisclaimer />
-              </div>
-            )}
-          </div>
+                <div className="mt-4">
+                  <NFTDisclaimer />
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default Wallet;
+export default WalletPage;
