@@ -25,11 +25,13 @@ export const TeacherDashboard = () => {
       }
       
       // Only prevent navigation away from dashboard if it's not intentional
-      if (!e.currentTarget.location.pathname.includes('classes')) {
+      if (!window.location.pathname.includes('classes')) {
         e.preventDefault();
         console.log("Preventing unintended navigation");
       }
     };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     // Clean up the event listener on component unmount
     return () => {
