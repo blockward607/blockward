@@ -11,7 +11,6 @@ import { BalanceCard } from "@/components/wallet/BalanceCard";
 import { TransferForm } from "@/components/wallet/TransferForm";
 import { NFTGrid } from "@/components/wallet/NFTGrid";
 import { NFTDisclaimer } from "@/components/wallet/NFTDisclaimer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BlockwardTemplateCreator } from "@/components/wallet/BlockwardTemplateCreator";
 
 interface NFTMetadata {
@@ -59,7 +58,6 @@ const Wallet = () => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null);
-  const [activeTab, setActiveTab] = useState('create');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -190,22 +188,7 @@ const Wallet = () => {
 
           <div className="space-y-6">
             {userRole === 'teacher' ? (
-              <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="create">Create BlockWard</TabsTrigger>
-                  <TabsTrigger value="collection">My Collection</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="create">
-                  <BlockwardTemplateCreator />
-                </TabsContent>
-
-                <TabsContent value="collection" className="space-y-4">
-                  <h2 className="text-xl font-semibold">Your BlockWards</h2>
-                  <NFTGrid nfts={nfts} isLoading={isLoading} />
-                  <NFTDisclaimer />
-                </TabsContent>
-              </Tabs>
+              <BlockwardTemplateCreator />
             ) : (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Your BlockWards</h2>

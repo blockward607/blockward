@@ -3,13 +3,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TemplateSelector } from "@/components/nft/TemplateSelector";
-import { ImagePlus, Loader2, Shield, AlertTriangle } from "lucide-react";
+import { ImagePlus, Loader2, Shield, AlertTriangle, Trophy, LayoutTemplate } from "lucide-react";
 import { StudentSelect } from "@/components/nft/StudentSelect";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BlockchainWalletPanel } from "@/components/wallet/BlockchainWalletPanel";
 import { blockchainService } from '@/blockchain/services/BlockchainService';
 import { Switch } from "@/components/ui/switch";
+import { NFTAwardForm } from "@/components/nft/NFTAwardForm";
+import { NFTImageUpload } from "@/components/nft/NFTImageUpload";
 
 // Template interface
 interface Template {
@@ -30,6 +32,14 @@ export const BlockwardTemplateCreator = () => {
   const [isBlockchainMinting, setIsBlockchainMinting] = useState(false);
   const [studentWalletAddress, setStudentWalletAddress] = useState<string | null>(null);
   const [connectedWalletAddress, setConnectedWalletAddress] = useState<string | null>(null);
+  const [useTemplate, setUseTemplate] = useState(true);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    points: 100,
+    nftType: "academic"
+  });
 
   // Predefined templates - same as in CreateNFTAward
   const templates = [
@@ -110,11 +120,20 @@ export const BlockwardTemplateCreator = () => {
   };
 
   const createBlockward = async () => {
-    if (!selectedTemplate || !selectedStudent) {
+    if (useTemplate && (!selectedTemplate || !selectedStudent)) {
       toast({
         variant: "destructive",
         title: "Missing information",
         description: "Please select both a template and a student"
+      });
+      return;
+    }
+
+    if (!useTemplate && (!formData.title || !formData.description || !imageUrl || !selectedStudent)) {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please fill in all required fields for custom award"
       });
       return;
     }
@@ -124,17 +143,6 @@ export const BlockwardTemplateCreator = () => {
         variant: "destructive",
         title: "Error",
         description: "Student wallet address not found"
-      });
-      return;
-    }
-
-    // Find the selected template
-    const template = templates.find(t => t.id === selectedTemplate);
-    if (!template) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Selected template not found"
       });
       return;
     }
@@ -157,25 +165,60 @@ export const BlockwardTemplateCreator = () => {
         }
       }
 
-      // Create metadata from template
-      const metadata = {
-        name: template.title,
-        description: template.description,
-        points: template.points,
-        type: template.type,
-        image: template.imageUrl,
-        created_at: new Date().toISOString(),
-        attributes: [
-          {
-            trait_type: "Type",
-            value: template.type
-          },
-          {
-            trait_type: "Points",
-            value: template.points.toString()
-          }
-        ]
-      };
+      // Get metadata from either template or custom form
+      let metadata;
+      
+      if (useTemplate) {
+        // Find the selected template
+        const template = templates.find(t => t.id === selectedTemplate);
+        if (!template) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Selected template not found"
+          });
+          setLoading(false);
+          return;
+        }
+        
+        metadata = {
+          name: template.title,
+          description: template.description,
+          points: template.points,
+          type: template.type,
+          image: template.imageUrl,
+          created_at: new Date().toISOString(),
+          attributes: [
+            {
+              trait_type: "Type",
+              value: template.type
+            },
+            {
+              trait_type: "Points",
+              value: template.points.toString()
+            }
+          ]
+        };
+      } else {
+        metadata = {
+          name: formData.title,
+          description: formData.description,
+          points: formData.points,
+          type: formData.nftType,
+          image: imageUrl,
+          created_at: new Date().toISOString(),
+          attributes: [
+            {
+              trait_type: "Type",
+              value: formData.nftType
+            },
+            {
+              trait_type: "Points",
+              value: formData.points.toString()
+            }
+          ]
+        };
+      }
 
       let blockchainResult;
       
@@ -191,7 +234,7 @@ export const BlockwardTemplateCreator = () => {
       }
 
       // Save to database
-      await saveToDatabase(blockchainResult, template);
+      await saveToDatabase(blockchainResult, metadata);
 
       toast({
         title: "Success",
@@ -203,6 +246,13 @@ export const BlockwardTemplateCreator = () => {
       // Reset form
       setSelectedTemplate("");
       setSelectedStudent("");
+      setFormData({
+        title: "",
+        description: "",
+        points: 100,
+        nftType: "academic"
+      });
+      setImageUrl(null);
       
     } catch (error: any) {
       console.error("Error creating BlockWard:", error);
@@ -217,7 +267,7 @@ export const BlockwardTemplateCreator = () => {
     }
   };
 
-  const saveToDatabase = async (blockchainResult: any, template: Template) => {
+  const saveToDatabase = async (blockchainResult: any, metadata: any) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -246,26 +296,6 @@ export const BlockwardTemplateCreator = () => {
         throw studentWalletError;
       }
       
-      // Create metadata
-      const metadata = {
-        name: template.title,
-        description: template.description,
-        points: template.points,
-        type: template.type,
-        image: template.imageUrl,
-        created_at: new Date().toISOString(),
-        attributes: [
-          {
-            trait_type: "Type",
-            value: template.type
-          },
-          {
-            trait_type: "Points",
-            value: template.points.toString()
-          }
-        ]
-      };
-      
       // Insert NFT record
       const { data: nft, error: nftError } = await supabase
         .from('nfts')
@@ -274,7 +304,7 @@ export const BlockwardTemplateCreator = () => {
           contract_address: BLOCKWARD_NFT_CONTRACT_ADDRESS,
           metadata,
           creator_wallet_id: teacherWallet.id,
-          image_url: template.imageUrl,
+          image_url: metadata.image,
           owner_wallet_id: studentWallet.id,
           network: "testnet",
         })
@@ -300,7 +330,7 @@ export const BlockwardTemplateCreator = () => {
       const { error: incrementError } = await supabase
         .rpc('increment_student_points', {
           student_id: selectedStudent,
-          points_to_add: template.points
+          points_to_add: metadata.points
         });
 
       if (incrementError) throw incrementError;
@@ -315,13 +345,60 @@ export const BlockwardTemplateCreator = () => {
   return (
     <Card className="p-6 glass-card">
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold">Create BlockWard from Template</h2>
+        <div className="flex items-center gap-4 mb-2">
+          <Trophy className="w-6 h-6 text-purple-400" />
+          <h2 className="text-2xl font-semibold text-purple-400">Create BlockWard Award</h2>
+        </div>
         
-        <TemplateSelector
-          templates={templates}
-          selectedTemplate={selectedTemplate}
-          onSelect={setSelectedTemplate}
-        />
+        <div className="flex overflow-hidden rounded-lg">
+          <button
+            type="button"
+            className={`flex-1 py-3 px-4 text-center font-medium transition-all flex items-center justify-center ${
+              useTemplate
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+            onClick={() => setUseTemplate(true)}
+          >
+            <LayoutTemplate className="w-4 h-4 mr-2" />
+            Use Template
+          </button>
+          <button
+            type="button"
+            className={`flex-1 py-3 px-4 text-center font-medium transition-all flex items-center justify-center ${
+              !useTemplate
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+            onClick={() => setUseTemplate(false)}
+          >
+            <ImagePlus className="w-4 h-4 mr-2" />
+            Custom Award
+          </button>
+        </div>
+        
+        {useTemplate ? (
+          <>
+            <h3 className="text-lg font-medium">Select a Template</h3>
+            <TemplateSelector
+              templates={templates}
+              selectedTemplate={selectedTemplate}
+              onSelect={setSelectedTemplate}
+            />
+          </>
+        ) : (
+          <>
+            <NFTAwardForm 
+              formData={formData}
+              onChange={setFormData}
+            />
+
+            <NFTImageUpload
+              imageUrl={imageUrl}
+              onImageSelect={setImageUrl}
+            />
+          </>
+        )}
         
         <div>
           <h3 className="text-md font-medium mb-2">Select Student</h3>
@@ -382,7 +459,7 @@ export const BlockwardTemplateCreator = () => {
         <div className="flex justify-end">
           <Button 
             onClick={createBlockward} 
-            disabled={loading || !selectedTemplate || !selectedStudent || (useMetaMask && !connectedWalletAddress)}
+            disabled={loading || (useTemplate && !selectedTemplate) || !selectedStudent || (useMetaMask && !connectedWalletAddress) || (!useTemplate && (!formData.title || !formData.description || !imageUrl))}
             className="bg-purple-600 hover:bg-purple-700"
           >
             {loading ? (
