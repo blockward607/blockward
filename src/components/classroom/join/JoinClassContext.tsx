@@ -4,21 +4,29 @@ import { ClassJoinService } from '@/services/class-join';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 
-// Define context type
+// Define context type with all required properties
 type JoinClassContextType = {
-  code: string;
-  setCode: (code: string) => void;
-  isProcessing: boolean;
+  invitationCode: string;
+  setInvitationCode: (code: string) => void;
+  scannerOpen: boolean;
+  setScannerOpen: (open: boolean) => void;
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
   error: string | null;
+  setError: (error: string | null) => void;
   joinClassWithCode: (code: string) => Promise<void>;
 };
 
-// Create context with default values
+// Create context with default values for all properties
 const JoinClassContext = createContext<JoinClassContextType>({
-  code: '',
-  setCode: () => {},
-  isProcessing: false,
+  invitationCode: '',
+  setInvitationCode: () => {},
+  scannerOpen: false,
+  setScannerOpen: () => {},
+  loading: false,
+  setLoading: () => {},
   error: null,
+  setError: () => {},
   joinClassWithCode: async () => {},
 });
 
@@ -26,8 +34,9 @@ const JoinClassContext = createContext<JoinClassContextType>({
 export const useJoinClassContext = () => useContext(JoinClassContext);
 
 export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [code, setCode] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [invitationCode, setInvitationCode] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -44,7 +53,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     try {
-      setIsProcessing(true);
+      setLoading(true);
       setError(null);
       console.log('Attempting to join class with code:', classCode);
 
@@ -112,7 +121,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
       
       // Reset form state
-      setCode('');
+      setInvitationCode('');
       
     } catch (err: any) {
       console.error('Exception in joinClassWithCode:', err);
@@ -123,15 +132,19 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         variant: 'destructive',
       });
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
   const contextValue: JoinClassContextType = {
-    code,
-    setCode,
-    isProcessing,
+    invitationCode,
+    setInvitationCode,
+    scannerOpen,
+    setScannerOpen,
+    loading,
+    setLoading,
     error,
+    setError,
     joinClassWithCode,
   };
 

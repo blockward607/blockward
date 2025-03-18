@@ -1,16 +1,27 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { JoinClassroomResult } from "./types";
+
+export interface JoinClassResult {
+  data: {
+    classroomId: string;
+    invitationId: string | null;
+    classroom?: {
+      id: string;
+      name?: string;
+    };
+  } | null;
+  error: { message: string } | null;
+}
 
 export const InvitationMatchingService = {
   // Try all possible ways to find a classroom or invitation
-  async findClassroomOrInvitation(code: string): Promise<JoinClassroomResult> {
+  async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
     console.log("Trying to find classroom or invitation with code:", code);
     try {
       // 1. First try to find a direct class invitation by token
       const { data: invitation, error: invitationError } = await supabase
         .from('class_invitations')
-        .select('id, classroom_id, invitation_token, status, expires_at')
+        .select('id, classroom_id, invitation_token, status, expires_at, classrooms(id, name)')
         .eq('invitation_token', code)
         .eq('status', 'pending')
         .maybeSingle();
@@ -29,7 +40,8 @@ export const InvitationMatchingService = {
         return { 
           data: { 
             classroomId: invitation.classroom_id,
-            invitationId: invitation.id
+            invitationId: invitation.id,
+            classroom: invitation.classrooms
           }, 
           error: null 
         };
@@ -38,7 +50,7 @@ export const InvitationMatchingService = {
       // 2. If no direct match, try to find the classroom by code
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
-        .select('id')
+        .select('id, name')
         .eq('join_code', code)
         .maybeSingle();
         
@@ -48,7 +60,8 @@ export const InvitationMatchingService = {
         return { 
           data: { 
             classroomId: classroom.id,
-            invitationId: null
+            invitationId: null,
+            classroom: classroom
           }, 
           error: null 
         };
