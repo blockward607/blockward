@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Grid, Calendar } from "lucide-react";
+import { Grid, Calendar, BookOpen } from "lucide-react";
 
 export const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -17,11 +17,39 @@ export const TeacherDashboard = () => {
     navigate('/classroom/seating');
   };
 
+  const handleNavigateToClasses = () => {
+    console.log("Navigating to classes page");
+    navigate('/classes');
+  };
+
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold mb-6 gradient-text">Teacher Dashboard</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Classes Card */}
+        <Card 
+          className="p-6 bg-gradient-to-br from-purple-900/30 to-black border-purple-500/30 hover:shadow-lg transition-all cursor-pointer" 
+          onClick={handleNavigateToClasses}
+        >
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-purple-600/30 flex items-center justify-center mb-4">
+              <BookOpen className="h-8 w-8 text-purple-300" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Classes</h3>
+            <p className="text-gray-300 mb-4">Manage your classes and students</p>
+            <Button 
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNavigateToClasses();
+              }}
+            >
+              Manage Classes
+            </Button>
+          </div>
+        </Card>
+
         {/* Attendance Card */}
         <Card 
           className="p-6 bg-gradient-to-br from-blue-900/30 to-black border-blue-500/30 hover:shadow-lg transition-all cursor-pointer" 

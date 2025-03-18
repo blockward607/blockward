@@ -27,7 +27,8 @@ import {
   LogOut,
   ChevronsLeft,
   ChevronsRight,
-  ChartBar
+  ChartBar,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ export function AppSidebar() {
       name: "Main",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },
     {
@@ -112,6 +114,7 @@ export function AppSidebar() {
       name: "Main",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },
     {
