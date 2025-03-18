@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, ImagePlus, Loader2, LayoutTemplate, Shield } from "lucide-react";
+import { Trophy, ImagePlus, Loader2, LayoutTemplate, Shield, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NFTImageUpload } from "./NFTImageUpload";
@@ -9,6 +9,8 @@ import { StudentSelect } from "./StudentSelect";
 import { NFTAwardForm } from "./NFTAwardForm";
 import { TemplateSelector } from "./TemplateSelector";
 import { blockchainService } from '@/blockchain/services/BlockchainService';
+import { BlockchainWalletPanel } from "@/components/wallet/BlockchainWalletPanel";
+import { Switch } from "@/components/ui/switch";
 
 export const CreateNFTAward = () => {
   const { toast } = useToast();
@@ -19,6 +21,8 @@ export const CreateNFTAward = () => {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [isBlockchainMinting, setIsBlockchainMinting] = useState(false);
   const [studentWalletAddress, setStudentWalletAddress] = useState<string | null>(null);
+  const [useMetaMask, setUseMetaMask] = useState(false);
+  const [connectedWalletAddress, setConnectedWalletAddress] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -132,6 +136,14 @@ export const CreateNFTAward = () => {
     }
   };
 
+  const handleWalletConnect = (address: string) => {
+    setConnectedWalletAddress(address);
+    toast({
+      title: "Wallet Connected",
+      description: `Connected to blockchain with address: ${address.substring(0, 8)}...`
+    });
+  };
+
   const handleBlockchainMint = async () => {
     if (!studentWalletAddress) {
       toast({
@@ -145,7 +157,7 @@ export const CreateNFTAward = () => {
     setIsBlockchainMinting(true);
     
     try {
-      const initialized = await blockchainService.initialize('teacher', false);
+      const initialized = await blockchainService.initialize('teacher', useMetaMask);
       if (!initialized) {
         toast({
           variant: "destructive",
@@ -176,13 +188,15 @@ export const CreateNFTAward = () => {
 
       const result = await blockchainService.mintBlockWard(studentWalletAddress, metadata);
       
-      console.log("BlockWard simulated on blockchain:", result);
+      console.log("BlockWard minted on blockchain:", result);
       
       await handleSaveToDatabase(result);
       
       toast({
         title: "Success",
-        description: "BlockWard successfully created and will be transferred to the student's blockchain wallet!",
+        description: useMetaMask 
+          ? "BlockWard successfully minted on the blockchain!" 
+          : "BlockWard successfully created and simulated on the blockchain!",
       });
       
       setFormData({ title: "", description: "", points: 100, nftType: "academic" });
@@ -389,36 +403,66 @@ export const CreateNFTAward = () => {
             </div>
           )}
         </div>
-
+        
         <div className="border border-dashed border-purple-500/30 p-4 rounded-lg">
           <h3 className="text-lg font-semibold mb-3 text-purple-300">Blockchain Integration</h3>
-          <p className="text-sm text-gray-400 mb-4">
-            BlockWard NFTs will be created and stored in our system, ready to be transferred to blockchain wallets when funded with gas fees.
-          </p>
           
-          <div className="bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/30 flex items-center mt-2">
-            <Shield className="h-5 w-5 text-indigo-400 mr-3" />
-            <div className="text-sm text-indigo-300">
-              Simulated blockchain mint will process NFTs within our system without requiring MetaMask or gas fees.
-            </div>
+          <div className="flex items-center space-x-2 mb-4">
+            <Switch 
+              id="use-metamask" 
+              checked={useMetaMask} 
+              onCheckedChange={setUseMetaMask} 
+            />
+            <label 
+              htmlFor="use-metamask" 
+              className="text-sm cursor-pointer"
+            >
+              Use MetaMask for actual blockchain transactions
+            </label>
           </div>
+          
+          {useMetaMask ? (
+            <>
+              <BlockchainWalletPanel 
+                onConnect={handleWalletConnect} 
+                accountType="teacher"
+              />
+              
+              {!connectedWalletAddress && (
+                <div className="bg-amber-900/20 p-3 rounded-lg border border-amber-500/30 flex items-center mt-4">
+                  <AlertTriangle className="h-5 w-5 text-amber-400 mr-3" />
+                  <div className="text-sm text-amber-300">
+                    Connect your MetaMask wallet above to mint BlockWards directly on the blockchain. 
+                    Make sure your wallet has MATIC tokens for gas fees.
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/30 flex items-center mt-2">
+              <Shield className="h-5 w-5 text-indigo-400 mr-3" />
+              <div className="text-sm text-indigo-300">
+                Simulated blockchain mint will process NFTs within our system without requiring MetaMask or gas fees.
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end">
           <Button 
             type="submit" 
-            disabled={loading || !formData.title || !formData.description || !imageUrl || !selectedStudent}
+            disabled={loading || !formData.title || !formData.description || !imageUrl || !selectedStudent || (useMetaMask && !connectedWalletAddress)}
             className="bg-purple-600 hover:bg-purple-700"
           >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
+                {isBlockchainMinting ? "Minting..." : "Creating..."}
               </>
             ) : (
               <>
                 <ImagePlus className="w-4 h-4 mr-2" />
-                Create BlockWard Award
+                {useMetaMask ? "Mint Blockchain NFT" : "Create BlockWard Award"}
               </>
             )}
           </Button>

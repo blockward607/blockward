@@ -37,7 +37,7 @@ const NETWORK_CONFIG = {
 const BLOCKWARD_NFT_CONTRACT_ADDRESS = '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1'; // Replace this with your actual deployed contract address
 
 class BlockchainService {
-  private provider: ethers.providers.Web3Provider | null = null;
+  private provider: ethers.providers.Provider | null = null;
   private signer: ethers.Signer | null = null;
   private contract: ethers.Contract | null = null;
   private isInitialized = false;
@@ -61,7 +61,7 @@ class BlockchainService {
         
         // Create provider and signer
         this.provider = new ethers.providers.Web3Provider(window.ethereum);
-        this.signer = this.provider.getSigner();
+        this.signer = (this.provider as ethers.providers.Web3Provider).getSigner();
         
         // Check if we're on the correct network
         const network = await this.provider.getNetwork();
