@@ -61,46 +61,44 @@ export const StudentGradeList = ({ grades, loading }: StudentGradeListProps) => 
               : null;
             
             return (
-              <>
-                <TableRow 
-                  key={assignment.id} 
-                  className={`cursor-pointer hover:bg-purple-900/20 ${isSelected ? 'bg-purple-900/10' : ''}`}
-                  onClick={() => toggleFeedback(assignment.id)}
-                >
-                  <TableCell className="font-medium">
-                    {assignment.title}
-                    {isSelected && grade?.feedback && (
-                      <div className="mt-2 text-sm text-gray-400">
-                        <span className="block font-bold text-purple-400 mb-1">Feedback:</span>
-                        {grade.feedback}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">{dueDate}</TableCell>
-                  <TableCell className="text-right">
-                    {grade ? (
-                      `${grade.points_earned} / ${assignment.points_possible}`
-                    ) : (
-                      <Badge variant="outline">Not graded</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {percentage !== null ? (
-                      <Badge className={`${
-                        percentage >= 90 ? 'bg-green-500' :
-                        percentage >= 80 ? 'bg-blue-500' :
-                        percentage >= 70 ? 'bg-yellow-500' :
-                        percentage >= 60 ? 'bg-orange-500' :
-                        'bg-red-500'
-                      }`}>
-                        {percentage}%
-                      </Badge>
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                </TableRow>
-              </>
+              <TableRow 
+                key={assignment.id} 
+                className={`cursor-pointer hover:bg-purple-900/20 ${isSelected ? 'bg-purple-900/10' : ''}`}
+                onClick={() => toggleFeedback(assignment.id)}
+              >
+                <TableCell className="font-medium">
+                  {assignment.title}
+                  {isSelected && grade?.feedback && (
+                    <div className="mt-2 text-sm text-gray-400">
+                      <span className="block font-bold text-purple-400 mb-1">Feedback:</span>
+                      {grade.feedback}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">{dueDate}</TableCell>
+                <TableCell className="text-right">
+                  {grade ? (
+                    `${grade.points_earned} / ${assignment.points_possible}`
+                  ) : (
+                    <Badge variant="outline">Not graded</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {percentage !== null ? (
+                    <Badge className={`${
+                      percentage >= 90 ? 'bg-green-500' :
+                      percentage >= 80 ? 'bg-blue-500' :
+                      percentage >= 70 ? 'bg-yellow-500' :
+                      percentage >= 60 ? 'bg-orange-500' :
+                      'bg-red-500'
+                    }`}>
+                      {percentage}%
+                    </Badge>
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
+              </TableRow>
             );
           })}
         </TableBody>

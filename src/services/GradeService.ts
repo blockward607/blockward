@@ -27,6 +27,11 @@ export const GradeService = {
 
   // Create a new assignment
   async createAssignment(assignment: Partial<Assignment>) {
+    // Ensure title is present before insertion
+    if (!assignment.title) {
+      return { data: null, error: new Error('Assignment title is required') };
+    }
+    
     const { data, error } = await supabase
       .from('assignments')
       .insert(assignment)

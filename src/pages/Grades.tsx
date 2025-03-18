@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStudentData } from "@/components/student-dashboard/hooks/useStudentData";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrades } from "@/hooks/use-grades";
