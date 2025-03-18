@@ -30,7 +30,6 @@ const Classes = () => {
     console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
     // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
-    toast.success("Classes page loaded successfully");
     
     // Check for invitation code in URL params
     const queryParams = new URLSearchParams(location.search);
