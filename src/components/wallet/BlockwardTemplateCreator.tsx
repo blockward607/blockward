@@ -38,9 +38,7 @@ export const BlockwardTemplateCreator = () => {
     points: 100,
     nftType: "academic"
   });
-
-  // Predefined templates with subject-specific options
-  const templates = [
+  const [templates, setTemplates] = useState<Template[]>([
     {
       id: "math-excellence",
       title: "Mathematics Excellence Award",
@@ -86,7 +84,62 @@ export const BlockwardTemplateCreator = () => {
       imageUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071",
       icon: <Palette className="w-4 h-4 text-white" />
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    fetchCustomTemplates();
+  }, []);
+
+  const fetchCustomTemplates = async () => {
+    try {
+      const { data: nfts, error } = await supabase
+        .from('nfts')
+        .select('*')
+        .is('owner_wallet_id', null)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      if (nfts && nfts.length > 0) {
+        const customTemplates = nfts.map(nft => {
+          const metadata = typeof nft.metadata === 'string' 
+            ? JSON.parse(nft.metadata) 
+            : nft.metadata;
+            
+          return {
+            id: `custom-${nft.id}`,
+            title: metadata.name || "Custom BlockWard",
+            description: metadata.description || "Custom educational achievement award",
+            points: metadata.points || 100,
+            type: metadata.type || "academic",
+            imageUrl: nft.image_url || "https://images.unsplash.com/photo-1569025690938-a00729c9e1f9",
+            icon: getIconForType(metadata.type || "academic"),
+          };
+        });
+        
+        setTemplates(prevTemplates => {
+          // Filter out existing custom templates to avoid duplicates
+          const standardTemplates = prevTemplates.filter(t => !t.id.startsWith('custom-'));
+          return [...standardTemplates, ...customTemplates];
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching custom templates:', error);
+    }
+  };
+  
+  const getIconForType = (type: string): JSX.Element => {
+    switch (type) {
+      case 'academic': return <Trophy className="w-4 h-4 text-white" />;
+      case 'math': return <Pi className="w-4 h-4 text-white" />;
+      case 'science': return <Atom className="w-4 h-4 text-white" />;
+      case 'computer': return <Code className="w-4 h-4 text-white" />;
+      case 'physical': return <Dumbbell className="w-4 h-4 text-white" />;
+      case 'special': 
+      case 'creative': 
+      default: return <Palette className="w-4 h-4 text-white" />;
+    }
+  };
 
   const handleWalletConnect = (address: string) => {
     setConnectedWalletAddress(address);
@@ -109,7 +162,7 @@ export const BlockwardTemplateCreator = () => {
         setImageUrl(template.imageUrl);
       }
     }
-  }, [selectedTemplate, useTemplate]);
+  }, [selectedTemplate, useTemplate, templates]);
 
   const createBlockward = async () => {
     if (useTemplate && !selectedTemplate) {
@@ -241,6 +294,24 @@ export const BlockwardTemplateCreator = () => {
         description: "BlockWard created successfully! It's now available in your wallet to transfer to students."
       });
 
+      // If this was a custom BlockWard, add it to the templates
+      if (!useTemplate) {
+        const newCustomTemplate = {
+          id: `custom-${nft.id}`,
+          title: formData.title,
+          description: formData.description,
+          points: formData.points,
+          type: formData.nftType,
+          imageUrl: imageUrl as string,
+          icon: getIconForType(formData.nftType)
+        };
+        
+        setTemplates(prevTemplates => [...prevTemplates, newCustomTemplate]);
+      }
+
+      // Refresh the custom templates list
+      fetchCustomTemplates();
+      
       // Reset form
       setSelectedTemplate("");
       setFormData({
