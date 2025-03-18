@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Grid, QrCode, Calendar } from "lucide-react";
+import { BookOpen, Grid, Calendar } from "lucide-react";
 
 export const TeacherDashboard = () => {
   const navigate = useNavigate();
