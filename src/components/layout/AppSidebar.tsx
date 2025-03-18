@@ -65,9 +65,8 @@ export function AppSidebar() {
     navigate('/auth');
   };
 
-  const handleToggleSidebar = () => {
-    setIsMinimized(!isMinimized);
-    toggleSidebar(); // Use the shadcn sidebar toggle functionality
+  const handleNavigate = (path: string) => {
+    navigate(path);
   };
 
   const teacherNavGroups = [
@@ -140,8 +139,6 @@ export function AppSidebar() {
 
   const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
   
-  const mainNavItems = navGroups[0].items || [];
-
   return (
     <>
       <div className={cn(
@@ -152,7 +149,7 @@ export function AppSidebar() {
         <Button 
           size="icon" 
           variant="secondary" 
-          onClick={handleToggleSidebar}
+          onClick={() => toggleSidebar()}
           className="h-8 w-8 rounded-full bg-purple-900 border border-purple-500/30 hover:bg-purple-800 shadow-lg"
         >
           {isMinimized ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
@@ -166,44 +163,17 @@ export function AppSidebar() {
         <div className="flex flex-col h-full w-full">
           <SidebarHeader className="flex items-center px-6 py-6">
             {!isMinimized && (
-              <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600" onClick={() => navigate('/')}>
+              <div 
+                className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 cursor-pointer" 
+                onClick={() => handleNavigate('/')}
+              >
                 BlockWard
               </div>
             )}
           </SidebarHeader>
           
           <SidebarContent className="flex-1 overflow-y-auto w-full">
-            <SidebarMenu className="px-2 mt-2 mb-6 w-full">
-              {mainNavItems.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={isActive}
-                      tooltip={isMinimized ? item.name : undefined}
-                      className={cn(
-                        "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
-                        isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
-                      )}
-                    >
-                      <div 
-                        onClick={() => navigate(item.href)} 
-                        className={cn(
-                          "cursor-pointer flex items-center w-full",
-                          isActive ? "text-white font-semibold" : "text-gray-300"
-                        )}
-                      >
-                        <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
-                        {!isMinimized && <span className="ml-3">{item.name}</span>}
-                      </div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-            
-            {navGroups.slice(1).map((group) => (
+            {navGroups.map((group) => (
               <SidebarGroup key={group.name} className="w-full">
                 {!isMinimized && (
                   <SidebarGroupLabel className="text-gray-300 font-semibold px-4">{group.name}</SidebarGroupLabel>
@@ -212,8 +182,9 @@ export function AppSidebar() {
                   <SidebarMenu className="w-full">
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.href;
+                      const Icon = item.icon;
                       return (
-                        <SidebarMenuItem key={item.name} className="w-full">
+                        <SidebarMenuItem key={item.name}>
                           <SidebarMenuButton 
                             asChild 
                             isActive={isActive}
@@ -224,13 +195,13 @@ export function AppSidebar() {
                             )}
                           >
                             <div 
-                              onClick={() => navigate(item.href)} 
+                              onClick={() => handleNavigate(item.href)} 
                               className={cn(
                                 "cursor-pointer flex items-center w-full",
                                 isActive ? "text-white font-semibold" : "text-gray-300"
                               )}
                             >
-                              <item.icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
+                              <Icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
                               {!isMinimized && <span className="ml-3">{item.name}</span>}
                             </div>
                           </SidebarMenuButton>
