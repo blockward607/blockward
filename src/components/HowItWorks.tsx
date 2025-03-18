@@ -1,49 +1,68 @@
+
 import { motion } from "framer-motion";
+import { GraduationCap, Award, Calendar, Users } from "lucide-react";
 
-const steps = [
-  {
-    number: "01",
-    title: "Create Your Class",
-    description: "Set up your virtual classroom in minutes",
-  },
-  {
-    number: "02",
-    title: "Add Students",
-    description: "Invite students to join your digital learning space",
-  },
-  {
-    number: "03",
-    title: "Set Goals",
-    description: "Define achievements and milestones for your students",
-  },
-  {
-    number: "04",
-    title: "Award NFTs",
-    description: "Recognize and reward student progress with unique NFTs",
-  },
-];
+interface HowItWorksProps {
+  id?: string;
+}
 
-export const HowItWorks = () => {
+export const HowItWorks = ({ id }: HowItWorksProps) => {
+  const steps = [
+    {
+      icon: <Users className="w-10 h-10 text-purple-400" />,
+      title: "Create Your Classroom",
+      description: "Set up your virtual classroom and invite students to join via email or class code."
+    },
+    {
+      icon: <Calendar className="w-10 h-10 text-purple-400" />,
+      title: "Track Attendance",
+      description: "Easily mark attendance for your class with our intuitive attendance tracker."
+    },
+    {
+      icon: <Award className="w-10 h-10 text-purple-400" />,
+      title: "Award Achievements",
+      description: "Recognize student excellence with digital NFT achievements that are securely stored."
+    },
+    {
+      icon: <GraduationCap className="w-10 h-10 text-purple-400" />,
+      title: "Monitor Progress",
+      description: "Track student progress and engagement with detailed analytics and reports."
+    }
+  ];
+
   return (
-    <section className="py-20 bg-black/30">
-      <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-12 gradient-text">
-          How It Works
-        </h2>
+    <section id={id || "how-it-works"} className="py-20 px-4 bg-black">
+      <div className="container mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 gradient-text">
+            How Blockward Works
+          </h2>
+          <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+            Our simple process helps you create engaging classroom experiences in just a few steps
+          </p>
+        </motion.div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="relative"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="glass-card p-6 rounded-lg text-center hover:bg-purple-900/10 transition-colors duration-300"
             >
-              <div className="text-6xl font-bold text-primary/20 mb-4">
-                {step.number}
+              <div className="flex justify-center mb-4">
+                {step.icon}
               </div>
-              <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-              <p className="text-gray-400">{step.description}</p>
+              <h3 className="text-xl font-bold mb-3 text-white">{step.title}</h3>
+              <p className="text-gray-300">{step.description}</p>
             </motion.div>
           ))}
         </div>

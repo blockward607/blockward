@@ -1,109 +1,157 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { ClassJoinService } from '@/services/class-join';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
-interface JoinClassContextType {
+// Define context type with all required properties
+type JoinClassContextType = {
   invitationCode: string;
   setInvitationCode: (code: string) => void;
-  loading: boolean;
-  setLoading: (loading: boolean) => void;
   scannerOpen: boolean;
   setScannerOpen: (open: boolean) => void;
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
   error: string | null;
   setError: (error: string | null) => void;
-}
+  joinClassWithCode: (code: string) => Promise<void>;
+};
 
-const JoinClassContext = createContext<JoinClassContextType | undefined>(undefined);
+// Create context with default values for all properties
+const JoinClassContext = createContext<JoinClassContextType>({
+  invitationCode: '',
+  setInvitationCode: () => {},
+  scannerOpen: false,
+  setScannerOpen: () => {},
+  loading: false,
+  setLoading: () => {},
+  error: null,
+  setError: () => {},
+  joinClassWithCode: async () => {},
+});
 
-export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
-  // Extract code from URL if present
-  const getCodeFromURL = () => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code') || '';
-      // Preserve original case but trim whitespace
-      const normalizedCode = code.trim();
-      console.log("Got code from URL:", normalizedCode);
-      return normalizedCode;
-    } catch (e) {
-      console.error("Error getting code from URL:", e);
-      return '';
-    }
-  };
-  
-  const [invitationCode, setInvitationCode] = useState<string>(getCodeFromURL());
-  const [loading, setLoading] = useState<boolean>(false);
-  const [scannerOpen, setScannerOpen] = useState<boolean>(false);
+// Custom hook to use the context
+export const useJoinClassContext = () => useContext(JoinClassContext);
+
+export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [invitationCode, setInvitationCode] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Update code if URL changes
-  useEffect(() => {
-    const handleUrlChange = () => {
-      try {
-        const code = getCodeFromURL();
-        if (code) {
-          console.log("URL changed, updating code to:", code);
-          setInvitationCode(code);
-        }
-      } catch (e) {
-        console.error("Error updating code from URL:", e);
-      }
-    };
-
-    // Call immediately on mount
-    handleUrlChange();
-    
-    // Set up listener for URL changes
-    window.addEventListener('popstate', handleUrlChange);
-    
-    return () => {
-      window.removeEventListener('popstate', handleUrlChange);
-    };
-  }, []);
-
-  // Format invitation code on change - preserve case but trim whitespace
-  const handleSetInvitationCode = (code: string) => {
-    // Preserve original case but trim whitespace
-    const normalizedCode = code.trim();
-    setInvitationCode(normalizedCode);
-    
-    // Clear error when code changes
-    if (error) {
-      setError(null);
+  const joinClassWithCode = useCallback(async (classCode: string) => {
+    if (!user) {
+      setError('You must be logged in to join a class');
+      toast({
+        title: 'Authentication Required',
+        description: 'You must be logged in to join a class',
+        variant: 'destructive',
+      });
+      return;
     }
-  };
 
-  // Log context state for debugging
-  useEffect(() => {
-    console.log("JoinClassContext state:", { 
-      invitationCode, 
-      loading, 
-      scannerOpen,
-      error
-    });
-  }, [invitationCode, loading, scannerOpen, error]);
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Attempting to join class with code:', classCode);
+
+      // Find classroom or invitation by code
+      const { data: foundClass, error: findError } = await ClassJoinService.findClassroomOrInvitation(classCode);
+      
+      if (findError || !foundClass) {
+        console.error('Error finding class:', findError);
+        setError(findError?.message || 'Invalid class code');
+        toast({
+          title: 'Error',
+          description: findError?.message || 'Invalid class code',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      console.log('Found class/invitation:', foundClass);
+      
+      // Check if student is already enrolled
+      const { data: existingEnrollment, error: enrollmentError } = await ClassJoinService.checkEnrollment(
+        user.id,
+        foundClass.classroomId
+      );
+      
+      if (enrollmentError) {
+        console.error('Error checking enrollment:', enrollmentError);
+      }
+      
+      if (existingEnrollment) {
+        setError('You are already enrolled in this class');
+        toast({
+          title: 'Already Enrolled',
+          description: 'You are already enrolled in this class',
+        });
+        return;
+      }
+      
+      // If invitation exists, accept it
+      if (foundClass.invitationId) {
+        await ClassJoinService.acceptInvitation(foundClass.invitationId);
+      }
+      
+      // Enroll student in classroom
+      const { data: enrollment, error: enrollError } = await ClassJoinService.enrollStudent(
+        user.id,
+        foundClass.classroomId
+      );
+      
+      if (enrollError) {
+        console.error('Error enrolling student:', enrollError);
+        setError(enrollError.message || 'Failed to join class');
+        toast({
+          title: 'Error',
+          description: enrollError.message || 'Failed to join class',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      console.log('Successfully joined class:', enrollment);
+      toast({
+        title: 'Success',
+        description: 'You have successfully joined the class',
+      });
+      
+      // Reset form state
+      setInvitationCode('');
+      window.location.href = `/class/${foundClass.classroomId}`;
+      
+    } catch (err: any) {
+      console.error('Exception in joinClassWithCode:', err);
+      setError(err.message || 'An unexpected error occurred');
+      toast({
+        title: 'Error',
+        description: err.message || 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user, toast]);
+
+  const contextValue: JoinClassContextType = {
+    invitationCode,
+    setInvitationCode,
+    scannerOpen,
+    setScannerOpen,
+    loading,
+    setLoading,
+    error,
+    setError,
+    joinClassWithCode,
+  };
 
   return (
-    <JoinClassContext.Provider
-      value={{
-        invitationCode,
-        setInvitationCode: handleSetInvitationCode,
-        loading,
-        setLoading,
-        scannerOpen,
-        setScannerOpen,
-        error,
-        setError
-      }}
-    >
+    <JoinClassContext.Provider value={contextValue}>
       {children}
     </JoinClassContext.Provider>
   );
-};
-
-export const useJoinClassContext = (): JoinClassContextType => {
-  const context = useContext(JoinClassContext);
-  if (context === undefined) {
-    throw new Error("useJoinClassContext must be used within a JoinClassProvider");
-  }
-  return context;
 };

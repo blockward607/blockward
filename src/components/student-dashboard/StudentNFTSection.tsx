@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NFTCard } from "./NFTCard";
 import { motion } from "framer-motion";
+import { Award } from "lucide-react";
 
 interface NFT {
   id: string;
@@ -21,8 +22,8 @@ interface StudentNFTSectionProps {
 }
 
 export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionProps) => {
-  // For demo purposes, show some high-quality NFTs with better images
-  const demoNfts = isDemo && nfts.length === 0 ? [
+  // For demo purposes, show some high-quality demo NFTs
+  const demoNfts = isDemo ? [
     {
       id: 'demo-1',
       image_url: 'https://images.unsplash.com/photo-1607462525137-6ec8b5a75920?q=80&w=2127&auto=format&fit=crop',
@@ -47,30 +48,42 @@ export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionP
         description: 'Recognizing outstanding leadership qualities'
       }
     }
-  ] : nfts;
+  ] : [];
+  
+  const displayNfts = nfts.length > 0 ? nfts : demoNfts;
   
   return (
     <Card className="p-6 glass-card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">My NFT Achievements</h3>
+        <div className="flex items-center gap-2">
+          <Award className="w-5 h-5 text-purple-400" />
+          <h3 className="text-lg font-semibold">My NFT Achievements</h3>
+        </div>
         <Link to={isDemo ? "/auth" : "/wallet"} className="text-purple-400 hover:text-purple-300 text-sm">
           {isDemo ? "Sign up to view all" : "View all"} →
         </Link>
       </div>
       
-      {isDemo && nfts.length === 0 && !demoNfts.length ? (
+      {displayNfts.length === 0 ? (
         <div className="text-center py-4">
-          <p className="text-gray-400 mb-4">Sign up to start earning NFT achievements for your academic success.</p>
-          <Button
-            onClick={onSignUp}
-            className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
-          >
-            Create Account
-          </Button>
+          <p className="text-gray-400 mb-4">
+            {isDemo 
+              ? "Sign up to start earning NFT achievements for your academic success."
+              : "You haven't earned any NFT achievements yet."
+            }
+          </p>
+          {isDemo && (
+            <Button
+              onClick={onSignUp}
+              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
+            >
+              Create Account
+            </Button>
+          )}
         </div>
-      ) : demoNfts.length > 0 ? (
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {demoNfts.map((nft, index) => (
+          {displayNfts.map((nft, index) => (
             <motion.div
               key={nft.id}
               initial={{ opacity: 0, y: 20 }}
@@ -86,9 +99,7 @@ export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionP
             </motion.div>
           ))}
         </div>
-      ) : (
-        <p className="text-gray-400">You haven't earned any NFT achievements yet.</p>
       )}
     </Card>
   );
-};
+}

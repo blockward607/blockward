@@ -29,11 +29,13 @@ const ResetPasswordOTP = lazy(() => import("@/pages/ResetPasswordOTP"));
 const ClassroomInvite = lazy(() => import("@/pages/ClassroomInvite"));
 const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
 const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
+const Grades = lazy(() => import("@/pages/Grades"));
+const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
-      <BrowserRouter>
+    <BrowserRouter>
+      <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
         <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             {/* Public routes */}
@@ -77,12 +79,16 @@ function App() {
               <Route path="analytics" element={<Analytics />} />
               <Route path="settings" element={<Settings />} />
               <Route path="progress" element={<Progress />} />
+              {/* Add new route */}
+              <Route path="/class/:classroomId/grades" element={<Grades />} />
+              {/* Add new route */}
+              <Route path="/auth/wallet-verify" element={<WalletVerify />} />
             </Route>
           </Routes>
         </Suspense>
         <Toaster />
-      </BrowserRouter>
-    </ThemeProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 

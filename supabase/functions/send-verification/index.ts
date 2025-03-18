@@ -1,101 +1,111 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { Resend } from 'npm:resend';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface VerificationEmailRequest {
-  email: string;
-  verificationToken: string;
-  teacherName?: string;
-  className?: string;
-}
-
-const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { email, verificationToken, teacherName, className }: VerificationEmailRequest = await req.json();
-
-    let emailBody;
+    const { email, verificationToken, teacherName, className } = await req.json();
     
-    if (teacherName && className) {
-      // This is a class invitation email
-      emailBody = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-          <h1 style="color: #8b5cf6; margin-bottom: 20px;">You're Invited to Join Blockward!</h1>
-          <p style="font-size: 16px; line-height: 1.5; color: #333;">
-            <strong>${teacherName}</strong> has invited you to join their class <strong>${className}</strong> on Blockward.
-          </p>
-          <p style="font-size: 16px; line-height: 1.5; color: #333;">
-            Click the button below to join the class:
-          </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${Deno.env.get("SITE_URL")}/join-class?token=${verificationToken}" 
-               style="background-color: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-              Join Class
-            </a>
-          </div>
-          <p style="font-size: 14px; color: #666; margin-top: 30px;">
-            If you don't have a Blockward account yet, you'll be guided to create one after clicking the link.
-          </p>
-          <p style="font-size: 14px; color: #666;">
-            If you didn't expect this invitation, you can safely ignore this email.
-          </p>
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-            <p style="font-size: 14px; color: #666;">
-              Best regards,<br>The Blockward Team
-            </p>
-          </div>
-        </div>
-      `;
-    } else {
-      // This is a standard verification email
-      emailBody = `
-        <h1>Welcome to Blockward!</h1>
-        <p>Please verify your email address by clicking the link below:</p>
-        <a href="${Deno.env.get("SITE_URL")}/verify?token=${verificationToken}">
-          Verify Email
-        </a>
-        <p>If you didn't create an account, you can safely ignore this email.</p>
-        <p>Best regards,<br>The Blockward Team</p>
-      `;
+    if (!email || !verificationToken) {
+      return new Response(
+        JSON.stringify({
+          error: 'Missing required parameters: email and verificationToken are required'
+        }),
+        { 
+          status: 400,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
     }
 
-    const emailResponse = await resend.emails.send({
-      from: "Blockward <onboarding@resend.dev>",
+    console.log(`Sending verification email to ${email} with token ${verificationToken}`);
+    
+    // Initialize Resend with the API key
+    const resend = new Resend('re_NwHmfv8U_GtGzR7NHyDmHkEhxAsLKdo8t');
+    
+    // Generate the join URL with the token
+    const joinUrl = `https://blockward.app/classes?code=${verificationToken}`;
+    
+    // Send the email
+    const { data, error } = await resend.emails.send({
+      from: 'Blockward <noreply@blockward.app>',
       to: [email],
-      subject: teacherName ? `Invitation to join ${className} on Blockward` : "Verify your Blockward account",
-      html: emailBody,
+      subject: `Join ${className || 'a classroom'} on Blockward`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #7e22ce; text-align: center;">Blockward Classroom Invitation</h1>
+          <p>Hello,</p>
+          <p>${teacherName || 'A teacher'} has invited you to join their class "${className || 'Classroom'}" on Blockward, an educational platform for interactive learning.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${joinUrl}" style="background-color: #7e22ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Join Classroom</a>
+          </div>
+          <p>If the button doesn't work, you can also manually enter this code after logging in:</p>
+          <p style="text-align: center; font-family: monospace; font-size: 24px; letter-spacing: 2px; background: #f3f4f6; padding: 10px; border-radius: 4px;">${verificationToken}</p>
+          <p>If you don't have a Blockward account yet, you'll be guided to create one when you click the join link.</p>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;" />
+          <p style="color: #6b7280; font-size: 12px; text-align: center;">This is an automated message from Blockward. Please do not reply to this email.</p>
+        </div>
+      `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    if (error) {
+      console.error('Error sending email:', error);
+      return new Response(
+        JSON.stringify({
+          error: `Failed to send email: ${error.message}`
+        }), 
+        { 
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
+    }
 
-    return new Response(JSON.stringify(emailResponse), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
-  } catch (error: any) {
-    console.error("Error sending email:", error);
+    console.log('Email sent successfully:', data);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
+      JSON.stringify({
+        success: true,
+        message: 'Verification email sent successfully'
+      }),
+      { 
+        status: 200,
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Unhandled error:', error);
+    
+    return new Response(
+      JSON.stringify({
+        error: `Internal Server Error: ${error.message}`
+      }),
+      { 
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       }
     );
   }
-};
-
-serve(handler);
+});

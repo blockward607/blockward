@@ -7,7 +7,6 @@ import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
 import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
-import { useToast } from "@/hooks/use-toast";
 import { EmptyClassState } from "@/components/classroom/EmptyClassState";
 import { JoinClassProvider } from "@/components/classroom/join/JoinClassContext";
 
@@ -22,22 +21,16 @@ const Classes = () => {
     handleDeleteClassroom,
     refreshClassrooms
   } = useClassroomManagement();
-  
-  const { toast } = useToast();
 
   useEffect(() => {
-    // Log information to help debugging
     console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
-    
-    // Refresh classrooms when the page loads
     refreshClassrooms();
-  }, [userRole]);
+  }, [refreshClassrooms]);
 
   if (loading) {
     return <ClassesLoading />;
   }
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -48,6 +41,7 @@ const Classes = () => {
     }
   };
 
+  // This ensures we're actually on the Classes page and not showing announcements
   return (
     <JoinClassProvider>
       <motion.div
@@ -76,13 +70,15 @@ const Classes = () => {
             show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
           }}>
             <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 text-white">Invite Students to {selectedClassroom.name}</h2>
+              <h2 className="text-2xl font-bold mb-4 text-white">
+                Invite Students to {selectedClassroom.name}
+              </h2>
               <InviteStudents classroomId={selectedClassroom.id} />
             </div>
           </motion.div>
         )}
 
-        {classrooms.length > 0 ? (
+        {classrooms && classrooms.length > 0 ? (
           <ClassroomsList 
             classrooms={classrooms} 
             userRole={userRole} 
@@ -93,12 +89,6 @@ const Classes = () => {
         ) : (
           <EmptyClassState userRole={userRole} />
         )}
-        
-        {/* Decorative elements */}
-        <div className="hidden md:block">
-          <div className="hexagon absolute top-40 right-40 w-32 h-32 bg-gradient-to-r from-purple-500/10 to-pink-500/10 -z-10"></div>
-          <div className="hexagon absolute bottom-40 left-20 w-24 h-24 bg-gradient-to-r from-blue-500/10 to-purple-500/10 -z-10"></div>
-        </div>
       </motion.div>
     </JoinClassProvider>
   );

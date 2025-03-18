@@ -2,15 +2,17 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, ChevronDown, ChevronUp, Plus, Send } from "lucide-react";
+import { Wallet, ChevronDown, ChevronUp, Plus, Send, Award, Copy, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface WalletPanelProps {
   expanded?: boolean;
 }
 
 export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
+  const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(expanded);
   const [walletType, setWalletType] = useState<'user' | 'admin'>('user');
   const [isTeacher, setIsTeacher] = useState(false);
@@ -79,11 +81,71 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
 
       if (walletData) {
         setAddress(walletData.address);
-        // For a real app, we would fetch the actual balance here
-        setBalance(Math.floor(Math.random() * 1000));
+        
+        // For a student wallet, fetch their points as balance
+        if (walletType === 'user') {
+          const { data: studentData } = await supabase
+            .from('students')
+            .select('points')
+            .eq('user_id', session.user.id)
+            .single();
+            
+          if (studentData) {
+            setBalance(studentData.points || 0);
+          }
+        } else {
+          // For a teacher wallet, set a default balance or fetch from their profile
+          const { data: teacherData } = await supabase
+            .from('teacher_profiles')
+            .select('remaining_credits')
+            .eq('user_id', session.user.id)
+            .single();
+            
+          if (teacherData) {
+            setBalance(teacherData.remaining_credits || 1000);
+          } else {
+            setBalance(1000); // Default for teachers
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching wallet details:', error);
+    }
+  };
+
+  const handleCreateBlockward = () => {
+    if (!isTeacher) {
+      toast({
+        title: "Permission Denied",
+        description: "Only teachers can create BlockWards",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Navigate to rewards page for creating BlockWards
+    window.location.href = "/rewards";
+  };
+
+  const copyAddressToClipboard = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      toast({
+        title: "Address Copied",
+        description: "Wallet address copied to clipboard"
+      });
+    }
+  };
+
+  const openExternalWalletViewer = () => {
+    if (address) {
+      // This is a placeholder. In a real blockchain implementation, 
+      // you would link to a block explorer with the wallet address
+      window.open(`https://example.com/wallet/${address}`, '_blank');
+      toast({
+        title: "External Viewer",
+        description: "Opening wallet in external viewer"
+      });
     }
   };
 
@@ -112,8 +174,29 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
         <div className="mt-4 space-y-4">
           {address && (
             <div className="p-3 bg-purple-900/20 rounded-lg">
-              <p className="text-xs text-gray-400">Wallet Address</p>
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-xs text-gray-400">Wallet Address</p>
+                <div className="flex gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={copyAddressToClipboard}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={openExternalWalletViewer}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
               <p className="text-sm font-mono truncate">{address}</p>
+              <p className="text-xs text-gray-500 mt-1">Use this address to sign in to your account</p>
             </div>
           )}
           
@@ -131,21 +214,21 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
           {isTeacher ? (
             <div className="space-y-2">
               <Link to="/rewards">
-                <Button className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
+                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                  <Award className="w-4 h-4 mr-2" />
                   Create BlockWard Award
                 </Button>
               </Link>
-              <Link to="/students">
+              <Link to="/wallet">
                 <Button variant="outline" className="w-full">
                   <Send className="w-4 h-4 mr-2" />
-                  Send Points
+                  Send Points & BlockWards
                 </Button>
               </Link>
             </div>
           ) : (
             <div className="space-y-2">
-              <Link to="/rewards">
+              <Link to="/wallet">
                 <Button className="w-full">
                   <Wallet className="w-4 h-4 mr-2" />
                   View My BlockWards
