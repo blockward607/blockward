@@ -37,7 +37,7 @@ export const InvitationMatchingService = {
           };
         }
         
-        // Get classroom details separately to avoid circular reference
+        // Get classroom details in a separate query to avoid circular references
         const { data: classroom } = await supabase
           .from('classrooms')
           .select('id, name')
@@ -68,7 +68,7 @@ export const InvitationMatchingService = {
           data: { 
             classroomId: classroom.id,
             invitationId: null,
-            classroom: classroom
+            classroom
           }, 
           error: null 
         };
