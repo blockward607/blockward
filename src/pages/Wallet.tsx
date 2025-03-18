@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Wallet as WalletIcon, Plus, AlertTriangle } from "lucide-react";
@@ -12,6 +11,7 @@ import { TransferForm } from "@/components/wallet/TransferForm";
 import { NFTGrid } from "@/components/wallet/NFTGrid";
 import { NFTDisclaimer } from "@/components/wallet/NFTDisclaimer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BlockwardTemplateCreator } from "@/components/wallet/BlockwardTemplateCreator";
 
 interface NFTMetadata {
   name: string;
@@ -58,6 +58,7 @@ const Wallet = () => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null);
+  const [activeTab, setActiveTab] = useState('create');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -74,7 +75,6 @@ const Wallet = () => {
       
       setIsAuthenticated(true);
       
-      // Check user role
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -85,7 +85,6 @@ const Wallet = () => {
         setUserRole(roleData.role as 'teacher' | 'student');
       }
       
-      // Load user wallet
       try {
         const { data: walletData, error: walletError } = await supabase
           .from('wallets')
@@ -100,7 +99,6 @@ const Wallet = () => {
         
         setWallet(walletData);
         
-        // Load student points as balance
         const { data: studentData, error: studentError } = await supabase
           .from('students')
           .select('points')
@@ -111,7 +109,6 @@ const Wallet = () => {
           setBalance(studentData.points || 0);
         }
         
-        // Load BlockWards
         if (walletData) {
           const { data: nftData, error: nftError } = await supabase
             .from('nfts')
@@ -123,9 +120,7 @@ const Wallet = () => {
             throw nftError;
           }
           
-          // Transform the Supabase NFT data to match our NFT interface
           const transformedNfts: NFT[] = (nftData || []).map((nft: SupabaseNFT) => {
-            // Parse the metadata JSON if it's a string
             const parsedMetadata: NFTMetadata = typeof nft.metadata === 'string' 
               ? JSON.parse(nft.metadata) 
               : (nft.metadata as unknown as NFTMetadata);
@@ -193,19 +188,26 @@ const Wallet = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Your BlockWards</h2>
+            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="collection">My Collection</TabsTrigger>
+                {userRole === 'teacher' && (
+                  <TabsTrigger value="create">Create BlockWard</TabsTrigger>
+                )}
+              </TabsList>
+
+              <TabsContent value="collection" className="space-y-4">
+                <h2 className="text-xl font-semibold">Your BlockWards</h2>
+                <NFTGrid nfts={nfts} isLoading={isLoading} />
+                <NFTDisclaimer />
+              </TabsContent>
+
               {userRole === 'teacher' && (
-                <Button size="sm" variant="outline" onClick={() => navigate('/rewards')}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create BlockWard
-                </Button>
+                <TabsContent value="create">
+                  <BlockwardTemplateCreator />
+                </TabsContent>
               )}
-            </div>
-            
-            <NFTGrid nfts={nfts} isLoading={isLoading} />
-            
-            <NFTDisclaimer />
+            </Tabs>
           </div>
         </div>
       </div>
