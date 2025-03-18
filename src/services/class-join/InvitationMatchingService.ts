@@ -19,15 +19,16 @@ interface ClassroomResponse {
   name?: string;
 }
 
-// Fix the type definition to avoid circular references
+// Define a simplified invitation response type without nested objects
 interface InvitationResponse {
   id: string;
   classroom_id: string;
   invitation_token: string;
   status: string;
   expires_at: string | null;
-  // Instead of embedding the classroom object directly, use a separate type
-  classrooms: ClassroomResponse;
+  // Use a direct reference to the classroom ID instead of embedding the object
+  // which causes the circular reference
+  classrooms?: ClassroomResponse;
 }
 
 export const InvitationMatchingService = {
