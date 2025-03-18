@@ -1,14 +1,15 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, ImagePlus, Loader2, LayoutTemplate } from "lucide-react";
+import { Trophy, ImagePlus, Loader2, LayoutTemplate, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NFTImageUpload } from "./NFTImageUpload";
 import { StudentSelect } from "./StudentSelect";
 import { NFTAwardForm } from "./NFTAwardForm";
 import { TemplateSelector } from "./TemplateSelector";
+import { blockchainService } from '@/blockchain/services/BlockchainService';
+import { BlockchainWalletPanel } from "../wallet/BlockchainWalletPanel";
 
 export const CreateNFTAward = () => {
   const { toast } = useToast();
@@ -17,6 +18,9 @@ export const CreateNFTAward = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [useTemplate, setUseTemplate] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [isBlockchainMinting, setIsBlockchainMinting] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [studentWalletAddress, setStudentWalletAddress] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -42,6 +46,33 @@ export const CreateNFTAward = () => {
       }
     }
   }, [selectedTemplate, useTemplate]);
+
+  useEffect(() => {
+    if (selectedStudent) {
+      fetchStudentWalletAddress();
+    } else {
+      setStudentWalletAddress(null);
+    }
+  }, [selectedStudent]);
+
+  const fetchStudentWalletAddress = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('wallets')
+        .select('address')
+        .eq('user_id', selectedStudent)
+        .single();
+
+      if (error) {
+        console.error('Error fetching student wallet:', error);
+        return;
+      }
+
+      setStudentWalletAddress(data.address);
+    } catch (error) {
+      console.error('Error in fetchStudentWalletAddress:', error);
+    }
+  };
 
   const templates = [
     {
@@ -100,6 +131,74 @@ export const CreateNFTAward = () => {
       }
     } catch (error) {
       console.error('Error checking/creating BlockWard images bucket:', error);
+    }
+  };
+
+  const handleBlockchainMint = async () => {
+    if (!studentWalletAddress) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Student wallet address not found"
+      });
+      return;
+    }
+
+    setIsBlockchainMinting(true);
+    
+    try {
+      const initialized = await blockchainService.initialize('teacher');
+      if (!initialized) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to initialize blockchain connection. Please ensure MetaMask is installed."
+        });
+        return;
+      }
+
+      const metadata = {
+        name: formData.title,
+        description: formData.description,
+        points: formData.points,
+        type: formData.nftType,
+        image: imageUrl,
+        created_at: new Date().toISOString(),
+        attributes: [
+          {
+            trait_type: "Type",
+            value: formData.nftType
+          },
+          {
+            trait_type: "Points",
+            value: formData.points.toString()
+          }
+        ]
+      };
+
+      const result = await blockchainService.mintBlockWard(studentWalletAddress, metadata);
+      
+      console.log("BlockWard minted on blockchain:", result);
+      
+      toast({
+        title: "Success",
+        description: "BlockWard successfully minted on the blockchain!",
+      });
+      
+      setFormData({ title: "", description: "", points: 100, nftType: "academic" });
+      setImageUrl(null);
+      setSelectedStudent("");
+      setSelectedTemplate("");
+      
+    } catch (error: any) {
+      console.error("Error minting BlockWard on blockchain:", error);
+      toast({
+        variant: "destructive",
+        title: "Blockchain Minting Failed",
+        description: error.message || "Failed to mint BlockWard on blockchain"
+      });
+    } finally {
+      setIsBlockchainMinting(false);
     }
   };
 
@@ -276,6 +375,11 @@ export const CreateNFTAward = () => {
     }
   };
 
+  const handleWalletConnect = (address: string) => {
+    console.log("Wallet connected:", address);
+    setWalletConnected(true);
+  };
+
   return (
     <Card className="p-6 glass-card">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -340,6 +444,42 @@ export const CreateNFTAward = () => {
             selectedStudentId={selectedStudent}
             onStudentSelect={setSelectedStudent}
           />
+          {selectedStudent && studentWalletAddress && (
+            <div className="text-xs text-gray-400 mt-1">
+              Student wallet: {studentWalletAddress.substring(0, 8)}...
+            </div>
+          )}
+        </div>
+
+        <div className="border border-dashed border-purple-500/30 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold mb-3 text-purple-300">Blockchain Wallet Connection</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Connect your blockchain wallet to mint this BlockWard as an NFT on Polygon.
+          </p>
+          <BlockchainWalletPanel onConnect={handleWalletConnect} accountType="teacher" />
+          
+          {walletConnected && (
+            <div className="mt-4">
+              <Button 
+                type="button"
+                onClick={handleBlockchainMint}
+                disabled={isBlockchainMinting || !formData.title || !formData.description || !imageUrl || !selectedStudent}
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+              >
+                {isBlockchainMinting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Minting on Blockchain...
+                  </>
+                ) : (
+                  <>
+                    <LinkIcon className="w-4 h-4 mr-2" />
+                    Mint as Blockchain NFT
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end">

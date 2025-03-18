@@ -32,8 +32,9 @@ const NETWORK_CONFIG = {
   blockExplorerUrl: 'https://mumbai.polygonscan.com'
 };
 
-// Contract address (this would be the address after deploying the contract)
-const BLOCKWARD_NFT_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // Replace with actual address
+// Contract address for the deployed BlockWard NFT contract on Polygon Mumbai
+// NOTE: This is a placeholder address and should be replaced with the actual deployed contract address
+const BLOCKWARD_NFT_CONTRACT_ADDRESS = '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1'; // Replace this with your actual deployed contract address
 
 class BlockchainService {
   private provider: ethers.providers.Web3Provider | null = null;
@@ -45,7 +46,8 @@ class BlockchainService {
   // Initialize the blockchain service
   async initialize(accountType?: 'teacher' | 'student') {
     if (!window.ethereum) {
-      throw new Error('MetaMask or another web3 wallet is required');
+      console.error('MetaMask or another web3 wallet is required');
+      return false;
     }
     
     try {
@@ -59,6 +61,8 @@ class BlockchainService {
       // Check if we're on the correct network
       const network = await this.provider.getNetwork();
       if (network.chainId !== NETWORK_CONFIG.chainId) {
+        console.log(`Not on Polygon Mumbai. Current network: ${network.name} (${network.chainId})`);
+        console.log('Switching to Polygon Mumbai...');
         // Prompt user to switch to Polygon Mumbai
         await this.switchToPolygonMumbai();
       }
@@ -72,11 +76,19 @@ class BlockchainService {
       
       // Determine wallet type if not provided
       if (!accountType) {
-        const address = await this.getWalletAddress();
-        const isTeacher = await this.contract.isTeacher(address);
-        this.walletType = isTeacher ? 'teacher' : 'student';
+        try {
+          const address = await this.getWalletAddress();
+          const isTeacher = await this.contract.isTeacher(address);
+          this.walletType = isTeacher ? 'teacher' : 'student';
+          console.log(`Wallet type determined as: ${this.walletType}`);
+        } catch (error) {
+          console.error('Error determining wallet type:', error);
+          // Default to student if we can't determine
+          this.walletType = 'student';
+        }
       } else {
         this.walletType = accountType;
+        console.log(`Wallet type set as: ${this.walletType}`);
       }
       
       this.isInitialized = true;
@@ -162,71 +174,82 @@ class BlockchainService {
     if (!this.contract) throw new Error('Contract not initialized');
     
     // Check if current wallet is a teacher
-    const isTeacher = await this.isTeacherWallet();
-    if (!isTeacher) {
-      throw new Error('Only teachers can mint BlockWards');
-    }
-    
-    // Convert metadata to URI (in a real implementation, this would be stored on IPFS)
-    const metadataURI = `ipfs://bafybeih${Math.random().toString(36).substring(2, 15)}`;
-    
-    // Check if student is assigned to this teacher
-    const teacherAddress = await this.getWalletAddress();
-    const studentTeacher = await this.contract.getStudentTeacher(studentAddress);
-    
-    // If student is already assigned to a teacher, ensure it's this teacher
-    if (studentTeacher !== ethers.constants.AddressZero && 
-        studentTeacher.toLowerCase() !== teacherAddress.toLowerCase()) {
-      throw new Error('This student is assigned to a different teacher');
-    }
-    
-    // Mint the NFT
-    const tx = await this.contract.mintBlockWard(studentAddress, metadataURI);
-    const receipt = await tx.wait();
-    
-    // Find the BlockWardMinted event
-    const event = receipt.events?.find(e => e.event === 'BlockWardMinted');
-    if (!event) throw new Error('Minting event not found');
-    
-    // Return the token ID
-    return {
-      tokenId: event.args.tokenId.toString(),
-      tokenURI: event.args.tokenURI
-    };
-  }
-  
-  // Switch network to Polygon Mumbai
-  async switchToPolygonMumbai() {
-    if (!window.ethereum) {
-      throw new Error('MetaMask or another web3 wallet is required');
-    }
-
     try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: ethers.utils.hexlify(NETWORK_CONFIG.chainId) }],
-      });
-    } catch (switchError: any) {
-      // If the network doesn't exist, add it
-      if (switchError.code === 4902) {
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId: ethers.utils.hexlify(NETWORK_CONFIG.chainId),
-              chainName: NETWORK_CONFIG.name,
-              rpcUrls: [NETWORK_CONFIG.rpcUrl],
-              blockExplorerUrls: [NETWORK_CONFIG.blockExplorerUrl],
-              nativeCurrency: {
-                name: 'MATIC',
-                symbol: 'MATIC',
-                decimals: 18
-              }
-            },
-          ],
-        });
+      const isTeacher = await this.isTeacherWallet();
+      if (!isTeacher) {
+        throw new Error('Only teachers can mint BlockWards');
+      }
+      
+      // For debugging: log the addresses
+      const teacherAddress = await this.getWalletAddress();
+      console.log('Teacher wallet address:', teacherAddress);
+      console.log('Student wallet address:', studentAddress);
+      
+      // Convert metadata to a simple JSON string (in a real implementation, this would be stored on IPFS)
+      // For now we'll create a simple URI
+      const metadataJSON = JSON.stringify(metadata);
+      const metadataURI = `data:application/json,${encodeURIComponent(metadataJSON)}`;
+      
+      console.log('Minting BlockWard with metadata URI:', metadataURI);
+      
+      // Check if the student is assigned to this teacher
+      let studentTeacher;
+      try {
+        studentTeacher = await this.contract.getStudentTeacher(studentAddress);
+        console.log('Student assigned to teacher:', studentTeacher);
+      } catch (error) {
+        console.error('Error checking student teacher:', error);
+        studentTeacher = ethers.constants.AddressZero;
+      }
+      
+      // If not assigned, let's assign them
+      if (studentTeacher === ethers.constants.AddressZero) {
+        try {
+          console.log('Assigning student to teacher...');
+          const assignTx = await this.contract.assignStudentToTeacher(studentAddress, teacherAddress);
+          console.log('Assignment transaction hash:', assignTx.hash);
+          await assignTx.wait();
+          console.log('Student assigned successfully');
+        } catch (error) {
+          console.error('Error assigning student to teacher:', error);
+          // Continue with minting even if assignment fails
+        }
+      }
+      
+      // Mint the NFT
+      console.log('Sending mint transaction...');
+      const tx = await this.contract.mintBlockWard(studentAddress, metadataURI);
+      console.log('Mint transaction hash:', tx.hash);
+      
+      // Wait for the transaction to be mined
+      console.log('Waiting for transaction to be mined...');
+      const receipt = await tx.wait();
+      console.log('Transaction mined with result:', receipt);
+      
+      // Find the BlockWardMinted event
+      const event = receipt.events?.find((e: any) => e.event === 'BlockWardMinted');
+      if (!event) {
+        console.log('All events:', receipt.events);
+        throw new Error('Minting event not found');
+      }
+      
+      console.log('BlockWard minted successfully! Event:', event);
+      
+      // Return the token ID and URI
+      return {
+        tokenId: event.args.tokenId.toString(),
+        tokenURI: event.args.tokenURI
+      };
+    } catch (error: any) {
+      console.error('Error in mintBlockWard:', error);
+      
+      // Try to get more specific error details if available
+      if (error.error && error.error.message) {
+        throw new Error(`BlockWard minting failed: ${error.error.message}`);
+      } else if (error.message) {
+        throw new Error(`BlockWard minting failed: ${error.message}`);
       } else {
-        throw switchError;
+        throw new Error('BlockWard minting failed with unknown error');
       }
     }
   }
