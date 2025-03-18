@@ -15,6 +15,7 @@ export const useClassroomManagement = () => {
 
   const checkUserRoleAndFetchData = useCallback(async () => {
     try {
+      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -90,6 +91,7 @@ export const useClassroomManagement = () => {
   }, [toast]);
 
   const refreshClassrooms = useCallback(() => {
+    setLoading(true);
     checkUserRoleAndFetchData();
   }, [checkUserRoleAndFetchData]);
 

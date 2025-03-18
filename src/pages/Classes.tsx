@@ -41,7 +41,6 @@ const Classes = () => {
     }
   };
 
-  // This ensures we're actually on the Classes page and not showing announcements
   return (
     <JoinClassProvider>
       <motion.div

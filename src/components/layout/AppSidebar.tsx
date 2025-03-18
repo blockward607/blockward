@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -64,6 +63,7 @@ export function AppSidebar() {
   };
 
   const handleNavigate = (path: string) => {
+    console.log(`Navigating to: ${path}`);
     navigate(path);
   };
 
