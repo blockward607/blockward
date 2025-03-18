@@ -13,22 +13,21 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
-// Define these separately to avoid potential circular references
+// Define these as standalone types to avoid circular references
 interface ClassroomResponse {
   id: string;
   name?: string;
 }
 
-// Define a simplified invitation response type without nested objects
+// Avoid circular references by not including the full classroom object
 interface InvitationResponse {
   id: string;
   classroom_id: string;
   invitation_token: string;
   status: string;
   expires_at: string | null;
-  // Use a direct reference to the classroom ID instead of embedding the object
-  // which causes the circular reference
-  classrooms?: ClassroomResponse;
+  // Only include the ID for the classroom
+  classroom_id_reference?: string;
 }
 
 export const InvitationMatchingService = {
@@ -39,7 +38,7 @@ export const InvitationMatchingService = {
       // 1. First try to find a direct class invitation by token
       const { data: invitation, error: invitationError } = await supabase
         .from('class_invitations')
-        .select('id, classroom_id, invitation_token, status, expires_at, classrooms:classroom_id(id, name)')
+        .select('id, classroom_id, invitation_token, status, expires_at')
         .eq('invitation_token', code)
         .eq('status', 'pending')
         .maybeSingle();
@@ -55,11 +54,18 @@ export const InvitationMatchingService = {
           };
         }
         
+        // Get classroom details separately to avoid circular reference
+        const { data: classroom } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', invitation.classroom_id)
+          .maybeSingle();
+        
         return { 
           data: { 
             classroomId: invitation.classroom_id,
             invitationId: invitation.id,
-            classroom: invitation.classrooms
+            classroom: classroom || undefined
           }, 
           error: null 
         };
