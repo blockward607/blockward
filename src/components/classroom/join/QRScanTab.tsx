@@ -8,14 +8,13 @@ import { useJoinClass } from "./useJoinClass";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { useCallback } from "react";
 
 export const QRScanTab = () => {
   const { setInvitationCode, scannerOpen, setScannerOpen, loading, error } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
   const { toast } = useToast();
 
-  const handleQRCodeScanned = useCallback((code: string) => {
+  const handleQRCodeScanned = (code: string) => {
     setScannerOpen(false);
     if (!code) {
       toast({
@@ -72,7 +71,7 @@ export const QRScanTab = () => {
         description: "Failed to process QR code"
       });
     }
-  }, [setScannerOpen, toast, setInvitationCode, handleJoinClass]);
+  };
 
   return (
     <div className="text-center space-y-3">

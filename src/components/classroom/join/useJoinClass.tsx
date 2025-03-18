@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,50 +13,7 @@ export const useJoinClass = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Helper function to ensure student profile and return student ID
-  const ensureStudentProfile = async (session: any): Promise<string | null> => {
-    try {
-      // Check if student profile exists
-      const { data: student, error: studentError } = await StudentProfileService.getStudentProfile(session.user.id);
-          
-      console.log("Student profile check result:", { student, studentError });
-
-      if (student?.id) {
-        return student.id;
-      }
-
-      // If no student profile, we need to create one and set role
-      console.log("Creating student profile for user:", session.user.id);
-      
-      // Create student profile
-      const { data: newStudent, error: createError } = await StudentProfileService.createStudentProfile(
-        session.user.id, 
-        session.user.email?.split('@')[0] || 'Student'
-      );
-
-      if (createError) {
-        console.error("Error creating student profile:", createError);
-        return null;
-      }
-      
-      console.log("Student profile created:", newStudent);
-
-      // Set user role as student
-      const { error: roleError } = await StudentProfileService.setUserRole(session.user.id, 'student');
-
-      if (roleError) {
-        console.error("Error setting user role:", roleError);
-        return null;
-      }
-
-      return newStudent.id;
-    } catch (error) {
-      console.error("Error in ensureStudentProfile:", error);
-      return null;
-    }
-  };
-
-  const handleJoinClass = useCallback(async () => {
+  const handleJoinClass = async () => {
     try {
       // Clear previous errors
       setError(null);
@@ -112,18 +69,21 @@ export const useJoinClass = () => {
       
       if (matchData.classroom) {
         // If we matched a classroom directly or via an invitation
-        classroomId = matchData.classroomId;
+        classroomId = matchData.classroom.id;
         classroomName = matchData.classroom.name;
         
         // If this came from an invitation, store its ID
-        if (matchData.invitationId) {
-          invitationId = matchData.invitationId;
+        if (matchData.id) {
+          invitationId = matchData.id;
         }
-      } else {
-        // If we have just the classroom ID
-        classroomId = matchData.classroomId;
+      } else if (matchData.classroom_id) {
+        // If we have just the classroom ID from an invitation
+        classroomId = matchData.classroom_id;
         classroomName = "the classroom";
-        invitationId = matchData.invitationId;
+        invitationId = matchData.id;
+      } else {
+        setError("Invalid data returned. Please try again.");
+        return;
       }
       
       console.log("Found classroom to join:", { classroomId, classroomName });
@@ -178,7 +138,50 @@ export const useJoinClass = () => {
       setIsJoining(false);
       setLoading(false);
     }
-  }, [invitationCode, setError, setLoading, isJoining, toast, navigate]);
+  };
+
+  // Helper function to ensure student profile and return student ID
+  const ensureStudentProfile = async (session: any): Promise<string | null> => {
+    try {
+      // Check if student profile exists
+      const { data: student, error: studentError } = await StudentProfileService.getStudentProfile(session.user.id);
+          
+      console.log("Student profile check result:", { student, studentError });
+
+      if (student?.id) {
+        return student.id;
+      }
+
+      // If no student profile, we need to create one and set role
+      console.log("Creating student profile for user:", session.user.id);
+      
+      // Create student profile
+      const { data: newStudent, error: createError } = await StudentProfileService.createStudentProfile(
+        session.user.id, 
+        session.user.email?.split('@')[0] || 'Student'
+      );
+
+      if (createError) {
+        console.error("Error creating student profile:", createError);
+        return null;
+      }
+      
+      console.log("Student profile created:", newStudent);
+
+      // Set user role as student
+      const { error: roleError } = await StudentProfileService.setUserRole(session.user.id, 'student');
+
+      if (roleError) {
+        console.error("Error setting user role:", roleError);
+        return null;
+      }
+
+      return newStudent.id;
+    } catch (error) {
+      console.error("Error in ensureStudentProfile:", error);
+      return null;
+    }
+  };
 
   return { handleJoinClass };
 };

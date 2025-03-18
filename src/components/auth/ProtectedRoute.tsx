@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Outlet } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -15,13 +15,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
         
         if (!session) {
           console.log('No active session found, redirecting to auth page');
@@ -37,7 +33,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           setIsAuthenticated(true);
         }
       } catch (error) {
-        if (!mounted) return;
         console.error('Authentication error:', error);
         setIsAuthenticated(false);
         navigate('/auth');
@@ -48,8 +43,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return;
-        
         console.log('Auth state changed:', event);
         if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
@@ -61,7 +54,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
 
     return () => {
-      mounted = false;
       if (authListener && authListener.subscription) {
         authListener.subscription.unsubscribe();
       }

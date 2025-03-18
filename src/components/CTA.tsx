@@ -1,16 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Rocket, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 export const CTA = () => {
-  const navigate = useNavigate();
-  
-  const handleStartFreeTrial = () => {
-    navigate('/auth');
-  };
-  
   return (
     <section className="py-20 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-black/30" />
@@ -47,7 +39,6 @@ export const CTA = () => {
             <Button 
               size="lg" 
               className="bg-purple-600 hover:bg-purple-700 transition-all duration-300 px-8 py-6 text-lg flex items-center gap-2"
-              onClick={handleStartFreeTrial}
             >
               Start Free Trial <ArrowRight className="w-5 h-5" />
             </Button>

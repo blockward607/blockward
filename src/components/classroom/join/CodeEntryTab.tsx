@@ -59,7 +59,7 @@ export const CodeEntryTab = () => {
     };
     
     attemptAutoJoin();
-  }, [invitationCode, loading, autoJoinAttempted, handleJoinClass, setInvitationCode]);
+  }, [invitationCode, loading, autoJoinAttempted]);
 
   return (
     <div className="space-y-4">

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -6,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
-import { WalletSignInForm } from "@/components/auth/WalletSignInForm";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -26,9 +26,9 @@ const AuthPage = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [useCustomAuth, setUseCustomAuth] = useState(true);
-  const [activeAuthTab, setActiveAuthTab] = useState("signin");
+  const [useCustomAuth, setUseCustomAuth] = useState(true); // Set to true by default to show custom auth UI
   
+  // Check for token errors in URL hash
   useEffect(() => {
     const hashParams = new URLSearchParams(location.hash.substring(1));
     const error = hashParams.get('error');
@@ -38,8 +38,10 @@ const AuthPage = () => {
       setShowError(true);
       setErrorMessage(errorDescription.replace(/\+/g, ' '));
       
+      // Clear the hash from URL to prevent showing the error again on refresh
       navigate(location.pathname, { replace: true });
       
+      // Show a toast for better visibility
       toast({
         variant: "destructive",
         title: "Error",
@@ -48,6 +50,7 @@ const AuthPage = () => {
     }
   }, [location, navigate, toast]);
   
+  // Check if coming from password reset link
   useEffect(() => {
     const resetToken = searchParams.get('reset');
     if (resetToken) {
@@ -57,14 +60,15 @@ const AuthPage = () => {
 
   const handleForgotPasswordClick = () => {
     setShowForgotPassword(true);
-    setShowError(false);
+    setShowError(false); // Clear any previous errors
   };
 
   const handleBackToSignIn = () => {
     setShowForgotPassword(false);
-    setShowError(false);
+    setShowError(false); // Clear any previous errors
   };
 
+  // Clear error when input changes
   useEffect(() => {
     if (showError) {
       setShowError(false);
@@ -102,11 +106,10 @@ const AuthPage = () => {
                   </TabsList>
                 </Tabs>
 
-                <Tabs value={activeAuthTab} onValueChange={setActiveAuthTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                <Tabs defaultValue="signin" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="signin">Sign In</TabsTrigger>
                     <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                    <TabsTrigger value="wallet">Wallet</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="signin" className="space-y-4">
@@ -129,14 +132,6 @@ const AuthPage = () => {
                       setEmail={setEmail}
                       password={password}
                       setPassword={setPassword}
-                      setErrorMessage={setErrorMessage}
-                      setShowError={setShowError}
-                      setLoading={setLoading}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="wallet" className="space-y-4">
-                    <WalletSignInForm
                       setErrorMessage={setErrorMessage}
                       setShowError={setShowError}
                       setLoading={setLoading}

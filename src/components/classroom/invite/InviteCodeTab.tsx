@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -18,49 +18,16 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
   const [invitationCode, setInvitationCode] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
   const { toast } = useToast();
-  
-  // Check for existing invitation code on component mount
-  useEffect(() => {
-    const checkExistingCode = async () => {
-      if (!classroomId) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('class_invitations')
-          .select('invitation_token')
-          .eq('classroom_id', classroomId)
-          .eq('status', 'pending')
-          .eq('email', 'general_invitation@blockward.app')
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          setInvitationCode(data[0].invitation_token);
-        }
-      } catch (error) {
-        console.error("Error checking for existing invitation code:", error);
-      }
-    };
-    
-    checkExistingCode();
-  }, [classroomId]);
 
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      console.log("Generating new invitation code for classroom:", classroomId);
-      
-      // Generate a simple, readable alphanumeric code
+      // Generate a simple, readable alphanumeric code (all uppercase for easier reading)
       const invitationToken = Array.from({length: 6}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       
-      // Make sure we have a valid classroom ID
-      if (!classroomId) {
-        throw new Error("No classroom ID provided");
-      }
+      console.log("Generating invitation code:", invitationToken, "for classroom:", classroomId);
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
@@ -75,13 +42,9 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
         .select()
         .single();
       
-      if (inviteError) {
+      if (inviteError || !invitation) {
         console.error("Error generating invitation:", inviteError);
-        throw new Error(inviteError.message || 'Failed to generate invitation code');
-      }
-      
-      if (!invitation) {
-        throw new Error("Failed to create invitation record");
+        throw new Error(inviteError?.message || 'Failed to generate invitation code');
       }
       
       console.log("Invitation created successfully:", invitation);

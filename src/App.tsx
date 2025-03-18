@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -30,12 +29,11 @@ const ClassroomInvite = lazy(() => import("@/pages/ClassroomInvite"));
 const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
 const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
 const Grades = lazy(() => import("@/pages/Grades"));
-const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
 
 function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
+      <BrowserRouter>
         <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             {/* Public routes */}
@@ -81,14 +79,12 @@ function App() {
               <Route path="progress" element={<Progress />} />
               {/* Add new route */}
               <Route path="/class/:classroomId/grades" element={<Grades />} />
-              {/* Add new route */}
-              <Route path="/auth/wallet-verify" element={<WalletVerify />} />
             </Route>
           </Routes>
         </Suspense>
         <Toaster />
-      </ThemeProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

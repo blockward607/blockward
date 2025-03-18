@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, ArrowRight, BookOpen } from "lucide-react";
+import { GraduationCap, Sparkles, ArrowRight, BookOpen } from "lucide-react";
 
 export const Hero = () => {
   const navigate = useNavigate();
@@ -13,6 +13,10 @@ export const Hero = () => {
   
   const handleLearnMore = () => {
     document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const handleViewPreview = () => {
+    document.getElementById('preview')?.scrollIntoView({ behavior: 'smooth' });
   };
   
   return (
@@ -99,6 +103,14 @@ export const Hero = () => {
               onClick={handleGetStarted}
             >
               Get Started <ArrowRight className="w-4 h-4" />
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="border-purple-400 text-purple-400 hover:bg-purple-400/10 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+              onClick={handleViewPreview}
+            >
+              See Preview <Sparkles className="w-4 h-4" />
             </Button>
             <Button 
               size="lg" 

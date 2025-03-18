@@ -83,7 +83,7 @@ export function useAuth() {
       }
       
       if (!existingWallet) {
-        // Create wallet based on role - teacher wallets are 'admin' type, student wallets are 'user' type
+        // Create wallet based on role
         const walletType = userRole === 'teacher' ? 'admin' : 'user';
         const walletAddress = `${Math.random().toString(16).slice(2, 10)}_${Math.random().toString(16).slice(2, 10)}`;
         
@@ -107,7 +107,7 @@ export function useAuth() {
           console.log('Creating teacher profile with school and subject');
           await AuthService.createTeacherProfile(userId, school, subject, fullName);
           
-          // Generate a unique class code for teacher
+          // Generate a unique class code
           const classCode = await AuthService.generateClassCode();
           
           // Create a default classroom for the teacher
