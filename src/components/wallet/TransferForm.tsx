@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Gift, User, Wallet as WalletIcon } from "lucide-react";
+import { Gift } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TransferFormProps {
@@ -28,16 +27,12 @@ interface Student {
 
 export const TransferForm = ({ disabled = false }: TransferFormProps) => {
   const { toast } = useToast();
-  const [recipientAddress, setRecipientAddress] = useState("");
   const [isTeacher, setIsTeacher] = useState(false);
-  const [transferAmount, setTransferAmount] = useState("10");
-  const [transferMethod, setTransferMethod] = useState<"address" | "name">("name");
-  const [transferTab, setTransferTab] = useState<"points" | "nft">("points");
-  const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedNft, setSelectedNft] = useState("");
   const [availableNfts, setAvailableNfts] = useState<any[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   
   useEffect(() => {
     checkUserRole();
@@ -164,138 +159,6 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
       console.error('Error fetching available NFTs:', error);
     }
   };
-  
-  const handleTransferPoints = async () => {
-    let recipientWalletAddress = '';
-    let recipientId = '';
-    
-    if (transferMethod === 'address') {
-      if (!recipientAddress) {
-        toast({
-          variant: "destructive",
-          title: "Missing recipient",
-          description: "Please enter a wallet address"
-        });
-        return;
-      }
-      recipientWalletAddress = recipientAddress;
-    } else {
-      if (!selectedStudent) {
-        toast({
-          variant: "destructive",
-          title: "Missing recipient",
-          description: "Please select a student"
-        });
-        return;
-      }
-      
-      // Find the student's wallet address
-      const student = students.find(s => s.id === selectedStudent);
-      if (!student || !student.wallet_address) {
-        toast({
-          variant: "destructive",
-          title: "Wallet not found",
-          description: "The selected student doesn't have a wallet"
-        });
-        return;
-      }
-      
-      recipientWalletAddress = student.wallet_address;
-      recipientId = student.id;
-    }
-    
-    const amount = parseInt(transferAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        variant: "destructive",
-        title: "Invalid amount",
-        description: "Please enter a valid amount to transfer."
-      });
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      
-      // If we have the student ID directly
-      if (recipientId) {
-        const { error: updateError } = await supabase.rpc('increment_student_points', {
-          student_id: recipientId,
-          points_to_add: amount
-        });
-        
-        if (updateError) {
-          console.error('Error updating student points:', updateError);
-          throw updateError;
-        }
-      } else {
-        // Get the recipient's wallet
-        const { data: recipientWallet, error: walletError } = await supabase
-          .from('wallets')
-          .select('id, user_id')
-          .eq('address', recipientWalletAddress)
-          .single();
-          
-        if (walletError) {
-          console.error('Error finding recipient wallet:', walletError);
-          toast({
-            variant: "destructive",
-            title: "Recipient not found",
-            description: "Could not find a wallet with that address."
-          });
-          setLoading(false);
-          return;
-        }
-        
-        // Get the recipient student
-        const { data: student, error: studentError } = await supabase
-          .from('students')
-          .select('id, points')
-          .eq('user_id', recipientWallet.user_id)
-          .single();
-          
-        if (studentError) {
-          console.error('Error finding student:', studentError);
-          toast({
-            variant: "destructive",
-            title: "Recipient not found",
-            description: "Recipient is not a student."
-          });
-          setLoading(false);
-          return;
-        }
-        
-        // Update student points
-        const { error: updateError } = await supabase
-          .from('students')
-          .update({ points: (student.points || 0) + amount })
-          .eq('id', student.id);
-          
-        if (updateError) {
-          console.error('Error updating student points:', updateError);
-          throw updateError;
-        }
-      }
-      
-      toast({
-        title: "Transfer Successful",
-        description: `Transferred ${amount} points to ${transferMethod === 'name' ? students.find(s => s.id === selectedStudent)?.name : 'wallet'}`
-      });
-      
-      setRecipientAddress("");
-      setTransferAmount("10");
-      
-    } catch (error) {
-      console.error('Error during transfer:', error);
-      toast({
-        variant: "destructive",
-        title: "Transfer Failed",
-        description: "Could not complete the transfer. Please try again."
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleTransferNft = async () => {
     if (!selectedStudent) {
@@ -419,7 +282,7 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
       <div className="space-y-2 pt-4 border-t border-gray-700">
         <h3 className="font-semibold text-sm">Student Wallet</h3>
         <p className="text-sm text-gray-400">
-          Students cannot initiate transfers. Only teachers can send points or BlockWards.
+          Students cannot initiate transfers. Only teachers can send BlockWards.
         </p>
       </div>
     );
@@ -429,195 +292,85 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
     <div className="space-y-4 pt-4 border-t border-gray-700">
       <h3 className="font-semibold">Teacher Transfer</h3>
       
-      <Tabs value={transferTab} onValueChange={(value) => setTransferTab(value as "points" | "nft")} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="points" className="flex items-center gap-2">
-            <WalletIcon className="w-4 h-4" />
-            Points
-          </TabsTrigger>
-          <TabsTrigger value="nft" className="flex items-center gap-2">
-            <Gift className="w-4 h-4" />
-            BlockWard
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="points" className="space-y-4">
-          <div className="flex mb-4 rounded-lg overflow-hidden">
-            <button
-              className={`flex-1 py-2 text-center font-medium transition-colors ${
-                transferMethod === 'name'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-              onClick={() => setTransferMethod('name')}
-            >
-              By Name
-            </button>
-            <button
-              className={`flex-1 py-2 text-center font-medium transition-colors ${
-                transferMethod === 'address'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-              onClick={() => setTransferMethod('address')}
-            >
-              By Address
-            </button>
-          </div>
-          
-          {transferMethod === 'name' ? (
-            <div className="space-y-2">
-              <Label htmlFor="student">Select Student</Label>
-              <Select 
-                value={selectedStudent} 
-                onValueChange={setSelectedStudent}
-                disabled={loading || disabled}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a student" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      {loading ? "Loading students..." : "No students available"}
-                    </SelectItem>
-                  ) : (
-                    students.map((student) => (
-                      <SelectItem key={student.id} value={student.id}>
-                        {student.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="recipient">Recipient Address</Label>
-              <div className="relative">
-                <Input 
-                  id="recipient"
-                  placeholder="Enter wallet address"
-                  value={recipientAddress}
-                  onChange={(e) => setRecipientAddress(e.target.value)}
-                  disabled={disabled}
-                />
-                <Search className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <Label htmlFor="amount">Points Amount</Label>
-            <Input 
-              id="amount"
-              type="number"
-              placeholder="Amount to transfer"
-              value={transferAmount}
-              onChange={(e) => setTransferAmount(e.target.value)}
-              disabled={disabled}
-              min="1"
-            />
-          </div>
-          
-          <Button 
-            className="w-full"
-            disabled={
-              (transferMethod === 'address' && !recipientAddress) || 
-              (transferMethod === 'name' && !selectedStudent) || 
-              disabled || 
-              parseInt(transferAmount) <= 0 ||
-              loading
-            }
-            onClick={handleTransferPoints}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="nft-student">Select Student</Label>
+          <Select 
+            value={selectedStudent} 
+            onValueChange={setSelectedStudent}
+            disabled={loading || disabled}
           >
-            {loading ? "Sending..." : "Send Points"}
-          </Button>
-        </TabsContent>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a student" />
+            </SelectTrigger>
+            <SelectContent>
+              {students.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  {loading ? "Loading students..." : "No students available"}
+                </SelectItem>
+              ) : (
+                students.map((student) => (
+                  <SelectItem key={student.id} value={student.id}>
+                    {student.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
         
-        <TabsContent value="nft" className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="nft-student">Select Student</Label>
-            <Select 
-              value={selectedStudent} 
-              onValueChange={setSelectedStudent}
-              disabled={loading || disabled}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a student" />
-              </SelectTrigger>
-              <SelectContent>
-                {students.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    {loading ? "Loading students..." : "No students available"}
-                  </SelectItem>
-                ) : (
-                  students.map((student) => (
-                    <SelectItem key={student.id} value={student.id}>
-                      {student.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="nft">Select BlockWard</Label>
-            <Select 
-              value={selectedNft} 
-              onValueChange={setSelectedNft}
-              disabled={loading || disabled}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a BlockWard" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableNfts.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    No available BlockWards
-                  </SelectItem>
-                ) : (
-                  availableNfts.map((nft) => {
-                    const metadata = typeof nft.metadata === 'string' 
-                      ? JSON.parse(nft.metadata) 
-                      : nft.metadata;
-                    return (
-                      <SelectItem key={nft.id} value={nft.id}>
-                        {metadata.name || `BlockWard #${nft.id.substring(0, 4)}`}
-                      </SelectItem>
-                    );
-                  })
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {availableNfts.length === 0 && (
-            <div className="text-center p-4 border border-dashed border-gray-600 rounded-md">
-              <p className="text-gray-400 text-sm">
-                No available BlockWards to transfer. Create new BlockWards in the Rewards section.
-              </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                onClick={() => window.location.href = '/rewards'}
-              >
-                Go to Rewards
-              </Button>
-            </div>
-          )}
-          
-          <Button 
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-            disabled={!selectedStudent || !selectedNft || loading || disabled}
-            onClick={handleTransferNft}
+        <div className="space-y-2">
+          <Label htmlFor="nft">Select BlockWard</Label>
+          <Select 
+            value={selectedNft} 
+            onValueChange={setSelectedNft}
+            disabled={loading || disabled}
           >
-            {loading ? "Transferring..." : "Send BlockWard"}
-          </Button>
-        </TabsContent>
-      </Tabs>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a BlockWard" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableNfts.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  No available BlockWards
+                </SelectItem>
+              ) : (
+                availableNfts.map((nft) => {
+                  const metadata = typeof nft.metadata === 'string' 
+                    ? JSON.parse(nft.metadata) 
+                    : nft.metadata;
+                  return (
+                    <SelectItem key={nft.id} value={nft.id}>
+                      {metadata.name || `BlockWard #${nft.id.substring(0, 4)}`}
+                    </SelectItem>
+                  );
+                })
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {availableNfts.length === 0 && (
+          <div className="text-center p-4 border border-dashed border-gray-600 rounded-md">
+            <p className="text-gray-400 text-sm">
+              No available BlockWards to transfer. Create new BlockWards in the Create BlockWard section.
+            </p>
+          </div>
+        )}
+        
+        <Button 
+          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+          disabled={!selectedStudent || !selectedNft || loading || disabled}
+          onClick={handleTransferNft}
+        >
+          {loading ? "Transferring..." : (
+            <>
+              <Gift className="w-4 h-4 mr-2" />
+              Send BlockWard
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 };
