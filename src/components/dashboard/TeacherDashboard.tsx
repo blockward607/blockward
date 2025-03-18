@@ -65,21 +65,12 @@ export const TeacherDashboard = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">Manage Classes</h3>
             <p className="text-gray-300 mb-4">Create, edit and manage your classroom settings</p>
-            <a 
-              href="/classes" 
-              className="w-full"
-              onClick={(e) => {
-                e.preventDefault();
-                handleNavigateToClasses();
-              }}
+            <Button 
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              onClick={handleNavigateToClasses}
             >
-              <Button 
-                className="w-full bg-purple-600 hover:bg-purple-700"
-                type="button"
-              >
-                View Classes
-              </Button>
-            </a>
+              View Classes
+            </Button>
           </div>
         </Card>
 
