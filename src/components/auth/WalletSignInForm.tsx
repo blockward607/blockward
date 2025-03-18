@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet } from "lucide-react";
+import { Wallet, Link as LinkIcon, Loader2 } from "lucide-react";
+import { BlockchainWalletPanel } from "@/components/wallet/BlockchainWalletPanel";
+import { isValidAddress } from "@/utils/addressUtils";
 
 interface WalletSignInFormProps {
   setLoading: (loading: boolean) => void;
@@ -20,6 +22,7 @@ export const WalletSignInForm = ({
 }: WalletSignInFormProps) => {
   const { toast } = useToast();
   const [walletAddress, setWalletAddress] = useState("");
+  const [connectingBlockchain, setConnectingBlockchain] = useState(false);
 
   const handleWalletSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,13 +87,71 @@ export const WalletSignInForm = ({
     }
   };
 
+  const handleBlockchainWalletConnect = async (address: string) => {
+    try {
+      setConnectingBlockchain(true);
+      setWalletAddress(address);
+      
+      // Check if this blockchain wallet is linked to a BlockWard account
+      const { data: existingWallet, error: walletError } = await supabase
+        .from('wallets')
+        .select('user_id')
+        .eq('address', address)
+        .maybeSingle();
+      
+      if (walletError && !walletError.message.includes('No rows found')) {
+        throw walletError;
+      }
+      
+      if (existingWallet) {
+        // Wallet exists in our system, proceed with authentication
+        localStorage.setItem('blockward_login_wallet', address);
+        
+        toast({
+          title: "Wallet Verified",
+          description: "Signing you in with your blockchain wallet..."
+        });
+        
+        window.location.href = "/auth/wallet-verify";
+      } else {
+        // Wallet not registered yet
+        toast({
+          variant: "destructive",
+          title: "Wallet Not Registered",
+          description: "This blockchain wallet is not linked to a BlockWard account yet."
+        });
+      }
+    } catch (error: any) {
+      console.error("Blockchain wallet connection error:", error);
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: error.message || "Failed to authenticate with blockchain wallet"
+      });
+    } finally {
+      setConnectingBlockchain(false);
+    }
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-center mb-4">
         <div className="p-3 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)]">
           <Wallet className="w-6 h-6 text-purple-300" />
         </div>
       </div>
+      
+      <BlockchainWalletPanel onConnect={handleBlockchainWalletConnect} />
+      
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-600"></span>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-gray-400">Or use BlockWard wallet</span>
+        </div>
+      </div>
+      
       <form onSubmit={handleWalletSignIn} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="walletAddress">BlockWard Wallet Address</Label>
