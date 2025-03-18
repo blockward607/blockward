@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -17,7 +18,6 @@ import {
 import {
   Home,
   Users,
-  BookOpen,
   Settings,
   Bell,
   Calendar,
@@ -64,13 +64,6 @@ export function AppSidebar() {
 
   const handleNavigate = (path: string) => {
     console.log(`Navigating to: ${path}`);
-    
-    if (path === '/classes') {
-      window.location.href = path;
-      toast.success("Redirecting to classes...");
-      return;
-    }
-    
     navigate(path);
   };
 
@@ -84,7 +77,6 @@ export function AppSidebar() {
       name: "Main",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: Home },
-        { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },
     {
@@ -120,7 +112,6 @@ export function AppSidebar() {
       name: "Main",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: Home },
-        { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },
     {
@@ -191,37 +182,6 @@ export function AppSidebar() {
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.href;
                       const Icon = item.icon;
-                      
-                      if (item.href === '/classes') {
-                        return (
-                          <SidebarMenuItem key={item.name}>
-                            <SidebarMenuButton 
-                              asChild 
-                              isActive={isActive}
-                              tooltip={isMinimized ? item.name : undefined}
-                              className={cn(
-                                "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
-                                isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
-                              )}
-                            >
-                              <a 
-                                href="/classes"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleNavigate('/classes');
-                                }}
-                                className={cn(
-                                  "cursor-pointer flex items-center w-full",
-                                  isActive ? "text-white font-semibold" : "text-gray-300"
-                                )}
-                              >
-                                <Icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
-                                {!isMinimized && <span className="ml-3">{item.name}</span>}
-                              </a>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      }
                       
                       return (
                         <SidebarMenuItem key={item.name}>
