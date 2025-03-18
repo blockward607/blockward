@@ -29,7 +29,6 @@ export const TeacherDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card 
           className="p-6 bg-gradient-to-br from-purple-900/30 to-black border-purple-500/30 hover:shadow-lg transition-all cursor-pointer" 
-          onClick={handleNavigateToClasses}
         >
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-full bg-purple-600/30 flex items-center justify-center mb-4">
@@ -39,10 +38,7 @@ export const TeacherDashboard = () => {
             <p className="text-gray-300 mb-4">Create, edit and manage your classroom settings</p>
             <Button 
               className="w-full bg-purple-600 hover:bg-purple-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNavigateToClasses();
-              }}
+              onClick={handleNavigateToClasses}
             >
               View Classes
             </Button>
@@ -51,7 +47,6 @@ export const TeacherDashboard = () => {
 
         <Card 
           className="p-6 bg-gradient-to-br from-blue-900/30 to-black border-blue-500/30 hover:shadow-lg transition-all cursor-pointer" 
-          onClick={handleNavigateToAttendance}
         >
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-full bg-blue-600/30 flex items-center justify-center mb-4">
@@ -61,10 +56,7 @@ export const TeacherDashboard = () => {
             <p className="text-gray-300 mb-4">Track and manage student attendance</p>
             <Button 
               className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNavigateToAttendance();
-              }}
+              onClick={handleNavigateToAttendance}
             >
               Take Attendance
             </Button>
@@ -73,7 +65,6 @@ export const TeacherDashboard = () => {
 
         <Card 
           className="p-6 bg-gradient-to-br from-green-900/30 to-black border-green-500/30 hover:shadow-lg transition-all cursor-pointer" 
-          onClick={handleNavigateToSeating}
         >
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-full bg-green-600/30 flex items-center justify-center mb-4">
@@ -83,10 +74,7 @@ export const TeacherDashboard = () => {
             <p className="text-gray-300 mb-4">Create and manage classroom seating arrangements</p>
             <Button 
               className="w-full bg-green-600 hover:bg-green-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNavigateToSeating();
-              }}
+              onClick={handleNavigateToSeating}
             >
               View Seating Plans
             </Button>

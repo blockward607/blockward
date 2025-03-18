@@ -5,23 +5,25 @@ import { Card } from "@/components/ui/card";
 import { BarChart, LineChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const Analytics = () => {
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [engagementData, setEngagementData] = useState<any[]>([]);
   const [classPerformanceData, setClassPerformanceData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const { toast: useToastHook } = useToast();
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
+        toast.info("Loading analytics data...");
         
         // Get authenticated session
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          toast({
+          useToastHook({
             variant: "destructive",
             title: "Authentication required",
             description: "Please log in to view analytics"
@@ -50,6 +52,7 @@ const Analytics = () => {
           // If no classrooms, use default data
           setEmptyData();
           setLoading(false);
+          toast.warning("No classrooms found. Using sample data.");
           return;
         }
           
@@ -82,21 +85,23 @@ const Analytics = () => {
           };
         });
         setClassPerformanceData(performance);
+        toast.success("Analytics data loaded successfully");
       } catch (error) {
         console.error('Error fetching analytics:', error);
-        toast({
+        useToastHook({
           variant: "destructive",
           title: "Error",
           description: "Failed to load analytics data"
         });
         setEmptyData();
+        toast.error("Failed to load analytics data");
       } finally {
         setLoading(false);
       }
     };
     
     fetchAnalytics();
-  }, [toast]);
+  }, [useToastHook]);
   
   const setEmptyData = () => {
     setAttendanceData([

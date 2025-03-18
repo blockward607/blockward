@@ -165,7 +165,7 @@ export function AppSidebar() {
             {!isMinimized && (
               <div 
                 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 cursor-pointer" 
-                onClick={() => handleNavigate('/')}
+                onClick={() => handleNavigate('/dashboard')}
               >
                 BlockWard
               </div>

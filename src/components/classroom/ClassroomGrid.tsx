@@ -19,6 +19,7 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {} }: ClassroomGridP
   const navigate = useNavigate();
 
   const handleCardClick = () => {
+    console.log(`Card clicked for classroom: ${classroom.id}`);
     navigate(`/class/${classroom.id}`);
   };
 

@@ -9,6 +9,7 @@ import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { EmptyClassState } from "@/components/classroom/EmptyClassState";
 import { JoinClassProvider } from "@/components/classroom/join/JoinClassContext";
+import { toast } from "sonner";
 
 const Classes = () => {
   const { 
@@ -26,6 +27,7 @@ const Classes = () => {
     console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
     // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
+    toast.success("Classes page loaded successfully");
   }, [refreshClassrooms]);
 
   if (loading) {
