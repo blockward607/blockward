@@ -60,24 +60,22 @@ export const InvitationMatchingService = {
       // 2. If no direct match, try to find the classroom by code
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
-        .select('id, name')
+        .select('id, name, join_code')
         .eq('join_code', code)
         .maybeSingle();
         
       console.log("Classroom lookup result:", { classroom, classroomError });
         
       if (classroom) {
-        // Create a simple classroom object to avoid circular references
-        const classroomData = {
-          id: classroom.id,
-          name: classroom.name
-        };
-        
+        // Create a simple classroom object with only necessary properties
         return { 
           data: { 
             classroomId: classroom.id,
             invitationId: null,
-            classroom: classroomData
+            classroom: {
+              id: classroom.id,
+              name: classroom.name
+            }
           }, 
           error: null 
         };
