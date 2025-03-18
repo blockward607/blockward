@@ -64,11 +64,17 @@ export const InvitationMatchingService = {
       console.log("Classroom lookup result:", { classroom, classroomError });
         
       if (classroom) {
+        // Create a simple classroom object to avoid circular references
+        const classroomData = {
+          id: classroom.id,
+          name: classroom.name
+        };
+        
         return { 
           data: { 
             classroomId: classroom.id,
             invitationId: null,
-            classroom
+            classroom: classroomData
           }, 
           error: null 
         };
