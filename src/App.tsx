@@ -68,8 +68,10 @@ function App() {
               <Route path="classes" element={<Classes />} />
               <Route path="students" element={<Students />} />
               <Route path="attendance" element={<Attendance />} />
-              {/* Add classroom seating route */}
+              {/* Classroom specific routes */}
               <Route path="classroom/:classroomId/seating" element={<ClassroomSeating />} />
+              <Route path="classroom/:classroomId/invite" element={<ClassroomInvite />} />
+              <Route path="classroom/:classroomId/attendance" element={<Attendance />} />
               {/* Redirect from achievements to wallet */}
               <Route path="achievements" element={<Navigate to="/wallet" replace />} />
               <Route path="rewards" element={<Rewards />} />

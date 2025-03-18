@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -65,6 +64,11 @@ export function AppSidebar() {
   const handleNavigate = (path: string) => {
     console.log(`Navigating to: ${path}`);
     navigate(path);
+  };
+
+  const toggleSidebarAndMinimize = () => {
+    toggleSidebar();
+    setIsMinimized(!isMinimized);
   };
 
   const teacherNavGroups = [
@@ -145,10 +149,7 @@ export function AppSidebar() {
         <Button 
           size="icon" 
           variant="secondary" 
-          onClick={() => {
-            toggleSidebar();
-            setIsMinimized(!isMinimized);
-          }}
+          onClick={toggleSidebarAndMinimize}
           className="h-8 w-8 rounded-full bg-purple-900 border border-purple-500/30 hover:bg-purple-800 shadow-lg"
         >
           {isMinimized ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}

@@ -16,7 +16,7 @@ export const TeacherDashboard = () => {
   };
 
   const handleNavigateToSeating = () => {
-    navigate('/classes');
+    navigate('/classroom/e283c012-39cb-40e1-b7d5-b54556b02ef2/seating');
   };
 
   return (
