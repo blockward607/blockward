@@ -2,7 +2,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
-import { Trophy, Calendar, Award, Star, Tag } from "lucide-react";
+import { Trophy, Calendar, Award, Star, Tag, SendHorizontal } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { StudentSelect } from "@/components/nft/StudentSelect";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NFTMetadata {
   name: string;
@@ -35,7 +39,10 @@ interface NFTGridProps {
 }
 
 export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
+  const { toast } = useToast();
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   // Demo NFTs with high-quality images
   const demoNfts = nfts.length === 0 && !isLoading ? [
@@ -118,6 +125,145 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
       day: 'numeric',
       year: 'numeric'
     }).format(date);
+  };
+
+  const handleSendNft = async (nft: NFT) => {
+    if (!selectedStudent) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select a student first"
+      });
+      return;
+    }
+
+    setIsSending(true);
+    
+    try {
+      // Get the student details
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('name, user_id')
+        .eq('id', selectedStudent)
+        .single();
+      
+      if (!studentData) {
+        throw new Error("Student not found");
+      }
+      
+      // Get teacher's wallet
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in to transfer BlockWards");
+      }
+      
+      const { data: teacherWallet, error: teacherWalletError } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+        
+      if (teacherWalletError) {
+        throw teacherWalletError;
+      }
+      
+      // Get or create student wallet
+      let studentWallet;
+      const { data: existingWallet } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', studentData.user_id)
+        .maybeSingle();
+        
+      if (existingWallet) {
+        studentWallet = existingWallet;
+      } else {
+        // Create a wallet for the student
+        const { data: newWallet, error: createWalletError } = await supabase
+          .from('wallets')
+          .insert({
+            user_id: studentData.user_id,
+            address: "wallet_" + Math.random().toString(16).slice(2, 10),
+            type: "user"
+          })
+          .select()
+          .single();
+          
+        if (createWalletError) {
+          throw createWalletError;
+        }
+        
+        studentWallet = newWallet;
+      }
+      
+      // Update the NFT owner
+      const { error: updateError } = await supabase
+        .from('nfts')
+        .update({ owner_wallet_id: studentWallet.id })
+        .eq('id', nft.id);
+        
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // Create a transaction record
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          nft_id: nft.id,
+          from_wallet_id: teacherWallet.id,
+          to_wallet_id: studentWallet.id,
+          transaction_hash: "transfer_" + Date.now(),
+          status: 'completed',
+        });
+        
+      if (transactionError) {
+        throw transactionError;
+      }
+      
+      // Add points to student if the NFT has points attribute
+      const pointsAttribute = nft.metadata.attributes?.find(a => a.trait_type === "Points");
+      if (pointsAttribute) {
+        const points = parseInt(pointsAttribute.value);
+        if (!isNaN(points)) {
+          const { error: pointsError } = await supabase.rpc('increment_student_points', {
+            student_id: selectedStudent,
+            points_to_add: points
+          });
+          
+          if (pointsError) {
+            throw pointsError;
+          }
+        }
+      }
+      
+      toast({
+        title: "Success",
+        description: `BlockWard sent to ${studentData.name} successfully!`
+      });
+      
+      setSelectedStudent("");
+      setSelectedNFT(null);
+      
+      // Close the dialog
+      const dialogElement = document.querySelector('[role="dialog"]');
+      if (dialogElement) {
+        const closeButton = dialogElement.querySelector('button[data-state="open"]');
+        if (closeButton) {
+          (closeButton as HTMLButtonElement).click();
+        }
+      }
+      
+    } catch (error: any) {
+      console.error("Error sending NFT:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to send BlockWard"
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // Array of different icons for visual variety
@@ -218,6 +364,33 @@ export const NFTGrid = ({ nfts, isLoading }: NFTGridProps) => {
                         <p className="text-xs text-gray-400 mb-1">Issued On</p>
                         <p className="font-medium">{formatDate(nft.created_at)}</p>
                       </div>
+                    </div>
+                  </div>
+                  
+                  {/* Student selection and send button */}
+                  <div className="pt-4 border-t border-purple-500/20">
+                    <h4 className="text-md font-medium mb-2">Send to Student</h4>
+                    <div className="space-y-3">
+                      <StudentSelect
+                        selectedStudentId={selectedStudent}
+                        onStudentSelect={setSelectedStudent}
+                        placeholder="Select recipient"
+                      />
+                      
+                      <Button
+                        onClick={() => handleSendNft(nft)}
+                        disabled={!selectedStudent || isSending}
+                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                      >
+                        {isSending ? (
+                          "Sending..."
+                        ) : (
+                          <>
+                            <SendHorizontal className="w-4 h-4 mr-2" />
+                            Send BlockWard
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>

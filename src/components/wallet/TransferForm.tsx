@@ -71,7 +71,7 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
 
   return (
     <div className="space-y-4 pt-4 border-t border-gray-700">
-      <h3 className="font-semibold">Teacher Transfer</h3>
+      <h3 className="font-semibold">Transfer BlockWards</h3>
       
       <div className="space-y-4">
         <StudentSelector 

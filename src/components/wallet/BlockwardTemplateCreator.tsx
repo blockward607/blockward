@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TemplateSelector } from "@/components/nft/TemplateSelector";
 import { ImagePlus, Loader2, Shield, AlertTriangle, Trophy, LayoutTemplate, Pi, Atom, Code, Dumbbell, Palette } from "lucide-react";
-import { StudentSelect } from "@/components/nft/StudentSelect";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BlockchainWalletPanel } from "@/components/wallet/BlockchainWalletPanel";
@@ -27,11 +26,9 @@ interface Template {
 export const BlockwardTemplateCreator = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [useMetaMask, setUseMetaMask] = useState(false);
   const [isBlockchainMinting, setIsBlockchainMinting] = useState(false);
-  const [studentWalletAddress, setStudentWalletAddress] = useState<string | null>(null);
   const [connectedWalletAddress, setConnectedWalletAddress] = useState<string | null>(null);
   const [useTemplate, setUseTemplate] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -91,32 +88,6 @@ export const BlockwardTemplateCreator = () => {
     }
   ];
 
-  // Handle student selection change
-  const handleStudentSelect = async (studentId: string) => {
-    setSelectedStudent(studentId);
-    
-    if (studentId) {
-      try {
-        const { data, error } = await supabase
-          .from('wallets')
-          .select('address')
-          .eq('user_id', studentId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching student wallet:', error);
-          return;
-        }
-
-        setStudentWalletAddress(data.address);
-      } catch (error) {
-        console.error('Error fetching student wallet:', error);
-      }
-    } else {
-      setStudentWalletAddress(null);
-    }
-  };
-
   const handleWalletConnect = (address: string) => {
     setConnectedWalletAddress(address);
     toast({
@@ -125,30 +96,36 @@ export const BlockwardTemplateCreator = () => {
     });
   };
 
+  useEffect(() => {
+    if (selectedTemplate && useTemplate) {
+      const template = templates.find(t => t.id === selectedTemplate);
+      if (template) {
+        setFormData({
+          title: template.title,
+          description: template.description,
+          points: template.points,
+          nftType: template.type
+        });
+        setImageUrl(template.imageUrl);
+      }
+    }
+  }, [selectedTemplate, useTemplate]);
+
   const createBlockward = async () => {
-    if (useTemplate && (!selectedTemplate || !selectedStudent)) {
+    if (useTemplate && !selectedTemplate) {
       toast({
         variant: "destructive",
         title: "Missing information",
-        description: "Please select both a template and a student"
+        description: "Please select a template"
       });
       return;
     }
 
-    if (!useTemplate && (!formData.title || !formData.description || !imageUrl || !selectedStudent)) {
+    if (!useTemplate && (!formData.title || !formData.description || !imageUrl)) {
       toast({
         variant: "destructive",
         title: "Missing information",
         description: "Please fill in all required fields for custom award"
-      });
-      return;
-    }
-
-    if (!studentWalletAddress) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Student wallet address not found"
       });
       return;
     }
@@ -226,32 +203,46 @@ export const BlockwardTemplateCreator = () => {
         };
       }
 
-      let blockchainResult;
+      // Get the teacher's wallet
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in to create BlockWards");
+      }
       
-      if (useMetaMask) {
-        // Mint on actual blockchain
-        blockchainResult = await blockchainService.mintBlockWard(studentWalletAddress, metadata);
-      } else {
-        // Simulated mint
-        blockchainResult = {
-          tokenId: `simulated-${Date.now()}`,
-          transactionHash: `hash-${Date.now()}`
-        };
+      const { data: teacherWallet, error: walletError } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (walletError) {
+        throw walletError;
       }
 
-      // Save to database
-      await saveToDatabase(blockchainResult, metadata);
+      // Insert the NFT without assigning to a student yet
+      const { data: nft, error: nftError } = await supabase
+        .from('nfts')
+        .insert({
+          token_id: `award-${Date.now()}`,
+          contract_address: BLOCKWARD_NFT_CONTRACT_ADDRESS,
+          metadata,
+          creator_wallet_id: teacherWallet.id,
+          image_url: metadata.image,
+          owner_wallet_id: null, // No student assigned yet
+          network: "testnet",
+        })
+        .select()
+        .single();
+
+      if (nftError) throw nftError;
 
       toast({
         title: "Success",
-        description: useMetaMask 
-          ? "BlockWard successfully minted on the blockchain!" 
-          : "BlockWard successfully created and simulated on the blockchain!",
+        description: "BlockWard created successfully! It's now available in your wallet to transfer to students."
       });
 
       // Reset form
       setSelectedTemplate("");
-      setSelectedStudent("");
       setFormData({
         title: "",
         description: "",
@@ -270,81 +261,6 @@ export const BlockwardTemplateCreator = () => {
     } finally {
       setLoading(false);
       setIsBlockchainMinting(false);
-    }
-  };
-
-  const saveToDatabase = async (blockchainResult: any, metadata: any) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("You must be logged in to create BlockWards");
-      }
-      
-      // Get teacher wallet
-      const { data: teacherWallet, error: walletError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (walletError) {
-        throw walletError;
-      }
-      
-      // Get student wallet
-      const { data: studentWallet, error: studentWalletError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', selectedStudent)
-        .single();
-        
-      if (studentWalletError) {
-        throw studentWalletError;
-      }
-      
-      // Insert NFT record
-      const { data: nft, error: nftError } = await supabase
-        .from('nfts')
-        .insert({
-          token_id: blockchainResult.tokenId || `award-${Date.now()}`,
-          contract_address: BLOCKWARD_NFT_CONTRACT_ADDRESS,
-          metadata,
-          creator_wallet_id: teacherWallet.id,
-          image_url: metadata.image,
-          owner_wallet_id: studentWallet.id,
-          network: "testnet",
-        })
-        .select()
-        .single();
-
-      if (nftError) throw nftError;
-      
-      // Insert transaction record
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          nft_id: nft.id,
-          from_wallet_id: teacherWallet.id,
-          to_wallet_id: studentWallet.id,
-          transaction_hash: blockchainResult.tokenId || "simulated-" + Date.now(),
-          status: 'completed',
-        });
-
-      if (transactionError) throw transactionError;
-      
-      // Increment student points
-      const { error: incrementError } = await supabase
-        .rpc('increment_student_points', {
-          student_id: selectedStudent,
-          points_to_add: metadata.points
-        });
-
-      if (incrementError) throw incrementError;
-      
-      return true;
-    } catch (error) {
-      console.error("Error saving NFT to database:", error);
-      throw error;
     }
   };
 
@@ -406,19 +322,6 @@ export const BlockwardTemplateCreator = () => {
           </>
         )}
         
-        <div>
-          <h3 className="text-md font-medium mb-2">Select Student</h3>
-          <StudentSelect
-            selectedStudentId={selectedStudent}
-            onStudentSelect={handleStudentSelect}
-          />
-          {selectedStudent && studentWalletAddress && (
-            <div className="text-xs text-gray-400 mt-1">
-              Student wallet: {studentWalletAddress.substring(0, 8)}...
-            </div>
-          )}
-        </div>
-        
         <div className="border border-dashed border-purple-500/30 p-4 rounded-lg">
           <h3 className="text-lg font-semibold mb-3 text-purple-300">Blockchain Integration</h3>
           
@@ -465,7 +368,7 @@ export const BlockwardTemplateCreator = () => {
         <div className="flex justify-end">
           <Button 
             onClick={createBlockward} 
-            disabled={loading || (useTemplate && !selectedTemplate) || !selectedStudent || (useMetaMask && !connectedWalletAddress) || (!useTemplate && (!formData.title || !formData.description || !imageUrl))}
+            disabled={loading || (useTemplate && !selectedTemplate) || (!useTemplate && (!formData.title || !formData.description || !imageUrl)) || (useMetaMask && !connectedWalletAddress)}
             className="bg-purple-600 hover:bg-purple-700"
           >
             {loading ? (
