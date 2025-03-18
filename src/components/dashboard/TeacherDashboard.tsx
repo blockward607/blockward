@@ -9,7 +9,8 @@ export const TeacherDashboard = () => {
 
   const handleNavigateToClasses = () => {
     console.log("Navigating to classes page");
-    navigate('/classes');
+    // Force navigation to classes route
+    window.location.href = '/classes';
   };
 
   const handleNavigateToAttendance = () => {
