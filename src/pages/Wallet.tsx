@@ -4,7 +4,6 @@ import { Wallet as WalletIcon, Plus, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { WalletPanel } from "@/components/wallet/WalletPanel";
 import { Json } from "@/integrations/supabase/types";
 import { BalanceCard } from "@/components/wallet/BalanceCard";
 import { TransferForm } from "@/components/wallet/TransferForm";
@@ -167,10 +166,6 @@ const Wallet = () => {
         <h1 className="text-4xl font-bold shimmer-text">
           BlockWard Wallet
         </h1>
-      </div>
-      
-      <div className="bg-purple-900/10 p-6 rounded-lg">
-        <WalletPanel expanded={false} />
       </div>
       
       <div className="w-full">

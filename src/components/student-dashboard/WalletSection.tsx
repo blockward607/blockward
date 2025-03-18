@@ -33,7 +33,9 @@ export const WalletSection = ({ isDemo, onSignUp }: WalletSectionProps) => {
         </div>
       ) : (
         <div className="space-y-4">
-          <WalletPanel expanded={true} />
+          <div className="bg-purple-900/10 p-4 rounded-lg">
+            <WalletPanel />
+          </div>
           <Link to="/wallet" className="inline-flex items-center justify-center w-full">
             <Button 
               variant="outline" 

@@ -5,11 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
-interface WalletPanelProps {
-  expanded?: boolean;
-}
-
-export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
+export const WalletPanel = () => {
   const { toast } = useToast();
   const [walletType, setWalletType] = useState<'user' | 'admin'>('user');
   const [isTeacher, setIsTeacher] = useState(false);
