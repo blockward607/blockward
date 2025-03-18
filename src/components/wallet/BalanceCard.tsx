@@ -1,5 +1,5 @@
 
-import { WalletIcon, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { WalletIcon, ArrowUpRight, ArrowDownRight, Copy, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -27,8 +27,29 @@ export const BalanceCard = ({
   const handleReceivePoints = () => {
     toast({
       title: "Receive Points",
-      description: `Your wallet address: ${walletAddress?.substring(0, 10)}...`
+      description: `Your wallet address: ${walletAddress}`
     });
+  };
+
+  const copyAddressToClipboard = () => {
+    if (walletAddress) {
+      navigator.clipboard.writeText(walletAddress);
+      toast({
+        title: "Address Copied",
+        description: "Wallet address copied to clipboard"
+      });
+    }
+  };
+
+  const openExternalWalletViewer = () => {
+    if (walletAddress) {
+      // Placeholder for a real blockchain explorer
+      window.open(`https://example.com/wallet/${walletAddress}`, '_blank');
+      toast({
+        title: "External Viewer",
+        description: "Opening wallet in external viewer"
+      });
+    }
   };
 
   if (isLoading) {
@@ -50,12 +71,35 @@ export const BalanceCard = ({
           <WalletIcon className="w-8 h-8 text-purple-400 mb-2" />
           <h3 className="font-semibold">Balance</h3>
           <p className="text-2xl font-bold text-purple-400">{balance} Points</p>
-          {walletAddress && (
-            <p className="text-sm text-purple-300/70 mt-1">
-              Wallet: {walletAddress.substring(0, 10)}...
-            </p>
-          )}
         </div>
+        
+        {walletAddress && (
+          <div className="p-3 bg-purple-900/20 rounded-lg">
+            <div className="flex justify-between items-center mb-1">
+              <p className="text-sm font-medium text-gray-300">Wallet Address</p>
+              <div className="flex gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6" 
+                  onClick={copyAddressToClipboard}
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6" 
+                  onClick={openExternalWalletViewer}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+            <p className="text-sm font-mono text-purple-300 truncate">{walletAddress}</p>
+            <p className="text-xs text-gray-500 mt-1">Use this address to sign in to your account</p>
+          </div>
+        )}
         
         <div className="space-y-2">
           <Button 

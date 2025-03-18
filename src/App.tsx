@@ -29,6 +29,7 @@ const ClassroomInvite = lazy(() => import("@/pages/ClassroomInvite"));
 const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
 const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
 const Grades = lazy(() => import("@/pages/Grades"));
+const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
 
 function App() {
   return (
@@ -79,6 +80,8 @@ function App() {
               <Route path="progress" element={<Progress />} />
               {/* Add new route */}
               <Route path="/class/:classroomId/grades" element={<Grades />} />
+              {/* Add new route */}
+              <Route path="/auth/wallet-verify" element={<WalletVerify />} />
             </Route>
           </Routes>
         </Suspense>
