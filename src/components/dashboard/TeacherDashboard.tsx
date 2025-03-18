@@ -1,261 +1,60 @@
-import { useEffect, useState } from "react";
+
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Send, X } from "lucide-react";
-import type { Notification } from "@/types/notification";
-import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Grid, QrCode, Calendar } from "lucide-react";
 
 export const TeacherDashboard = () => {
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [announcements, setAnnouncements] = useState<Notification[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
-  const [classrooms, setClassrooms] = useState<any[]>([]);
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // Fetch classroom data on component mount
-  useEffect(() => {
-    const fetchClassrooms = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data: teacherProfile } = await supabase
-          .from('teacher_profiles')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .single();
-
-        if (teacherProfile) {
-          const { data, error } = await supabase
-            .from('classrooms')
-            .select('*')
-            .eq('teacher_id', teacherProfile.id)
-            .order('created_at', { ascending: false });
-
-          if (error) throw error;
-          
-          if (data && data.length > 0) {
-            setClassrooms(data);
-            setSelectedClassroom(data[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching classrooms:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load classrooms"
-        });
-      }
-    };
-
-    fetchClassrooms();
-  }, [toast]);
-
-  const handleCreateAnnouncement = async () => {
-    if (!title.trim() || !message.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Missing information",
-        description: "Please provide both a title and a message for your announcement"
-      });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const { data, error } = await supabase
-        .from('notifications')
-        .insert({
-          title: title.trim(),
-          message: message.trim(),
-          created_by: session?.user.id,
-          type: 'announcement',
-          classroom_id: selectedClassroom
-        })
-        .select();
-
-      if (error) throw error;
-
-      toast({
-        title: "Announcement created",
-        description: "Your announcement has been published successfully"
-      });
-
-      // Clear the form
-      setTitle("");
-      setMessage("");
-      
-      // Close the form after successful submission
-      setShowForm(false);
-      
-      // Add the new announcement to the list
-      if (data && data.length > 0) {
-        setAnnouncements([data[0], ...announcements]);
-      }
-    } catch (error) {
-      console.error("Error creating announcement:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to create announcement. Please try again."
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const toggleForm = () => {
-    setShowForm(!showForm);
-    // Reset form when closing
-    if (showForm) {
-      setTitle("");
-      setMessage("");
-    }
+  const handleNavigateToClasses = () => {
+    navigate('/classes');
   };
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-end mb-4">
-        <Button
-          onClick={toggleForm}
-          className={`rounded-full ${showForm ? "bg-red-600 hover:bg-red-700" : "bg-purple-600 hover:bg-purple-700"}`}
-          size="icon"
-        >
-          {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-        </Button>
-      </div>
-
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <Card className="p-6 bg-gradient-to-br from-purple-900/30 to-black border-purple-500/30 mb-8">
-              <h2 className="text-2xl font-bold mb-4">Create Announcement</h2>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium mb-1">
-                    Title
-                  </label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Announcement title"
-                    className="w-full bg-black/50 border-purple-500/30"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium mb-1">
-                    Message
-                  </label>
-                  <Textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Write your announcement here..."
-                    className="w-full min-h-[120px] bg-black/50 border-purple-500/30"
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <Button 
-                    onClick={handleCreateAnnouncement} 
-                    disabled={isSubmitting || !title || !message}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Posting...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Post Announcement
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Recent Announcements</h2>
-        <AnnouncementsList />
-      </div>
-    </div>
-  );
-};
-
-const AnnouncementsList = () => {
-  const [announcements, setAnnouncements] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchAnnouncements();
-  }, []);
-
-  const fetchAnnouncements = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('type', 'announcement')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setAnnouncements(data || []);
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-      </div>
-    );
-  }
-
-  if (announcements.length === 0) {
-    return (
-      <Card className="p-6 text-center bg-black/50 border-purple-500/20">
-        <p className="text-gray-400">No announcements yet</p>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {announcements.map((announcement) => (
-        <Card key={announcement.id} className="p-6 bg-black/50 border-purple-500/30">
-          <h3 className="text-xl font-bold mb-2">{announcement.title}</h3>
-          <p className="text-gray-300 mb-4">{announcement.message}</p>
-          <div className="text-sm text-gray-400">
-            Posted on {new Date(announcement.created_at).toLocaleDateString()} at {new Date(announcement.created_at).toLocaleTimeString()}
+      <h2 className="text-2xl font-bold mb-6 gradient-text">Teacher Dashboard</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="p-6 bg-gradient-to-br from-purple-900/30 to-black border-purple-500/30 hover:shadow-lg transition-all cursor-pointer" onClick={handleNavigateToClasses}>
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-purple-600/30 flex items-center justify-center mb-4">
+              <BookOpen className="h-8 w-8 text-purple-300" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Manage Classes</h3>
+            <p className="text-gray-300 mb-4">Create, edit and manage your classroom settings</p>
+            <Button className="w-full bg-purple-600 hover:bg-purple-700">
+              View Classes
+            </Button>
           </div>
         </Card>
-      ))}
+
+        <Card className="p-6 bg-gradient-to-br from-blue-900/30 to-black border-blue-500/30 hover:shadow-lg transition-all cursor-pointer" onClick={() => navigate('/attendance')}>
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-blue-600/30 flex items-center justify-center mb-4">
+              <Calendar className="h-8 w-8 text-blue-300" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Attendance</h3>
+            <p className="text-gray-300 mb-4">Track and manage student attendance</p>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+              Take Attendance
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-green-900/30 to-black border-green-500/30 hover:shadow-lg transition-all cursor-pointer" onClick={() => navigate('/classes')}>
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-green-600/30 flex items-center justify-center mb-4">
+              <Grid className="h-8 w-8 text-green-300" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Seating Plan</h3>
+            <p className="text-gray-300 mb-4">Create and manage classroom seating arrangements</p>
+            <Button className="w-full bg-green-600 hover:bg-green-700">
+              View Seating Plans
+            </Button>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };
