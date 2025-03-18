@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Fixed import from button instead of card
 import { useNavigate } from "react-router-dom";
 import { Wallet, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -38,11 +38,11 @@ const WalletVerify = () => {
           return;
         }
         
-        // Get user's email for authentication
+        // Get user's role from user_roles table instead of trying to query auth table
         const { data: userData, error: userError } = await supabase
-          .from('auth')
-          .select('email')
-          .eq('id', walletData.user_id)
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', walletData.user_id)
           .single();
           
         if (userError || !userData) {
@@ -54,11 +54,16 @@ const WalletVerify = () => {
         // In a real implementation, you would validate a cryptographic signature here
         // For this demo, we're just simulating the process
         
+        // Create a session for the user (in a real app, this would involve proper auth)
+        // For the demo, we'll store the user ID in localStorage
+        localStorage.setItem('blockward_user_id', walletData.user_id);
+        localStorage.setItem('blockward_user_role', userData.role);
+        
         // Set success status and redirect to dashboard after a delay
         setStatus('success');
         setMessage("Wallet verified! Redirecting to your dashboard...");
         
-        // Clean up the localStorage
+        // Clean up the login wallet address
         localStorage.removeItem('blockward_login_wallet');
         
         // Redirect after a short delay
