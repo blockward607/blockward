@@ -31,7 +31,7 @@ const Classes = () => {
     
     // Refresh classrooms when the page loads
     refreshClassrooms();
-  }, [userRole]);
+  }, [refreshClassrooms]);
 
   if (loading) {
     return <ClassesLoading />;
@@ -82,7 +82,7 @@ const Classes = () => {
           </motion.div>
         )}
 
-        {classrooms.length > 0 ? (
+        {classrooms && classrooms.length > 0 ? (
           <ClassroomsList 
             classrooms={classrooms} 
             userRole={userRole} 

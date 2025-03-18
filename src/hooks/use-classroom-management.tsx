@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
@@ -13,12 +13,7 @@ export const useClassroomManagement = () => {
   const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    console.log("useClassroomManagement hook initialized");
-    checkUserRoleAndFetchData();
-  }, []);
-
-  const checkUserRoleAndFetchData = async () => {
+  const checkUserRoleAndFetchData = useCallback(async () => {
     try {
       console.log("Checking user session...");
       const { data: { session } } = await supabase.auth.getSession();
@@ -155,31 +150,36 @@ export const useClassroomManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const handleClassroomCreated = (newClassroom: Classroom) => {
-    setClassrooms([newClassroom, ...classrooms]);
+  useEffect(() => {
+    console.log("useClassroomManagement hook initialized");
+    checkUserRoleAndFetchData();
+  }, [checkUserRoleAndFetchData]);
+
+  const handleClassroomCreated = useCallback((newClassroom: Classroom) => {
+    setClassrooms(prevClassrooms => [newClassroom, ...prevClassrooms]);
     setSelectedClassroom(newClassroom);
     toast({
       title: "Success",
       description: `Classroom "${newClassroom.name}" created successfully`
     });
-  };
+  }, [toast]);
 
-  const handleDeleteClassroom = (classroomId: string) => {
+  const handleDeleteClassroom = useCallback((classroomId: string) => {
     // Filter out the deleted classroom
-    setClassrooms(classrooms.filter(classroom => classroom.id !== classroomId));
+    setClassrooms(prevClassrooms => prevClassrooms.filter(classroom => classroom.id !== classroomId));
     
     // If the deleted classroom was selected, clear the selection
-    if (selectedClassroom && selectedClassroom.id === classroomId) {
-      setSelectedClassroom(null);
-    }
+    setSelectedClassroom(prevSelected => 
+      prevSelected && prevSelected.id === classroomId ? null : prevSelected
+    );
     
     toast({
       title: "Success",
       description: "Classroom deleted successfully"
     });
-  };
+  }, [toast]);
 
   return {
     classrooms,

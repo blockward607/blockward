@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -33,8 +34,8 @@ const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
-      <BrowserRouter>
+    <BrowserRouter>
+      <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
         <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             {/* Public routes */}
@@ -86,8 +87,8 @@ function App() {
           </Routes>
         </Suspense>
         <Toaster />
-      </BrowserRouter>
-    </ThemeProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 
