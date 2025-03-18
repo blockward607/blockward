@@ -13,23 +13,6 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
-// Define these as standalone types to avoid circular references
-interface ClassroomResponse {
-  id: string;
-  name?: string;
-}
-
-// Avoid circular references by not including the full classroom object
-interface InvitationResponse {
-  id: string;
-  classroom_id: string;
-  invitation_token: string;
-  status: string;
-  expires_at: string | null;
-  // Only include the ID for the classroom
-  classroom_id_reference?: string;
-}
-
 export const InvitationMatchingService = {
   // Try all possible ways to find a classroom or invitation
   async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
