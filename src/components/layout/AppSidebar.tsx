@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -27,8 +28,7 @@ import {
   LogOut,
   ChevronsLeft,
   ChevronsRight,
-  ChartBar,
-  Megaphone
+  ChartBar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -75,7 +75,7 @@ export function AppSidebar() {
     {
       name: "Main",
       items: [
-        { name: "Announcements", href: "/dashboard", icon: Megaphone },
+        { name: "Dashboard", href: "/dashboard", icon: Home },
         { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },
@@ -111,7 +111,7 @@ export function AppSidebar() {
     {
       name: "Main",
       items: [
-        { name: "Announcements", href: "/dashboard", icon: Megaphone },
+        { name: "Dashboard", href: "/dashboard", icon: Home },
         { name: "Classes", href: "/classes", icon: BookOpen },
       ]
     },

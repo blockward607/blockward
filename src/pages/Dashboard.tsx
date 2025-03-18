@@ -83,7 +83,7 @@ const Dashboard = () => {
       {TutorialPrompt}
       <DashboardHeader userName={userName} />
       
-      <div className="flex-1 overflow-y-auto w-full">
+      <div className="flex-1 overflow-y-auto w-full p-6">
         {userRole === 'student' ? (
           <StudentDashboard />
         ) : (
