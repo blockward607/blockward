@@ -15,10 +15,13 @@ const BLOCKWARD_NFT_ABI = [
   "function mintBlockWard(address to, string memory tokenURI) returns (uint256)",
   "function addTeacher(address teacher)",
   "function removeTeacher(address teacher)",
+  "function assignStudentToTeacher(address student, address teacher)",
+  "function getStudentTeacher(address student) view returns (address)",
   
   // Events
   "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
-  "event BlockWardMinted(address indexed to, uint256 indexed tokenId, string tokenURI)"
+  "event BlockWardMinted(address indexed to, uint256 indexed tokenId, string tokenURI)",
+  "event StudentAssigned(address indexed student, address indexed teacher)"
 ];
 
 // Network configuration for Polygon Mumbai testnet
@@ -37,9 +40,10 @@ class BlockchainService {
   private signer: ethers.Signer | null = null;
   private contract: ethers.Contract | null = null;
   private isInitialized = false;
+  private walletType: 'teacher' | 'student' | null = null;
   
   // Initialize the blockchain service
-  async initialize() {
+  async initialize(accountType?: 'teacher' | 'student') {
     if (!window.ethereum) {
       throw new Error('MetaMask or another web3 wallet is required');
     }
@@ -65,6 +69,15 @@ class BlockchainService {
         BLOCKWARD_NFT_ABI,
         this.signer
       );
+      
+      // Determine wallet type if not provided
+      if (!accountType) {
+        const address = await this.getWalletAddress();
+        const isTeacher = await this.contract.isTeacher(address);
+        this.walletType = isTeacher ? 'teacher' : 'student';
+      } else {
+        this.walletType = accountType;
+      }
       
       this.isInitialized = true;
       return true;
@@ -96,13 +109,76 @@ class BlockchainService {
     return await this.contract.isTeacher(address);
   }
   
+  // Get the wallet type (teacher or student)
+  getWalletType() {
+    return this.walletType;
+  }
+  
+  // Set the wallet type explicitly (for new users)
+  setWalletType(type: 'teacher' | 'student') {
+    this.walletType = type;
+  }
+  
+  // Register a teacher wallet with the contract
+  async registerTeacherWallet(teacherAddress?: string) {
+    if (!this.isInitialized) await this.initialize();
+    if (!this.contract) throw new Error('Contract not initialized');
+    
+    const address = teacherAddress || await this.getWalletAddress();
+    const currentWalletIsTeacher = await this.contract.isTeacher(await this.getWalletAddress());
+    
+    // Only the contract owner or existing teachers can add new teachers
+    if (!currentWalletIsTeacher) {
+      throw new Error('Only existing teachers or the contract owner can register new teachers');
+    }
+    
+    const tx = await this.contract.addTeacher(address);
+    await tx.wait();
+    
+    return true;
+  }
+  
+  // Assign a student to a teacher
+  async assignStudentToTeacher(studentAddress: string, teacherAddress?: string) {
+    if (!this.isInitialized) await this.initialize();
+    if (!this.contract) throw new Error('Contract not initialized');
+    
+    const teacher = teacherAddress || await this.getWalletAddress();
+    const isTeacher = await this.contract.isTeacher(teacher);
+    
+    if (!isTeacher) {
+      throw new Error('Teacher address must belong to a registered teacher');
+    }
+    
+    const tx = await this.contract.assignStudentToTeacher(studentAddress, teacher);
+    await tx.wait();
+    
+    return true;
+  }
+  
   // Mint a new BlockWard NFT to a student
   async mintBlockWard(studentAddress: string, metadata: any) {
     if (!this.isInitialized) await this.initialize();
     if (!this.contract) throw new Error('Contract not initialized');
     
+    // Check if current wallet is a teacher
+    const isTeacher = await this.isTeacherWallet();
+    if (!isTeacher) {
+      throw new Error('Only teachers can mint BlockWards');
+    }
+    
     // Convert metadata to URI (in a real implementation, this would be stored on IPFS)
     const metadataURI = `ipfs://bafybeih${Math.random().toString(36).substring(2, 15)}`;
+    
+    // Check if student is assigned to this teacher
+    const teacherAddress = await this.getWalletAddress();
+    const studentTeacher = await this.contract.getStudentTeacher(studentAddress);
+    
+    // If student is already assigned to a teacher, ensure it's this teacher
+    if (studentTeacher !== ethers.constants.AddressZero && 
+        studentTeacher.toLowerCase() !== teacherAddress.toLowerCase()) {
+      throw new Error('This student is assigned to a different teacher');
+    }
     
     // Mint the NFT
     const tx = await this.contract.mintBlockWard(studentAddress, metadataURI);
@@ -181,6 +257,25 @@ class BlockchainService {
     }));
     
     return nfts;
+  }
+  
+  // Verify if a student can receive NFTs from a specific teacher
+  async canReceiveFromTeacher(studentAddress: string, teacherAddress: string) {
+    if (!this.isInitialized) await this.initialize();
+    if (!this.contract) throw new Error('Contract not initialized');
+    
+    // Check if the teacher is registered
+    const isTeacher = await this.contract.isTeacher(teacherAddress);
+    if (!isTeacher) return false;
+    
+    // Get student's assigned teacher
+    const assignedTeacher = await this.contract.getStudentTeacher(studentAddress);
+    
+    // If student has no teacher yet, they can be assigned
+    if (assignedTeacher === ethers.constants.AddressZero) return true;
+    
+    // If student has a teacher, check if it's the same teacher
+    return assignedTeacher.toLowerCase() === teacherAddress.toLowerCase();
   }
 }
 

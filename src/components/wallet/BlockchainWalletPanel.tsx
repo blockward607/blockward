@@ -2,26 +2,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Wallet, ExternalLink, Link as LinkIcon, Check } from "lucide-react";
+import { Loader2, Wallet, ExternalLink, Link as LinkIcon, Check, Shield, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { blockchainService } from '@/blockchain/services/BlockchainService';
 import { truncateAddress } from '@/utils/addressUtils';
 
 interface BlockchainWalletPanelProps {
   onConnect?: (address: string) => void;
+  accountType?: 'teacher' | 'student';
 }
 
-export const BlockchainWalletPanel = ({ onConnect }: BlockchainWalletPanelProps) => {
+export const BlockchainWalletPanel = ({ onConnect, accountType }: BlockchainWalletPanelProps) => {
   const { toast } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isTeacher, setIsTeacher] = useState(false);
+  const [walletType, setWalletType] = useState<'teacher' | 'student' | null>(null);
   
   const connectWallet = useCallback(async () => {
     try {
       setIsConnecting(true);
       
-      const initialized = await blockchainService.initialize();
+      const initialized = await blockchainService.initialize(accountType);
       if (!initialized) {
         toast({
           variant: "destructive",
@@ -38,6 +40,12 @@ export const BlockchainWalletPanel = ({ onConnect }: BlockchainWalletPanelProps)
       try {
         const teacherStatus = await blockchainService.isTeacherWallet();
         setIsTeacher(teacherStatus);
+        
+        // Set wallet type based on teacher status or explicit type
+        const type = accountType || (teacherStatus ? 'teacher' : 'student');
+        setWalletType(type);
+        blockchainService.setWalletType(type);
+        
       } catch (error) {
         console.error("Error checking teacher status:", error);
       }
@@ -59,7 +67,7 @@ export const BlockchainWalletPanel = ({ onConnect }: BlockchainWalletPanelProps)
     } finally {
       setIsConnecting(false);
     }
-  }, [toast, onConnect]);
+  }, [toast, onConnect, accountType]);
   
   // Check if wallet was previously connected
   useEffect(() => {
@@ -85,6 +93,7 @@ export const BlockchainWalletPanel = ({ onConnect }: BlockchainWalletPanelProps)
         // User disconnected wallet
         setWalletAddress(null);
         setIsTeacher(false);
+        setWalletType(null);
         toast({
           variant: "destructive",
           title: "Wallet Disconnected",
@@ -96,6 +105,14 @@ export const BlockchainWalletPanel = ({ onConnect }: BlockchainWalletPanelProps)
         toast({
           title: "Account Changed",
           description: `Now connected to ${truncateAddress(accounts[0])}`
+        });
+        
+        // Re-check teacher status for new account
+        blockchainService.isTeacherWallet().then(status => {
+          setIsTeacher(status);
+          const type = status ? 'teacher' : 'student';
+          setWalletType(type);
+          blockchainService.setWalletType(type);
         });
       }
     };
@@ -145,16 +162,38 @@ export const BlockchainWalletPanel = ({ onConnect }: BlockchainWalletPanelProps)
               >
                 <ExternalLink className="h-4 w-4" />
               </Button>
-              {isTeacher && (
+              {walletType === 'teacher' && (
+                <div className="flex items-center bg-purple-600/20 text-purple-400 text-xs px-2 rounded">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Teacher
+                </div>
+              )}
+              {walletType === 'student' && (
                 <div className="flex items-center bg-green-600/20 text-green-400 text-xs px-2 rounded">
                   <Check className="h-3 w-3 mr-1" />
-                  Teacher
+                  Student
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+      
+      {walletAddress && (
+        <div className="mt-3 p-2 rounded text-xs bg-gray-800">
+          {walletType === 'teacher' ? (
+            <div className="flex items-center text-amber-400">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              <span>Teacher wallets can only mint and send BlockWards, not receive them</span>
+            </div>
+          ) : walletType === 'student' ? (
+            <div className="flex items-center text-green-400">
+              <Shield className="h-3 w-3 mr-1" />
+              <span>Student wallets can only receive BlockWards from their assigned teacher</span>
+            </div>
+          ) : null}
+        </div>
+      )}
       
       {!walletAddress && (
         <Button 
