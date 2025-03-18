@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, Sparkles, ArrowRight, BookOpen } from "lucide-react";
+import { AccessDemoButtons } from "./demo/AccessDemoButtons";
 
 export const Hero = () => {
   const navigate = useNavigate();
@@ -95,7 +96,7 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="flex flex-wrap gap-4 justify-center"
+            className="flex flex-wrap gap-4 justify-center mb-8"
           >
             <Button 
               size="lg" 
@@ -121,6 +122,9 @@ export const Hero = () => {
               How It Works <BookOpen className="w-4 h-4 ml-2" />
             </Button>
           </motion.div>
+          
+          {/* Demo Access Buttons */}
+          <AccessDemoButtons />
         </motion.div>
       </div>
     </div>

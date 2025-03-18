@@ -36,11 +36,10 @@ export const InvitationMatchingService = {
       }
       
       // 2. If no direct match, try to find the classroom by code
-      // This is a fallback for older class codes that might have been stored differently
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
         .select('id')
-        .eq('join_code', code)  // Assumes there might be a join_code column on classrooms
+        .eq('join_code', code)
         .maybeSingle();
         
       console.log("Classroom lookup result:", { classroom, classroomError });

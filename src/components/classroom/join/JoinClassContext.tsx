@@ -1,166 +1,143 @@
 
-import React, { createContext, useState, useContext, ReactNode } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { ClassJoinService } from "@/services/class-join";
-import { supabase } from "@/integrations/supabase/client";
+import React, { createContext, useContext, useState } from 'react';
+import { ClassJoinService } from '@/services/class-join';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
-interface JoinClassContextType {
-  joining: boolean;
-  joinError: string | null;
-  joinSuccess: boolean;
-  joinClass: (code: string) => Promise<void>;
-  resetJoinState: () => void;
-}
+// Define context type
+type JoinClassContextType = {
+  code: string;
+  setCode: (code: string) => void;
+  isProcessing: boolean;
+  error: string | null;
+  joinClassWithCode: (code: string) => Promise<void>;
+};
 
-const JoinClassContext = createContext<JoinClassContextType | undefined>(undefined);
+// Create context with default values
+const JoinClassContext = createContext<JoinClassContextType>({
+  code: '',
+  setCode: () => {},
+  isProcessing: false,
+  error: null,
+  joinClassWithCode: async () => {},
+});
 
-export const JoinClassProvider = ({ children }: { children: ReactNode }) => {
-  const [joining, setJoining] = useState(false);
-  const [joinError, setJoinError] = useState<string | null>(null);
-  const [joinSuccess, setJoinSuccess] = useState(false);
+// Custom hook to use the context
+export const useJoinClassContext = () => useContext(JoinClassContext);
+
+export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [code, setCode] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  const resetJoinState = () => {
-    setJoining(false);
-    setJoinError(null);
-    setJoinSuccess(false);
-  };
+  const joinClassWithCode = async (classCode: string) => {
+    if (!user) {
+      setError('You must be logged in to join a class');
+      toast({
+        title: 'Authentication Required',
+        description: 'You must be logged in to join a class',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-  const joinClass = async (code: string) => {
     try {
-      setJoining(true);
-      setJoinError(null);
-      setJoinSuccess(false);
+      setIsProcessing(true);
+      setError(null);
+      console.log('Attempting to join class with code:', classCode);
+
+      // Find classroom or invitation by code
+      const { data: foundClass, error: findError } = await ClassJoinService.findClassroomOrInvitation(classCode);
       
-      console.log("Attempting to join class with code:", code);
-      
-      // Validate session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("You must be logged in to join a class");
+      if (findError || !foundClass) {
+        console.error('Error finding class:', findError);
+        setError(findError?.message || 'Invalid class code');
+        toast({
+          title: 'Error',
+          description: findError?.message || 'Invalid class code',
+          variant: 'destructive',
+        });
+        return;
       }
+
+      console.log('Found class/invitation:', foundClass);
       
-      console.log("User is authenticated, proceeding with class join");
-      
-      // Get student profile for the current user
-      const { data: studentData, error: studentError } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-        
-      if (studentError) {
-        console.error("Error fetching student profile:", studentError);
-        throw new Error("Failed to fetch your student profile");
-      }
-      
-      if (!studentData) {
-        console.error("No student profile found for user");
-        throw new Error("No student profile found for your account");
-      }
-      
-      console.log("Found student profile:", studentData);
-      
-      // Find classroom by code
-      const { data: invitationData, error: inviteError } = await ClassJoinService.findClassroomOrInvitation(code);
-      
-      if (inviteError) {
-        console.error("Error finding classroom:", inviteError);
-        throw new Error(inviteError.message || "Failed to find classroom with this code");
-      }
-      
-      if (!invitationData) {
-        throw new Error("Invalid invitation code. Please check and try again.");
-      }
-      
-      console.log("Found invitation data:", invitationData);
-      
-      // Check if classroom exists
-      if (!invitationData.classroomId) {
-        throw new Error("Could not find a classroom with this code");
-      }
-      
-      // Check if already enrolled
-      const { data: enrollmentCheck, error: enrollmentError } = await ClassJoinService.checkEnrollment(
-        studentData.id,
-        invitationData.classroomId
+      // Check if student is already enrolled
+      const { data: existingEnrollment, error: enrollmentError } = await ClassJoinService.checkEnrollment(
+        user.id,
+        foundClass.classroomId
       );
       
       if (enrollmentError) {
-        console.error("Error checking enrollment:", enrollmentError);
+        console.error('Error checking enrollment:', enrollmentError);
       }
       
-      if (enrollmentCheck) {
-        console.log("Already enrolled in this classroom:", enrollmentCheck);
+      if (existingEnrollment) {
+        setError('You are already enrolled in this class');
         toast({
-          title: "Already Enrolled",
-          description: "You are already enrolled in this class",
+          title: 'Already Enrolled',
+          description: 'You are already enrolled in this class',
         });
-        setJoinSuccess(true);
         return;
       }
       
-      // Enroll student in classroom
-      console.log("Enrolling student in classroom:", {
-        studentId: studentData.id,
-        classroomId: invitationData.classroomId,
-      });
+      // If invitation exists, accept it
+      if (foundClass.invitationId) {
+        await ClassJoinService.acceptInvitation(foundClass.invitationId);
+      }
       
+      // Enroll student in classroom
       const { data: enrollment, error: enrollError } = await ClassJoinService.enrollStudent(
-        studentData.id,
-        invitationData.classroomId
+        user.id,
+        foundClass.classroomId
       );
       
       if (enrollError) {
-        console.error("Error enrolling in classroom:", enrollError);
-        throw new Error(enrollError.message || "Failed to join the classroom");
+        console.error('Error enrolling student:', enrollError);
+        setError(enrollError.message || 'Failed to join class');
+        toast({
+          title: 'Error',
+          description: enrollError.message || 'Failed to join class',
+          variant: 'destructive',
+        });
+        return;
       }
       
-      console.log("Successfully enrolled:", enrollment);
-      
-      // If there was an invitation ID, mark it as accepted
-      if (invitationData.invitationId) {
-        await ClassJoinService.acceptInvitation(invitationData.invitationId);
-      }
-      
+      console.log('Successfully joined class:', enrollment);
       toast({
-        title: "Success!",
-        description: "You have successfully joined the class",
+        title: 'Success',
+        description: 'You have successfully joined the class',
       });
       
-      setJoinSuccess(true);
-    } catch (error: any) {
-      console.error("Error joining class:", error);
-      setJoinError(error.message || "An error occurred while joining the class");
+      // Reset form state
+      setCode('');
+      
+    } catch (err: any) {
+      console.error('Exception in joinClassWithCode:', err);
+      setError(err.message || 'An unexpected error occurred');
       toast({
-        title: "Error",
-        description: error.message || "Failed to join class",
-        variant: "destructive",
+        title: 'Error',
+        description: err.message || 'An unexpected error occurred',
+        variant: 'destructive',
       });
     } finally {
-      setJoining(false);
+      setIsProcessing(false);
     }
   };
 
+  const contextValue: JoinClassContextType = {
+    code,
+    setCode,
+    isProcessing,
+    error,
+    joinClassWithCode,
+  };
+
   return (
-    <JoinClassContext.Provider
-      value={{
-        joining,
-        joinError,
-        joinSuccess,
-        joinClass,
-        resetJoinState,
-      }}
-    >
+    <JoinClassContext.Provider value={contextValue}>
       {children}
     </JoinClassContext.Provider>
   );
-};
-
-export const useJoinClass = () => {
-  const context = useContext(JoinClassContext);
-  if (context === undefined) {
-    throw new Error("useJoinClass must be used within a JoinClassProvider");
-  }
-  return context;
 };
