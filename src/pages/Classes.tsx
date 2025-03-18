@@ -1,6 +1,7 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import { InviteStudents } from "@/components/classroom/InviteStudents";
 import { JoinClassSection } from "@/components/classroom/join/JoinClassSection";
 import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
@@ -22,13 +23,24 @@ const Classes = () => {
     handleDeleteClassroom,
     refreshClassrooms
   } = useClassroomManagement();
-
+  
+  const location = useLocation();
+  
   useEffect(() => {
     console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
     // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
     toast.success("Classes page loaded successfully");
-  }, [refreshClassrooms]);
+    
+    // Check for invitation code in URL params
+    const queryParams = new URLSearchParams(location.search);
+    const inviteCode = queryParams.get('code');
+    if (inviteCode) {
+      console.log("Found invitation code in URL:", inviteCode);
+      toast.info("Processing invitation code...");
+      // The JoinClassContext will pick this up automatically
+    }
+  }, [refreshClassrooms, location.search]);
 
   if (loading) {
     return <ClassesLoading />;
