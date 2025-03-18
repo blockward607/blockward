@@ -11,6 +11,14 @@ export const TeacherDashboard = () => {
     navigate('/classes');
   };
 
+  const handleNavigateToAttendance = () => {
+    navigate('/attendance');
+  };
+
+  const handleNavigateToSeating = () => {
+    navigate('/classes');
+  };
+
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold mb-6 gradient-text">Teacher Dashboard</h2>
@@ -29,7 +37,7 @@ export const TeacherDashboard = () => {
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-blue-900/30 to-black border-blue-500/30 hover:shadow-lg transition-all cursor-pointer" onClick={() => navigate('/attendance')}>
+        <Card className="p-6 bg-gradient-to-br from-blue-900/30 to-black border-blue-500/30 hover:shadow-lg transition-all cursor-pointer" onClick={handleNavigateToAttendance}>
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-full bg-blue-600/30 flex items-center justify-center mb-4">
               <Calendar className="h-8 w-8 text-blue-300" />
@@ -42,7 +50,7 @@ export const TeacherDashboard = () => {
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-green-900/30 to-black border-green-500/30 hover:shadow-lg transition-all cursor-pointer" onClick={() => navigate('/classes')}>
+        <Card className="p-6 bg-gradient-to-br from-green-900/30 to-black border-green-500/30 hover:shadow-lg transition-all cursor-pointer" onClick={handleNavigateToSeating}>
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-full bg-green-600/30 flex items-center justify-center mb-4">
               <Grid className="h-8 w-8 text-green-300" />
