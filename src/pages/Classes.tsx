@@ -24,6 +24,7 @@ const Classes = () => {
 
   useEffect(() => {
     console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
+    // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
   }, [refreshClassrooms]);
 
