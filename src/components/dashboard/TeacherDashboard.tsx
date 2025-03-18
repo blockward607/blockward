@@ -7,22 +7,56 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Send, X } from "lucide-react";
-import type { Classroom } from "@/types/classroom";
 import type { Notification } from "@/types/notification";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface TeacherDashboardProps {
-  classrooms: Partial<Classroom>[];
-  selectedClassroom: string | null;
-}
-
-export const TeacherDashboard = ({ classrooms, selectedClassroom }: TeacherDashboardProps) => {
+export const TeacherDashboard = () => {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [announcements, setAnnouncements] = useState<Notification[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch classroom data on component mount
+  useEffect(() => {
+    const fetchClassrooms = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data: teacherProfile } = await supabase
+          .from('teacher_profiles')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (teacherProfile) {
+          const { data, error } = await supabase
+            .from('classrooms')
+            .select('*')
+            .eq('teacher_id', teacherProfile.id)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            setSelectedClassroom(data[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching classrooms:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load classrooms"
+        });
+      }
+    };
+
+    fetchClassrooms();
+  }, [toast]);
 
   const handleCreateAnnouncement = async () => {
     if (!title.trim() || !message.trim()) {
