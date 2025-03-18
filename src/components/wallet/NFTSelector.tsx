@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { NFT } from "@/hooks/useTransferData";
+import { Award } from "lucide-react";
 
 interface NFTSelectorProps {
   nfts: NFT[];
@@ -26,7 +27,10 @@ export const NFTSelector = ({
 }: NFTSelectorProps) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="nft">Select BlockWard</Label>
+      <Label htmlFor="nft" className="flex items-center gap-2">
+        <Award className="h-4 w-4 text-purple-400" />
+        <span>Select BlockWard</span>
+      </Label>
       <Select 
         value={selectedNft} 
         onValueChange={setSelectedNft}

@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Student } from "@/hooks/useTransferData";
+import { User } from "lucide-react";
 
 interface StudentSelectorProps {
   students: Student[];
@@ -26,7 +27,10 @@ export const StudentSelector = ({
 }: StudentSelectorProps) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="nft-student">Select Student</Label>
+      <Label htmlFor="nft-student" className="flex items-center gap-2">
+        <User className="h-4 w-4 text-purple-400" />
+        <span>Select Student</span>
+      </Label>
       <Select 
         value={selectedStudent} 
         onValueChange={setSelectedStudent}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Wallet as WalletIcon, Plus, AlertTriangle } from "lucide-react";
@@ -188,26 +189,30 @@ const Wallet = () => {
           </div>
 
           <div className="space-y-6">
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="collection">My Collection</TabsTrigger>
-                {userRole === 'teacher' && (
+            {userRole === 'teacher' ? (
+              <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="mb-4">
                   <TabsTrigger value="create">Create BlockWard</TabsTrigger>
-                )}
-              </TabsList>
+                  <TabsTrigger value="collection">My Collection</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="collection" className="space-y-4">
-                <h2 className="text-xl font-semibold">Your BlockWards</h2>
-                <NFTGrid nfts={nfts} isLoading={isLoading} />
-                <NFTDisclaimer />
-              </TabsContent>
-
-              {userRole === 'teacher' && (
                 <TabsContent value="create">
                   <BlockwardTemplateCreator />
                 </TabsContent>
-              )}
-            </Tabs>
+
+                <TabsContent value="collection" className="space-y-4">
+                  <h2 className="text-xl font-semibold">Your BlockWards</h2>
+                  <NFTGrid nfts={nfts} isLoading={isLoading} />
+                  <NFTDisclaimer />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Your BlockWards</h2>
+                <NFTGrid nfts={nfts} isLoading={isLoading} />
+                <NFTDisclaimer />
+              </div>
+            )}
           </div>
         </div>
       </div>
