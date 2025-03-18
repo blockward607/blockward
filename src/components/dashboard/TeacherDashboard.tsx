@@ -20,6 +20,7 @@ export const TeacherDashboard = () => {
   // Force navigation to remain on the current page when component mounts
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // If already on the dashboard, allow normal navigation
       if (window.location.pathname === '/dashboard') {
         return;
       }
