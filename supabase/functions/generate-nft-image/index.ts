@@ -13,6 +13,25 @@ serve(async (req) => {
 
   try {
     const { prompt } = await req.json()
+    
+    // Validate that we have a prompt
+    if (!prompt) {
+      console.error('Missing prompt in request');
+      return new Response(
+        JSON.stringify({ error: 'Prompt is required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Get the OpenAI API key from environment
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      console.error('OPENAI_API_KEY environment variable is not set');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key is not configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
 
     console.log('Generating image for prompt:', prompt);
 
@@ -20,7 +39,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAIApiKey}`,
       },
       body: JSON.stringify({
         model: "dall-e-3",
@@ -32,7 +51,25 @@ serve(async (req) => {
     })
 
     const data = await response.json()
-    console.log('OpenAI API response:', data);
+    console.log('OpenAI API response status:', response.status);
+    
+    // Check if the response contains an error
+    if (!response.ok) {
+      console.error('OpenAI API error:', data);
+      return new Response(
+        JSON.stringify({ error: data.error?.message || 'Error from OpenAI API' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: response.status }
+      )
+    }
+    
+    // Validate we have the expected data structure
+    if (!data.data || !data.data[0] || !data.data[0].url) {
+      console.error('Unexpected response structure from OpenAI:', data);
+      return new Response(
+        JSON.stringify({ error: 'Invalid response from image generation API' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
     
     return new Response(
       JSON.stringify({ imageUrl: data.data[0].url }),
