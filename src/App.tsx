@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -66,7 +67,6 @@ function App() {
               <Route path="classes" element={<Classes />} />
               <Route path="students" element={<Students />} />
               <Route path="attendance" element={<Attendance />} />
-              {/* Fix: Change classroom path structure */}
               <Route path="classroom/seating" element={<ClassroomSeating />} />
               <Route path="classroom/:classroomId/seating" element={<ClassroomSeating />} />
               <Route path="classroom/:classroomId/invite" element={<ClassroomInvite />} />

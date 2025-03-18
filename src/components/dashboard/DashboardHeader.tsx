@@ -1,5 +1,5 @@
 
-import { ArrowLeft, Bell, Megaphone } from "lucide-react";
+import { ArrowLeft, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { WalletPanel } from "@/components/wallet/WalletPanel";
@@ -74,7 +74,7 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold gradient-text">Announcements</h1>
+          <h1 className="text-4xl font-bold gradient-text">Dashboard</h1>
           <p className="text-gray-400">Welcome back, {userName || 'User'}</p>
         </div>
       </div>
@@ -86,7 +86,7 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
           className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/30"
         >
           <Bell className="w-4 h-4 mr-2" />
-          All Notifications
+          Notifications
         </Button>
         <WalletPanel />
       </div>
