@@ -32,9 +32,18 @@ export const GradeService = {
       return { data: null, error: new Error('Assignment title is required') };
     }
     
+    // Now we explicitly define the assignment object with a required title
+    const assignmentData = {
+      title: assignment.title,
+      description: assignment.description || '',
+      classroom_id: assignment.classroom_id,
+      points_possible: assignment.points_possible || 100,
+      due_date: assignment.due_date
+    };
+    
     const { data, error } = await supabase
       .from('assignments')
-      .insert(assignment)
+      .insert(assignmentData)
       .select();
       
     return { data, error };
