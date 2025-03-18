@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export function AppSidebar() {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -63,7 +64,13 @@ export function AppSidebar() {
 
   const handleNavigate = (path: string) => {
     console.log(`Navigating to: ${path}`);
-    navigate(path);
+    
+    if (path === '/classes') {
+      window.location.href = path;
+      toast.success("Redirecting to classes...");
+    } else {
+      navigate(path);
+    }
   };
 
   const toggleSidebarAndMinimize = () => {
