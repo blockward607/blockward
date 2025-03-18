@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, ImagePlus, Loader2, LayoutTemplate, Shield, AlertTriangle } from "lucide-react";
+import { Trophy, ImagePlus, Loader2, LayoutTemplate, Shield, AlertTriangle, Pi, Atom, Code, Dumbbell, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NFTImageUpload } from "./NFTImageUpload";
@@ -80,42 +81,47 @@ export const CreateNFTAward = () => {
     {
       id: "math-excellence",
       title: "Mathematics Excellence Award",
-      description: "Awarded for outstanding achievement in mathematics",
+      description: "Awarded for outstanding achievement in mathematics and problem-solving skills",
       points: 200,
       type: "academic",
       imageUrl: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2070",
+      icon: <Pi className="w-4 h-4 text-white" />
     },
     {
       id: "science-achievement",
       title: "Science Achievement Award",
-      description: "Recognizing exceptional work in scientific studies",
+      description: "Recognizing exceptional work in scientific studies and experimentation",
       points: 200,
       type: "academic",
       imageUrl: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2070",
+      icon: <Atom className="w-4 h-4 text-white" />
     },
     {
-      id: "leadership",
-      title: "Leadership Excellence",
-      description: "Recognizing outstanding leadership qualities and initiative",
-      points: 250,
-      type: "behavior",
-      imageUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070",
+      id: "computer-science",
+      title: "Computer Science Excellence",
+      description: "Celebrating achievements in programming, algorithms and computational thinking",
+      points: 220,
+      type: "academic",
+      imageUrl: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=2070",
+      icon: <Code className="w-4 h-4 text-white" />
     },
     {
-      id: "perfect-attendance",
-      title: "Perfect Attendance",
-      description: "Awarded for outstanding attendance record",
-      points: 150,
-      type: "attendance",
-      imageUrl: "https://images.unsplash.com/photo-1506784365847-bbad939e9335?q=80&w=2068",
+      id: "physical-education",
+      title: "Physical Education Achievement",
+      description: "Recognizing excellence in sports, teamwork and physical fitness",
+      points: 180,
+      type: "physical",
+      imageUrl: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2070",
+      icon: <Dumbbell className="w-4 h-4 text-white" />
     },
     {
-      id: "creativity",
-      title: "Creative Excellence",
-      description: "Recognizing exceptional creativity and innovation",
+      id: "creative-arts",
+      title: "Creative Arts Excellence",
+      description: "Recognizing exceptional creativity and artistic expression",
       points: 180,
       type: "special",
       imageUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071",
+      icon: <Palette className="w-4 h-4 text-white" />
     }
   ];
 
@@ -312,7 +318,7 @@ export const CreateNFTAward = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please upload or generate an image"
+        description: "Please upload or select an image"
       });
       return;
     }

@@ -1,7 +1,6 @@
 
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, Pi, Atom, Code, Dumbbell, Palette } from "lucide-react";
 
 interface Template {
   id: string;
@@ -10,6 +9,7 @@ interface Template {
   points: number;
   type: string;
   imageUrl: string;
+  icon: JSX.Element;
 }
 
 interface TemplateSelectorProps {
@@ -38,12 +38,15 @@ export const TemplateSelector = ({ templates, selectedTemplate, onSelect }: Temp
                 <Check className="w-4 h-4 text-white" />
               </div>
             )}
-            <div className="h-36 overflow-hidden">
+            <div className="h-36 overflow-hidden relative">
               <img
                 src={template.imageUrl}
                 alt={template.title}
                 className="w-full h-full object-cover transition-transform hover:scale-110"
               />
+              <div className="absolute top-2 left-2 bg-purple-600/80 p-2 rounded-full">
+                {template.icon}
+              </div>
             </div>
             <div className="p-4">
               <h4 className="font-semibold text-sm">{template.title}</h4>

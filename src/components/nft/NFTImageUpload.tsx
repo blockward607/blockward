@@ -2,17 +2,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Wand2, Loader2, ImageIcon } from "lucide-react";
+import { Loader2, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface NFTImageUploadProps {
   imageUrl: string | null;
@@ -22,9 +14,6 @@ interface NFTImageUploadProps {
 export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [generatingImage, setGeneratingImage] = useState(false);
-  const [imagePrompt, setImagePrompt] = useState("");
-  const [aiImageDialogOpen, setAiImageDialogOpen] = useState(false);
 
   const createNftImagesBucketIfNeeded = async () => {
     try {
@@ -82,43 +71,6 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
     }
   };
 
-  const generateImage = async () => {
-    if (!imagePrompt) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter an image prompt"
-      });
-      return;
-    }
-
-    setGeneratingImage(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-nft-image', {
-        body: { prompt: imagePrompt }
-      });
-
-      if (error) throw error;
-      
-      onImageSelect(data.imageUrl);
-      setAiImageDialogOpen(false);
-      
-      toast({
-        title: "Success",
-        description: "AI image generated successfully!"
-      });
-    } catch (error: any) {
-      console.error('AI image generation error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to generate image: " + (error.message || "Unknown error")
-      });
-    } finally {
-      setGeneratingImage(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
       <label className="text-sm text-gray-400">BlockWard Image</label>
@@ -138,48 +90,6 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
             </div>
           )}
         </div>
-        
-        <Dialog open={aiImageDialogOpen} onOpenChange={setAiImageDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="flex-shrink-0 bg-purple-600/20 border-purple-500/30 hover:bg-purple-600/30 text-purple-300"
-            >
-              <Wand2 className="w-4 h-4 mr-2" />
-              Generate AI Image
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-center">Generate BlockWard Image with AI</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <Textarea
-                placeholder="Describe the image you want to generate... (e.g., 'A shining golden trophy with blue digital particles, educational achievement award, high quality digital art')"
-                value={imagePrompt}
-                onChange={(e) => setImagePrompt(e.target.value)}
-                className="min-h-[120px]"
-              />
-              <Button 
-                onClick={generateImage}
-                disabled={generatingImage || !imagePrompt.trim()}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-              >
-                {generatingImage ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating Digital Art...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate BlockWard Image
-                  </>
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {imageUrl ? (
@@ -197,7 +107,7 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
         <div className="mt-4 h-40 border-2 border-dashed border-gray-600 rounded-lg flex flex-col items-center justify-center text-gray-500">
           <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
           <p className="text-sm">No image selected</p>
-          <p className="text-xs mt-1">Upload an image or generate one with AI</p>
+          <p className="text-xs mt-1">Upload an image for your BlockWard</p>
         </div>
       )}
     </div>
