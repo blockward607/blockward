@@ -23,11 +23,7 @@ const Classes = () => {
   } = useClassroomManagement();
 
   useEffect(() => {
-    console.log("Classes page loaded", { 
-      userRole, 
-      loading, 
-      classroomsCount: classrooms?.length 
-    });
+    console.log("Classes page loaded", { userRole, loading, classroomsCount: classrooms?.length });
     refreshClassrooms();
   }, [refreshClassrooms]);
 
@@ -45,6 +41,7 @@ const Classes = () => {
     }
   };
 
+  // This ensures we're actually on the Classes page and not showing announcements
   return (
     <JoinClassProvider>
       <motion.div
@@ -92,11 +89,6 @@ const Classes = () => {
         ) : (
           <EmptyClassState userRole={userRole} />
         )}
-        
-        <div className="hidden md:block">
-          <div className="hexagon absolute top-40 right-40 w-32 h-32 bg-gradient-to-r from-purple-500/10 to-pink-500/10 -z-10" />
-          <div className="hexagon absolute bottom-40 left-20 w-24 h-24 bg-gradient-to-r from-blue-500/10 to-purple-500/10 -z-10" />
-        </div>
       </motion.div>
     </JoinClassProvider>
   );

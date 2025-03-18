@@ -2,8 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Sparkles, ArrowRight, BookOpen } from "lucide-react";
-import { AccessDemoButtons } from "./demo/AccessDemoButtons";
+import { GraduationCap, ArrowRight, BookOpen } from "lucide-react";
 
 export const Hero = () => {
   const navigate = useNavigate();
@@ -14,10 +13,6 @@ export const Hero = () => {
   
   const handleLearnMore = () => {
     document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
-  };
-  
-  const handleViewPreview = () => {
-    document.getElementById('preview')?.scrollIntoView({ behavior: 'smooth' });
   };
   
   return (
@@ -96,7 +91,7 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="flex flex-wrap gap-4 justify-center mb-8"
+            className="flex flex-wrap gap-4 justify-center"
           >
             <Button 
               size="lg" 
@@ -107,14 +102,6 @@ export const Hero = () => {
             </Button>
             <Button 
               size="lg" 
-              variant="outline"
-              className="border-purple-400 text-purple-400 hover:bg-purple-400/10 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
-              onClick={handleViewPreview}
-            >
-              See Preview <Sparkles className="w-4 h-4" />
-            </Button>
-            <Button 
-              size="lg" 
               variant="ghost"
               className="text-gray-400 hover:text-white transition-all duration-300 flex items-center gap-2"
               onClick={handleLearnMore}
@@ -122,9 +109,6 @@ export const Hero = () => {
               How It Works <BookOpen className="w-4 h-4 ml-2" />
             </Button>
           </motion.div>
-          
-          {/* Demo Access Buttons */}
-          <AccessDemoButtons />
         </motion.div>
       </div>
     </div>
