@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Wand2, Loader2 } from "lucide-react";
+import { Wand2, Loader2, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -24,6 +24,7 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
   const [loading, setLoading] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imagePrompt, setImagePrompt] = useState("");
+  const [aiImageDialogOpen, setAiImageDialogOpen] = useState(false);
 
   const createNftImagesBucketIfNeeded = async () => {
     try {
@@ -98,12 +99,20 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
       });
 
       if (error) throw error;
+      
       onImageSelect(data.imageUrl);
+      setAiImageDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "AI image generated successfully!"
+      });
     } catch (error: any) {
+      console.error('AI image generation error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to generate image"
+        description: "Failed to generate image: " + (error.message || "Unknown error")
       });
     } finally {
       setGeneratingImage(false);
@@ -111,45 +120,60 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <label className="text-sm text-gray-400">BlockWard Image</label>
-      <div className="flex gap-4">
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="glass-input"
-        />
-        <Dialog>
+      
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-1">
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="glass-input"
+            disabled={loading}
+          />
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-md">
+              <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+            </div>
+          )}
+        </div>
+        
+        <Dialog open={aiImageDialogOpen} onOpenChange={setAiImageDialogOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline">
+            <Button 
+              variant="outline" 
+              className="flex-shrink-0 bg-purple-600/20 border-purple-500/30 hover:bg-purple-600/30 text-purple-300"
+            >
               <Wand2 className="w-4 h-4 mr-2" />
               Generate AI Image
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Generate BlockWard Image with AI</DialogTitle>
+              <DialogTitle className="text-center">Generate BlockWard Image with AI</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 mt-4">
               <Textarea
-                placeholder="Describe the image you want to generate..."
+                placeholder="Describe the image you want to generate... (e.g., 'A shining golden trophy with blue digital particles, educational achievement award, high quality digital art')"
                 value={imagePrompt}
                 onChange={(e) => setImagePrompt(e.target.value)}
+                className="min-h-[120px]"
               />
               <Button 
                 onClick={generateImage}
-                disabled={generatingImage}
+                disabled={generatingImage || !imagePrompt.trim()}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
               >
                 {generatingImage ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
+                    Creating Digital Art...
                   </>
                 ) : (
                   <>
                     <Wand2 className="w-4 h-4 mr-2" />
-                    Generate
+                    Generate BlockWard Image
                   </>
                 )}
               </Button>
@@ -158,13 +182,22 @@ export const NFTImageUpload = ({ imageUrl, onImageSelect }: NFTImageUploadProps)
         </Dialog>
       </div>
 
-      {imageUrl && (
-        <div className="mt-4">
+      {imageUrl ? (
+        <div className="mt-4 rounded-lg overflow-hidden shadow-lg border border-purple-500/30">
           <img 
             src={imageUrl} 
             alt="BlockWard Preview" 
-            className="w-full max-w-md mx-auto rounded-lg shadow-lg"
+            className="w-full h-48 object-cover object-center"
           />
+          <div className="p-3 bg-purple-900/30 text-center text-xs text-purple-200">
+            BlockWard Image Preview
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 h-40 border-2 border-dashed border-gray-600 rounded-lg flex flex-col items-center justify-center text-gray-500">
+          <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+          <p className="text-sm">No image selected</p>
+          <p className="text-xs mt-1">Upload an image or generate one with AI</p>
         </div>
       )}
     </div>
