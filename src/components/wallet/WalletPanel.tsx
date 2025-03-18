@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -82,7 +81,6 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
       if (walletData) {
         setAddress(walletData.address);
         
-        // For a student wallet, fetch their points as balance
         if (walletType === 'user') {
           const { data: studentData } = await supabase
             .from('students')
@@ -94,7 +92,6 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
             setBalance(studentData.points || 0);
           }
         } else {
-          // For a teacher wallet, set a default balance or fetch from their profile
           const { data: teacherData } = await supabase
             .from('teacher_profiles')
             .select('remaining_credits')
@@ -104,27 +101,13 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
           if (teacherData) {
             setBalance(teacherData.remaining_credits || 1000);
           } else {
-            setBalance(1000); // Default for teachers
+            setBalance(1000);
           }
         }
       }
     } catch (error) {
       console.error('Error fetching wallet details:', error);
     }
-  };
-
-  const handleCreateBlockward = () => {
-    if (!isTeacher) {
-      toast({
-        title: "Permission Denied",
-        description: "Only teachers can create BlockWards",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Navigate to rewards page for creating BlockWards
-    window.location.href = "/rewards";
   };
 
   const copyAddressToClipboard = () => {
@@ -139,8 +122,6 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
 
   const openExternalWalletViewer = () => {
     if (address) {
-      // This is a placeholder. In a real blockchain implementation, 
-      // you would link to a block explorer with the wallet address
       window.open(`https://example.com/wallet/${address}`, '_blank');
       toast({
         title: "External Viewer",
@@ -213,12 +194,6 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
           
           {isTeacher ? (
             <div className="space-y-2">
-              <Link to="/rewards">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                  <Award className="w-4 h-4 mr-2" />
-                  Create BlockWard Award
-                </Button>
-              </Link>
               <Link to="/wallet">
                 <Button variant="outline" className="w-full">
                   <Send className="w-4 h-4 mr-2" />
