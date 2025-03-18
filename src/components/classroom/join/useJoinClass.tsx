@@ -69,21 +69,18 @@ export const useJoinClass = () => {
       
       if (matchData.classroom) {
         // If we matched a classroom directly or via an invitation
-        classroomId = matchData.classroom.id;
+        classroomId = matchData.classroomId;
         classroomName = matchData.classroom.name;
         
         // If this came from an invitation, store its ID
-        if (matchData.id) {
-          invitationId = matchData.id;
+        if (matchData.invitationId) {
+          invitationId = matchData.invitationId;
         }
-      } else if (matchData.classroom_id) {
-        // If we have just the classroom ID from an invitation
-        classroomId = matchData.classroom_id;
-        classroomName = "the classroom";
-        invitationId = matchData.id;
       } else {
-        setError("Invalid data returned. Please try again.");
-        return;
+        // If we have just the classroom ID
+        classroomId = matchData.classroomId;
+        classroomName = "the classroom";
+        invitationId = matchData.invitationId;
       }
       
       console.log("Found classroom to join:", { classroomId, classroomName });
