@@ -13,6 +13,20 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
+type ClassroomResponse = {
+  id: string;
+  name?: string;
+};
+
+type InvitationResponse = {
+  id: string;
+  classroom_id: string;
+  invitation_token: string;
+  status: string;
+  expires_at: string | null;
+  classrooms: ClassroomResponse;
+};
+
 export const InvitationMatchingService = {
   // Try all possible ways to find a classroom or invitation
   async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
