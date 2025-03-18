@@ -127,20 +127,6 @@ export const WalletPanel = ({ expanded = false }: WalletPanelProps) => {
     window.location.href = "/rewards";
   };
 
-  const handleSendPoints = () => {
-    if (!isTeacher) {
-      toast({
-        title: "Permission Denied",
-        description: "Only teachers can send points",
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    // Navigate to students page for sending points
-    window.location.href = "/students";
-  };
-
   return (
     <Card className={`glass-card transition-all ${isExpanded ? 'p-6' : 'p-2'}`}>
       <div className="flex items-center justify-between">

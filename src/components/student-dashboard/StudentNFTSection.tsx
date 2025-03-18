@@ -102,4 +102,4 @@ export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionP
       )}
     </Card>
   );
-};
+}

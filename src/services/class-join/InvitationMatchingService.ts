@@ -60,19 +60,17 @@ export const InvitationMatchingService = {
         };
       }
       
-      // 2. If no direct match, try to find the classroom by code
-      // Note: Adding a check if the join_code field exists in the classrooms table
-      // This is to handle the error about 'join_code' not existing
+      // 2. Try to find the classroom directly by ID (if code is a UUID)
+      // This can happen when scanning QR codes or using direct links
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
         .select('id, name')
-        .eq('id', code)  // Just try to match against ID directly instead of join_code
+        .eq('id', code)
         .maybeSingle();
         
       console.log("Classroom lookup result:", { classroom, classroomError });
         
       if (classroom) {
-        // Create a simple classroom object with only necessary properties
         return { 
           data: { 
             classroomId: classroom.id,
