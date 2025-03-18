@@ -13,19 +13,20 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
-type ClassroomResponse = {
+// Define these separately to avoid potential circular references
+interface ClassroomResponse {
   id: string;
   name?: string;
-};
+}
 
-type InvitationResponse = {
+interface InvitationResponse {
   id: string;
   classroom_id: string;
   invitation_token: string;
   status: string;
   expires_at: string | null;
   classrooms: ClassroomResponse;
-};
+}
 
 export const InvitationMatchingService = {
   // Try all possible ways to find a classroom or invitation
