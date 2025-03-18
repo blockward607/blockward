@@ -36,13 +36,26 @@ export const EmailInviteTab = ({ classroomId, teacherName, classroomName }: Emai
       return;
     }
 
-    setLoading(true);
     try {
-      // Generate invitation token
+      setLoading(true);
+      console.log("Starting email invitation process for:", email);
+      
+      // Generate a simple invitation token
       const invitationToken = Array.from({length: 8}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       
+      console.log("Generated invitation token:", invitationToken);
+      
+      // First check if the session is active
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in to send invitations");
+      }
+      
+      console.log("Current classroom ID:", classroomId);
+      
+      // Create invitation in database
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .insert({
@@ -54,10 +67,25 @@ export const EmailInviteTab = ({ classroomId, teacherName, classroomName }: Emai
         .select()
         .single();
       
-      if (inviteError || !invitation) {
-        throw new Error(inviteError?.message || 'Failed to create invitation');
+      if (inviteError) {
+        console.error("Error creating invitation:", inviteError);
+        throw new Error(inviteError.message || 'Failed to create invitation');
       }
+      
+      if (!invitation) {
+        throw new Error("Failed to create invitation record");
+      }
+      
+      console.log("Created invitation in database:", invitation);
 
+      // Call the edge function to send the email
+      console.log("Calling edge function with data:", {
+        email,
+        verificationToken: invitation.invitation_token,
+        teacherName,
+        className: classroomName
+      });
+      
       const response = await fetch("https://vuwowvhoiyzmnjuoawqz.supabase.co/functions/v1/send-verification", {
         method: 'POST',
         headers: {
@@ -72,10 +100,16 @@ export const EmailInviteTab = ({ classroomId, teacherName, classroomName }: Emai
         })
       });
 
+      console.log("Response from edge function:", response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Edge function error:", errorData);
         throw new Error(errorData.message || 'Failed to send email invitation');
       }
+      
+      const responseData = await response.json();
+      console.log("Email sent successfully:", responseData);
       
       toast({
         title: "Success",
@@ -83,6 +117,7 @@ export const EmailInviteTab = ({ classroomId, teacherName, classroomName }: Emai
       });
       setEmail("");
     } catch (error: any) {
+      console.error("Error in handleInvite:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to send invitation",
