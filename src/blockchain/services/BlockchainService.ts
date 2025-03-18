@@ -1,7 +1,6 @@
 
 import { ethers } from 'ethers';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 // Contract ABI (this would be generated after compiling the contract)
 // This is a simplified ABI for our BlockWard NFT contract
@@ -122,6 +121,10 @@ class BlockchainService {
   
   // Switch network to Polygon Mumbai
   async switchToPolygonMumbai() {
+    if (!window.ethereum) {
+      throw new Error('MetaMask or another web3 wallet is required');
+    }
+
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
