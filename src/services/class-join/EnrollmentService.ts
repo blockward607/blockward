@@ -47,8 +47,8 @@ export const EnrollmentService = {
       try {
         const { data: fnResult, error: fnError } = await supabase
           .rpc('enroll_student', { 
-            p_classroom_id: classroomId, 
-            p_student_id: studentId 
+            classroom_id: classroomId, 
+            student_id: studentId 
           });
           
         if (fnError) {
