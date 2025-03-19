@@ -118,7 +118,7 @@ I'd like to invite you to join my class ${classroomName} on Blockward.
 
 Use this invitation code to join: ${invitationCode}
 
-You can enter this code after logging in to Blockward.
+You can also use this direct link to join: ${window.location.origin}/classes?code=${invitationCode}
 
 Best regards,
 ${teacherName}`);

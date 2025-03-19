@@ -8,12 +8,13 @@ import { useJoinClass } from "./useJoinClass";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 export const QRScanTab = () => {
   const { setInvitationCode, scannerOpen, setScannerOpen, loading, error } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
   const { toast } = useToast();
+  const [scanInProgress, setScanInProgress] = useState(false);
 
   const handleQRCodeScanned = useCallback((code: string) => {
     setScannerOpen(false);
@@ -28,6 +29,7 @@ export const QRScanTab = () => {
     
     try {
       console.log("QR Code scanned:", code);
+      setScanInProgress(true);
       
       // Process the scanned code - handle both direct codes and URLs
       let inviteCode = code.trim();
@@ -50,11 +52,22 @@ export const QRScanTab = () => {
         try {
           const parts = code.split('/classes/join/');
           if (parts.length > 1) {
-            inviteCode = parts[1].trim();
+            inviteCode = parts[1].split('?')[0].trim();
             console.log("Extracted code from join URL:", inviteCode);
           }
         } catch (error) {
           console.error("Error parsing join URL:", error);
+        }
+      } else if (code.includes('/class/')) {
+        // Handle direct class URLs
+        try {
+          const parts = code.split('/class/');
+          if (parts.length > 1) {
+            inviteCode = parts[1].split('?')[0].split('/')[0].trim();
+            console.log("Extracted classroom ID from URL:", inviteCode);
+          }
+        } catch (error) {
+          console.error("Error parsing class URL:", error);
         }
       }
       
@@ -63,9 +76,13 @@ export const QRScanTab = () => {
       console.log("Setting invitation code to:", inviteCode);
       
       // Auto-join class after scan with short delay
-      setTimeout(() => handleJoinClass(), 300);
+      setTimeout(() => {
+        setScanInProgress(false);
+        handleJoinClass();
+      }, 500);
     } catch (error) {
       console.error("Error processing QR code:", error);
+      setScanInProgress(false);
       toast({
         variant: "destructive",
         title: "Error",
@@ -86,12 +103,12 @@ export const QRScanTab = () => {
       <Button
         onClick={() => setScannerOpen(true)}
         className="bg-purple-700 hover:bg-purple-800 mx-auto"
-        disabled={loading}
+        disabled={loading || scanInProgress}
       >
-        {loading ? (
+        {loading || scanInProgress ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Processing...
+            {scanInProgress ? "Processing scan..." : "Processing..."}
           </>
         ) : (
           <>

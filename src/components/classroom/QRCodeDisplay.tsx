@@ -31,22 +31,52 @@ export const QRCodeDisplay = ({
   const handleDownloadQR = () => {
     try {
       setIsDownloading(true);
-      const canvas = document.getElementById('qr-code-canvas') as HTMLCanvasElement;
-      if (!canvas) {
-        throw new Error("QR code canvas not found");
+      
+      // Create a canvas from the QR code
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      if (!context) {
+        throw new Error("Unable to create canvas context");
       }
       
-      const url = canvas.toDataURL("image/png");
-      const link = document.createElement('a');
-      link.download = `${downloadFileName}.png`;
-      link.href = url;
-      link.click();
+      // Set canvas dimensions
+      canvas.width = size;
+      canvas.height = size;
       
-      toast.success("QR code downloaded successfully");
+      // Create a new image to draw the QR code
+      const img = new Image();
+      img.src = document.getElementById('qr-code-svg')?.querySelector('svg')?.outerHTML
+        ? 'data:image/svg+xml;base64,' + btoa(document.getElementById('qr-code-svg')?.querySelector('svg')?.outerHTML || '')
+        : '';
+        
+      img.onload = () => {
+        // Draw white background
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw the QR code image
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to PNG and download
+        const url = canvas.toDataURL("image/png");
+        const link = document.createElement('a');
+        link.download = `${downloadFileName}.png`;
+        link.href = url;
+        link.click();
+        
+        toast.success("QR code downloaded successfully");
+        setIsDownloading(false);
+      };
+      
+      img.onerror = (error) => {
+        console.error("Error creating QR image:", error);
+        toast.error("Failed to download QR code");
+        setIsDownloading(false);
+      };
     } catch (error) {
       console.error("Error downloading QR code:", error);
       toast.error("Failed to download QR code");
-    } finally {
       setIsDownloading(false);
     }
   };
@@ -69,7 +99,7 @@ export const QRCodeDisplay = ({
       {title && (
         <h3 className="text-lg font-medium text-black mb-2">{title}</h3>
       )}
-      <div id="qr-container">
+      <div id="qr-code-svg">
         <QRCodeSVG 
           id="qr-code-canvas"
           value={value}
