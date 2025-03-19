@@ -4,14 +4,14 @@ import { InvitationMatchingService } from './InvitationMatchingService';
 import { JoinClassroomResult } from './types';
 
 export const ClassJoinService = {
-  // Check if student is already enrolled in this classroom
-  checkEnrollment: EnrollmentService.checkEnrollment,
+  // Validate classroom by ID
+  validateClassroom: EnrollmentService.validateClassroom,
   
-  // Enroll student in classroom with RLS bypass via service function
-  enrollStudent: EnrollmentService.enrollStudent,
+  // Validate student by ID
+  validateStudent: EnrollmentService.validateStudent,
   
-  // Update invitation status to accepted
-  acceptInvitation: EnrollmentService.acceptInvitation,
+  // Enroll student in classroom with invitation token
+  enrollStudentInClassroom: EnrollmentService.enrollStudentInClassroom,
   
   // Try all possible ways to find a classroom or invitation
   findClassroomOrInvitation: InvitationMatchingService.findClassroomOrInvitation
