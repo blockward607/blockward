@@ -78,5 +78,66 @@ export const EnrollmentService = {
     
     console.log('Student enrolled successfully:', data);
     return { success: true, data };
+  },
+
+  // Function to check if a student is already enrolled in a classroom
+  checkEnrollment: async (studentId: string, classroomId: string) => {
+    console.log('Checking student enrollment:', { studentId, classroomId });
+    
+    const { data, error } = await supabase
+      .from('classroom_students')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('classroom_id', classroomId)
+      .single();
+      
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+      console.error('Error checking enrollment:', error);
+      return { error };
+    }
+    
+    return { data };
+  },
+
+  // Function to enroll a student directly
+  enrollStudent: async (studentId: string, classroomId: string) => {
+    console.log('Enrolling student directly:', { studentId, classroomId });
+    
+    // Create enrollment record
+    const { data, error } = await supabase
+      .from('classroom_students')
+      .insert({
+        student_id: studentId,
+        classroom_id: classroomId
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error enrolling student:', error);
+      return { error };
+    }
+    
+    console.log('Student enrolled successfully:', data);
+    return { data };
+  },
+
+  // Function to accept an invitation
+  acceptInvitation: async (invitationId: string) => {
+    console.log('Accepting invitation:', invitationId);
+    
+    const { data, error } = await supabase
+      .from('class_invitations')
+      .update({ status: 'accepted' })
+      .eq('id', invitationId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error accepting invitation:', error);
+      return { error };
+    }
+    
+    return { data };
   }
 };
