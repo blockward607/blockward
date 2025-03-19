@@ -11,31 +11,37 @@ export function useAuthState() {
   const { setupUserAccount } = useAccountSetup();
 
   const initializeAuth = useCallback(async () => {
-    // Check if user is already logged in
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setUser(session.user);
-      
-      // Get the user role
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single();
+    try {
+      // Check if user is already logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUser(session.user);
         
-      if (data) {
-        setUserRole(data.role);
-      }
+        // Get the user role
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+          
+        if (data) {
+          setUserRole(data.role);
+        }
         
-      console.log('Found existing session, navigating to dashboard');
-      
-      // Don't automatically navigate to dashboard if we're already on another page
-      const currentPath = window.location.pathname;
-      if (currentPath === '/' || currentPath === '/auth') {
-        navigate('/dashboard');
+        console.log('Found existing session, navigating to dashboard');
+        
+        // Don't automatically navigate to dashboard if we're already on another page
+        const currentPath = window.location.pathname;
+        if (currentPath === '/' || currentPath === '/auth') {
+          navigate('/dashboard');
+        }
+      } else {
+        console.log('No existing session found');
+        setUser(null);
+        setUserRole(null);
       }
-    } else {
-      console.log('No existing session found');
+    } catch (error) {
+      console.error('Error initializing auth:', error);
       setUser(null);
       setUserRole(null);
     }
