@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { InvitationService } from "@/services/InvitationService";
 
 export const useInviteCode = (classroomId: string) => {
   const [loading, setLoading] = useState(false);
@@ -41,40 +42,15 @@ export const useInviteCode = (classroomId: string) => {
     try {
       console.log("Generating new invitation code for classroom:", classroomId);
       
-      // Generate a simple, readable alphanumeric code
-      const invitationToken = Array.from({length: 6}, () => 
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
-      ).join('');
+      // Use the InvitationService to generate and store the code
+      const { data, error } = await InvitationService.createClassInvitation(classroomId);
       
-      // Make sure we have a valid classroom ID
-      if (!classroomId) {
-        throw new Error("No classroom ID provided");
+      if (error) {
+        throw new Error(error.message || 'Failed to generate invitation code');
       }
       
-      // Store the invitation code in Supabase
-      const { data: invitation, error: inviteError } = await supabase
-        .from('class_invitations')
-        .insert({
-          classroom_id: classroomId,
-          email: 'general_invitation@blockward.app', // Marker for general invitations
-          invitation_token: invitationToken,
-          status: 'pending',
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
-        })
-        .select()
-        .single();
-      
-      if (inviteError) {
-        console.error("Error generating invitation:", inviteError);
-        throw new Error(inviteError.message || 'Failed to generate invitation code');
-      }
-      
-      if (!invitation) {
-        throw new Error("Failed to create invitation record");
-      }
-      
-      console.log("Invitation created successfully:", invitation);
-      setInvitationCode(invitation.invitation_token);
+      console.log("Invitation created successfully:", data);
+      setInvitationCode(data.invitation_token);
       toast({
         title: "Invitation Code Generated",
         description: "Share this code with your students",

@@ -1,29 +1,36 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInviteCode } from "./useInviteCode";
 import { InviteCodeInput } from "./InviteCodeInput";
 import { EmailShareButton } from "./EmailShareButton";
 import { QRCodeSection } from "./QRCodeSection";
 import { GenerateCodeButton } from "./GenerateCodeButton";
+import { useClassroomDetails } from "./useClassroomDetails";
 
 interface InviteCodeTabProps {
   classroomId: string;
-  teacherName: string;
-  classroomName: string;
 }
 
-export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: InviteCodeTabProps) => {
+export const InviteCodeTab = ({ classroomId }: InviteCodeTabProps) => {
   const [showQRCode, setShowQRCode] = useState(false);
   const { loading, invitationCode, generateInviteCode, joinUrl } = useInviteCode(classroomId);
+  const { teacher, classroom } = useClassroomDetails(classroomId);
   
   const toggleQRCode = () => {
     setShowQRCode(!showQRCode);
   };
 
+  // Auto-generate code if none exists
+  useEffect(() => {
+    if (!invitationCode && !loading && classroomId) {
+      generateInviteCode();
+    }
+  }, [invitationCode, loading, classroomId]);
+
   return (
     <div className="space-y-4">
       <div className="text-sm text-gray-300">
-        Generate an invitation code that students can use to join your class.
+        Share this invitation code with students to join your class.
       </div>
       
       {invitationCode ? (
@@ -33,15 +40,15 @@ export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: Invit
           <div className="flex flex-col sm:flex-row gap-2">
             <EmailShareButton 
               invitationCode={invitationCode}
-              classroomName={classroomName}
-              teacherName={teacherName}
+              classroomName={classroom?.name || "classroom"}
+              teacherName={teacher?.full_name || "your teacher"}
             />
             
             <QRCodeSection 
               showQRCode={showQRCode}
               toggleQRCode={toggleQRCode}
               joinUrl={joinUrl}
-              classroomName={classroomName}
+              classroomName={classroom?.name || "classroom"}
             />
             
             <GenerateCodeButton 
