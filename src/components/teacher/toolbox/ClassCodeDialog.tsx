@@ -55,8 +55,7 @@ export const ClassCodeDialog = () => {
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status')
         .in('classroom_id', classroomIds)
-        .eq('status', 'pending')
-        .eq('email', 'general_invitation@blockward.app');
+        .eq('status', 'pending');
 
       // Map classroom names to invitations
       const codesWithClassroomNames = invitations?.map(invitation => {
@@ -66,6 +65,21 @@ export const ClassCodeDialog = () => {
           classroom_name: classroom?.name || 'Unnamed Class'
         };
       }) || [];
+
+      // Ensure each classroom has at least one code
+      const classroomsWithoutCodes = classrooms.filter(
+        classroom => !codesWithClassroomNames.some(code => code.classroom_id === classroom.id)
+      );
+
+      // Create initial codes for classrooms that don't have one
+      if (classroomsWithoutCodes.length > 0) {
+        for (const classroom of classroomsWithoutCodes) {
+          await generateNewCode(classroom.id);
+        }
+        // Refresh the codes after creating new ones
+        await fetchClassCodes();
+        return;
+      }
 
       setClassCodes(codesWithClassroomNames);
     } catch (error) {
@@ -87,6 +101,13 @@ export const ClassCodeDialog = () => {
       const invitationToken = Array.from({length: 6}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
+      
+      // First, update any existing general invitations to expired
+      await supabase
+        .from('class_invitations')
+        .update({ status: 'expired' })
+        .eq('classroom_id', classroomId)
+        .eq('email', 'general_invitation@blockward.app');
       
       // Store the invitation code in Supabase
       const { data: invitation, error } = await supabase
@@ -110,6 +131,8 @@ export const ClassCodeDialog = () => {
         title: "Success",
         description: "New class code generated successfully"
       });
+      
+      return invitation;
     } catch (error) {
       console.error("Error generating class code:", error);
       toast({
@@ -117,6 +140,7 @@ export const ClassCodeDialog = () => {
         title: "Error",
         description: "Failed to generate class code"
       });
+      return null;
     } finally {
       setLoading(false);
     }

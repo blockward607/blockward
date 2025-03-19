@@ -15,8 +15,8 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Set the code in context - minimal formatting to preserve potential case-sensitivity
-    let value = e.target.value.trim();
+    // Set the code in context - convert to uppercase for better user experience
+    let value = e.target.value.trim().toUpperCase();
     setInvitationCode(value);
   };
 
@@ -43,8 +43,8 @@ export const CodeEntryTab = () => {
         if (code && code.trim() && !loading && !autoJoinAttempted) {
           console.log("Auto-joining with code from URL:", code);
           
-          // Preserve original code formatting
-          const cleanCode = code.trim();
+          // Preserve original code formatting but convert to uppercase for consistency
+          const cleanCode = code.trim().toUpperCase();
           setInvitationCode(cleanCode);
           setAutoJoinAttempted(true);
           
@@ -77,7 +77,7 @@ export const CodeEntryTab = () => {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter classroom code"
-          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg"
+          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg uppercase"
           autoComplete="off"
           disabled={loading}
         />

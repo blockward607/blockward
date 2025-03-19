@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { JoinClassroomResult } from "./types";
 
@@ -26,82 +27,50 @@ export const EnrollmentService = {
     console.log("Enrolling student in classroom:", { studentId, classroomId });
     
     try {
-      // First check for existing invitations we can use
-      const { data: invitations, error: invError } = await supabase
-        .from('class_invitations')
-        .select('invitation_token')
-        .eq('classroom_id', classroomId)
-        .eq('status', 'pending')
-        .limit(1);
+      // Direct enrollment approach
+      const { data: directEnrollment, error: directError } = await supabase
+        .from('classroom_students')
+        .insert({
+          classroom_id: classroomId,
+          student_id: studentId
+        })
+        .select();
         
-      if (invError) {
-        console.error("Error checking for invitations:", invError);
+      if (!directError) {
+        console.log("Direct enrollment succeeded:", directEnrollment);
+        return { data: { enrolled: true }, error: null };
       }
       
-      let token;
-        
-      // If we found an invitation, use it
-      if (invitations && invitations.length > 0) {
-        token = invitations[0].invitation_token;
-        console.log("Using existing invitation token:", token);
-      } else {
-        // Otherwise create a temporary invitation to use
-        console.log("Creating temporary invitation for enrollment");
-        token = Math.random().toString(36).substring(2, 10).toUpperCase();
-        
-        const { data: newInvitation, error: createError } = await supabase
-          .from('class_invitations')
-          .insert({
-            classroom_id: classroomId,
-            email: `temp-${Date.now()}@enrollment.temp`,
-            invitation_token: token,
-            status: 'pending'
-          })
-          .select();
-          
-        if (createError) {
-          console.error("Error creating temporary invitation:", createError);
-          return { data: null, error: createError };
-        }
-        
-        console.log("Created temporary invitation with token:", token);
-      }
+      console.log("Direct enrollment failed, trying alternative approach:", directError);
       
-      // Try direct enrollment first (for simpler cases)
+      // Fallback: Try to use RPC function if available
       try {
-        const { data: directEnrollment, error: directError } = await supabase
-          .from('classroom_students')
-          .insert({
-            classroom_id: classroomId,
-            student_id: studentId
-          })
-          .select()
-          .single();
+        const { data: fnResult, error: fnError } = await supabase
+          .rpc('enroll_student', { 
+            p_classroom_id: classroomId, 
+            p_student_id: studentId 
+          });
           
-        if (!directError) {
-          console.log("Direct enrollment succeeded:", directEnrollment);
-          return { data: { enrolled: true }, error: null };
+        if (fnError) {
+          console.error("RPC enrollment error:", fnError);
+          return { 
+            data: null, 
+            error: { message: "Failed to join classroom. Please try again or contact your teacher." } 
+          };
         }
         
-        console.log("Direct enrollment failed, trying with RPC function:", directError);
-      } catch (directErr) {
-        console.log("Error in direct enrollment, continuing with RPC approach:", directErr);
-      }
-      
-      // Use RPC function for enrollment (with RLS bypass)
-      const { data: fnResult, error: fnError } = await supabase
-        .rpc('enroll_student', { 
-          invitation_token: token, 
-          student_id: studentId 
-        });
+        console.log("Successfully enrolled student with RPC function");
+        return { data: { enrolled: true }, error: null };
+      } catch (rpcError) {
+        console.error("Error in RPC enrollment fallback:", rpcError);
         
-      if (fnError) {
-        console.error("RPC enrollment error:", fnError);
-        return { data: null, error: fnError };
+        // Last resort: Create a function to try to bypass RLS
+        return { 
+          data: null, 
+          error: { message: "Server error during enrollment. Please contact your teacher for assistance." }
+        };
       }
       
-      console.log("Successfully enrolled student with RPC function");
-      return { data: { enrolled: true }, error: null };
     } catch (error: any) {
       console.error("Enrollment exception:", error);
       return { 
