@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useJoinClassContext } from "./JoinClassContext";
 import { QRCodeScanner } from "../QRCodeScanner";
-import { Scanner, X } from "lucide-react";
+import { QrCode, X } from "lucide-react";
 
 export const QRScanTab = () => {
   const { 
@@ -37,8 +37,8 @@ export const QRScanTab = () => {
             
             <div className="bg-black/30 rounded-xl overflow-hidden">
               <QRCodeScanner 
-                onScanSuccess={handleScanResult}
-                onScanError={(err) => setError(err.message || "Error scanning QR code")}
+                onScan={handleScanResult}
+                onClose={() => setScannerOpen(false)}
               />
             </div>
             
@@ -51,7 +51,7 @@ export const QRScanTab = () => {
             onClick={() => setScannerOpen(true)}
             className="w-full bg-purple-700 hover:bg-purple-800"
           >
-            <Scanner className="mr-2 h-4 w-4" />
+            <QrCode className="mr-2 h-4 w-4" />
             Scan QR Code
           </Button>
         )}

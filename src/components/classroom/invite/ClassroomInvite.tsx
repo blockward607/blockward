@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailInviteTab } from "./EmailInviteTab";
 import { InviteCodeTab } from "./InviteCodeTab";
 import { useAuth } from "@/hooks/use-auth";
+import { useClassroomDetails } from "./useClassroomDetails";
 
 interface ClassroomInviteProps {
   classroomId: string;
@@ -12,6 +13,7 @@ interface ClassroomInviteProps {
 export const ClassroomInvite = ({ classroomId }: ClassroomInviteProps) => {
   const [activeTab, setActiveTab] = useState<string>("code");
   const { user } = useAuth();
+  const { teacher, classroom, loading } = useClassroomDetails(classroomId);
 
   if (!classroomId) {
     return <div>Classroom ID is required</div>;
@@ -37,7 +39,9 @@ export const ClassroomInvite = ({ classroomId }: ClassroomInviteProps) => {
         
         <TabsContent value="email" className="mt-0">
           <EmailInviteTab 
-            classroomId={classroomId} 
+            classroomId={classroomId}
+            teacherName={teacher?.full_name || "Teacher"}
+            classroomName={classroom?.name || "Classroom"}
           />
         </TabsContent>
       </Tabs>
