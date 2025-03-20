@@ -24,6 +24,19 @@ const Dashboard = () => {
 
   const checkAuth = async () => {
     try {
+      // Check if we're in demo mode first
+      if (window.location.pathname.includes('view-student-dashboard')) {
+        setUserRole('student');
+        setUserName('Demo Student');
+        setLoading(false);
+        return;
+      } else if (window.location.pathname.includes('view-teacher-dashboard')) {
+        setUserRole('teacher');
+        setUserName('Demo Teacher');
+        setLoading(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -35,15 +48,15 @@ const Dashboard = () => {
         return;
       }
 
-      const { data: teacherData } = await supabase
+      const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
         .select('full_name')
         .eq('user_id', session.user.id)
         .single();
       
-      if (teacherData) {
+      if (teacherProfile) {
         setUserRole('teacher');
-        setUserName(teacherData.full_name || session.user.email);
+        setUserName(teacherProfile.full_name || session.user.email);
       } else {
         const { data: studentData } = await supabase
           .from('students')

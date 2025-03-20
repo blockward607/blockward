@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -86,6 +85,7 @@ export const ClassroomPreview = () => {
         </div>
 
         <Tabs defaultValue="attendance" value={activeTab} onValueChange={setActiveTab} className="p-4">
+          
           <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="attendance" className="gap-2">
               <Calendar className="h-4 w-4" />
@@ -100,6 +100,7 @@ export const ClassroomPreview = () => {
               <span>BlockWards</span>
             </TabsTrigger>
           </TabsList>
+          
           
           <TabsContent value="attendance" className="space-y-4">
             <Card>

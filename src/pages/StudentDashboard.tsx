@@ -19,12 +19,25 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+      // Check if we're in demo mode first
+      const isDemoMode = window.location.pathname.includes('view-student');
+      if (isDemoMode) {
+        setIsDemo(true);
+        setIsAuthenticated(false);
+        setLoadingAnnouncements(false);
+        return;
+      }
       
-      // Demo mode is enabled if we're in the view route or no authenticated session
-      const isDemoMode = window.location.pathname.includes('view-student') || !session;
-      setIsDemo(isDemoMode);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
+        
+        // Demo mode is enabled if no authenticated session
+        setIsDemo(isDemoMode || !session);
+      } catch (error) {
+        console.error("Error checking auth:", error);
+        setIsDemo(true);
+      }
     };
     
     checkAuth();
@@ -33,6 +46,27 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (!isDemo) {
       fetchAnnouncements();
+    } else {
+      // Set demo announcements
+      setAnnouncements([
+        {
+          id: '1',
+          title: 'Welcome to BlockWard Demo',
+          message: 'This is a demo of the BlockWard platform. You can explore the features as a student.',
+          type: 'announcement',
+          created_at: new Date().toISOString(),
+          user_id: '1'
+        },
+        {
+          id: '2',
+          title: 'New Achievement System',
+          message: 'We have launched a new achievement system to reward your progress!',
+          type: 'announcement',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          user_id: '1'
+        }
+      ]);
+      setLoadingAnnouncements(false);
     }
   }, [isDemo]);
 
@@ -57,10 +91,12 @@ const StudentDashboard = () => {
     navigate('/auth');
   };
 
-  if (loading) {
+  if (loading && !isDemo) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="p-4">Loading...</div>
+        <div className="p-4">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+        </div>
       </div>
     );
   }
@@ -69,9 +105,9 @@ const StudentDashboard = () => {
     <div className="space-y-6">
       {/* Student Info */}
       <StudentInfoCard 
-        studentName={studentData?.name || "Guest Student"} 
-        studentEmail={null} 
-        studentPoints={studentData?.points || 0} 
+        studentName={studentData?.name || "Demo Student"} 
+        studentEmail={isDemo ? "student@blockward.edu" : null} 
+        studentPoints={studentData?.points || isDemo ? 125 : 0} 
       />
 
       {/* Demo Banner (only shown in demo mode) */}
