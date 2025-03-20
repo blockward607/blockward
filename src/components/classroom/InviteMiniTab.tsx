@@ -55,6 +55,8 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
         throw new Error("No classroom ID provided");
       }
       
+      console.log("Generating new invitation code for classroom:", classroomId);
+      
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
@@ -72,7 +74,7 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
         throw new Error(inviteError.message || 'Failed to generate invitation code');
       }
       
-      console.log("Successfully created invitation:", invitation);
+      console.log("Invitation created successfully:", invitation);
       setInvitationCode(invitation.invitation_token);
       toast({
         title: "Invitation Code Generated",

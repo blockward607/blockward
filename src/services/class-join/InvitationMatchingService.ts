@@ -18,11 +18,14 @@ export const InvitationMatchingService = {
   async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
     console.log("Trying to find classroom or invitation with code:", code);
     try {
+      // Clean up the code - remove spaces and convert to uppercase for consistency
+      const cleanCode = code.trim().toUpperCase();
+      
       // 1. First try to find a direct class invitation by token
       const { data: invitation, error: invitationError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at')
-        .eq('invitation_token', code.trim())
+        .eq('invitation_token', cleanCode)
         .eq('status', 'pending')
         .maybeSingle();
         
@@ -61,11 +64,11 @@ export const InvitationMatchingService = {
       }
       
       // 2. Try to find the classroom directly by ID (if code is a UUID)
-      if (code.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      if (cleanCode.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
         const { data: classroom, error: classroomError } = await supabase
           .from('classrooms')
           .select('id, name')
-          .eq('id', code)
+          .eq('id', cleanCode)
           .maybeSingle();
           
         console.log("Classroom lookup by UUID result:", { classroom, classroomError });
@@ -85,8 +88,48 @@ export const InvitationMatchingService = {
         }
       }
       
-      // 3. Log what code we're looking for to help debug
-      console.log("No valid invitation or classroom found with code:", code);
+      // 3. Try a fuzzy match for invitation tokens (in case capitalization is wrong)
+      const { data: fuzzyInvitations, error: fuzzyError } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id, invitation_token, status, expires_at')
+        .eq('status', 'pending')
+        .ilike('invitation_token', cleanCode);
+        
+      console.log("Fuzzy invitation lookup result:", { fuzzyInvitations, fuzzyError });
+        
+      if (fuzzyInvitations && fuzzyInvitations.length > 0) {
+        const invitation = fuzzyInvitations[0];
+        
+        // Check if invitation is expired
+        if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
+          return { 
+            data: null, 
+            error: { message: "This invitation has expired. Please request a new one." } 
+          };
+        }
+        
+        // Get classroom details
+        const { data: classroom } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', invitation.classroom_id)
+          .maybeSingle();
+          
+        return { 
+          data: { 
+            classroomId: invitation.classroom_id,
+            invitationId: invitation.id,
+            classroom: classroom ? {
+              id: classroom.id,
+              name: classroom.name
+            } : undefined
+          }, 
+          error: null 
+        };
+      }
+      
+      // 4. Log what code we're looking for to help debug
+      console.log("No valid invitation or classroom found with code:", cleanCode);
       return { 
         data: null, 
         error: { message: "Invalid invitation code. Please check and try again." } 

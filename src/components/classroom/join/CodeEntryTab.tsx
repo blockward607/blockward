@@ -15,7 +15,7 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Set the code in context - minimal formatting to preserve potential case-sensitivity
+    // Set the code in context
     let value = e.target.value.trim();
     setInvitationCode(value);
   };
