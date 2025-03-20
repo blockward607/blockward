@@ -74,7 +74,7 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold gradient-text">Dashboard</h1>
+          <h1 className="text-4xl font-bold gradient-text">Announcements</h1>
           <p className="text-gray-400">Welcome back, {userName || 'User'}</p>
         </div>
       </div>

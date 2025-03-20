@@ -8,6 +8,7 @@ import { StudentInfoCard } from "@/components/student-dashboard/StudentInfoCard"
 import { DemoBanner } from "@/components/student-dashboard/DemoBanner";
 import { useStudentData } from "@/components/student-dashboard/hooks/useStudentData";
 import type { Notification } from "@/types/notification";
+import { AnnouncementList } from "@/components/announcements/AnnouncementList";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -79,29 +80,14 @@ const StudentDashboard = () => {
 
       {/* Announcements Section */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Recent Announcements</h2>
+        <h2 className="text-2xl font-bold">Announcements</h2>
         
-        {loadingAnnouncements ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-          </div>
-        ) : announcements.length === 0 ? (
-          <Card className="p-6 text-center bg-black/50 border-purple-500/20">
-            <p className="text-gray-400">No announcements yet</p>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {announcements.map((announcement) => (
-              <Card key={announcement.id} className="p-6 bg-black/50 border-purple-500/30">
-                <h3 className="text-xl font-bold mb-2">{announcement.title}</h3>
-                <p className="text-gray-300 mb-4">{announcement.message}</p>
-                <div className="text-sm text-gray-400">
-                  Posted on {new Date(announcement.created_at).toLocaleDateString()} at {new Date(announcement.created_at).toLocaleTimeString()}
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+        <AnnouncementList 
+          announcements={announcements} 
+          loading={loadingAnnouncements} 
+          isTeacher={false}
+          onAnnouncementDeleted={() => {}}
+        />
       </div>
     </div>
   );

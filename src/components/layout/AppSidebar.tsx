@@ -28,11 +28,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ChartBar,
-  BookOpen
+  BookOpen,
+  Megaphone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 export function AppSidebar() {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -85,7 +85,7 @@ export function AppSidebar() {
     {
       name: "Main",
       items: [
-        { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "Announcements", href: "/dashboard", icon: Megaphone },
       ]
     },
     {
@@ -126,7 +126,7 @@ export function AppSidebar() {
     {
       name: "Main",
       items: [
-        { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "Announcements", href: "/dashboard", icon: Megaphone },
       ]
     },
     {
