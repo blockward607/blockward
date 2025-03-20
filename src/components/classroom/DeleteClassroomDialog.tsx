@@ -60,30 +60,6 @@ export const DeleteClassroomDialog = ({
         .delete()
         .eq('classroom_id', classroomId);
       
-      // Delete notifications related to this classroom
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('classroom_id', classroomId);
-        
-      // Delete assignments
-      await supabase
-        .from('assignments')
-        .delete()
-        .eq('classroom_id', classroomId);
-          
-      // Delete resources
-      await supabase
-        .from('resources')
-        .delete()
-        .eq('classroom_id', classroomId);
-          
-      // Delete events
-      await supabase
-        .from('events')
-        .delete()
-        .eq('classroom_id', classroomId);
-      
       // Finally, delete the classroom
       const { error } = await supabase
         .from('classrooms')
