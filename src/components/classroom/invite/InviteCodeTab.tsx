@@ -6,6 +6,7 @@ import { EmailShareButton } from "./EmailShareButton";
 import { QRCodeSection } from "./QRCodeSection";
 import { GenerateCodeButton } from "./GenerateCodeButton";
 import { useClassroomDetails } from "./useClassroomDetails";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface InviteCodeTabProps {
   classroomId: string;
@@ -26,6 +27,19 @@ export const InviteCodeTab = ({ classroomId }: InviteCodeTabProps) => {
       generateInviteCode();
     }
   }, [invitationCode, loading, classroomId, generateInviteCode]);
+
+  if (loading && !invitationCode) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

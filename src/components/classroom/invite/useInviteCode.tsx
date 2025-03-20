@@ -81,14 +81,19 @@ export const useInviteCode = (classroomId: string) => {
       
       console.log("Generated random code:", randomCode);
       
-      // Save to database - adding email field with default value to fix the error
+      // Set expiration date to 7 days from now
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
+      // Save to database - adding email field with default value
       const { data, error } = await supabase
         .from('class_invitations')
         .insert({
           classroom_id: classroomId,
           invitation_token: randomCode,
           status: 'pending',
-          email: 'general_invitation@blockward.app' // Adding default email to satisfy the required field
+          email: 'general_invitation@blockward.app', // Adding default email
+          expires_at: expiresAt.toISOString()
         })
         .select()
         .single();

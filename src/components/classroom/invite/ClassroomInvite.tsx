@@ -5,6 +5,7 @@ import { EmailInviteTab } from "./EmailInviteTab";
 import { InviteCodeTab } from "./InviteCodeTab";
 import { useAuth } from "@/hooks/use-auth";
 import { useClassroomDetails } from "./useClassroomDetails";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ClassroomInviteProps {
   classroomId: string;
@@ -17,6 +18,10 @@ export const ClassroomInvite = ({ classroomId }: ClassroomInviteProps) => {
 
   if (!classroomId) {
     return <div>Classroom ID is required</div>;
+  }
+
+  if (loading) {
+    return <LoadingSpinner />;
   }
 
   return (
