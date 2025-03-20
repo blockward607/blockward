@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Copy, Link2, Loader2, QrCode } from "lucide-react";
 import { QRCodeDisplay } from "../QRCodeDisplay";
-import { useClassroomDetails } from "./useClassroomDetails";
 
 interface InviteCodeTabProps {
   classroomId: string;
@@ -14,16 +12,11 @@ interface InviteCodeTabProps {
   classroomName?: string;
 }
 
-export const InviteCodeTab = ({ classroomId, teacherName: propTeacherName, classroomName: propClassroomName }: InviteCodeTabProps) => {
+export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", classroomName = "the class" }: InviteCodeTabProps) => {
   const [loading, setLoading] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
   const { toast } = useToast();
-  const details = useClassroomDetails(classroomId);
-  
-  // Use props if provided, otherwise use details from the hook
-  const teacherName = propTeacherName || details.teacherName;
-  const classroomName = propClassroomName || details.classroomName;
   
   // Check for existing invitation code on component mount
   useEffect(() => {
