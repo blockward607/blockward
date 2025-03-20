@@ -24,7 +24,7 @@ export const InviteCodeInput = ({ invitationCode }: InviteCodeInputProps) => {
       <Input 
         value={invitationCode} 
         readOnly 
-        className="font-mono bg-black/50 border-purple-500/30 text-lg"
+        className="font-mono bg-black/50 border-purple-500/30 text-lg tracking-wider"
       />
       <Button 
         variant="outline" 

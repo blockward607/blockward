@@ -92,7 +92,7 @@ export const useInviteCode = (classroomId: string) => {
           classroom_id: classroomId,
           invitation_token: randomCode,
           status: 'pending',
-          email: 'general_invitation@blockward.app', // Adding default email
+          email: 'general_invitation@blockward.app',
           expires_at: expiresAt.toISOString()
         })
         .select()

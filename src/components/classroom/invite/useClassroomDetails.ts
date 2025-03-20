@@ -17,6 +17,8 @@ export const useClassroomDetails = (classroomId: string) => {
 
       try {
         setLoading(true);
+        setError(null);
+        
         // Fetch classroom data
         const { data: classroomData, error: classroomError } = await supabase
           .from('classrooms')
@@ -24,7 +26,14 @@ export const useClassroomDetails = (classroomId: string) => {
           .eq('id', classroomId)
           .single();
 
-        if (classroomError) throw classroomError;
+        if (classroomError) {
+          console.error("Error fetching classroom:", classroomError);
+          throw classroomError;
+        }
+
+        if (!classroomData) {
+          throw new Error("Classroom not found");
+        }
 
         setClassroom({
           id: classroomData.id,

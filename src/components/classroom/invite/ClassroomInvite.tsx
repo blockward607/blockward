@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailInviteTab } from "./EmailInviteTab";
 import { InviteCodeTab } from "./InviteCodeTab";
@@ -20,10 +20,6 @@ export const ClassroomInvite = ({ classroomId }: ClassroomInviteProps) => {
     return <div>Classroom ID is required</div>;
   }
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
   return (
     <div className="w-full rounded-lg border border-purple-500/20 bg-black/40 p-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -36,19 +32,27 @@ export const ClassroomInvite = ({ classroomId }: ClassroomInviteProps) => {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="code" className="mt-0">
-          <InviteCodeTab 
-            classroomId={classroomId} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="email" className="mt-0">
-          <EmailInviteTab 
-            classroomId={classroomId}
-            teacherName={teacher?.full_name || "Teacher"}
-            classroomName={classroom?.name || "Classroom"}
-          />
-        </TabsContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : (
+          <>
+            <TabsContent value="code" className="mt-0">
+              <InviteCodeTab 
+                classroomId={classroomId} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="email" className="mt-0">
+              <EmailInviteTab 
+                classroomId={classroomId}
+                teacherName={teacher?.full_name || "Teacher"}
+                classroomName={classroom?.name || "Classroom"}
+              />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
     </div>
   );
