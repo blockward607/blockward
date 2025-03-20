@@ -81,13 +81,14 @@ export const useInviteCode = (classroomId: string) => {
       
       console.log("Generated random code:", randomCode);
       
-      // Save to database
+      // Save to database - adding email field with default value to fix the error
       const { data, error } = await supabase
         .from('class_invitations')
         .insert({
           classroom_id: classroomId,
           invitation_token: randomCode,
-          status: 'pending'
+          status: 'pending',
+          email: 'general_invitation@blockward.app' // Adding default email to satisfy the required field
         })
         .select()
         .single();

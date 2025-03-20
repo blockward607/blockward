@@ -49,11 +49,11 @@ export const useJoinClass = () => {
       
       // Check if student is already enrolled in this class
       const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
-        .from('student_enrollments')
+        .from('classroom_students')
         .select('id')
         .eq('classroom_id', inviteData.classroom_id)
         .eq('student_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (existingEnrollment) {
         throw new Error("You are already enrolled in this class.");
@@ -63,21 +63,20 @@ export const useJoinClass = () => {
       let studentProfileId = null;
       
       const { data: existingProfile } = await supabase
-        .from('student_profiles')
+        .from('students')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (existingProfile) {
         studentProfileId = existingProfile.id;
       } else {
         // Create student profile
         const { data: newProfile, error: profileError } = await supabase
-          .from('student_profiles')
+          .from('students')
           .insert({
             user_id: user.id,
-            full_name: user.user_metadata?.full_name || 'Student',
-            email: user.email
+            name: user.user_metadata?.full_name || 'Student'
           })
           .select('id')
           .single();
@@ -89,14 +88,12 @@ export const useJoinClass = () => {
         studentProfileId = newProfile.id;
       }
       
-      // Enroll the student
+      // Enroll the student - using classroom_students table instead of student_enrollments
       const { error: enrollError } = await supabase
-        .from('student_enrollments')
+        .from('classroom_students')
         .insert({
           student_id: studentProfileId,
-          classroom_id: inviteData.classroom_id,
-          status: 'active',
-          invitation_id: inviteData.id
+          classroom_id: inviteData.classroom_id
         });
       
       if (enrollError) {
