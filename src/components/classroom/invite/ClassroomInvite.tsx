@@ -1,9 +1,9 @@
 
 import { useState } from "react";
+import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailInviteTab } from "./EmailInviteTab";
 import { InviteCodeTab } from "./InviteCodeTab";
-import { useAuth } from "@/hooks/use-auth";
 import { useClassroomDetails } from "./useClassroomDetails";
 
 interface ClassroomInviteProps {
@@ -11,40 +11,32 @@ interface ClassroomInviteProps {
 }
 
 export const ClassroomInvite = ({ classroomId }: ClassroomInviteProps) => {
-  const [activeTab, setActiveTab] = useState<string>("code");
-  const { user } = useAuth();
-  const { teacher, classroom, loading } = useClassroomDetails(classroomId);
-
-  if (!classroomId) {
-    return <div>Classroom ID is required</div>;
-  }
-
+  const { teacherName, classroomName } = useClassroomDetails(classroomId);
+  
   return (
-    <div className="w-full rounded-lg border border-purple-500/20 bg-black/40 p-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="code" className="rounded-lg">
-            Invitation Code
-          </TabsTrigger>
-          <TabsTrigger value="email" className="rounded-lg">
-            Email Invites
-          </TabsTrigger>
+    <Card className="p-4 bg-purple-900/30 backdrop-blur-md border border-purple-500/30 shadow-lg">
+      <Tabs defaultValue="code" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 bg-purple-950/50">
+          <TabsTrigger value="code" className="data-[state=active]:bg-purple-700/40">Invite Code</TabsTrigger>
+          <TabsTrigger value="email" className="data-[state=active]:bg-purple-700/40">Email Invite</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="code" className="mt-0">
+        <TabsContent value="code">
           <InviteCodeTab 
-            classroomId={classroomId} 
+            classroomId={classroomId}
+            teacherName={teacherName}
+            classroomName={classroomName}
           />
         </TabsContent>
         
-        <TabsContent value="email" className="mt-0">
+        <TabsContent value="email">
           <EmailInviteTab 
             classroomId={classroomId}
-            teacherName={teacher?.full_name || "Teacher"}
-            classroomName={classroom?.name || "Classroom"}
+            teacherName={teacherName}
+            classroomName={classroomName}
           />
         </TabsContent>
       </Tabs>
-    </div>
+    </Card>
   );
 };

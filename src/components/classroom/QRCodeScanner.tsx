@@ -34,11 +34,9 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
             {
               fps: 10,
               qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0
             },
             (decodedText) => {
               // On QR code detected
-              console.log("QR Code detected:", decodedText);
               onScan(decodedText);
               if (scanner) {
                 scanner.stop().catch(error => console.error("Error stopping scanner:", error));
@@ -49,15 +47,13 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
               console.log(errorMessage);
             }
           );
-          
-          setIsLoading(false);
         } else {
           setError("No camera devices found");
-          setIsLoading(false);
         }
       } catch (err) {
         console.error("Error initializing scanner:", err);
         setError("Unable to access camera. Please ensure camera permissions are granted.");
+      } finally {
         setIsLoading(false);
       }
     };
@@ -92,7 +88,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
       <div 
         id="qr-reader" 
         ref={qrBoxRef} 
-        className={`w-full max-w-md h-64 ${isLoading || error ? 'hidden' : ''}`}
+        className={`w-full max-w-xs ${isLoading || error ? 'hidden' : ''}`}
       >
         {/* Scanner will render here */}
       </div>

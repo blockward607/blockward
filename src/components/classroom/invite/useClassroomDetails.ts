@@ -1,56 +1,39 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
-interface Teacher {
-  id: string;
-  full_name: string;
-}
-
-interface Classroom {
-  id: string;
-  name: string;
-  description: string;
-}
-
 export const useClassroomDetails = (classroomId: string) => {
-  const [teacher, setTeacher] = useState<Teacher | null>(null);
-  const [classroom, setClassroom] = useState<Classroom | null>(null);
+  const [teacherName, setTeacherName] = useState("");
+  const [classroomName, setClassroomName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchClassroomDetails = async () => {
-      if (!classroomId) {
-        setLoading(false);
-        return;
-      }
-      
       try {
-        // Fetch classroom details
-        const { data: classroomData, error: classroomError } = await supabase
+        setLoading(true);
+        const { data: classroom } = await supabase
           .from('classrooms')
-          .select('id, name, description, teacher_id')
+          .select('name, teacher_id')
           .eq('id', classroomId)
           .single();
-        
-        if (classroomError) throw classroomError;
-        
-        setClassroom(classroomData);
-        
-        if (classroomData.teacher_id) {
-          // Fetch teacher details
-          const { data: teacherData, error: teacherError } = await supabase
+          
+        if (classroom) {
+          setClassroomName(classroom.name);
+          
+          const { data: teacherProfile } = await supabase
             .from('teacher_profiles')
-            .select('id, full_name, user_id')
-            .eq('id', classroomData.teacher_id)
+            .select('full_name')
+            .eq('id', classroom.teacher_id)
             .single();
             
-          if (teacherError) throw teacherError;
-          
-          setTeacher(teacherData);
+          if (teacherProfile) {
+            setTeacherName(teacherProfile.full_name || 'Your Teacher');
+          }
         }
-      } catch (error) {
-        console.error("Error fetching classroom details:", error);
+      } catch (error: any) {
+        console.error('Error fetching classroom details:', error);
+        setError(error.message || 'Failed to load classroom details');
       } finally {
         setLoading(false);
       }
@@ -59,5 +42,10 @@ export const useClassroomDetails = (classroomId: string) => {
     fetchClassroomDetails();
   }, [classroomId]);
 
-  return { teacher, classroom, loading };
+  return {
+    teacherName,
+    classroomName,
+    loading,
+    error
+  };
 };
