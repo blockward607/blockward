@@ -34,7 +34,7 @@ export const ClassroomInvite = ({ classroomId }: ClassroomInviteProps) => {
         
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" />
+            <LoadingSpinner />
           </div>
         ) : (
           <>
