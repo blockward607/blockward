@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
       if (!classroomId) return;
       
       try {
+        console.log("Checking for existing invitation code for classroom:", classroomId);
         const { data, error } = await supabase
           .from('class_invitations')
           .select('invitation_token')
@@ -36,7 +38,10 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
         if (error) throw error;
         
         if (data && data.length > 0) {
+          console.log("Found existing invitation code:", data[0].invitation_token);
           setInvitationCode(data[0].invitation_token);
+        } else {
+          console.log("No existing invitation code found for this classroom");
         }
       } catch (error) {
         console.error("Error checking for existing invitation code:", error);
@@ -49,9 +54,8 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      console.log("Generating new invitation code for classroom:", classroomId);
-      
-      // Generate a simple, readable alphanumeric code
+      // Explicitly create a simple, clean, alphanumeric code
+      // Using uppercase letters + numbers for better readability and API compatibility
       const invitationToken = Array.from({length: 6}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
@@ -60,6 +64,9 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
       if (!classroomId) {
         throw new Error("No classroom ID provided");
       }
+      
+      console.log("Generating new invitation code for classroom:", classroomId);
+      console.log("Generated invitation token:", invitationToken);
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
@@ -109,13 +116,12 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
     });
   };
 
-  // Create direct join URLs that will work with both mobile and web
+  // Create a direct join URL that works both on desktop and mobile
   const getJoinUrl = () => {
-    // Use absolute URL to ensure it works when shared
+    // Use window.location.origin to get the domain (works in both development and production)
     const baseUrl = window.location.origin;
-    // Generate a join link with the code as a query parameter
-    // This matches what the join page expects
-    return `${baseUrl}/classes?code=${invitationCode}`;
+    // Create a direct join URL with the code as a query parameter
+    return `${baseUrl}/classes?code=${invitationCode.trim()}`;
   };
 
   const shareViaGmail = () => {
@@ -142,9 +148,6 @@ ${teacherName}`);
   const toggleQRCode = () => {
     setShowQRCode(!showQRCode);
   };
-
-  // Use the join URL for QR codes
-  const joinUrl = getJoinUrl();
 
   return (
     <div className="space-y-4">
@@ -200,7 +203,7 @@ ${teacherName}`);
           
           {showQRCode && (
             <QRCodeDisplay 
-              value={joinUrl}
+              value={getJoinUrl()}
               title={`Join ${classroomName}`}
               className="mt-4"
             />

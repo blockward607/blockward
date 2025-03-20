@@ -18,11 +18,16 @@ export const EnrollmentService = {
       return { data, error };
     } catch (error: any) {
       console.error("Error checking enrollment:", error);
-      return { data: null, error };
+      return { 
+        data: null, 
+        error: {
+          message: error.message || "Failed to check enrollment status"
+        }
+      };
     }
   },
 
-  // Enroll student in classroom with RLS bypass via service function
+  // Enroll student in classroom
   async enrollStudent(studentId: string, classroomId: string): Promise<JoinClassroomResult> {
     console.log("Enrolling student in classroom:", { studentId, classroomId });
     
@@ -52,15 +57,15 @@ export const EnrollmentService = {
         }
         
         console.log("Direct enrollment failed, trying with RPC function:", directError);
-      } catch (directErr) {
+      } catch (directErr: any) {
         console.log("Error in direct enrollment, continuing with RPC approach:", directErr);
       }
       
-      // First check for existing invitations we can use
+      // Look for existing invitations we can use
       console.log("Looking for existing invitations for classroom:", classroomId);
       const { data: invitations, error: invError } = await supabase
         .from('class_invitations')
-        .select('invitation_token')
+        .select('invitation_token, id')
         .eq('classroom_id', classroomId)
         .eq('status', 'pending')
         .limit(1);
@@ -70,15 +75,19 @@ export const EnrollmentService = {
       }
       
       let token;
+      let invitationId = null;
         
       // If we found an invitation, use it
       if (invitations && invitations.length > 0) {
         token = invitations[0].invitation_token;
-        console.log("Using existing invitation token:", token);
+        invitationId = invitations[0].id;
+        console.log("Using existing invitation token:", token, "id:", invitationId);
       } else {
         // Otherwise create a temporary invitation to use
         console.log("Creating temporary invitation for enrollment");
-        token = Math.random().toString(36).substring(2, 10).toUpperCase();
+        token = Array.from({length: 6}, () => 
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
+        ).join('');
         
         const { data: newInvitation, error: createError } = await supabase
           .from('class_invitations')
@@ -92,7 +101,16 @@ export const EnrollmentService = {
           
         if (createError) {
           console.error("Error creating temporary invitation:", createError);
-          return { data: null, error: createError };
+          return { 
+            data: null, 
+            error: {
+              message: createError.message || "Failed to create enrollment invitation"
+            }
+          };
+        }
+        
+        if (newInvitation && newInvitation.length > 0) {
+          invitationId = newInvitation[0].id;
         }
         
         console.log("Created temporary invitation with token:", token);
@@ -108,7 +126,17 @@ export const EnrollmentService = {
         
       if (fnError) {
         console.error("RPC enrollment error:", fnError);
-        return { data: null, error: fnError };
+        return { 
+          data: null, 
+          error: {
+            message: fnError.message || "Failed to enroll in classroom"
+          }
+        };
+      }
+      
+      // If we have an invitation ID, update its status
+      if (invitationId) {
+        await this.acceptInvitation(invitationId);
       }
       
       console.log("Successfully enrolled student with RPC function");
@@ -117,7 +145,9 @@ export const EnrollmentService = {
       console.error("Enrollment exception:", error);
       return { 
         data: null, 
-        error: { message: "Failed to enroll in the classroom. Please try again or contact support." } 
+        error: { 
+          message: error.message || "Failed to enroll in the classroom. Please try again or contact support." 
+        } 
       };
     }
   },
@@ -136,7 +166,12 @@ export const EnrollmentService = {
       return { data, error };
     } catch (error: any) {
       console.error("Error accepting invitation:", error);
-      return { data: null, error };
+      return { 
+        data: null, 
+        error: {
+          message: error.message || "Failed to accept invitation"
+        }
+      };
     }
   }
 };

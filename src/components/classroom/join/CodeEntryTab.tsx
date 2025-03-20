@@ -15,13 +15,19 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Clean and normalize the code (trim whitespace, make uppercase)
-    let value = e.target.value.trim().toUpperCase();
+    // Clean and normalize the code (remove spaces, make uppercase)
+    let value = e.target.value;
+    // Don't trim while typing - only trim on submit
+    // But convert to uppercase for consistency
+    value = value.toUpperCase();
     setInvitationCode(value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && invitationCode.trim()) {
+      // Trim the code before joining
+      const cleanCode = invitationCode.trim();
+      setInvitationCode(cleanCode);
       handleJoinClass();
     }
   };
@@ -50,6 +56,7 @@ export const CodeEntryTab = () => {
           
           // Small delay to ensure context is fully set up
           setTimeout(() => {
+            console.log("Attempting to join with code:", cleanCode);
             handleJoinClass();
           }, 500);
         }
@@ -60,6 +67,15 @@ export const CodeEntryTab = () => {
     
     attemptAutoJoin();
   }, [invitationCode, loading, autoJoinAttempted, handleJoinClass, setInvitationCode]);
+
+  const handleSubmitCode = () => {
+    // Clean the code before submission
+    const cleanCode = invitationCode.trim().toUpperCase();
+    if (cleanCode !== invitationCode) {
+      setInvitationCode(cleanCode);
+    }
+    handleJoinClass();
+  };
 
   return (
     <div className="space-y-4">
@@ -82,7 +98,7 @@ export const CodeEntryTab = () => {
           disabled={loading}
         />
         <Button
-          onClick={handleJoinClass}
+          onClick={handleSubmitCode}
           disabled={loading || !invitationCode.trim()}
           className="bg-purple-700 hover:bg-purple-800"
         >

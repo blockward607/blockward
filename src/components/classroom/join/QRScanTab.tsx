@@ -15,52 +15,69 @@ export const QRScanTab = () => {
   const { handleJoinClass } = useJoinClass();
   const { toast } = useToast();
 
-  // Helper function to extract code from URL
-  const extractCodeFromUrl = useCallback((url: string): string | null => {
+  // Helper function to extract code from URL or direct code
+  const extractCodeFromUrl = useCallback((input: string): string | null => {
     try {
-      console.log("Extracting code from URL:", url);
+      console.log("Extracting code from input:", input);
       
-      // First check if it's a URL with a code parameter
-      if (url.includes('?code=')) {
-        const urlObj = new URL(url);
-        const codeParam = urlObj.searchParams.get('code');
-        console.log("Found code param:", codeParam);
-        return codeParam;
-      } 
-      // Check for direct join URL
-      else if (url.includes('/classes/join/')) {
-        const parts = url.split('/classes/join/');
-        if (parts.length > 1) {
-          const code = parts[1].split('?')[0]; // Remove any query params
-          console.log("Found direct join code:", code);
-          return code;
+      // Clean up input
+      const trimmedInput = input.trim();
+      
+      // If it's a QR code with just the code itself
+      if (/^[A-Z0-9]{4,10}$/i.test(trimmedInput)) {
+        console.log("Input appears to be a direct code:", trimmedInput);
+        return trimmedInput;
+      }
+      
+      // Handle URL with code parameter
+      if (trimmedInput.includes('?code=')) {
+        try {
+          const urlObj = new URL(trimmedInput);
+          const codeParam = urlObj.searchParams.get('code');
+          console.log("Found code parameter in URL:", codeParam);
+          if (codeParam && codeParam.trim()) {
+            return codeParam.trim();
+          }
+        } catch (e) {
+          console.error("Error parsing URL:", e);
+          // Continue to try other methods
         }
       }
-      // Check for classes URL with code parameter
-      else if (url.includes('/classes') && url.includes('?code=')) {
-        const urlObj = new URL(url);
-        const codeParam = urlObj.searchParams.get('code');
-        console.log("Found code param in classes URL:", codeParam);
-        return codeParam;
+      
+      // Handle URL patterns with the code embedded in the path
+      const urlPatterns = [
+        /\/classes\/join\/([A-Z0-9]{4,10})/i,  // /classes/join/ABC123
+        /\/join\/([A-Z0-9]{4,10})/i,            // /join/ABC123
+        /\/invite\/([A-Z0-9]{4,10})/i,          // /invite/ABC123
+      ];
+      
+      for (const pattern of urlPatterns) {
+        const match = trimmedInput.match(pattern);
+        if (match && match[1]) {
+          console.log("Found code in URL path:", match[1]);
+          return match[1];
+        }
       }
       
-      // If it's not a URL but looks like an invitation code itself, return as is
-      if (/^[A-Z0-9]{5,10}$/i.test(url.trim())) {
-        console.log("URL appears to be a direct code:", url.trim());
-        return url.trim();
+      // Last resort: Check if the input contains something that looks like a code
+      const codeMatch = trimmedInput.match(/[A-Z0-9]{4,10}/i);
+      if (codeMatch) {
+        console.log("Extracted possible code from text:", codeMatch[0]);
+        return codeMatch[0];
       }
       
-      console.log("Could not extract code from URL:", url);
+      console.log("Could not extract code from input");
       return null;
     } catch (error) {
-      console.error("Error parsing URL:", error);
+      console.error("Error in code extraction:", error);
       return null;
     }
   }, []);
 
-  const handleQRCodeScanned = useCallback((code: string) => {
+  const handleQRCodeScanned = useCallback((scannedContent: string) => {
     setScannerOpen(false);
-    if (!code) {
+    
+    if (!scannedContent || scannedContent.trim() === '') {
       toast({
         variant: "destructive",
         title: "Error",
@@ -70,54 +87,42 @@ export const QRScanTab = () => {
     }
     
     try {
-      console.log("QR Code scanned:", code);
+      console.log("QR Code scanned content:", scannedContent);
       
-      // Process the scanned code - handle both direct codes and URLs
-      let inviteCode = code.trim();
+      // Extract invitation code from the scanned content
+      const extractedCode = extractCodeFromUrl(scannedContent);
       
-      // Check if code is a URL and try to extract the invitation code
-      if (code.includes('http')) {
-        const extractedCode = extractCodeFromUrl(code);
-        if (extractedCode) {
-          inviteCode = extractedCode.trim();
-          console.log("Extracted code from URL:", inviteCode);
-        } else {
-          console.log("Could not extract code from URL, using full code");
-        }
+      if (!extractedCode) {
+        toast({
+          variant: "destructive",
+          title: "Invalid QR Code",
+          description: "Could not find a valid invitation code in the QR code"
+        });
+        return;
       }
       
-      // For QR code scans, we need to make sure the code is cleaned up
-      // Sometimes QR codes might have whitespace or lowercase letters
-      inviteCode = inviteCode.trim().toUpperCase();
+      // Normalize code to uppercase for consistency
+      const normalizedCode = extractedCode.trim().toUpperCase();
+      console.log("Extracted and normalized code:", normalizedCode);
       
-      // Set code and attempt to join
-      setInvitationCode(inviteCode);
-      console.log("Setting invitation code to:", inviteCode);
+      // Set the code in the context
+      setInvitationCode(normalizedCode);
       
-      // Auto-join class after scan with short delay
-      setTimeout(() => handleJoinClass(), 300);
-    } catch (error) {
+      // Attempt to join with a slight delay to ensure context is updated
+      setTimeout(() => {
+        console.log("Auto-joining with code:", normalizedCode);
+        handleJoinClass();
+      }, 300);
+      
+    } catch (error: any) {
       console.error("Error processing QR code:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to process QR code"
+        description: "Failed to process QR code: " + (error.message || "Unknown error")
       });
     }
   }, [setScannerOpen, toast, setInvitationCode, handleJoinClass, extractCodeFromUrl]);
-
-  // Attempt to get code from URL on component mount (for direct links)
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const codeParam = urlParams.get('code');
-    
-    if (codeParam && codeParam.trim()) {
-      console.log("Found code parameter in URL:", codeParam);
-      const cleanCode = codeParam.trim().toUpperCase(); // Normalize code
-      setInvitationCode(cleanCode);
-      // Don't auto-join here, let user click the button
-    }
-  }, [setInvitationCode]);
 
   return (
     <div className="text-center space-y-3">
