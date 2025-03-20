@@ -48,8 +48,14 @@ export const ClassroomPreview = () => {
     }
   };
 
-  const handleViewDemo = () => {
-    navigate('/view-student-dashboard');
+  const handleTryDemo = () => {
+    const targetSection = document.getElementById('demo');
+    if (targetSection) {
+      targetSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Fallback direct navigation
+      navigate('/view-student-dashboard');
+    }
   };
 
   return (
@@ -236,7 +242,7 @@ export const ClassroomPreview = () => {
         <Button 
           size="lg" 
           className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-          onClick={handleViewDemo}
+          onClick={handleTryDemo}
         >
           Try BlockWard Now
         </Button>

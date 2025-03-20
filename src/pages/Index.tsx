@@ -23,6 +23,17 @@ const Index = () => {
     if (introShown) {
       setShowIntro(false);
     }
+
+    // Check for hash in URL to handle direct links to sections
+    const hash = window.location.hash;
+    if (hash) {
+      setTimeout(() => {
+        const element = document.getElementById(hash.substring(1));
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 500);
+    }
   }, []);
   
   const handleSignUp = () => {
