@@ -6,7 +6,14 @@ import App from './App.tsx'
 import './index.css'
 
 // Create a client for React Query
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+})
 
 const container = document.getElementById('root')
 if (!container) {
