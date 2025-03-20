@@ -25,7 +25,7 @@ export const InviteCodeTab = ({ classroomId }: InviteCodeTabProps) => {
     if (!invitationCode && !loading && classroomId) {
       generateInviteCode();
     }
-  }, [invitationCode, loading, classroomId]);
+  }, [invitationCode, loading, classroomId, generateInviteCode]);
 
   return (
     <div className="space-y-4">
