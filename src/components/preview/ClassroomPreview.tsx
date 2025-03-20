@@ -8,9 +8,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Check, X, Clock, Users, Calendar, Award, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 export const ClassroomPreview = () => {
   const [activeTab, setActiveTab] = useState("attendance");
+  const navigate = useNavigate();
   
   // Sample data for the preview
   const students = [
@@ -44,6 +46,10 @@ export const ClassroomPreview = () => {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const handleViewDemo = () => {
+    navigate('/view-student-dashboard');
   };
 
   return (
@@ -230,6 +236,7 @@ export const ClassroomPreview = () => {
         <Button 
           size="lg" 
           className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+          onClick={handleViewDemo}
         >
           Try BlockWard Now
         </Button>

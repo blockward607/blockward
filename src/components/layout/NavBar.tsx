@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
+import { Home, User, BookOpen, Phone, Menu, X, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InteractiveLogo } from "@/components/logo/InteractiveLogo";
 
@@ -56,6 +57,13 @@ export const NavBar = () => {
           >
             <BookOpen className="w-4 h-4" />
             <span>Preview</span>
+          </button>
+          <button 
+            onClick={() => scrollToSection('demo')} 
+            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2"
+          >
+            <Monitor className="w-4 h-4" />
+            <span>Demo</span>
           </button>
           <button 
             onClick={() => scrollToSection('contact')} 
@@ -119,6 +127,13 @@ export const NavBar = () => {
           >
             <BookOpen className="w-5 h-5" />
             <span>Preview</span>
+          </button>
+          <button 
+            onClick={() => scrollToSection('demo')} 
+            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2 py-2"
+          >
+            <Monitor className="w-5 h-5" />
+            <span>Demo</span>
           </button>
           <button 
             onClick={() => scrollToSection('contact')} 
