@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "./components/ui/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/hooks/use-auth';
-import { TutorialProvider } from '@/contexts/TutorialContext';
+import { TutorialProvider } from '@/hooks/useTutorial';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import Index from './pages/Index';
 import Home from './pages/Home';
@@ -71,28 +72,106 @@ function App() {
                   <Route path="/view-teacher-dashboard" element={<ViewTeacherDashboard />} />
                   
                   {/* Protected Routes */}
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/classroom-attendance/:id" element={<ClassroomAttendance />} />
-                    <Route path="/classes" element={<Classes />} />
-                    <Route path="/classes/:id" element={<ClassDetails />} />
-                    <Route path="/students" element={<Students />} />
-                    <Route path="/attendance" element={<Attendance />} />
-                    <Route path="/classroom/seating" element={<ClassroomSeating />} />
-                    <Route path="/classroom/seating/:id" element={<ClassroomSeating />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/messages" element={<Messages />} />
-                    <Route path="/progress" element={<Progress />} />
-                    <Route path="/wallet" element={<Wallet />} />
-                    <Route path="/resources" element={<Resources />} />
-                    <Route path="/tutorial" element={<TutorialPage />} />
-                    <Route path="/achievements" element={<Achievements />} />
-                    <Route path="/rewards" element={<Rewards />} />
-                    <Route path="/assignments" element={<Assignments />} />
-                    <Route path="/grades" element={<Grades />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/notifications" element={<Notifications />} />
-                  </Route>
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/classroom-attendance/:id" element={
+                    <ProtectedRoute>
+                      <ClassroomAttendance />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/classes" element={
+                    <ProtectedRoute>
+                      <Classes />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/classes/:id" element={
+                    <ProtectedRoute>
+                      <ClassDetails />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/students" element={
+                    <ProtectedRoute>
+                      <Students />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/attendance" element={
+                    <ProtectedRoute>
+                      <Attendance />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/classroom/seating" element={
+                    <ProtectedRoute>
+                      <ClassroomSeating />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/classroom/seating/:id" element={
+                    <ProtectedRoute>
+                      <ClassroomSeating />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/messages" element={
+                    <ProtectedRoute>
+                      <Messages />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/progress" element={
+                    <ProtectedRoute>
+                      <Progress />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/wallet" element={
+                    <ProtectedRoute>
+                      <Wallet />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/resources" element={
+                    <ProtectedRoute>
+                      <Resources />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/tutorial" element={
+                    <ProtectedRoute>
+                      <TutorialPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/achievements" element={
+                    <ProtectedRoute>
+                      <Achievements />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/rewards" element={
+                    <ProtectedRoute>
+                      <Rewards />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/assignments" element={
+                    <ProtectedRoute>
+                      <Assignments />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/grades" element={
+                    <ProtectedRoute>
+                      <Grades />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/analytics" element={
+                    <ProtectedRoute>
+                      <Analytics />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/notifications" element={
+                    <ProtectedRoute>
+                      <Notifications />
+                    </ProtectedRoute>
+                  } />
                 </Routes>
               </Router>
               <Toaster />

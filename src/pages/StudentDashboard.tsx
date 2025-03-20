@@ -55,7 +55,7 @@ const StudentDashboard = () => {
           message: 'This is a demo of the BlockWard platform. You can explore the features as a student.',
           type: 'announcement',
           created_at: new Date().toISOString(),
-          user_id: '1'
+          created_by: '1'
         },
         {
           id: '2',
@@ -63,7 +63,7 @@ const StudentDashboard = () => {
           message: 'We have launched a new achievement system to reward your progress!',
           type: 'announcement',
           created_at: new Date(Date.now() - 86400000).toISOString(),
-          user_id: '1'
+          created_by: '1'
         }
       ]);
       setLoadingAnnouncements(false);

@@ -34,6 +34,7 @@ export const useStudentData = () => {
         
         // Check if we're in demo mode
         if (window.location.pathname.includes('view-student')) {
+          console.log("Setting demo student data");
           // Set demo student data
           setStudentData({
             id: 'demo-student',
@@ -79,7 +80,7 @@ export const useStudentData = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          console.error("No session found");
+          console.log("No session found in useStudentData");
           setLoading(false);
           return;
         }
@@ -89,7 +90,7 @@ export const useStudentData = () => {
           .from('students')
           .select('*')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
           
         if (studentError) {
           console.error("Error fetching student data:", studentError);
@@ -97,48 +98,50 @@ export const useStudentData = () => {
           return;
         }
         
-        setStudentData(studentData);
-        
-        // Fetch wallet
-        const { data: walletData, error: walletError } = await supabase
-          .from('wallets')
-          .select('id, address')
-          .eq('user_id', session.user.id)
-          .single();
+        if (studentData) {
+          console.log("Found student data:", studentData);
+          setStudentData(studentData);
           
-        if (walletError) {
-          console.error("Error fetching wallet:", walletError);
-          setLoading(false);
-          return;
-        }
-        
-        setWalletInfo(walletData);
-        
-        // Fetch NFTs
-        if (walletData) {
-          const { data: nftData, error: nftError } = await supabase
-            .from('nfts')
-            .select('*')
-            .eq('owner_wallet_id', walletData.id);
+          // Fetch wallet
+          const { data: walletData, error: walletError } = await supabase
+            .from('wallets')
+            .select('id, address')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
             
-          if (nftError) {
-            console.error("Error fetching NFTs:", nftError);
-            setLoading(false);
-            return;
+          if (walletError) {
+            console.error("Error fetching wallet:", walletError);
+          } else if (walletData) {
+            console.log("Found wallet data:", walletData);
+            setWalletInfo(walletData);
+            
+            // Fetch NFTs
+            const { data: nftData, error: nftError } = await supabase
+              .from('nfts')
+              .select('*')
+              .eq('owner_wallet_id', walletData.id);
+              
+            if (nftError) {
+              console.error("Error fetching NFTs:", nftError);
+            } else if (nftData) {
+              console.log("Found NFT data:", nftData);
+              
+              // Convert the JSON metadata to the expected format
+              const formattedNfts = nftData.map(nft => ({
+                id: nft.id,
+                image_url: nft.image_url || '',
+                metadata: typeof nft.metadata === 'string' 
+                  ? JSON.parse(nft.metadata) 
+                  : (nft.metadata as any) || { name: '', description: '' },
+                token_id: nft.token_id,
+                contract_address: nft.contract_address
+              }));
+              
+              setNfts(formattedNfts);
+            }
           }
-          
-          // Convert the JSON metadata to the expected format
-          const formattedNfts = nftData.map(nft => ({
-            id: nft.id,
-            image_url: nft.image_url || '',
-            metadata: typeof nft.metadata === 'string' 
-              ? JSON.parse(nft.metadata) 
-              : (nft.metadata as any) || { name: '', description: '' },
-            token_id: nft.token_id,
-            contract_address: nft.contract_address
-          }));
-          
-          setNfts(formattedNfts);
+        } else {
+          console.log("No student data found");
         }
       } catch (error) {
         console.error("Error in fetchStudentData:", error);

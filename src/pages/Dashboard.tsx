@@ -48,6 +48,7 @@ const Dashboard = () => {
         return;
       }
 
+      // Try to get the teacher profile first
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
         .select('full_name')
@@ -55,9 +56,11 @@ const Dashboard = () => {
         .single();
       
       if (teacherProfile) {
+        console.log("Found teacher profile:", teacherProfile);
         setUserRole('teacher');
         setUserName(teacherProfile.full_name || session.user.email);
       } else {
+        // If not a teacher, check for student profile
         const { data: studentData } = await supabase
           .from('students')
           .select('name')
@@ -65,9 +68,12 @@ const Dashboard = () => {
           .single();
           
         if (studentData) {
+          console.log("Found student profile:", studentData);
           setUserRole('student');
           setUserName(studentData.name || session.user.email);
         } else {
+          // Fallback to student if no profile found
+          console.log("No profile found, defaulting to student");
           setUserRole('student');
           setUserName(session.user.email);
         }
