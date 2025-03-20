@@ -4,7 +4,7 @@ export interface Notification {
   title: string;
   message: string;
   created_at: string;
-  classroom_id: string;
   created_by: string;
+  classroom_id: string;
   type: string;
 }

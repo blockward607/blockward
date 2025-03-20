@@ -1,11 +1,24 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorialModal } from "@/components/tutorial/TutorialModal";
 import { TutorialStartDialog } from "@/components/tutorial/TutorialStartDialog";
 import { useNavigate } from "react-router-dom";
 
-export const useTutorial = () => {
+// Create context for tutorial state
+type TutorialContextType = {
+  showTutorial: boolean;
+  showTutorialPrompt: boolean;
+  userRole: "teacher" | "student" | null;
+  startTutorial: () => void;
+  resetTutorialStatus: () => Promise<void>;
+  setShowTutorialPrompt: (show: boolean) => void;
+};
+
+const TutorialContext = createContext<TutorialContextType | undefined>(undefined);
+
+// Provider component
+export const TutorialProvider = ({ children }: { children: ReactNode }) => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
   const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
@@ -88,26 +101,41 @@ export const useTutorial = () => {
     }
   };
 
-  return {
+  const value = {
     showTutorial,
     showTutorialPrompt,
     userRole,
     startTutorial,
     resetTutorialStatus,
     setShowTutorialPrompt,
-    TutorialComponent: showTutorial ? (
-      <TutorialModal 
-        userRole={userRole}
-        onClose={() => setShowTutorial(false)} 
-      />
-    ) : null,
-    TutorialPrompt: showTutorialPrompt ? (
-      <TutorialStartDialog
-        userRole={userRole}
-        isOpen={showTutorialPrompt}
-        onOpenChange={setShowTutorialPrompt}
-        onStartTutorial={startTutorial}
-      />
-    ) : null
   };
+
+  return (
+    <TutorialContext.Provider value={value}>
+      {children}
+      {showTutorial ? (
+        <TutorialModal 
+          userRole={userRole}
+          onClose={() => setShowTutorial(false)} 
+        />
+      ) : null}
+      {showTutorialPrompt ? (
+        <TutorialStartDialog
+          userRole={userRole}
+          isOpen={showTutorialPrompt}
+          onOpenChange={setShowTutorialPrompt}
+          onStartTutorial={startTutorial}
+        />
+      ) : null}
+    </TutorialContext.Provider>
+  );
+};
+
+// Hook for using the tutorial context
+export const useTutorial = () => {
+  const context = useContext(TutorialContext);
+  if (context === undefined) {
+    throw new Error("useTutorial must be used within a TutorialProvider");
+  }
+  return context;
 };
