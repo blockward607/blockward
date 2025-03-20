@@ -6,18 +6,18 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Copy, Link2, Loader2, QrCode } from "lucide-react";
 import { QRCodeDisplay } from "../QRCodeDisplay";
+import { useClassroomDetails } from "./useClassroomDetails";
 
 interface InviteCodeTabProps {
   classroomId: string;
-  teacherName: string;
-  classroomName: string;
 }
 
-export const InviteCodeTab = ({ classroomId, teacherName, classroomName }: InviteCodeTabProps) => {
+export const InviteCodeTab = ({ classroomId }: InviteCodeTabProps) => {
   const [loading, setLoading] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
   const { toast } = useToast();
+  const { teacherName, classroomName } = useClassroomDetails(classroomId);
   
   // Check for existing invitation code on component mount
   useEffect(() => {

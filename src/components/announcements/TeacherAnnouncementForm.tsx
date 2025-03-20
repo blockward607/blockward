@@ -18,12 +18,17 @@ import type { Classroom } from "@/types/classroom";
 interface TeacherAnnouncementFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  defaultClassroomId?: string; // Added to support pre-selecting a classroom
 }
 
-export const TeacherAnnouncementForm = ({ onSuccess, onCancel }: TeacherAnnouncementFormProps) => {
+export const TeacherAnnouncementForm = ({ 
+  onSuccess, 
+  onCancel, 
+  defaultClassroomId 
+}: TeacherAnnouncementFormProps) => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [classroomId, setClassroomId] = useState<string | null>(null);
+  const [classroomId, setClassroomId] = useState<string | null>(defaultClassroomId || null);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -31,6 +36,13 @@ export const TeacherAnnouncementForm = ({ onSuccess, onCancel }: TeacherAnnounce
   useEffect(() => {
     fetchTeacherClassrooms();
   }, []);
+
+  useEffect(() => {
+    // When defaultClassroomId changes, update classroomId
+    if (defaultClassroomId) {
+      setClassroomId(defaultClassroomId);
+    }
+  }, [defaultClassroomId]);
 
   const fetchTeacherClassrooms = async () => {
     try {
@@ -75,6 +87,11 @@ export const TeacherAnnouncementForm = ({ onSuccess, onCancel }: TeacherAnnounce
       });
 
       if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Announcement ${classroomId ? 'for class' : 'for all students'} published successfully`
+      });
       
       onSuccess();
     } catch (error: any) {

@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +16,7 @@ const StudentDashboard = () => {
   const [isDemo, setIsDemo] = useState(false);
   const [announcements, setAnnouncements] = useState<Notification[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
+  const [enrolledClassrooms, setEnrolledClassrooms] = useState<string[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -26,24 +26,45 @@ const StudentDashboard = () => {
       // Demo mode is enabled if we're in the view route or no authenticated session
       const isDemoMode = window.location.pathname.includes('view-student') || !session;
       setIsDemo(isDemoMode);
+
+      if (session && studentData?.id) {
+        // Fetch enrolled classrooms for the student
+        const { data: enrollments } = await supabase
+          .from('classroom_students')
+          .select('classroom_id')
+          .eq('student_id', studentData.id);
+        
+        if (enrollments && enrollments.length > 0) {
+          setEnrolledClassrooms(enrollments.map(e => e.classroom_id));
+        }
+      }
     };
     
     checkAuth();
-  }, []);
+  }, [studentData]);
 
   useEffect(() => {
-    if (!isDemo) {
+    if (!isDemo && studentData?.id) {
       fetchAnnouncements();
     }
-  }, [isDemo]);
+  }, [isDemo, studentData, enrolledClassrooms]);
 
   const fetchAnnouncements = async () => {
     try {
-      const { data, error } = await supabase
+      if (!studentData) return;
+      
+      const query = supabase
         .from('notifications')
         .select('*')
         .eq('type', 'announcement')
         .order('created_at', { ascending: false });
+      
+      // If enrolled in classes, fetch announcements for those classes or global announcements
+      if (enrolledClassrooms.length > 0) {
+        query.or(`classroom_id.is.null,classroom_id.in.(${enrolledClassrooms.join(',')})`);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
       setAnnouncements(data || []);
@@ -86,7 +107,7 @@ const StudentDashboard = () => {
           announcements={announcements} 
           loading={loadingAnnouncements} 
           isTeacher={false}
-          onAnnouncementDeleted={() => {}}
+          onAnnouncementDeleted={() => fetchAnnouncements()}
         />
       </div>
     </div>
