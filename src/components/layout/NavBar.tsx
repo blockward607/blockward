@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, User, BookOpen, Phone, Menu, X, Monitor } from "lucide-react";
+import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InteractiveLogo } from "@/components/logo/InteractiveLogo";
 
@@ -23,14 +22,6 @@ export const NavBar = () => {
       section.scrollIntoView({ behavior: 'smooth' });
       setMobileMenuOpen(false);
     }
-  };
-
-  const handleStudentDemo = () => {
-    navigate('/view-student-dashboard');
-  };
-
-  const handleTeacherDemo = () => {
-    navigate('/view-teacher-dashboard');
   };
   
   return (
@@ -66,31 +57,6 @@ export const NavBar = () => {
             <BookOpen className="w-4 h-4" />
             <span>Preview</span>
           </button>
-          <div className="relative group">
-            <button 
-              onClick={() => scrollToSection('demo')} 
-              className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2"
-            >
-              <Monitor className="w-4 h-4" />
-              <span>Demo</span>
-            </button>
-            <div className="absolute left-0 top-full mt-2 w-52 bg-black/95 backdrop-blur-md border border-purple-900/20 rounded-md shadow-lg p-2 hidden group-hover:block">
-              <button 
-                onClick={handleStudentDemo}
-                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-purple-900/20 rounded-md flex items-center gap-2"
-              >
-                <Monitor className="w-4 h-4 text-purple-400" />
-                Student Dashboard
-              </button>
-              <button 
-                onClick={handleTeacherDemo}
-                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-purple-900/20 rounded-md flex items-center gap-2"
-              >
-                <Monitor className="w-4 h-4 text-indigo-400" />
-                Teacher Dashboard
-              </button>
-            </div>
-          </div>
           <button 
             onClick={() => scrollToSection('contact')} 
             className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2"
@@ -153,27 +119,6 @@ export const NavBar = () => {
           >
             <BookOpen className="w-5 h-5" />
             <span>Preview</span>
-          </button>
-          <button 
-            onClick={() => scrollToSection('demo')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2 py-2"
-          >
-            <Monitor className="w-5 h-5" />
-            <span>Demo</span>
-          </button>
-          <button 
-            onClick={handleStudentDemo} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2 py-1 pl-8"
-          >
-            <Monitor className="w-4 h-4 text-purple-400" />
-            <span className="text-sm">Student Demo</span>
-          </button>
-          <button 
-            onClick={handleTeacherDemo} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2 py-1 pl-8"
-          >
-            <Monitor className="w-4 h-4 text-indigo-400" />
-            <span className="text-sm">Teacher Demo</span>
           </button>
           <button 
             onClick={() => scrollToSection('contact')} 

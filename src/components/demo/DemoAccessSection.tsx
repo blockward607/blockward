@@ -7,13 +7,11 @@ import { ArrowRight } from "lucide-react";
 export const DemoAccessSection = () => {
   const navigate = useNavigate();
   
-  const handleStudentDemo = () => {
-    console.log("Navigating to student demo dashboard");
+  const handleDirectAccess = () => {
     navigate('/view-student-dashboard');
   };
 
   const handleTeacherDemo = () => {
-    console.log("Navigating to teacher demo dashboard");
     navigate('/view-teacher-dashboard');
   };
 
@@ -32,7 +30,7 @@ export const DemoAccessSection = () => {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            onClick={handleStudentDemo}
+            onClick={handleDirectAccess}
             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 rounded-full text-white font-medium hover-scale hover:from-purple-700 hover:to-purple-900 flex items-center gap-2"
           >
             View Student Demo <ArrowRight className="w-4 h-4" />

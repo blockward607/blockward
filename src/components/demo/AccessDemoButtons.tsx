@@ -1,19 +1,17 @@
 
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Monitor, Sparkles } from "lucide-react";
+import { GraduationCap, School, ArrowRight, PlayCircle, Monitor, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const AccessDemoButtons = () => {
   const navigate = useNavigate();
 
   const handleStudentDemo = () => {
-    console.log("Navigating to student demo dashboard");
     navigate('/view-student-dashboard');
   };
 
   const handleTeacherDemo = () => {
-    console.log("Navigating to teacher demo dashboard");
     navigate('/view-teacher-dashboard');
   };
 

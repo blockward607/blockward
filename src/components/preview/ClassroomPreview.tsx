@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -7,11 +8,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Check, X, Clock, Users, Calendar, Award, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
 
 export const ClassroomPreview = () => {
   const [activeTab, setActiveTab] = useState("attendance");
-  const navigate = useNavigate();
   
   // Sample data for the preview
   const students = [
@@ -47,16 +46,6 @@ export const ClassroomPreview = () => {
     }
   };
 
-  const handleTryDemo = () => {
-    const targetSection = document.getElementById('demo');
-    if (targetSection) {
-      targetSection.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      // Fallback direct navigation
-      navigate('/view-student-dashboard');
-    }
-  };
-
   return (
     <div className="container mx-auto py-16 px-4" id="preview">
       <div className="text-center mb-12">
@@ -85,7 +74,6 @@ export const ClassroomPreview = () => {
         </div>
 
         <Tabs defaultValue="attendance" value={activeTab} onValueChange={setActiveTab} className="p-4">
-          
           <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="attendance" className="gap-2">
               <Calendar className="h-4 w-4" />
@@ -100,7 +88,6 @@ export const ClassroomPreview = () => {
               <span>BlockWards</span>
             </TabsTrigger>
           </TabsList>
-          
           
           <TabsContent value="attendance" className="space-y-4">
             <Card>
@@ -243,7 +230,6 @@ export const ClassroomPreview = () => {
         <Button 
           size="lg" 
           className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-          onClick={handleTryDemo}
         >
           Try BlockWard Now
         </Button>

@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { showTutorial, showTutorialPrompt, TutorialComponent, TutorialPrompt } = useTutorial();
+  const { TutorialComponent, TutorialPrompt } = useTutorial();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,19 +24,6 @@ const Dashboard = () => {
 
   const checkAuth = async () => {
     try {
-      // Check if we're in demo mode first
-      if (window.location.pathname.includes('view-student-dashboard')) {
-        setUserRole('student');
-        setUserName('Demo Student');
-        setLoading(false);
-        return;
-      } else if (window.location.pathname.includes('view-teacher-dashboard')) {
-        setUserRole('teacher');
-        setUserName('Demo Teacher');
-        setLoading(false);
-        return;
-      }
-
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -48,19 +35,16 @@ const Dashboard = () => {
         return;
       }
 
-      // Try to get the teacher profile first
-      const { data: teacherProfile } = await supabase
+      const { data: teacherData } = await supabase
         .from('teacher_profiles')
         .select('full_name')
         .eq('user_id', session.user.id)
         .single();
       
-      if (teacherProfile) {
-        console.log("Found teacher profile:", teacherProfile);
+      if (teacherData) {
         setUserRole('teacher');
-        setUserName(teacherProfile.full_name || session.user.email);
+        setUserName(teacherData.full_name || session.user.email);
       } else {
-        // If not a teacher, check for student profile
         const { data: studentData } = await supabase
           .from('students')
           .select('name')
@@ -68,12 +52,9 @@ const Dashboard = () => {
           .single();
           
         if (studentData) {
-          console.log("Found student profile:", studentData);
           setUserRole('student');
           setUserName(studentData.name || session.user.email);
         } else {
-          // Fallback to student if no profile found
-          console.log("No profile found, defaulting to student");
           setUserRole('student');
           setUserName(session.user.email);
         }

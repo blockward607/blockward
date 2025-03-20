@@ -101,6 +101,7 @@ export const QRCodeDisplay = ({
       )}
       <div id="qr-code-svg">
         <QRCodeSVG 
+          id="qr-code-canvas"
           value={value}
           size={size}
           bgColor={"#ffffff"}

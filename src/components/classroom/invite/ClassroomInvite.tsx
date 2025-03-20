@@ -5,7 +5,6 @@ import { EmailInviteTab } from "./EmailInviteTab";
 import { InviteCodeTab } from "./InviteCodeTab";
 import { useAuth } from "@/hooks/use-auth";
 import { useClassroomDetails } from "./useClassroomDetails";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ClassroomInviteProps {
   classroomId: string;
@@ -32,27 +31,19 @@ export const ClassroomInvite = ({ classroomId }: ClassroomInviteProps) => {
           </TabsTrigger>
         </TabsList>
         
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner />
-          </div>
-        ) : (
-          <>
-            <TabsContent value="code" className="mt-0">
-              <InviteCodeTab 
-                classroomId={classroomId} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="email" className="mt-0">
-              <EmailInviteTab 
-                classroomId={classroomId}
-                teacherName={teacher?.full_name || "Teacher"}
-                classroomName={classroom?.name || "Classroom"}
-              />
-            </TabsContent>
-          </>
-        )}
+        <TabsContent value="code" className="mt-0">
+          <InviteCodeTab 
+            classroomId={classroomId} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="email" className="mt-0">
+          <EmailInviteTab 
+            classroomId={classroomId}
+            teacherName={teacher?.full_name || "Teacher"}
+            classroomName={classroom?.name || "Classroom"}
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );

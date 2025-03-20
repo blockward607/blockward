@@ -2,11 +2,21 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Teacher {
+  id: string;
+  full_name: string;
+}
+
+interface Classroom {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export const useClassroomDetails = (classroomId: string) => {
-  const [teacher, setTeacher] = useState<any>(null);
-  const [classroom, setClassroom] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [classroom, setClassroom] = useState<Classroom | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchClassroomDetails = async () => {
@@ -14,48 +24,40 @@ export const useClassroomDetails = (classroomId: string) => {
         setLoading(false);
         return;
       }
-
+      
       try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch classroom data
+        // Fetch classroom details
         const { data: classroomData, error: classroomError } = await supabase
           .from('classrooms')
-          .select('*, teacher:teacher_profiles(*)')
+          .select('id, name, description, teacher_id')
           .eq('id', classroomId)
           .single();
-
-        if (classroomError) {
-          console.error("Error fetching classroom:", classroomError);
-          throw classroomError;
+        
+        if (classroomError) throw classroomError;
+        
+        setClassroom(classroomData);
+        
+        if (classroomData.teacher_id) {
+          // Fetch teacher details
+          const { data: teacherData, error: teacherError } = await supabase
+            .from('teacher_profiles')
+            .select('id, full_name, user_id')
+            .eq('id', classroomData.teacher_id)
+            .single();
+            
+          if (teacherError) throw teacherError;
+          
+          setTeacher(teacherData);
         }
-
-        if (!classroomData) {
-          throw new Error("Classroom not found");
-        }
-
-        setClassroom({
-          id: classroomData.id,
-          name: classroomData.name,
-          description: classroomData.description,
-          created_at: classroomData.created_at
-        });
-
-        // Set teacher data
-        if (classroomData.teacher) {
-          setTeacher(classroomData.teacher);
-        }
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error fetching classroom details:", error);
-        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchClassroomDetails();
   }, [classroomId]);
 
-  return { teacher, classroom, loading, error };
+  return { teacher, classroom, loading };
 };

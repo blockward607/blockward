@@ -18,19 +18,19 @@ export const GenerateCodeButton = ({
       onClick={onClick} 
       disabled={loading}
       className={variant === "full" 
-        ? "w-full bg-purple-600 hover:bg-purple-700 h-12 text-base" 
-        : "bg-purple-600 hover:bg-purple-700 w-full"
+        ? "w-full bg-purple-600 hover:bg-purple-700" 
+        : "bg-purple-600/50 hover:bg-purple-600 w-full"
       }
-      variant="default"
+      variant={variant === "full" ? "default" : "outline"}
     >
       {loading ? (
         <>
-          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           Generating...
         </>
       ) : (
         <>
-          <Link2 className="w-5 h-5 mr-2" />
+          <Link2 className="w-4 h-4 mr-2" />
           {variant === "full" ? "Generate Invitation Code" : "New Code"}
         </>
       )}

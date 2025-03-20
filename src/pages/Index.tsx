@@ -11,7 +11,6 @@ import { ClassroomPreview } from "@/components/preview/ClassroomPreview";
 import { EasyToUse } from "@/components/EasyToUse";
 import { BlockwardIntro } from '@/components/intro/BlockwardIntro';
 import { HowItWorks } from '@/components/HowItWorks';
-import { DemoSection } from '@/components/demo/DemoSection';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -22,17 +21,6 @@ const Index = () => {
     const introShown = localStorage.getItem('introShown');
     if (introShown) {
       setShowIntro(false);
-    }
-
-    // Check for hash in URL to handle direct links to sections
-    const hash = window.location.hash;
-    if (hash) {
-      setTimeout(() => {
-        const element = document.getElementById(hash.substring(1));
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 500);
     }
   }, []);
   
@@ -68,11 +56,6 @@ const Index = () => {
       {/* Preview section */}
       <div id="preview" className="classroom-preview scroll-mt-20">
         <ClassroomPreview />
-      </div>
-      
-      {/* Demo Section */}
-      <div id="demo" className="scroll-mt-20">
-        <DemoSection />
       </div>
       
       {/* About Section with ID for scrolling */}
