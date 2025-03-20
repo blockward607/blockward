@@ -10,6 +10,7 @@ const ClassDetails = () => {
   const { classroomId } = useParams<{ classroomId: string }>();
   const [classroom, setClassroom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("stream");
 
   useEffect(() => {
     const fetchClassroom = async () => {
@@ -36,6 +37,10 @@ const ClassDetails = () => {
     fetchClassroom();
   }, [classroomId]);
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -57,27 +62,37 @@ const ClassDetails = () => {
 
       <Card className="w-full mt-8 bg-black/40 border-purple-500/30">
         <CardContent className="p-4">
-          <Tabs defaultValue="stream" className="w-full">
-            <TabsList className="grid w-full max-w-md mx-auto mb-6">
+          <Tabs defaultValue="stream" value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
               <TabsTrigger value="stream">Stream</TabsTrigger>
               <TabsTrigger value="assignments">Assignments</TabsTrigger>
               <TabsTrigger value="students">Students</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
-              <Link to={`/class/${classroomId}/grades`} className="px-4 py-2 rounded-md hover:bg-purple-800/40 text-white text-center">
-                Grades
-              </Link>
+              <TabsTrigger value="grades" asChild>
+                <Link to={`/class/${classroomId}/grades`} className="w-full h-full flex items-center justify-center">
+                  Grades
+                </Link>
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="stream">
-              <div>Stream Content</div>
+            
+            <TabsContent value="stream" className="min-h-[200px] p-4">
+              <div className="text-white">Stream Content</div>
             </TabsContent>
-            <TabsContent value="assignments">
-              <div>Assignments Content</div>
+            
+            <TabsContent value="assignments" className="min-h-[200px] p-4">
+              <div className="text-white">Assignments Content</div>
             </TabsContent>
-            <TabsContent value="students">
-              <div>Students Content</div>
+            
+            <TabsContent value="students" className="min-h-[200px] p-4">
+              <div className="text-white">Students Content</div>
             </TabsContent>
-            <TabsContent value="resources">
-              <div>Resources Content</div>
+            
+            <TabsContent value="resources" className="min-h-[200px] p-4">
+              <div className="text-white">Resources Content</div>
+            </TabsContent>
+            
+            <TabsContent value="grades" className="min-h-[200px] p-4">
+              <div className="text-white">Redirecting to grades page...</div>
             </TabsContent>
           </Tabs>
         </CardContent>
