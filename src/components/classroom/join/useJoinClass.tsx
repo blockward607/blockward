@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useJoinClassContext } from "./JoinClassContext";
 import { useAuth } from "@/hooks/use-auth";
+import { InvitationMatchingService } from "@/services/class-join/InvitationMatchingService";
 
 export const useJoinClass = () => {
   const { invitationCode, setInvitationCode, setLoading, setError, loading } = useJoinClassContext();
@@ -28,36 +29,15 @@ export const useJoinClass = () => {
       setError(null);
       console.log("Joining class with code:", invitationCode);
       
-      // First, find the invitation
-      const { data: inviteData, error: inviteError } = await supabase
-        .from('class_invitations')
-        .select('id, classroom_id, status')
-        .eq('invitation_token', invitationCode.trim())
-        .eq('status', 'pending')
-        .single();
+      // First, find the classroom or invitation using the InvitationMatchingService
+      const { data: matchResult, error: matchError } = await InvitationMatchingService.findClassroomOrInvitation(invitationCode);
       
-      if (inviteError) {
-        console.error("Invite lookup error:", inviteError);
-        throw new Error("Invalid invitation code. Please try again.");
+      if (matchError || !matchResult) {
+        console.error("Invitation matching error:", matchError);
+        throw new Error(matchError?.message || "Invalid invitation code. Please try again.");
       }
       
-      if (!inviteData) {
-        throw new Error("This invitation code is invalid or has expired.");
-      }
-      
-      console.log("Found invitation:", inviteData);
-      
-      // Check if student is already enrolled in this class
-      const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
-        .from('classroom_students')
-        .select('id')
-        .eq('classroom_id', inviteData.classroom_id)
-        .eq('student_id', user.id)
-        .maybeSingle();
-      
-      if (existingEnrollment) {
-        throw new Error("You are already enrolled in this class.");
-      }
+      console.log("Found classroom/invitation:", matchResult);
       
       // Get student profile, or create if it doesn't exist
       let studentProfileId = null;
@@ -88,33 +68,47 @@ export const useJoinClass = () => {
         studentProfileId = newProfile.id;
       }
       
-      // Enroll the student - using classroom_students table instead of student_enrollments
+      // Check if student is already enrolled in this class
+      const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
+        .from('classroom_students')
+        .select('id')
+        .eq('classroom_id', matchResult.classroomId)
+        .eq('student_id', studentProfileId)
+        .maybeSingle();
+      
+      if (existingEnrollment) {
+        throw new Error("You are already enrolled in this class.");
+      }
+      
+      // Enroll the student
       const { error: enrollError } = await supabase
         .from('classroom_students')
         .insert({
           student_id: studentProfileId,
-          classroom_id: inviteData.classroom_id
+          classroom_id: matchResult.classroomId
         });
       
       if (enrollError) {
         throw new Error("Failed to enroll in the class. Please try again.");
       }
       
-      // Update invitation status
-      await supabase
-        .from('class_invitations')
-        .update({ status: 'accepted' })
-        .eq('id', inviteData.id);
+      // If there was an invitation, update its status
+      if (matchResult.invitationId) {
+        await supabase
+          .from('class_invitations')
+          .update({ status: 'accepted' })
+          .eq('id', matchResult.invitationId);
+      }
       
       console.log("Successfully joined class!");
       
       toast({
         title: "Success!",
-        description: "You have successfully joined the class.",
+        description: `You have successfully joined the class${matchResult.classroom?.name ? ': ' + matchResult.classroom.name : ''}.`,
       });
       
       // Redirect to class dashboard
-      navigate(`/class/${inviteData.classroom_id}`);
+      navigate(`/class/${matchResult.classroomId}`);
     } catch (error: any) {
       console.error("Error joining class:", error);
       setError(error.message || "Failed to join class");
