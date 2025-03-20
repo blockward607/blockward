@@ -72,6 +72,7 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
         throw new Error(inviteError.message || 'Failed to generate invitation code');
       }
       
+      console.log("Successfully created invitation:", invitation);
       setInvitationCode(invitation.invitation_token);
       toast({
         title: "Invitation Code Generated",

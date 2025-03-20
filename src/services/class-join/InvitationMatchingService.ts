@@ -22,7 +22,7 @@ export const InvitationMatchingService = {
       const { data: invitation, error: invitationError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at')
-        .eq('invitation_token', code)
+        .eq('invitation_token', code.trim())
         .eq('status', 'pending')
         .maybeSingle();
         
@@ -61,30 +61,31 @@ export const InvitationMatchingService = {
       }
       
       // 2. Try to find the classroom directly by ID (if code is a UUID)
-      // This can happen when scanning QR codes or using direct links
-      const { data: classroom, error: classroomError } = await supabase
-        .from('classrooms')
-        .select('id, name')
-        .eq('id', code)
-        .maybeSingle();
-        
-      console.log("Classroom lookup result:", { classroom, classroomError });
-        
-      if (classroom) {
-        return { 
-          data: { 
-            classroomId: classroom.id,
-            invitationId: null,
-            classroom: {
-              id: classroom.id,
-              name: classroom.name
-            }
-          }, 
-          error: null 
-        };
+      if (code.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        const { data: classroom, error: classroomError } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', code)
+          .maybeSingle();
+          
+        console.log("Classroom lookup by UUID result:", { classroom, classroomError });
+          
+        if (classroom) {
+          return { 
+            data: { 
+              classroomId: classroom.id,
+              invitationId: null,
+              classroom: {
+                id: classroom.id,
+                name: classroom.name
+              }
+            }, 
+            error: null 
+          };
+        }
       }
       
-      // 3. If nothing found, return null data
+      // 3. Log what code we're looking for to help debug
       console.log("No valid invitation or classroom found with code:", code);
       return { 
         data: null, 
