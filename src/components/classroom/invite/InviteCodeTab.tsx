@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,15 +110,22 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
     });
   };
 
+  // Create direct join URLs that will work with both mobile and web
+  const getJoinUrl = () => {
+    // Use absolute URL to ensure it works when shared
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/classes?code=${invitationCode}`;
+  };
+
   const shareViaGmail = () => {
     const subject = encodeURIComponent(`Join my ${classroomName} class on Blockward`);
+    const joinUrl = getJoinUrl();
     const body = encodeURIComponent(`Hello,
 
 I'd like to invite you to join my class ${classroomName} on Blockward. 
 
-Use this invitation code to join: ${invitationCode}
-
-You can enter this code after logging in to Blockward.
+Use this invitation code: ${invitationCode}
+Or click this link to join directly: ${joinUrl}
 
 Best regards,
 ${teacherName}`);
@@ -134,8 +142,8 @@ ${teacherName}`);
     setShowQRCode(!showQRCode);
   };
 
-  // Create a URL that will automatically apply the code when clicked
-  const joinUrl = `${window.location.origin}/classes?code=${invitationCode}`;
+  // Use the join URL for QR codes
+  const joinUrl = getJoinUrl();
 
   return (
     <div className="space-y-4">

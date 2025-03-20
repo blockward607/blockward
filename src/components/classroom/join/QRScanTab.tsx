@@ -8,12 +8,39 @@ import { useJoinClass } from "./useJoinClass";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 export const QRScanTab = () => {
   const { setInvitationCode, scannerOpen, setScannerOpen, loading, error } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
   const { toast } = useToast();
+
+  // Helper function to extract code from URL
+  const extractCodeFromUrl = useCallback((url: string): string | null => {
+    try {
+      // First check if it's a URL with a code parameter
+      if (url.includes('?code=')) {
+        const urlObj = new URL(url);
+        return urlObj.searchParams.get('code');
+      } 
+      // Check for direct join URL
+      else if (url.includes('/classes/join/')) {
+        const parts = url.split('/classes/join/');
+        if (parts.length > 1) {
+          return parts[1].split('?')[0]; // Remove any query params
+        }
+      }
+      // Check for classes URL with code parameter
+      else if (url.includes('/classes') && url.includes('?code=')) {
+        const urlObj = new URL(url);
+        return urlObj.searchParams.get('code');
+      }
+      return null;
+    } catch (error) {
+      console.error("Error parsing URL:", error);
+      return null;
+    }
+  }, []);
 
   const handleQRCodeScanned = useCallback((code: string) => {
     setScannerOpen(false);
@@ -32,29 +59,14 @@ export const QRScanTab = () => {
       // Process the scanned code - handle both direct codes and URLs
       let inviteCode = code.trim();
       
-      // Handle various URL formats
-      if (code.includes('?code=')) {
-        try {
-          const url = new URL(code);
-          const codeParam = url.searchParams.get('code');
-          if (codeParam) {
-            inviteCode = codeParam.trim();
-            console.log("Extracted code from URL:", inviteCode);
-          }
-        } catch (error) {
-          console.error("Error parsing QR code URL:", error);
-          // Continue with original code if URL parsing fails
-        }
-      } else if (code.includes('/classes/join/')) {
-        // Handle direct join URLs
-        try {
-          const parts = code.split('/classes/join/');
-          if (parts.length > 1) {
-            inviteCode = parts[1].trim();
-            console.log("Extracted code from join URL:", inviteCode);
-          }
-        } catch (error) {
-          console.error("Error parsing join URL:", error);
+      // Check if code is a URL and try to extract the invitation code
+      if (code.includes('http')) {
+        const extractedCode = extractCodeFromUrl(code);
+        if (extractedCode) {
+          inviteCode = extractedCode.trim();
+          console.log("Extracted code from URL:", inviteCode);
+        } else {
+          console.log("Could not extract code from URL, using full code");
         }
       }
       
@@ -72,7 +84,19 @@ export const QRScanTab = () => {
         description: "Failed to process QR code"
       });
     }
-  }, [setScannerOpen, toast, setInvitationCode, handleJoinClass]);
+  }, [setScannerOpen, toast, setInvitationCode, handleJoinClass, extractCodeFromUrl]);
+
+  // Attempt to get code from URL on component mount (for direct links)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeParam = urlParams.get('code');
+    
+    if (codeParam && codeParam.trim()) {
+      console.log("Found code parameter in URL:", codeParam);
+      setInvitationCode(codeParam.trim());
+      // Don't auto-join here, let user click the button
+    }
+  }, [setInvitationCode]);
 
   return (
     <div className="text-center space-y-3">
