@@ -25,27 +25,39 @@ export const InvitationMatchingService = {
       };
     }
     
-    console.log("Trying to find classroom or invitation with code:", code);
+    console.log("[InvitationMatchingService] Searching for code:", code);
     try {
       // Clean up the code - remove spaces and standardize case for consistency
       const cleanCode = code.trim().toUpperCase();
       
-      console.log("Cleaned code value:", cleanCode);
+      console.log("[InvitationMatchingService] Cleaned code value:", cleanCode);
       
-      // 1. First try to find a direct class invitation by token
-      console.log("Trying to find invitation with token:", cleanCode);
-      const { data: invitation, error: invitationError } = await supabase
+      // DIRECT DATABASE QUERY - more reliable than using filters
+      const { data: allInvitations, error: queryError } = await supabase
         .from('class_invitations')
-        .select('id, classroom_id, invitation_token, status, expires_at')
-        .ilike('invitation_token', cleanCode) // Using case-insensitive comparison
-        .eq('status', 'pending')
-        .maybeSingle();
+        .select('id, classroom_id, invitation_token, status, expires_at');
         
-      console.log("Invitation lookup result:", { invitation, invitationError });
+      if (queryError) {
+        console.error("[InvitationMatchingService] Error querying invitations:", queryError);
+        return { 
+          data: null, 
+          error: { message: "Error accessing invitation database: " + queryError.message } 
+        };
+      }
+      
+      console.log("[InvitationMatchingService] Found invitations:", allInvitations?.length || 0);
+      
+      // Manual case-insensitive matching against all invitations
+      const matchingInvitation = allInvitations?.find(inv => 
+        inv.invitation_token.trim().toUpperCase() === cleanCode && 
+        inv.status === 'pending'
+      );
+      
+      if (matchingInvitation) {
+        console.log("[InvitationMatchingService] Found exact matching invitation:", matchingInvitation);
         
-      if (invitation) {
         // Check if invitation is expired
-        if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
+        if (matchingInvitation.expires_at && new Date(matchingInvitation.expires_at) < new Date()) {
           return { 
             data: null, 
             error: { message: "This invitation has expired. Please request a new one." } 
@@ -56,15 +68,13 @@ export const InvitationMatchingService = {
         const { data: classroom } = await supabase
           .from('classrooms')
           .select('id, name')
-          .eq('id', invitation.classroom_id)
+          .eq('id', matchingInvitation.classroom_id)
           .maybeSingle();
-        
-        console.log("Found classroom for invitation:", classroom);
-        
+          
         return { 
           data: { 
-            classroomId: invitation.classroom_id,
-            invitationId: invitation.id,
+            classroomId: matchingInvitation.classroom_id,
+            invitationId: matchingInvitation.id,
             classroom: classroom ? {
               id: classroom.id,
               name: classroom.name
@@ -74,17 +84,15 @@ export const InvitationMatchingService = {
         };
       }
       
-      // 2. Try to find the classroom directly by ID (if code is a UUID)
+      // If no match found with invitations, try matching UUID directly (unlikely but possible)
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidPattern.test(cleanCode)) {
-        console.log("Code appears to be a UUID, checking for direct classroom match");
+        console.log("[InvitationMatchingService] Code appears to be a UUID, checking for direct classroom match");
         const { data: classroom, error: classroomError } = await supabase
           .from('classrooms')
           .select('id, name')
           .eq('id', cleanCode)
           .maybeSingle();
-          
-        console.log("Classroom lookup by UUID result:", { classroom, classroomError });
           
         if (classroom) {
           return { 
@@ -101,65 +109,20 @@ export const InvitationMatchingService = {
         }
       }
       
-      // 3. Try an alternative query for debugging purposes
-      console.log("Trying alternative query to find all pending invitations");
-      const { data: allInvitations, error: queryError } = await supabase
-        .from('class_invitations')
-        .select('id, classroom_id, invitation_token, status, expires_at')
-        .eq('status', 'pending');
-        
-      if (queryError) {
-        console.error("Error querying all invitations:", queryError);
-      } else {
-        console.log("All pending invitations:", allInvitations);
-        
-        // Try to find a matching invitation manually (case-insensitive)
-        const matchingInvitation = allInvitations?.find(inv => 
-          inv.invitation_token.trim().toUpperCase() === cleanCode
-        );
-        
-        if (matchingInvitation) {
-          console.log("Found matching invitation manually:", matchingInvitation);
-          
-          // Check if invitation is expired
-          if (matchingInvitation.expires_at && new Date(matchingInvitation.expires_at) < new Date()) {
-            return { 
-              data: null, 
-              error: { message: "This invitation has expired. Please request a new one." } 
-            };
-          }
-          
-          // Get classroom details
-          const { data: classroom } = await supabase
-            .from('classrooms')
-            .select('id, name')
-            .eq('id', matchingInvitation.classroom_id)
-            .maybeSingle();
-            
-          return { 
-            data: { 
-              classroomId: matchingInvitation.classroom_id,
-              invitationId: matchingInvitation.id,
-              classroom: classroom ? {
-                id: classroom.id,
-                name: classroom.name
-              } : undefined
-            }, 
-            error: null 
-          };
-        } else {
-          console.log("No matching invitation found manually");
-        }
-      }
+      // Log all found invitations for debugging
+      console.log("[InvitationMatchingService] All invitations:", allInvitations?.map(i => ({
+        token: i.invitation_token,
+        status: i.status,
+        classroom: i.classroom_id
+      })));
       
-      // 4. If we got here, no valid invitation or classroom was found
-      console.log("No valid invitation or classroom found with code:", cleanCode);
+      // No match found
       return { 
         data: null, 
         error: { message: "Invalid invitation code. Please check and try again." } 
       };
     } catch (error: any) {
-      console.error("Error in findClassroomOrInvitation:", error);
+      console.error("[InvitationMatchingService] Unexpected error:", error);
       return { 
         data: null, 
         error: { message: error.message || "Failed to process invitation code" } 

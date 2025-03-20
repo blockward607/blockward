@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { QrCode, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -18,28 +17,30 @@ export const QRScanTab = () => {
   // Helper function to extract code from URL or direct code
   const extractCodeFromUrl = useCallback((input: string): string | null => {
     try {
-      console.log("Extracting code from input:", input);
+      console.log("[QRScanTab] Extracting code from input:", input);
       
       // Clean up input
       const trimmedInput = input.trim();
       
-      // If it's a QR code with just the code itself
+      // If it's a QR code with just the code itself (6-8 alphanumeric characters)
       if (/^[A-Z0-9]{4,10}$/i.test(trimmedInput)) {
-        console.log("Input appears to be a direct code:", trimmedInput);
+        console.log("[QRScanTab] Input appears to be a direct code:", trimmedInput);
         return trimmedInput;
       }
       
-      // Handle URL with code parameter
+      // Handle URL with code parameter (most common case)
       if (trimmedInput.includes('?code=')) {
         try {
-          const urlObj = new URL(trimmedInput);
-          const codeParam = urlObj.searchParams.get('code');
-          console.log("Found code parameter in URL:", codeParam);
+          const codeParam = new URLSearchParams(
+            trimmedInput.substring(trimmedInput.indexOf('?'))
+          ).get('code');
+          
+          console.log("[QRScanTab] Found code parameter in URL:", codeParam);
           if (codeParam && codeParam.trim()) {
             return codeParam.trim();
           }
         } catch (e) {
-          console.error("Error parsing URL:", e);
+          console.error("[QRScanTab] Error parsing URL query:", e);
           // Continue to try other methods
         }
       }
@@ -54,7 +55,7 @@ export const QRScanTab = () => {
       for (const pattern of urlPatterns) {
         const match = trimmedInput.match(pattern);
         if (match && match[1]) {
-          console.log("Found code in URL path:", match[1]);
+          console.log("[QRScanTab] Found code in URL path:", match[1]);
           return match[1];
         }
       }
@@ -62,14 +63,14 @@ export const QRScanTab = () => {
       // Last resort: Check if the input contains something that looks like a code
       const codeMatch = trimmedInput.match(/[A-Z0-9]{4,10}/i);
       if (codeMatch) {
-        console.log("Extracted possible code from text:", codeMatch[0]);
+        console.log("[QRScanTab] Extracted possible code from text:", codeMatch[0]);
         return codeMatch[0];
       }
       
-      console.log("Could not extract code from input");
+      console.log("[QRScanTab] Could not extract code from input");
       return null;
     } catch (error) {
-      console.error("Error in code extraction:", error);
+      console.error("[QRScanTab] Error in code extraction:", error);
       return null;
     }
   }, []);
@@ -87,7 +88,7 @@ export const QRScanTab = () => {
     }
     
     try {
-      console.log("QR Code scanned content:", scannedContent);
+      console.log("[QRScanTab] QR Code scanned content:", scannedContent);
       
       // Extract invitation code from the scanned content
       const extractedCode = extractCodeFromUrl(scannedContent);
@@ -103,19 +104,19 @@ export const QRScanTab = () => {
       
       // Normalize code to uppercase for consistency
       const normalizedCode = extractedCode.trim().toUpperCase();
-      console.log("Extracted and normalized code:", normalizedCode);
+      console.log("[QRScanTab] Extracted and normalized code:", normalizedCode);
       
       // Set the code in the context
       setInvitationCode(normalizedCode);
       
       // Attempt to join with a slight delay to ensure context is updated
       setTimeout(() => {
-        console.log("Auto-joining with code:", normalizedCode);
+        console.log("[QRScanTab] Auto-joining with code:", normalizedCode);
         handleJoinClass();
       }, 300);
       
     } catch (error: any) {
-      console.error("Error processing QR code:", error);
+      console.error("[QRScanTab] Error processing QR code:", error);
       toast({
         variant: "destructive",
         title: "Error",

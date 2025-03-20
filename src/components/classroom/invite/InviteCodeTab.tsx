@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +24,7 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
       if (!classroomId) return;
       
       try {
-        console.log("Checking for existing invitation code for classroom:", classroomId);
+        console.log("[InviteCodeTab] Checking for existing invitation code for classroom:", classroomId);
         const { data, error } = await supabase
           .from('class_invitations')
           .select('invitation_token')
@@ -38,13 +37,13 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
         if (error) throw error;
         
         if (data && data.length > 0) {
-          console.log("Found existing invitation code:", data[0].invitation_token);
+          console.log("[InviteCodeTab] Found existing invitation code:", data[0].invitation_token);
           setInvitationCode(data[0].invitation_token);
         } else {
-          console.log("No existing invitation code found for this classroom");
+          console.log("[InviteCodeTab] No existing invitation code found for this classroom");
         }
       } catch (error) {
-        console.error("Error checking for existing invitation code:", error);
+        console.error("[InviteCodeTab] Error checking for existing invitation code:", error);
       }
     };
     
@@ -54,19 +53,17 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      // Explicitly create a simple, clean, alphanumeric code
-      // Using uppercase letters + numbers for better readability and API compatibility
+      // Generate a simple, consistent, alphanumeric code - all uppercase
       const invitationToken = Array.from({length: 6}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       
-      // Make sure we have a valid classroom ID
       if (!classroomId) {
         throw new Error("No classroom ID provided");
       }
       
-      console.log("Generating new invitation code for classroom:", classroomId);
-      console.log("Generated invitation token:", invitationToken);
+      console.log("[InviteCodeTab] Generating new invitation code for classroom:", classroomId);
+      console.log("[InviteCodeTab] Generated invitation token:", invitationToken);
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
@@ -74,7 +71,7 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
         .insert({
           classroom_id: classroomId,
           email: 'general_invitation@blockward.app', // Marker for general invitations
-          invitation_token: invitationToken,
+          invitation_token: invitationToken, // Already uppercase
           status: 'pending',
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
         })
@@ -82,7 +79,7 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
         .single();
       
       if (inviteError) {
-        console.error("Error generating invitation:", inviteError);
+        console.error("[InviteCodeTab] Error generating invitation:", inviteError);
         throw new Error(inviteError.message || 'Failed to generate invitation code');
       }
       
@@ -90,14 +87,14 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
         throw new Error("Failed to create invitation record");
       }
       
-      console.log("Invitation created successfully:", invitation);
+      console.log("[InviteCodeTab] Invitation created successfully:", invitation);
       setInvitationCode(invitation.invitation_token);
       toast({
         title: "Invitation Code Generated",
         description: "Share this code with your students",
       });
     } catch (error: any) {
-      console.error("Error in generateInviteCode:", error);
+      console.error("[InviteCodeTab] Error in generateInviteCode:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate invitation code",

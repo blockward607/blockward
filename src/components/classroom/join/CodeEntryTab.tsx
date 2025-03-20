@@ -15,20 +15,19 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Clean and normalize the code (remove spaces, make uppercase)
-    let value = e.target.value;
-    // Don't trim while typing - only trim on submit
-    // But convert to uppercase for consistency
-    value = value.toUpperCase();
-    setInvitationCode(value);
+    // Store raw input as user types
+    const value = e.target.value;
+    
+    // Convert to uppercase for display consistency
+    // But DON'T trim while typing - only when submitting
+    const displayValue = value.toUpperCase();
+    setInvitationCode(displayValue);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && invitationCode.trim()) {
-      // Trim the code before joining
-      const cleanCode = invitationCode.trim();
-      setInvitationCode(cleanCode);
-      handleJoinClass();
+    if (e.key === 'Enter' && invitationCode) {
+      // For Enter key, normalize the code
+      handleSubmitCode();
     }
   };
 
@@ -46,34 +45,41 @@ export const CodeEntryTab = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         
-        if (code && code.trim() && !loading && !autoJoinAttempted) {
-          console.log("Auto-joining with code from URL:", code);
+        if (code && !loading && !autoJoinAttempted) {
+          console.log("[CodeEntryTab] Auto-joining with code from URL:", code);
           
-          // Preserve original code formatting but normalize
+          // Set the code in state
           const cleanCode = code.trim().toUpperCase();
           setInvitationCode(cleanCode);
           setAutoJoinAttempted(true);
           
           // Small delay to ensure context is fully set up
           setTimeout(() => {
-            console.log("Attempting to join with code:", cleanCode);
+            console.log("[CodeEntryTab] Attempting to join with code:", cleanCode);
             handleJoinClass();
           }, 500);
         }
       } catch (error) {
-        console.error("Error in auto-join:", error);
+        console.error("[CodeEntryTab] Error in auto-join:", error);
       }
     };
     
     attemptAutoJoin();
-  }, [invitationCode, loading, autoJoinAttempted, handleJoinClass, setInvitationCode]);
+  }, [loading, autoJoinAttempted, handleJoinClass, setInvitationCode]);
 
   const handleSubmitCode = () => {
-    // Clean the code before submission
+    // Normalize code before submission - this is critical
+    if (!invitationCode) return;
+    
     const cleanCode = invitationCode.trim().toUpperCase();
+    console.log("[CodeEntryTab] Submitting normalized code:", cleanCode);
+    
+    // Update the context with cleaned code
     if (cleanCode !== invitationCode) {
       setInvitationCode(cleanCode);
     }
+    
+    // Execute join logic
     handleJoinClass();
   };
 
@@ -99,7 +105,7 @@ export const CodeEntryTab = () => {
         />
         <Button
           onClick={handleSubmitCode}
-          disabled={loading || !invitationCode.trim()}
+          disabled={loading || !invitationCode}
           className="bg-purple-700 hover:bg-purple-800"
         >
           {loading ? (
