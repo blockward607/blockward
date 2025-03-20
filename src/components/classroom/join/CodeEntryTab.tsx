@@ -15,8 +15,8 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Set the code in context
-    let value = e.target.value.trim();
+    // Clean and normalize the code (trim whitespace, make uppercase)
+    let value = e.target.value.trim().toUpperCase();
     setInvitationCode(value);
   };
 
@@ -43,8 +43,8 @@ export const CodeEntryTab = () => {
         if (code && code.trim() && !loading && !autoJoinAttempted) {
           console.log("Auto-joining with code from URL:", code);
           
-          // Preserve original code formatting
-          const cleanCode = code.trim();
+          // Preserve original code formatting but normalize
+          const cleanCode = code.trim().toUpperCase();
           setInvitationCode(cleanCode);
           setAutoJoinAttempted(true);
           

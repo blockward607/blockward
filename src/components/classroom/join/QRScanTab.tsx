@@ -18,23 +18,39 @@ export const QRScanTab = () => {
   // Helper function to extract code from URL
   const extractCodeFromUrl = useCallback((url: string): string | null => {
     try {
+      console.log("Extracting code from URL:", url);
+      
       // First check if it's a URL with a code parameter
       if (url.includes('?code=')) {
         const urlObj = new URL(url);
-        return urlObj.searchParams.get('code');
+        const codeParam = urlObj.searchParams.get('code');
+        console.log("Found code param:", codeParam);
+        return codeParam;
       } 
       // Check for direct join URL
       else if (url.includes('/classes/join/')) {
         const parts = url.split('/classes/join/');
         if (parts.length > 1) {
-          return parts[1].split('?')[0]; // Remove any query params
+          const code = parts[1].split('?')[0]; // Remove any query params
+          console.log("Found direct join code:", code);
+          return code;
         }
       }
       // Check for classes URL with code parameter
       else if (url.includes('/classes') && url.includes('?code=')) {
         const urlObj = new URL(url);
-        return urlObj.searchParams.get('code');
+        const codeParam = urlObj.searchParams.get('code');
+        console.log("Found code param in classes URL:", codeParam);
+        return codeParam;
       }
+      
+      // If it's not a URL but looks like an invitation code itself, return as is
+      if (/^[A-Z0-9]{5,10}$/i.test(url.trim())) {
+        console.log("URL appears to be a direct code:", url.trim());
+        return url.trim();
+      }
+      
+      console.log("Could not extract code from URL:", url);
       return null;
     } catch (error) {
       console.error("Error parsing URL:", error);
@@ -70,6 +86,10 @@ export const QRScanTab = () => {
         }
       }
       
+      // For QR code scans, we need to make sure the code is cleaned up
+      // Sometimes QR codes might have whitespace or lowercase letters
+      inviteCode = inviteCode.trim().toUpperCase();
+      
       // Set code and attempt to join
       setInvitationCode(inviteCode);
       console.log("Setting invitation code to:", inviteCode);
@@ -93,7 +113,8 @@ export const QRScanTab = () => {
     
     if (codeParam && codeParam.trim()) {
       console.log("Found code parameter in URL:", codeParam);
-      setInvitationCode(codeParam.trim());
+      const cleanCode = codeParam.trim().toUpperCase(); // Normalize code
+      setInvitationCode(cleanCode);
       // Don't auto-join here, let user click the button
     }
   }, [setInvitationCode]);

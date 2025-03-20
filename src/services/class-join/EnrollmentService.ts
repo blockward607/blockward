@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { JoinClassroomResult } from "./types";
 
@@ -26,7 +27,37 @@ export const EnrollmentService = {
     console.log("Enrolling student in classroom:", { studentId, classroomId });
     
     try {
+      // Double-check we're not already enrolled
+      const { data: existing } = await this.checkEnrollment(studentId, classroomId);
+      if (existing) {
+        console.log("Student already enrolled, no need to enroll again");
+        return { data: { enrolled: true }, error: null };
+      }
+    
+      // Try direct enrollment first (for simpler cases)
+      try {
+        console.log("Attempting direct enrollment");
+        const { data: directEnrollment, error: directError } = await supabase
+          .from('classroom_students')
+          .insert({
+            classroom_id: classroomId,
+            student_id: studentId
+          })
+          .select()
+          .single();
+          
+        if (!directError) {
+          console.log("Direct enrollment succeeded:", directEnrollment);
+          return { data: { enrolled: true }, error: null };
+        }
+        
+        console.log("Direct enrollment failed, trying with RPC function:", directError);
+      } catch (directErr) {
+        console.log("Error in direct enrollment, continuing with RPC approach:", directErr);
+      }
+      
       // First check for existing invitations we can use
+      console.log("Looking for existing invitations for classroom:", classroomId);
       const { data: invitations, error: invError } = await supabase
         .from('class_invitations')
         .select('invitation_token')
@@ -67,28 +98,8 @@ export const EnrollmentService = {
         console.log("Created temporary invitation with token:", token);
       }
       
-      // Try direct enrollment first (for simpler cases)
-      try {
-        const { data: directEnrollment, error: directError } = await supabase
-          .from('classroom_students')
-          .insert({
-            classroom_id: classroomId,
-            student_id: studentId
-          })
-          .select()
-          .single();
-          
-        if (!directError) {
-          console.log("Direct enrollment succeeded:", directEnrollment);
-          return { data: { enrolled: true }, error: null };
-        }
-        
-        console.log("Direct enrollment failed, trying with RPC function:", directError);
-      } catch (directErr) {
-        console.log("Error in direct enrollment, continuing with RPC approach:", directErr);
-      }
-      
       // Use RPC function for enrollment (with RLS bypass)
+      console.log("Calling enroll_student RPC function with token:", token);
       const { data: fnResult, error: fnError } = await supabase
         .rpc('enroll_student', { 
           invitation_token: token, 

@@ -1,10 +1,8 @@
-
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { ClassJoinService } from '@/services/class-join';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 
-// Define context type with all required properties
 type JoinClassContextType = {
   invitationCode: string;
   setInvitationCode: (code: string) => void;
@@ -17,7 +15,6 @@ type JoinClassContextType = {
   joinClassWithCode: (code: string) => Promise<void>;
 };
 
-// Create context with default values for all properties
 const JoinClassContext = createContext<JoinClassContextType>({
   invitationCode: '',
   setInvitationCode: () => {},
@@ -30,7 +27,6 @@ const JoinClassContext = createContext<JoinClassContextType>({
   joinClassWithCode: async () => {},
 });
 
-// Custom hook to use the context
 export const useJoinClassContext = () => useContext(JoinClassContext);
 
 export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -57,8 +53,9 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setError(null);
       console.log('Attempting to join class with code:', classCode);
 
-      // Find classroom or invitation by code
-      const { data: foundClass, error: findError } = await ClassJoinService.findClassroomOrInvitation(classCode);
+      const cleanCode = classCode.trim().toUpperCase();
+
+      const { data: foundClass, error: findError } = await ClassJoinService.findClassroomOrInvitation(cleanCode);
       
       if (findError || !foundClass) {
         console.error('Error finding class:', findError);
@@ -73,7 +70,6 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       console.log('Found class/invitation:', foundClass);
       
-      // Check if student is already enrolled
       const { data: existingEnrollment, error: enrollmentError } = await ClassJoinService.checkEnrollment(
         user.id,
         foundClass.classroomId
@@ -92,12 +88,10 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
       
-      // If invitation exists, accept it
       if (foundClass.invitationId) {
         await ClassJoinService.acceptInvitation(foundClass.invitationId);
       }
       
-      // Enroll student in classroom
       const { data: enrollment, error: enrollError } = await ClassJoinService.enrollStudent(
         user.id,
         foundClass.classroomId
@@ -120,7 +114,6 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         description: 'You have successfully joined the class',
       });
       
-      // Reset form state
       setInvitationCode('');
       window.location.href = `/class/${foundClass.classroomId}`;
       
@@ -135,7 +128,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, setInvitationCode, setLoading, setError]);
 
   const contextValue: JoinClassContextType = {
     invitationCode,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,6 +113,8 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
   const getJoinUrl = () => {
     // Use absolute URL to ensure it works when shared
     const baseUrl = window.location.origin;
+    // Generate a join link with the code as a query parameter
+    // This matches what the join page expects
     return `${baseUrl}/classes?code=${invitationCode}`;
   };
 

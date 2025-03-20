@@ -21,11 +21,13 @@ export const InvitationMatchingService = {
       // Clean up the code - remove spaces and convert to uppercase for consistency
       const cleanCode = code.trim().toUpperCase();
       
-      // 1. First try to find a direct class invitation by token
+      console.log("DEBUG - Clean code value:", cleanCode);
+      
+      // 1. First try to find a direct class invitation by token (exact match)
       const { data: invitation, error: invitationError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at')
-        .eq('invitation_token', cleanCode)
+        .ilike('invitation_token', cleanCode) // Using case-insensitive comparison
         .eq('status', 'pending')
         .maybeSingle();
         
@@ -46,6 +48,8 @@ export const InvitationMatchingService = {
           .select('id, name')
           .eq('id', invitation.classroom_id)
           .maybeSingle();
+        
+        console.log("Found classroom for invitation:", classroom);
         
         // Create a simple object with only the necessary properties to avoid type instantiation issues
         const classroomData = classroom ? {
@@ -88,44 +92,46 @@ export const InvitationMatchingService = {
         }
       }
       
-      // 3. Try a fuzzy match for invitation tokens (in case capitalization is wrong)
-      const { data: fuzzyInvitations, error: fuzzyError } = await supabase
+      // 3. Try an alternative query with more debugging
+      console.log("Trying alternative query for code:", cleanCode);
+      const { data: allInvitations, error: queryError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at')
-        .eq('status', 'pending')
-        .ilike('invitation_token', cleanCode);
+        .eq('status', 'pending');
         
-      console.log("Fuzzy invitation lookup result:", { fuzzyInvitations, fuzzyError });
+      if (queryError) {
+        console.error("Error querying invitations:", queryError);
+      } else {
+        console.log("All pending invitations:", allInvitations);
+        // Find any matching invitation manually for debugging
+        const matchingInv = allInvitations?.find(inv => 
+          inv.invitation_token.trim().toUpperCase() === cleanCode
+        );
         
-      if (fuzzyInvitations && fuzzyInvitations.length > 0) {
-        const invitation = fuzzyInvitations[0];
-        
-        // Check if invitation is expired
-        if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
-          return { 
-            data: null, 
-            error: { message: "This invitation has expired. Please request a new one." } 
-          };
-        }
-        
-        // Get classroom details
-        const { data: classroom } = await supabase
-          .from('classrooms')
-          .select('id, name')
-          .eq('id', invitation.classroom_id)
-          .maybeSingle();
+        if (matchingInv) {
+          console.log("Found matching invitation manually:", matchingInv);
           
-        return { 
-          data: { 
-            classroomId: invitation.classroom_id,
-            invitationId: invitation.id,
-            classroom: classroom ? {
-              id: classroom.id,
-              name: classroom.name
-            } : undefined
-          }, 
-          error: null 
-        };
+          // Get classroom details
+          const { data: classroom } = await supabase
+            .from('classrooms')
+            .select('id, name')
+            .eq('id', matchingInv.classroom_id)
+            .maybeSingle();
+            
+          return { 
+            data: { 
+              classroomId: matchingInv.classroom_id,
+              invitationId: matchingInv.id,
+              classroom: classroom ? {
+                id: classroom.id,
+                name: classroom.name
+              } : undefined
+            }, 
+            error: null 
+          };
+        } else {
+          console.log("No matching invitation found manually");
+        }
       }
       
       // 4. Log what code we're looking for to help debug
