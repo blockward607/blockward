@@ -10,14 +10,20 @@ import { useClassroomDetails } from "./useClassroomDetails";
 
 interface InviteCodeTabProps {
   classroomId: string;
+  teacherName?: string;
+  classroomName?: string;
 }
 
-export const InviteCodeTab = ({ classroomId }: InviteCodeTabProps) => {
+export const InviteCodeTab = ({ classroomId, teacherName: propTeacherName, classroomName: propClassroomName }: InviteCodeTabProps) => {
   const [loading, setLoading] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
   const { toast } = useToast();
-  const { teacherName, classroomName } = useClassroomDetails(classroomId);
+  const details = useClassroomDetails(classroomId);
+  
+  // Use props if provided, otherwise use details from the hook
+  const teacherName = propTeacherName || details.teacherName;
+  const classroomName = propClassroomName || details.classroomName;
   
   // Check for existing invitation code on component mount
   useEffect(() => {
