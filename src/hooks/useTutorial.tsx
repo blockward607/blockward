@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorialModal } from "@/components/tutorial/TutorialModal";
@@ -133,20 +134,20 @@ export const TutorialProvider = ({ children }: { children: ReactNode }) => {
   return (
     <TutorialContext.Provider value={value}>
       {children}
-      {showTutorial ? (
+      {showTutorial && (
         <TutorialModal 
           userRole={userRole}
           onClose={() => setShowTutorial(false)} 
         />
-      ) : null}
-      {showTutorialPrompt ? (
+      )}
+      {showTutorialPrompt && (
         <TutorialStartDialog
           userRole={userRole}
           isOpen={showTutorialPrompt}
           onOpenChange={setShowTutorialPrompt}
           onStartTutorial={startTutorial}
         />
-      ) : null}
+      )}
     </TutorialContext.Provider>
   );
 };

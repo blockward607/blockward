@@ -52,10 +52,10 @@ function App() {
       disableTransitionOnChange
     >
       <AuthProvider>
-        <TutorialProvider>
-          {mounted && (
-            <>
-              <Router>
+        <Router>
+          <TutorialProvider>
+            {mounted && (
+              <>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/home" element={<Home />} />
@@ -173,11 +173,11 @@ function App() {
                     </ProtectedRoute>
                   } />
                 </Routes>
-              </Router>
-              <Toaster />
-            </>
-          )}
-        </TutorialProvider>
+                <Toaster />
+              </>
+            )}
+          </TutorialProvider>
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   );

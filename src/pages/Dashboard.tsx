@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +12,7 @@ import { Loader2 } from "lucide-react";
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { showTutorial, showTutorialPrompt } = useTutorial();
+  const { showTutorial, showTutorialPrompt, TutorialComponent, TutorialPrompt } = useTutorial();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +98,8 @@ const Dashboard = () => {
 
   return (
     <div className="h-full w-full flex flex-col">
+      {TutorialComponent}
+      {TutorialPrompt}
       <DashboardHeader userName={userName} />
       
       <div className="flex-1 overflow-y-auto w-full p-6">
