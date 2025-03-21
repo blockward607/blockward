@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { InvitationMatchingService } from "@/services/class-join/InvitationMatchingService";
 
 export const QRScanTab = () => {
   const { setInvitationCode, scannerOpen, setScannerOpen, loading, error } = useJoinClassContext();
@@ -21,57 +22,8 @@ export const QRScanTab = () => {
     try {
       console.log("[QRScanTab] Extracting code from input:", input);
       
-      // Clean up input
-      const trimmedInput = input.trim();
-      
-      // If it's a QR code with just the code itself (4-10 alphanumeric characters)
-      if (/^[A-Z0-9]{4,10}$/i.test(trimmedInput)) {
-        console.log("[QRScanTab] Input appears to be a direct code:", trimmedInput);
-        return trimmedInput;
-      }
-      
-      // Handle URL with code parameter (most common case)
-      if (trimmedInput.includes('?code=')) {
-        try {
-          const urlParts = trimmedInput.split('?');
-          const queryString = urlParts.length > 1 ? urlParts[1] : '';
-          const searchParams = new URLSearchParams(queryString);
-          const codeParam = searchParams.get('code');
-          
-          console.log("[QRScanTab] Found code parameter in URL:", codeParam);
-          if (codeParam && codeParam.trim()) {
-            return codeParam.trim();
-          }
-        } catch (e) {
-          console.error("[QRScanTab] Error parsing URL query:", e);
-          // Continue to try other methods
-        }
-      }
-      
-      // Handle URL patterns with the code embedded in the path
-      const urlPatterns = [
-        /\/classes\/join\/([A-Z0-9]{4,10})/i,  // /classes/join/ABC123
-        /\/join\/([A-Z0-9]{4,10})/i,            // /join/ABC123
-        /\/invite\/([A-Z0-9]{4,10})/i,          // /invite/ABC123
-      ];
-      
-      for (const pattern of urlPatterns) {
-        const match = trimmedInput.match(pattern);
-        if (match && match[1]) {
-          console.log("[QRScanTab] Found code in URL path:", match[1]);
-          return match[1];
-        }
-      }
-      
-      // Last resort: Check if the input contains something that looks like a code
-      const codeMatch = trimmedInput.match(/[A-Z0-9]{4,10}/i);
-      if (codeMatch) {
-        console.log("[QRScanTab] Extracted possible code from text:", codeMatch[0]);
-        return codeMatch[0];
-      }
-      
-      console.log("[QRScanTab] Could not extract code from input");
-      return null;
+      // Use the service to extract the code
+      return InvitationMatchingService.extractCodeFromInput(input);
     } catch (error) {
       console.error("[QRScanTab] Error in code extraction:", error);
       return null;
@@ -111,16 +63,12 @@ export const QRScanTab = () => {
         return;
       }
       
-      // Normalize code to uppercase and remove spaces for consistency
-      const normalizedCode = extractedCode.replace(/\s+/g, '').trim().toUpperCase();
-      console.log("[QRScanTab] Extracted and normalized code:", normalizedCode);
-      
       // Set the code in the context
-      setInvitationCode(normalizedCode);
+      setInvitationCode(extractedCode);
       
       // Attempt to join
       setTimeout(() => {
-        console.log("[QRScanTab] Auto-joining with code:", normalizedCode);
+        console.log("[QRScanTab] Auto-joining with code:", extractedCode);
         handleJoinClass();
         setScanProcessing(false);
       }, 100);

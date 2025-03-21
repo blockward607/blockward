@@ -26,7 +26,7 @@ export const InvitationMatchingService = {
     
     try {
       // Extract the code from input string (could be URL, pasted text, etc.)
-      const cleanCode = this.extractCodeFromInput(code);
+      const cleanCode = InvitationMatchingService.extractCodeFromInput(code);
       if (!cleanCode) {
         return { 
           data: null, 

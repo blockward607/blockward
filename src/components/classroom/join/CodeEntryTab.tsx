@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { InvitationMatchingService } from "@/services/class-join/InvitationMatchingService";
 
 export const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, loading, error } = useJoinClassContext();
@@ -54,14 +55,19 @@ export const CodeEntryTab = () => {
         if (code) {
           console.log("[CodeEntryTab] Auto-joining with code:", code);
           
-          // Set the code in state (already trimmed)
-          setInvitationCode(code.trim());
-          setAutoJoinAttempted(true);
+          // Process the code using the service
+          const processedCode = InvitationMatchingService.extractCodeFromInput(code);
           
-          // Small delay to ensure UI is ready
-          setTimeout(() => {
-            handleJoinClass();
-          }, 500);
+          if (processedCode) {
+            // Set the code in state (already trimmed)
+            setInvitationCode(processedCode);
+            setAutoJoinAttempted(true);
+            
+            // Small delay to ensure UI is ready
+            setTimeout(() => {
+              handleJoinClass();
+            }, 500);
+          }
         }
       } catch (error) {
         console.error("[CodeEntryTab] Error in auto-join:", error);
