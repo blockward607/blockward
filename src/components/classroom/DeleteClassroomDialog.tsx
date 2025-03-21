@@ -32,49 +32,85 @@ export const DeleteClassroomDialog = ({
   const { toast } = useToast();
 
   const handleDeleteClass = async () => {
-    if (!classroomId) return;
+    if (!classroomId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Missing classroom ID",
+      });
+      return;
+    }
     
     setIsDeleting(true);
     try {
+      console.log("Deleting classroom:", classroomId);
+      
       // Delete related records first (class_invitations)
-      await supabase
+      const { error: invitationsError } = await supabase
         .from('class_invitations')
         .delete()
         .eq('classroom_id', classroomId);
+        
+      if (invitationsError) {
+        console.error("Error deleting invitations:", invitationsError);
+        // Continue with other deletions even if this fails
+      }
 
       // Delete classroom_students records
-      await supabase
+      const { error: studentsError } = await supabase
         .from('classroom_students')
         .delete()
         .eq('classroom_id', classroomId);
+        
+      if (studentsError) {
+        console.error("Error deleting classroom students:", studentsError);
+        // Continue with other deletions even if this fails
+      }
 
       // Delete seating arrangements
-      await supabase
+      const { error: seatingError } = await supabase
         .from('seating_arrangements')
         .delete()
         .eq('classroom_id', classroomId);
+        
+      if (seatingError) {
+        console.error("Error deleting seating arrangements:", seatingError);
+        // Continue with other deletions even if this fails
+      }
 
       // Delete attendance records
-      await supabase
+      const { error: attendanceError } = await supabase
         .from('attendance')
         .delete()
         .eq('classroom_id', classroomId);
+        
+      if (attendanceError) {
+        console.error("Error deleting attendance records:", attendanceError);
+        // Continue with other deletions even if this fails
+      }
       
       // Finally, delete the classroom
-      const { error } = await supabase
+      const { error: classroomError } = await supabase
         .from('classrooms')
         .delete()
         .eq('id', classroomId);
       
-      if (error) throw error;
+      if (classroomError) {
+        throw classroomError;
+      }
+      
+      console.log("Classroom deleted successfully");
       
       toast({
         title: "Success",
         description: `${classroomName} has been deleted`,
       });
       
-      // Call the onDelete callback
+      // Call the onDelete callback to update UI
       onDelete(classroomId);
+      
+      // Close dialog after successful deletion
+      setIsOpen(false);
     } catch (error: any) {
       console.error("Error deleting classroom:", error);
       toast({
@@ -84,7 +120,6 @@ export const DeleteClassroomDialog = ({
       });
     } finally {
       setIsDeleting(false);
-      setIsOpen(false);
     }
   };
 
@@ -95,6 +130,7 @@ export const DeleteClassroomDialog = ({
           variant="ghost" 
           size="icon" 
           className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+          onClick={() => setIsOpen(true)}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -113,7 +149,10 @@ export const DeleteClassroomDialog = ({
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleDeleteClass}
+            onClick={(e) => {
+              e.preventDefault();
+              handleDeleteClass();
+            }}
             className="bg-red-600 hover:bg-red-700 text-white"
             disabled={isDeleting}
           >
