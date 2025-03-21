@@ -50,11 +50,11 @@ export const CodeEntryTab = () => {
           setInvitationCode(cleanCode);
           setAutoJoinAttempted(true);
           
-          // Attempt to join after a small delay to ensure state is updated
+          // Attempt to join with a small delay to ensure state is updated
           setTimeout(() => {
             console.log("[CodeEntryTab] Attempting to join with code:", cleanCode);
             handleJoinClass();
-          }, 500);
+          }, 100);
         }
       } catch (error) {
         console.error("[CodeEntryTab] Error in auto-join:", error);
@@ -68,7 +68,13 @@ export const CodeEntryTab = () => {
     // Normalize code before submission - this is critical
     if (!invitationCode) return;
     
-    console.log("[CodeEntryTab] Submitting code:", invitationCode);
+    // Clean and normalize the code one final time
+    const cleanCode = invitationCode.replace(/\s+/g, '').trim().toUpperCase();
+    if (cleanCode !== invitationCode) {
+      setInvitationCode(cleanCode);
+    }
+    
+    console.log("[CodeEntryTab] Submitting code:", cleanCode);
     
     // Execute join logic
     handleJoinClass();

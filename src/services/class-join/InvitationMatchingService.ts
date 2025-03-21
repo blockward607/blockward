@@ -76,7 +76,41 @@ export const InvitationMatchingService = {
         };
       }
       
-      // SECOND ATTEMPT: Get all pending invitations and do client-side matching
+      // SECOND ATTEMPT: Try a direct SQL query to avoid any potential issues with the JS client
+      // This uses a more direct query approach which can help in some edge cases
+      const { data: directQueryResult, error: directQueryError } = await supabase.rpc(
+        'find_invitation_by_code',
+        { code_param: cleanCode }
+      );
+      
+      if (directQueryError) {
+        console.log("[InvitationMatchingService] Direct query not available, continuing with standard approach");
+      } else if (directQueryResult && directQueryResult.length > 0) {
+        console.log("[InvitationMatchingService] Found match via direct query:", directQueryResult[0]);
+        
+        const invitationData = directQueryResult[0];
+        
+        // Get classroom details
+        const { data: classroom } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', invitationData.classroom_id)
+          .maybeSingle();
+          
+        return { 
+          data: { 
+            classroomId: invitationData.classroom_id,
+            invitationId: invitationData.id,
+            classroom: classroom ? {
+              id: classroom.id,
+              name: classroom.name
+            } : undefined
+          }, 
+          error: null 
+        };
+      }
+      
+      // THIRD ATTEMPT: Get all pending invitations and do client-side matching
       const { data: allInvitations, error: queryError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at')
@@ -139,7 +173,7 @@ export const InvitationMatchingService = {
         };
       }
       
-      // THIRD ATTEMPT: Try as classroom UUID directly
+      // FOURTH ATTEMPT: Try as classroom UUID directly
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidPattern.test(cleanCode)) {
         console.log("[InvitationMatchingService] Code appears to be a UUID, checking for direct classroom match");
