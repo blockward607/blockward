@@ -28,11 +28,11 @@ export const InvitationMatchingService = {
     console.log("[InvitationMatchingService] Searching for code:", code);
     try {
       // Clean up the code - remove spaces and standardize case for consistency
-      const cleanCode = code.trim().toUpperCase();
+      const cleanCode = code.replace(/\s+/g, '').trim().toUpperCase();
       
       console.log("[InvitationMatchingService] Cleaned code value:", cleanCode);
       
-      // DIRECT DATABASE QUERY - more reliable than using filters
+      // DIRECT DATABASE QUERY for invitations - more reliable
       const { data: allInvitations, error: queryError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at');
@@ -45,13 +45,23 @@ export const InvitationMatchingService = {
         };
       }
       
-      console.log("[InvitationMatchingService] Found invitations:", allInvitations?.length || 0);
+      console.log("[InvitationMatchingService] Found all invitations:", 
+        allInvitations?.map(inv => ({
+          token: inv.invitation_token,
+          status: inv.status
+        }))
+      );
       
       // Manual case-insensitive matching against all invitations
-      const matchingInvitation = allInvitations?.find(inv => 
-        inv.invitation_token.trim().toUpperCase() === cleanCode && 
-        inv.status === 'pending'
-      );
+      const matchingInvitation = allInvitations?.find(inv => {
+        // Clean invitation token the same way for consistent comparison
+        const cleanToken = inv.invitation_token.replace(/\s+/g, '').trim().toUpperCase();
+        const matched = cleanToken === cleanCode && inv.status === 'pending';
+        if (matched) {
+          console.log("[InvitationMatchingService] MATCH FOUND:", cleanToken, "=", cleanCode);
+        }
+        return matched;
+      });
       
       if (matchingInvitation) {
         console.log("[InvitationMatchingService] Found exact matching invitation:", matchingInvitation);
@@ -109,11 +119,12 @@ export const InvitationMatchingService = {
         }
       }
       
-      // Log all found invitations for debugging
-      console.log("[InvitationMatchingService] All invitations:", allInvitations?.map(i => ({
+      // Log all found invitations for debugging again
+      console.log("[InvitationMatchingService] No match found among invitations:", allInvitations?.map(i => ({
         token: i.invitation_token,
-        status: i.status,
-        classroom: i.classroom_id
+        cleanToken: i.invitation_token.replace(/\s+/g, '').trim().toUpperCase(),
+        searchingFor: cleanCode,
+        status: i.status
       })));
       
       // No match found

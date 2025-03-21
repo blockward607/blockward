@@ -1,11 +1,10 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { JoinClassroomResult } from "./types";
 
 export const EnrollmentService = {
   // Check if student is already enrolled in this classroom
   async checkEnrollment(studentId: string, classroomId: string): Promise<JoinClassroomResult> {
-    console.log("Checking if already enrolled in classroom:", classroomId);
+    console.log("[EnrollmentService] Checking if already enrolled in classroom:", classroomId);
     try {
       const { data, error } = await supabase
         .from('classroom_students')
@@ -14,10 +13,10 @@ export const EnrollmentService = {
         .eq('student_id', studentId)
         .maybeSingle();
 
-      console.log("Enrollment check result:", { data, error });
+      console.log("[EnrollmentService] Enrollment check result:", { data, error });
       return { data, error };
     } catch (error: any) {
-      console.error("Error checking enrollment:", error);
+      console.error("[EnrollmentService] Error checking enrollment:", error);
       return { 
         data: null, 
         error: {
@@ -29,19 +28,27 @@ export const EnrollmentService = {
 
   // Enroll student in classroom
   async enrollStudent(studentId: string, classroomId: string): Promise<JoinClassroomResult> {
-    console.log("Enrolling student in classroom:", { studentId, classroomId });
+    console.log("[EnrollmentService] Enrolling student in classroom:", { studentId, classroomId });
+    
+    if (!studentId || !classroomId) {
+      console.error("[EnrollmentService] Missing required parameters:", { studentId, classroomId });
+      return {
+        data: null,
+        error: { message: "Missing student ID or classroom ID" }
+      };
+    }
     
     try {
       // Double-check we're not already enrolled
       const { data: existing } = await this.checkEnrollment(studentId, classroomId);
       if (existing) {
-        console.log("Student already enrolled, no need to enroll again");
+        console.log("[EnrollmentService] Student already enrolled, no need to enroll again");
         return { data: { enrolled: true }, error: null };
       }
     
       // Try direct enrollment first (for simpler cases)
       try {
-        console.log("Attempting direct enrollment");
+        console.log("[EnrollmentService] Attempting direct enrollment");
         const { data: directEnrollment, error: directError } = await supabase
           .from('classroom_students')
           .insert({
@@ -52,17 +59,17 @@ export const EnrollmentService = {
           .single();
           
         if (!directError) {
-          console.log("Direct enrollment succeeded:", directEnrollment);
+          console.log("[EnrollmentService] Direct enrollment succeeded:", directEnrollment);
           return { data: { enrolled: true }, error: null };
         }
         
-        console.log("Direct enrollment failed, trying with RPC function:", directError);
+        console.log("[EnrollmentService] Direct enrollment failed, trying with RPC function:", directError);
       } catch (directErr: any) {
-        console.log("Error in direct enrollment, continuing with RPC approach:", directErr);
+        console.log("[EnrollmentService] Error in direct enrollment, continuing with RPC approach:", directErr);
       }
       
       // Look for existing invitations we can use
-      console.log("Looking for existing invitations for classroom:", classroomId);
+      console.log("[EnrollmentService] Looking for existing invitations for classroom:", classroomId);
       const { data: invitations, error: invError } = await supabase
         .from('class_invitations')
         .select('invitation_token, id')
@@ -71,7 +78,7 @@ export const EnrollmentService = {
         .limit(1);
         
       if (invError) {
-        console.error("Error checking for invitations:", invError);
+        console.error("[EnrollmentService] Error checking for invitations:", invError);
       }
       
       let token;
@@ -81,10 +88,10 @@ export const EnrollmentService = {
       if (invitations && invitations.length > 0) {
         token = invitations[0].invitation_token;
         invitationId = invitations[0].id;
-        console.log("Using existing invitation token:", token, "id:", invitationId);
+        console.log("[EnrollmentService] Using existing invitation token:", token, "id:", invitationId);
       } else {
         // Otherwise create a temporary invitation to use
-        console.log("Creating temporary invitation for enrollment");
+        console.log("[EnrollmentService] Creating temporary invitation for enrollment");
         token = Array.from({length: 6}, () => 
           'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
         ).join('');
@@ -100,7 +107,7 @@ export const EnrollmentService = {
           .select();
           
         if (createError) {
-          console.error("Error creating temporary invitation:", createError);
+          console.error("[EnrollmentService] Error creating temporary invitation:", createError);
           return { 
             data: null, 
             error: {
@@ -113,11 +120,11 @@ export const EnrollmentService = {
           invitationId = newInvitation[0].id;
         }
         
-        console.log("Created temporary invitation with token:", token);
+        console.log("[EnrollmentService] Created temporary invitation with token:", token);
       }
       
       // Use RPC function for enrollment (with RLS bypass)
-      console.log("Calling enroll_student RPC function with token:", token);
+      console.log("[EnrollmentService] Calling enroll_student RPC function with token:", token);
       const { data: fnResult, error: fnError } = await supabase
         .rpc('enroll_student', { 
           invitation_token: token, 
@@ -125,7 +132,7 @@ export const EnrollmentService = {
         });
         
       if (fnError) {
-        console.error("RPC enrollment error:", fnError);
+        console.error("[EnrollmentService] RPC enrollment error:", fnError);
         return { 
           data: null, 
           error: {
@@ -139,10 +146,10 @@ export const EnrollmentService = {
         await this.acceptInvitation(invitationId);
       }
       
-      console.log("Successfully enrolled student with RPC function");
+      console.log("[EnrollmentService] Successfully enrolled student with RPC function");
       return { data: { enrolled: true }, error: null };
     } catch (error: any) {
-      console.error("Enrollment exception:", error);
+      console.error("[EnrollmentService] Enrollment exception:", error);
       return { 
         data: null, 
         error: { 
@@ -154,7 +161,7 @@ export const EnrollmentService = {
 
   // Update invitation status to accepted
   async acceptInvitation(invitationId: string): Promise<JoinClassroomResult> {
-    console.log("Accepting invitation:", invitationId);
+    console.log("[EnrollmentService] Accepting invitation:", invitationId);
     try {
       const { data, error } = await supabase
         .from('class_invitations')
@@ -162,10 +169,10 @@ export const EnrollmentService = {
         .eq('id', invitationId)
         .select();
         
-      console.log("Invitation acceptance result:", { data, error });
+      console.log("[EnrollmentService] Invitation acceptance result:", { data, error });
       return { data, error };
     } catch (error: any) {
-      console.error("Error accepting invitation:", error);
+      console.error("[EnrollmentService] Error accepting invitation:", error);
       return { 
         data: null, 
         error: {

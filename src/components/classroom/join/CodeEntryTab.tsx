@@ -15,18 +15,15 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Store raw input as user types
+    // Store raw input as user types, but convert to uppercase for display
     const value = e.target.value;
-    
-    // Convert to uppercase for display consistency
-    // But DON'T trim while typing - only when submitting
-    const displayValue = value.toUpperCase();
+    // Remove spaces and convert to uppercase immediately for better UX
+    const displayValue = value.replace(/\s+/g, '').toUpperCase();
     setInvitationCode(displayValue);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && invitationCode) {
-      // For Enter key, normalize the code
       handleSubmitCode();
     }
   };
@@ -48,16 +45,16 @@ export const CodeEntryTab = () => {
         if (code && !loading && !autoJoinAttempted) {
           console.log("[CodeEntryTab] Auto-joining with code from URL:", code);
           
-          // Set the code in state
-          const cleanCode = code.trim().toUpperCase();
+          // Set the code in state - clean it immediately
+          const cleanCode = code.replace(/\s+/g, '').trim().toUpperCase();
           setInvitationCode(cleanCode);
           setAutoJoinAttempted(true);
           
-          // Small delay to ensure context is fully set up
+          // Attempt to join immediately
           setTimeout(() => {
             console.log("[CodeEntryTab] Attempting to join with code:", cleanCode);
             handleJoinClass();
-          }, 500);
+          }, 100);
         }
       } catch (error) {
         console.error("[CodeEntryTab] Error in auto-join:", error);
@@ -71,13 +68,8 @@ export const CodeEntryTab = () => {
     // Normalize code before submission - this is critical
     if (!invitationCode) return;
     
-    const cleanCode = invitationCode.trim().toUpperCase();
-    console.log("[CodeEntryTab] Submitting normalized code:", cleanCode);
-    
-    // Update the context with cleaned code
-    if (cleanCode !== invitationCode) {
-      setInvitationCode(cleanCode);
-    }
+    // No need to re-clean here, we're already cleaning on input
+    console.log("[CodeEntryTab] Submitting code:", invitationCode);
     
     // Execute join logic
     handleJoinClass();
@@ -99,8 +91,9 @@ export const CodeEntryTab = () => {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter classroom code"
-          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg"
+          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg uppercase"
           autoComplete="off"
+          maxLength={10}
           disabled={loading}
         />
         <Button
