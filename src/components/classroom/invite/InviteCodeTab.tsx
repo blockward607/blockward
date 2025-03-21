@@ -118,8 +118,8 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
   const getJoinUrl = () => {
     // Use window.location.origin to get the domain (works in both development and production)
     const baseUrl = window.location.origin;
-    // Create a direct join URL with the code as a query parameter - this directs students to the auth page first
-    return `${baseUrl}/auth?join=${invitationCode.trim()}`;
+    // Direct students to the auth page with the join parameter
+    return `${baseUrl}/auth?join=${invitationCode}`;
   };
 
   const shareViaGmail = () => {
@@ -210,7 +210,7 @@ ${teacherName}`);
           )}
           
           <p className="text-xs text-gray-400">
-            This link expires in 7 days. Share it with your students.
+            This link expires in 7 days. Students need to log in to join your class.
           </p>
         </div>
       ) : (

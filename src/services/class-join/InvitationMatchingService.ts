@@ -125,24 +125,39 @@ export const InvitationMatchingService = {
   
   // Helper method to extract a code from different input formats
   extractCodeFromInput(input: string): string | null {
+    if (!input) return null;
+    
     input = input.trim();
+    console.log("[InvitationMatchingService] Extracting code from input:", input);
     
-    // Case 1: Complete URL with code parameter
-    const urlCodeRegex = /[?&]code=([^&]+)/i;
-    const urlMatch = input.match(urlCodeRegex);
-    if (urlMatch && urlMatch[1]) {
-      return urlMatch[1].toUpperCase();
+    // Case 1: URL with join parameter
+    const joinParamRegex = /[?&]join=([^&]+)/i;
+    const joinMatch = input.match(joinParamRegex);
+    if (joinMatch && joinMatch[1]) {
+      console.log("[InvitationMatchingService] Extracted code from join parameter:", joinMatch[1]);
+      return joinMatch[1].toUpperCase();
     }
     
-    // Case 2: Complete URL with code in path (e.g., /join/CODE)
-    const pathCodeRegex = /\/join\/([A-Za-z0-9]+)/i;
-    const pathMatch = input.match(pathCodeRegex);
-    if (pathMatch && pathMatch[1]) {
-      return pathMatch[1].toUpperCase();
+    // Case 2: URL with code parameter
+    const codeParamRegex = /[?&]code=([^&]+)/i;
+    const codeMatch = input.match(codeParamRegex);
+    if (codeMatch && codeMatch[1]) {
+      console.log("[InvitationMatchingService] Extracted code from code parameter:", codeMatch[1]);
+      return codeMatch[1].toUpperCase();
     }
     
-    // Case 3: Direct code (no URL)
+    // Case 3: URL with join path (e.g., /join/CODE)
+    const joinPathRegex = /\/join\/([A-Za-z0-9]+)/i;
+    const joinPathMatch = input.match(joinPathRegex);
+    if (joinPathMatch && joinPathMatch[1]) {
+      console.log("[InvitationMatchingService] Extracted code from join path:", joinPathMatch[1]);
+      return joinPathMatch[1].toUpperCase();
+    }
+    
+    // Case 4: Direct code (no URL)
     // Clean and standardize input - remove spaces, convert to uppercase
-    return input.replace(/\s+/g, '').toUpperCase();
+    const cleanCode = input.replace(/\s+/g, '').toUpperCase();
+    console.log("[InvitationMatchingService] Using direct code:", cleanCode);
+    return cleanCode;
   }
 };
