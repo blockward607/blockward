@@ -32,10 +32,55 @@ export const InvitationMatchingService = {
       
       console.log("[InvitationMatchingService] Cleaned code value:", cleanCode);
       
-      // DIRECT DATABASE QUERY for invitations - more reliable
+      // FIRST ATTEMPT: Direct match on invitation_token field
+      const { data: exactInvitation, error: exactError } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id, invitation_token, status, expires_at')
+        .eq('invitation_token', cleanCode)
+        .eq('status', 'pending')
+        .maybeSingle();
+        
+      if (exactError) {
+        console.error("[InvitationMatchingService] Error in exact match query:", exactError);
+      }
+      
+      // If we found an exact match, return it immediately
+      if (exactInvitation) {
+        console.log("[InvitationMatchingService] Found exact invitation match:", exactInvitation);
+        
+        // Check if invitation is expired
+        if (exactInvitation.expires_at && new Date(exactInvitation.expires_at) < new Date()) {
+          return { 
+            data: null, 
+            error: { message: "This invitation has expired. Please request a new one." } 
+          };
+        }
+        
+        // Get classroom details
+        const { data: classroom } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', exactInvitation.classroom_id)
+          .maybeSingle();
+          
+        return { 
+          data: { 
+            classroomId: exactInvitation.classroom_id,
+            invitationId: exactInvitation.id,
+            classroom: classroom ? {
+              id: classroom.id,
+              name: classroom.name
+            } : undefined
+          }, 
+          error: null 
+        };
+      }
+      
+      // SECOND ATTEMPT: Get all pending invitations and do client-side matching
       const { data: allInvitations, error: queryError } = await supabase
         .from('class_invitations')
-        .select('id, classroom_id, invitation_token, status, expires_at');
+        .select('id, classroom_id, invitation_token, status, expires_at')
+        .eq('status', 'pending');
         
       if (queryError) {
         console.error("[InvitationMatchingService] Error querying invitations:", queryError);
@@ -45,7 +90,7 @@ export const InvitationMatchingService = {
         };
       }
       
-      console.log("[InvitationMatchingService] Found all invitations:", 
+      console.log("[InvitationMatchingService] Found pending invitations:", 
         allInvitations?.map(inv => ({
           token: inv.invitation_token,
           status: inv.status
@@ -56,7 +101,7 @@ export const InvitationMatchingService = {
       const matchingInvitation = allInvitations?.find(inv => {
         // Clean invitation token the same way for consistent comparison
         const cleanToken = inv.invitation_token.replace(/\s+/g, '').trim().toUpperCase();
-        const matched = cleanToken === cleanCode && inv.status === 'pending';
+        const matched = cleanToken === cleanCode;
         if (matched) {
           console.log("[InvitationMatchingService] MATCH FOUND:", cleanToken, "=", cleanCode);
         }
@@ -64,7 +109,7 @@ export const InvitationMatchingService = {
       });
       
       if (matchingInvitation) {
-        console.log("[InvitationMatchingService] Found exact matching invitation:", matchingInvitation);
+        console.log("[InvitationMatchingService] Found matching invitation:", matchingInvitation);
         
         // Check if invitation is expired
         if (matchingInvitation.expires_at && new Date(matchingInvitation.expires_at) < new Date()) {
@@ -94,7 +139,7 @@ export const InvitationMatchingService = {
         };
       }
       
-      // If no match found with invitations, try matching UUID directly (unlikely but possible)
+      // THIRD ATTEMPT: Try as classroom UUID directly
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidPattern.test(cleanCode)) {
         console.log("[InvitationMatchingService] Code appears to be a UUID, checking for direct classroom match");
@@ -123,8 +168,7 @@ export const InvitationMatchingService = {
       console.log("[InvitationMatchingService] No match found among invitations:", allInvitations?.map(i => ({
         token: i.invitation_token,
         cleanToken: i.invitation_token.replace(/\s+/g, '').trim().toUpperCase(),
-        searchingFor: cleanCode,
-        status: i.status
+        searchingFor: cleanCode
       })));
       
       // No match found
