@@ -1,22 +1,50 @@
 
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { GraduationCap, School, ArrowRight, PlayCircle, Monitor, Sparkles } from "lucide-react";
+import { GraduationCap, School, ArrowRight, PlayCircle, Monitor, Sparkles, Eye } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from 'react';
+import { useToast } from "@/hooks/use-toast";
 
 export const AccessDemoButtons = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
 
   const handleStudentDemo = () => {
+    toast({
+      title: "Student Preview",
+      description: "Loading student demo experience..."
+    });
     navigate('/view-student-dashboard');
   };
 
   const handleTeacherDemo = () => {
+    toast({
+      title: "Teacher Preview",
+      description: "Loading teacher demo experience..."
+    });
     navigate('/view-teacher-dashboard');
   };
 
   const handleSignUp = () => {
+    toast({
+      title: "Free Trial",
+      description: "Taking you to the sign up page..."
+    });
     navigate('/auth');
+  };
+
+  const handlePreview = (type: 'student' | 'teacher') => {
+    toast({
+      title: `${type === 'student' ? 'Student' : 'Teacher'} Preview`,
+      description: `Quick preview of the ${type} interface initiated!`
+    });
+    
+    // Set a small delay for the toast to show before navigation
+    setTimeout(() => {
+      navigate(type === 'student' ? '/view-student-dashboard' : '/view-teacher-dashboard');
+    }, 400);
   };
 
   return (
@@ -30,6 +58,8 @@ export const AccessDemoButtons = () => {
         whileHover={{ scale: 1.05, y: -5 }}
         transition={{ type: "spring", stiffness: 400, damping: 10 }}
         className="relative overflow-hidden rounded-xl"
+        onHoverStart={() => setHoveredButton('student')}
+        onHoverEnd={() => setHoveredButton(null)}
       >
         <Button
           onClick={handleStudentDemo}
@@ -44,12 +74,34 @@ export const AccessDemoButtons = () => {
             <span className="text-sm text-purple-200 font-normal">View student interface</span>
           </div>
         </Button>
+        
+        {hoveredButton === 'student' && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute bottom-3 right-3 z-20"
+          >
+            <Button 
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePreview('student');
+              }}
+              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 border border-white/30 rounded-full"
+            >
+              <Eye className="mr-1 h-3 w-3" />
+              Quick View
+            </Button>
+          </motion.div>
+        )}
       </motion.div>
       
       <motion.div
         whileHover={{ scale: 1.05, y: -5 }}
         transition={{ type: "spring", stiffness: 400, damping: 10 }}
         className="relative overflow-hidden rounded-xl"
+        onHoverStart={() => setHoveredButton('teacher')}
+        onHoverEnd={() => setHoveredButton(null)}
       >
         <Button
           onClick={handleTeacherDemo}
@@ -64,6 +116,26 @@ export const AccessDemoButtons = () => {
             <span className="text-sm text-blue-200 font-normal">View teacher interface</span>
           </div>
         </Button>
+        
+        {hoveredButton === 'teacher' && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute bottom-3 right-3 z-20"
+          >
+            <Button 
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePreview('teacher');
+              }}
+              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 border border-white/30 rounded-full"
+            >
+              <Eye className="mr-1 h-3 w-3" />
+              Quick View
+            </Button>
+          </motion.div>
+        )}
       </motion.div>
       
       <motion.div
