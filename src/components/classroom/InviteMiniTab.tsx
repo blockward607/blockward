@@ -13,6 +13,7 @@ interface InviteMiniTabProps {
 export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
   const [loading, setLoading] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
+  const [joinLink, setJoinLink] = useState("");
   const { toast } = useToast();
   
   // Check for existing invitation code on component mount
@@ -33,7 +34,10 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          setInvitationCode(data[0].invitation_token);
+          const code = data[0].invitation_token;
+          setInvitationCode(code);
+          // Create join link with the code
+          setJoinLink(`${window.location.origin}/classes?code=${code}`);
         }
       } catch (error) {
         console.error("Error checking for existing invitation code:", error);
@@ -76,15 +80,20 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
       
       console.log("Invitation created successfully:", invitation);
       setInvitationCode(invitation.invitation_token);
+      
+      // Create a link with the invitation code
+      const link = `${window.location.origin}/classes?code=${invitation.invitation_token}`;
+      setJoinLink(link);
+      
       toast({
-        title: "Invitation Code Generated",
-        description: "Share this code with your students",
+        title: "Invitation Link Generated",
+        description: "Share this link with your students",
       });
     } catch (error: any) {
       console.error("Error in generateInviteCode:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to generate invitation code",
+        description: error.message || "Failed to generate invitation link",
         variant: "destructive",
       });
     } finally {
@@ -93,10 +102,10 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(invitationCode);
+    navigator.clipboard.writeText(joinLink || invitationCode);
     toast({
       title: "Copied!",
-      description: "Invitation code copied to clipboard",
+      description: joinLink ? "Invitation link copied to clipboard" : "Invitation code copied to clipboard",
     });
   };
 
@@ -106,9 +115,9 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
         <div className="space-y-4">
           <div className="flex gap-2">
             <Input 
-              value={invitationCode} 
+              value={joinLink || invitationCode} 
               readOnly 
-              className="font-mono bg-black/50 border-purple-500/30 text-lg"
+              className="font-mono bg-black/50 border-purple-500/30 text-sm"
             />
             <Button 
               variant="outline" 
@@ -122,7 +131,7 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
           </div>
           
           <p className="text-xs text-gray-400">
-            This code expires in 7 days. Share it with your students.
+            This join link expires in 7 days. Share it with your students.
           </p>
         </div>
       ) : (
@@ -139,7 +148,7 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
           ) : (
             <>
               <Link2 className="w-4 h-4 mr-2" />
-              Generate Invitation Code
+              Generate Invitation Link
             </>
           )}
         </Button>

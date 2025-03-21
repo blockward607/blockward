@@ -22,7 +22,7 @@ export const QRScanTab = () => {
     try {
       console.log("[QRScanTab] Extracting code from input:", input);
       
-      // Use the service to extract the code
+      // Use the service's static method to extract the code
       return InvitationMatchingService.extractCodeFromInput(input);
     } catch (error) {
       console.error("[QRScanTab] Error in code extraction:", error);
