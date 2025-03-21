@@ -13,7 +13,7 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
-// Define the shape of the invitation return type from our custom RPC function
+// Define the shape of the invitation return type for the database query
 interface InvitationResult {
   id: string;
   classroom_id: string;
@@ -85,33 +85,41 @@ export const InvitationMatchingService = {
         };
       }
       
-      // SECOND ATTEMPT: Try a direct SQL query using our custom function
-      console.log("[InvitationMatchingService] Trying direct SQL function with code:", cleanCode);
+      // SECOND ATTEMPT: Try direct SQL query using our custom function
+      // Instead of using RPC, we'll use a direct query as a workaround for the type issue
+      console.log("[InvitationMatchingService] Trying direct query with code:", cleanCode);
       
-      const { data: directQueryData, error: directQueryError } = await supabase.rpc(
-        'find_invitation_by_code',
-        { code_param: cleanCode }
-      );
+      const { data: directQueryData, error: directQueryError } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id, invitation_token, status, expires_at')
+        .eq('status', 'pending')
+        .ilike('invitation_token', cleanCode)
+        .maybeSingle();
       
       if (directQueryError) {
         console.log("[InvitationMatchingService] Direct query error:", directQueryError);
-      } else if (directQueryData && Array.isArray(directQueryData) && directQueryData.length > 0) {
-        console.log("[InvitationMatchingService] Found match via direct query:", directQueryData[0]);
+      } else if (directQueryData) {
+        console.log("[InvitationMatchingService] Found match via direct query:", directQueryData);
         
-        // Safely cast the result to our expected type
-        const invitationData = directQueryData[0] as InvitationResult;
+        // Check if invitation is expired
+        if (directQueryData.expires_at && new Date(directQueryData.expires_at) < new Date()) {
+          return { 
+            data: null, 
+            error: { message: "This invitation has expired. Please request a new one." } 
+          };
+        }
         
         // Get classroom details
         const { data: classroom } = await supabase
           .from('classrooms')
           .select('id, name')
-          .eq('id', invitationData.classroom_id)
+          .eq('id', directQueryData.classroom_id)
           .maybeSingle();
           
         return { 
           data: { 
-            classroomId: invitationData.classroom_id,
-            invitationId: invitationData.id,
+            classroomId: directQueryData.classroom_id,
+            invitationId: directQueryData.id,
             classroom: classroom ? {
               id: classroom.id,
               name: classroom.name
