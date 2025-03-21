@@ -62,7 +62,7 @@ export const CodeEntryTab = () => {
         if (code) {
           console.log("[CodeEntryTab] Auto-joining with potential code:", code);
           
-          // Process the code using the service
+          // Process the code using the static service method
           const processedCode = InvitationMatchingService.extractCodeFromInput(code);
           
           if (processedCode) {
