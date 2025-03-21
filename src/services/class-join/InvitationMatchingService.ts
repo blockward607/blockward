@@ -13,9 +13,9 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
-export const InvitationMatchingService = {
+export class InvitationMatchingService {
   // Try to find a classroom or invitation with the given code
-  async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
+  static async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
     // Validate input
     if (!code || typeof code !== 'string') {
       return {
@@ -26,7 +26,7 @@ export const InvitationMatchingService = {
     
     try {
       // Extract the code from input string (could be URL, pasted text, etc.)
-      const cleanCode = this.extractCodeFromInput(code);
+      const cleanCode = InvitationMatchingService.extractCodeFromInput(code);
       if (!cleanCode) {
         return { 
           data: null, 
@@ -121,10 +121,10 @@ export const InvitationMatchingService = {
         error: { message: error.message || "Failed to process invitation code" } 
       };
     }
-  },
+  }
   
   // Helper method to extract a code from different input formats
-  extractCodeFromInput(input: string): string | null {
+  static extractCodeFromInput(input: string): string | null {
     if (!input) return null;
     
     input = input.trim();
@@ -193,4 +193,4 @@ export const InvitationMatchingService = {
     console.log("[InvitationMatchingService] Using cleaned input as code:", cleanCode);
     return cleanCode;
   }
-};
+}
