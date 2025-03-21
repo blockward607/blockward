@@ -37,14 +37,16 @@ export const AccessDemoButtons = () => {
 
   const handlePreview = (type: 'student' | 'teacher') => {
     toast({
-      title: `${type === 'student' ? 'Student' : 'Teacher'} Preview`,
-      description: `Quick preview of the ${type} interface initiated!`
+      title: `${type === 'student' ? 'Student' : 'Teacher'} Quick Preview`,
+      description: `Loading ${type} interface...`
     });
     
-    // Set a small delay for the toast to show before navigation
-    setTimeout(() => {
-      navigate(type === 'student' ? '/view-student-dashboard' : '/view-teacher-dashboard');
-    }, 400);
+    // Direct navigation without delay to fix preview functionality
+    if (type === 'student') {
+      navigate('/view-student-dashboard');
+    } else {
+      navigate('/view-teacher-dashboard');
+    }
   };
 
   return (
