@@ -21,7 +21,7 @@ const AuthPage = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { loading, setLoading } = useAuth();
-  const [role, setRole] = useState<'teacher' | 'student'>('teacher');
+  const [role, setRole] = useState<'teacher' | 'student'>('student');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showError, setShowError] = useState(false);
@@ -29,6 +29,36 @@ const AuthPage = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [useCustomAuth, setUseCustomAuth] = useState(true);
   const [activeAuthTab, setActiveAuthTab] = useState("signin");
+  const [joinCode, setJoinCode] = useState<string | null>(null);
+  
+  // Extract join code from URL query parameters or location state
+  useEffect(() => {
+    // Check for join parameter in URL
+    const joinParam = searchParams.get('join');
+    if (joinParam) {
+      setJoinCode(joinParam);
+      console.log("Found join code in URL:", joinParam);
+      toast({
+        title: "Class Invitation",
+        description: "Sign in or sign up to join the class",
+      });
+    }
+    
+    // Or check in state if redirected
+    if (location.state?.joinCode) {
+      setJoinCode(location.state.joinCode);
+      console.log("Found join code in state:", location.state.joinCode);
+      toast({
+        title: "Class Invitation",
+        description: "Sign in or sign up to join the class",
+      });
+    }
+    
+    // Set student role if there's a join code
+    if (joinParam || location.state?.joinCode) {
+      setRole('student');
+    }
+  }, [searchParams, location.state, toast]);
   
   useEffect(() => {
     const hashParams = new URLSearchParams(location.hash.substring(1));
@@ -56,6 +86,24 @@ const AuthPage = () => {
     }
   }, [searchParams, navigate]);
 
+  // Handle successful authentication
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && joinCode) {
+        // If user is signed in and there's a join code, redirect to classes page with the code
+        navigate('/classes', { 
+          state: { 
+            joinCode,
+            autoJoin: true
+          }
+        });
+      }
+    };
+    
+    checkSession();
+  }, [joinCode, navigate]);
+
   const handleForgotPasswordClick = () => {
     setShowForgotPassword(true);
     setShowError(false);
@@ -81,6 +129,13 @@ const AuthPage = () => {
         className="w-full max-w-md"
       >
         <Card className="glass-card p-8">
+          {joinCode && (
+            <div className="mb-6 p-3 bg-purple-500/20 border border-purple-500/30 rounded-md text-center">
+              <h3 className="font-medium text-purple-300">Class Invitation</h3>
+              <p className="text-sm text-gray-300">Sign in or create an account to join this class</p>
+            </div>
+          )}
+          
           {useCustomAuth ? (
             showForgotPassword ? (
               <div className="space-y-4">
@@ -96,7 +151,7 @@ const AuthPage = () => {
               </div>
             ) : (
               <>
-                <Tabs defaultValue="teacher" onValueChange={(value) => setRole(value as 'teacher' | 'student')}>
+                <Tabs defaultValue={role} onValueChange={(value) => setRole(value as 'teacher' | 'student')}>
                   <TabsList className="grid w-full grid-cols-2 mb-8">
                     <TabsTrigger value="teacher">Teacher</TabsTrigger>
                     <TabsTrigger value="student">Student</TabsTrigger>
