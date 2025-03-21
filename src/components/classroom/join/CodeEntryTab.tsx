@@ -15,9 +15,8 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Store input as user types and standardize display
-    const value = e.target.value;
-    setInvitationCode(value.trim().toUpperCase());
+    // Store input as user types and remove whitespace
+    setInvitationCode(e.target.value.trim());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -43,16 +42,12 @@ export const CodeEntryTab = () => {
         if (code && !loading && !autoJoinAttempted) {
           console.log("[CodeEntryTab] Auto-joining with code from URL:", code);
           
-          // Set the code in state - clean it immediately
-          const cleanCode = code.trim().toUpperCase();
-          setInvitationCode(cleanCode);
+          // Set the code in state (already trimmed)
+          setInvitationCode(code.trim());
           setAutoJoinAttempted(true);
           
-          // Attempt to join with a small delay to ensure state is updated
-          setTimeout(() => {
-            console.log("[CodeEntryTab] Attempting to join with code:", cleanCode);
-            handleJoinClass();
-          }, 100);
+          // Attempt to join immediately
+          handleJoinClass();
         }
       } catch (error) {
         console.error("[CodeEntryTab] Error in auto-join:", error);
@@ -65,7 +60,6 @@ export const CodeEntryTab = () => {
   const handleSubmitCode = () => {
     if (!invitationCode) return;
     
-    // Just use the code as-is since we clean it when setting state
     console.log("[CodeEntryTab] Submitting code:", invitationCode);
     handleJoinClass();
   };
