@@ -37,7 +37,7 @@ export const InvitationMatchingService = {
     console.log("[InvitationMatchingService] Searching for code:", code);
     try {
       // Clean up the code - remove spaces and standardize case for consistency
-      const cleanCode = code.replace(/\s+/g, '').trim().toUpperCase();
+      const cleanCode = code.trim().toUpperCase();
       
       console.log("[InvitationMatchingService] Cleaned code value:", cleanCode);
       
@@ -85,15 +85,16 @@ export const InvitationMatchingService = {
         };
       }
       
-      // SECOND ATTEMPT: Try a direct SQL query to avoid any potential issues with the JS client
-      // Use type assertion with the explicit cast to handle the response typing
+      // SECOND ATTEMPT: Try a direct SQL query using our custom function
+      console.log("[InvitationMatchingService] Trying direct SQL function with code:", cleanCode);
+      
       const { data: directQueryData, error: directQueryError } = await supabase.rpc(
-        'find_invitation_by_code' as any,
+        'find_invitation_by_code',
         { code_param: cleanCode }
       );
       
       if (directQueryError) {
-        console.log("[InvitationMatchingService] Direct query not available, continuing with standard approach");
+        console.log("[InvitationMatchingService] Direct query error:", directQueryError);
       } else if (directQueryData && Array.isArray(directQueryData) && directQueryData.length > 0) {
         console.log("[InvitationMatchingService] Found match via direct query:", directQueryData[0]);
         
@@ -120,7 +121,32 @@ export const InvitationMatchingService = {
         };
       }
       
-      // THIRD ATTEMPT: Get all pending invitations and do client-side matching
+      // THIRD ATTEMPT: Try as classroom UUID directly
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidPattern.test(cleanCode)) {
+        console.log("[InvitationMatchingService] Code appears to be a UUID, checking for direct classroom match");
+        const { data: classroom, error: classroomError } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', cleanCode)
+          .maybeSingle();
+          
+        if (classroom) {
+          return { 
+            data: { 
+              classroomId: classroom.id,
+              invitationId: null,
+              classroom: {
+                id: classroom.id,
+                name: classroom.name
+              }
+            }, 
+            error: null 
+          };
+        }
+      }
+      
+      // FOURTH ATTEMPT: Get all pending invitations and do client-side matching
       const { data: allInvitations, error: queryError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at')
@@ -134,22 +160,11 @@ export const InvitationMatchingService = {
         };
       }
       
-      console.log("[InvitationMatchingService] Found pending invitations:", 
-        allInvitations?.map(inv => ({
-          token: inv.invitation_token,
-          status: inv.status
-        }))
-      );
-      
       // Manual case-insensitive matching against all invitations
       const matchingInvitation = allInvitations?.find(inv => {
-        // Clean invitation token the same way for consistent comparison
-        const cleanToken = inv.invitation_token.replace(/\s+/g, '').trim().toUpperCase();
-        const matched = cleanToken === cleanCode;
-        if (matched) {
-          console.log("[InvitationMatchingService] MATCH FOUND:", cleanToken, "=", cleanCode);
-        }
-        return matched;
+        // Clean invitation token for consistent comparison
+        const cleanToken = inv.invitation_token.trim().toUpperCase();
+        return cleanToken === cleanCode;
       });
       
       if (matchingInvitation) {
@@ -183,39 +198,8 @@ export const InvitationMatchingService = {
         };
       }
       
-      // FOURTH ATTEMPT: Try as classroom UUID directly
-      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (uuidPattern.test(cleanCode)) {
-        console.log("[InvitationMatchingService] Code appears to be a UUID, checking for direct classroom match");
-        const { data: classroom, error: classroomError } = await supabase
-          .from('classrooms')
-          .select('id, name')
-          .eq('id', cleanCode)
-          .maybeSingle();
-          
-        if (classroom) {
-          return { 
-            data: { 
-              classroomId: classroom.id,
-              invitationId: null,
-              classroom: {
-                id: classroom.id,
-                name: classroom.name
-              }
-            }, 
-            error: null 
-          };
-        }
-      }
-      
-      // Log all found invitations for debugging again
-      console.log("[InvitationMatchingService] No match found among invitations:", allInvitations?.map(i => ({
-        token: i.invitation_token,
-        cleanToken: i.invitation_token.replace(/\s+/g, '').trim().toUpperCase(),
-        searchingFor: cleanCode
-      })));
-      
       // No match found
+      console.log("[InvitationMatchingService] No match found for code:", cleanCode);
       return { 
         data: null, 
         error: { message: "Invalid invitation code. Please check and try again." } 

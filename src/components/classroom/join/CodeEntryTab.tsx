@@ -15,11 +15,9 @@ export const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Store raw input as user types, but convert to uppercase for display
+    // Store input as user types and standardize display
     const value = e.target.value;
-    // Remove spaces and convert to uppercase immediately for better UX
-    const displayValue = value.replace(/\s+/g, '').toUpperCase();
-    setInvitationCode(displayValue);
+    setInvitationCode(value.trim().toUpperCase());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -46,7 +44,7 @@ export const CodeEntryTab = () => {
           console.log("[CodeEntryTab] Auto-joining with code from URL:", code);
           
           // Set the code in state - clean it immediately
-          const cleanCode = code.replace(/\s+/g, '').trim().toUpperCase();
+          const cleanCode = code.trim().toUpperCase();
           setInvitationCode(cleanCode);
           setAutoJoinAttempted(true);
           
@@ -65,18 +63,10 @@ export const CodeEntryTab = () => {
   }, [loading, autoJoinAttempted, handleJoinClass, setInvitationCode]);
 
   const handleSubmitCode = () => {
-    // Normalize code before submission - this is critical
     if (!invitationCode) return;
     
-    // Clean and normalize the code one final time
-    const cleanCode = invitationCode.replace(/\s+/g, '').trim().toUpperCase();
-    if (cleanCode !== invitationCode) {
-      setInvitationCode(cleanCode);
-    }
-    
-    console.log("[CodeEntryTab] Submitting code:", cleanCode);
-    
-    // Execute join logic
+    // Just use the code as-is since we clean it when setting state
+    console.log("[CodeEntryTab] Submitting code:", invitationCode);
     handleJoinClass();
   };
 
