@@ -13,6 +13,15 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
+// Define the shape of the invitation return type from our custom RPC function
+interface InvitationResult {
+  id: string;
+  classroom_id: string;
+  invitation_token: string;
+  status: string;
+  expires_at: string | null;
+}
+
 export const InvitationMatchingService = {
   // Try all possible ways to find a classroom or invitation
   async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
@@ -77,18 +86,19 @@ export const InvitationMatchingService = {
       }
       
       // SECOND ATTEMPT: Try a direct SQL query to avoid any potential issues with the JS client
-      // This uses a more direct query approach which can help in some edge cases
-      const { data: directQueryResult, error: directQueryError } = await supabase.rpc(
-        'find_invitation_by_code',
+      // Use type assertion with the explicit cast to handle the response typing
+      const { data: directQueryData, error: directQueryError } = await supabase.rpc(
+        'find_invitation_by_code' as any,
         { code_param: cleanCode }
       );
       
       if (directQueryError) {
         console.log("[InvitationMatchingService] Direct query not available, continuing with standard approach");
-      } else if (directQueryResult && directQueryResult.length > 0) {
-        console.log("[InvitationMatchingService] Found match via direct query:", directQueryResult[0]);
+      } else if (directQueryData && Array.isArray(directQueryData) && directQueryData.length > 0) {
+        console.log("[InvitationMatchingService] Found match via direct query:", directQueryData[0]);
         
-        const invitationData = directQueryResult[0];
+        // Safely cast the result to our expected type
+        const invitationData = directQueryData[0] as InvitationResult;
         
         // Get classroom details
         const { data: classroom } = await supabase
