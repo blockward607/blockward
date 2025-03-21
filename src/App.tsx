@@ -45,6 +45,7 @@ function App() {
               <Route path="reset-password" element={<ResetPassword />} />
               <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
               <Route path="invite/:inviteToken" element={<ClassroomInvite />} />
+              <Route path="join/:code" element={<Navigate to="/classes" replace state={{ joinCode: ':code' }} />} />
             </Route>
 
             {/* Protected routes with sidebar */}

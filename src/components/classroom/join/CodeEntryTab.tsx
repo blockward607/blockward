@@ -7,12 +7,14 @@ import { useJoinClass } from "./useJoinClass";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { useLocation } from "react-router-dom";
 
 export const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, loading, error } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
   const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Store input as user types and remove whitespace
@@ -32,22 +34,34 @@ export const CodeEntryTab = () => {
     }
   }, []);
 
-  // Try to join with code from URL query param if present
+  // Try to join with code from URL query param or state
   useEffect(() => {
     const attemptAutoJoin = async () => {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
+        if (autoJoinAttempted || loading) return;
+
+        let code = null;
         
-        if (code && !loading && !autoJoinAttempted) {
-          console.log("[CodeEntryTab] Auto-joining with code from URL:", code);
+        // Check URL query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        code = urlParams.get('code');
+        
+        // Check location state (from direct link navigation)
+        if (!code && location.state && location.state.joinCode) {
+          code = location.state.joinCode;
+        }
+        
+        if (code) {
+          console.log("[CodeEntryTab] Auto-joining with code:", code);
           
           // Set the code in state (already trimmed)
           setInvitationCode(code.trim());
           setAutoJoinAttempted(true);
           
-          // Attempt to join immediately
-          handleJoinClass();
+          // Small delay to ensure UI is ready
+          setTimeout(() => {
+            handleJoinClass();
+          }, 500);
         }
       } catch (error) {
         console.error("[CodeEntryTab] Error in auto-join:", error);
@@ -55,7 +69,7 @@ export const CodeEntryTab = () => {
     };
     
     attemptAutoJoin();
-  }, [loading, autoJoinAttempted, handleJoinClass, setInvitationCode]);
+  }, [loading, autoJoinAttempted, handleJoinClass, setInvitationCode, location]);
 
   const handleSubmitCode = () => {
     if (!invitationCode) return;

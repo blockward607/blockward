@@ -1,7 +1,6 @@
-
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { InviteStudents } from "@/components/classroom/InviteStudents";
 import { JoinClassSection } from "@/components/classroom/join/JoinClassSection";
 import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
@@ -10,6 +9,7 @@ import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { EmptyClassState } from "@/components/classroom/EmptyClassState";
 import { JoinClassProvider } from "@/components/classroom/join/JoinClassContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Classes = () => {
   const { 
@@ -24,6 +24,8 @@ const Classes = () => {
   } = useClassroomManagement();
   
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   useEffect(() => {
     // Verify we're on the Classes page
@@ -32,14 +34,36 @@ const Classes = () => {
     // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
     
-    // Check for invitation code in URL params
+    // Check for invitation code in URL params or state
     const queryParams = new URLSearchParams(location.search);
     const inviteCode = queryParams.get('code');
+    
     if (inviteCode) {
       console.log("Found invitation code in URL:", inviteCode);
       // The JoinClassContext will pick this up automatically
+      
+      // Clear the URL parameter after processing to avoid repeated join attempts
+      // But keep the code in state for the component to use
+      if (history.pushState) {
+        const newUrl = window.location.protocol + "//" + 
+                       window.location.host + 
+                       window.location.pathname;
+        window.history.pushState({ joinCode: inviteCode }, '', newUrl);
+      }
     }
-  }, [refreshClassrooms, location.search, location.pathname]);
+    
+    // Check for error in state from a failed join attempt
+    if (location.state && location.state.error) {
+      toast({
+        title: "Error Joining Class",
+        description: location.state.error,
+        variant: "destructive"
+      });
+      
+      // Clear the error from state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [refreshClassrooms, location.search, location.pathname, navigate, toast]);
 
   if (loading) {
     return <ClassesLoading />;
