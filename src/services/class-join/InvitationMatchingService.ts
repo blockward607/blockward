@@ -36,12 +36,12 @@ export class InvitationMatchingService {
       
       console.log("[InvitationMatchingService] Looking for code:", cleanCode);
       
-      // First try: Direct match with invitation_token
+      // First try: Direct match with invitation_token using the database function
       const { data: invitation, error: invitationError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at')
         .eq('status', 'pending')
-        .ilike('invitation_token', cleanCode)
+        .or(`invitation_token.eq.${cleanCode},invitation_token.ilike.${cleanCode}`)
         .maybeSingle();
       
       if (invitationError) {
@@ -77,7 +77,35 @@ export class InvitationMatchingService {
         };
       }
       
-      // Second try: Check if the code is a classroom UUID
+      // Second try: Direct match with code using exact match
+      const { data: exactInvitation, error: exactInvitationError } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id, invitation_token, status, expires_at')
+        .eq('status', 'pending')
+        .eq('invitation_token', cleanCode)
+        .maybeSingle();
+
+      if (!exactInvitationError && exactInvitation) {
+        console.log("[InvitationMatchingService] Found exact match invitation:", exactInvitation);
+        
+        // Get classroom details
+        const { data: classroom } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', exactInvitation.classroom_id)
+          .maybeSingle();
+          
+        return { 
+          data: { 
+            classroomId: exactInvitation.classroom_id,
+            invitationId: exactInvitation.id,
+            classroom: classroom || undefined
+          }, 
+          error: null 
+        };
+      }
+      
+      // Third try: Check if the code is a classroom UUID
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidPattern.test(cleanCode)) {
         console.log("[InvitationMatchingService] Code looks like a UUID, checking for classroom match");

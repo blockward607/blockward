@@ -1,63 +1,27 @@
 
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface UseInvitationCodeProps {
   classroomId: string;
 }
 
 export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
+  const [invitationCode, setInvitationCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [invitationCode, setInvitationCode] = useState("");
   const { toast } = useToast();
 
-  // Check for existing invitation code on component mount
-  useEffect(() => {
-    const checkExistingCode = async () => {
-      if (!classroomId) return;
-      
-      try {
-        console.log("[useInvitationCode] Checking for existing invitation code for classroom:", classroomId);
-        const { data, error } = await supabase
-          .from('class_invitations')
-          .select('invitation_token')
-          .eq('classroom_id', classroomId)
-          .eq('status', 'pending')
-          .eq('email', 'general_invitation@blockward.app')
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          console.log("[useInvitationCode] Found existing invitation code:", data[0].invitation_token);
-          setInvitationCode(data[0].invitation_token);
-        } else {
-          console.log("[useInvitationCode] No existing invitation code found for this classroom");
-        }
-      } catch (error) {
-        console.error("[useInvitationCode] Error checking for existing invitation code:", error);
-      }
-    };
-    
-    checkExistingCode();
-  }, [classroomId]);
-
-  const generateInviteCode = async () => {
+  // Generate a new invitation code
+  const generateInviteCode = useCallback(async () => {
     setLoading(true);
     try {
-      // Generate a simple, consistent, alphanumeric code - all uppercase
+      console.log("[useInvitationCode] Generating new invitation code for classroom:", classroomId);
+      
+      // Generate a simple, readable alphanumeric code (6 characters)
       const invitationToken = Array.from({length: 6}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
-      
-      if (!classroomId) {
-        throw new Error("No classroom ID provided");
-      }
-      
-      console.log("[useInvitationCode] Generating new invitation code for classroom:", classroomId);
-      console.log("[useInvitationCode] Generated invitation token:", invitationToken);
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
@@ -65,7 +29,7 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
         .insert({
           classroom_id: classroomId,
           email: 'general_invitation@blockward.app', // Marker for general invitations
-          invitation_token: invitationToken, // Already uppercase
+          invitation_token: invitationToken,
           status: 'pending',
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
         })
@@ -73,42 +37,39 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
         .single();
       
       if (inviteError) {
-        console.error("[useInvitationCode] Error generating invitation:", inviteError);
         throw new Error(inviteError.message || 'Failed to generate invitation code');
-      }
-      
-      if (!invitation) {
-        throw new Error("Failed to create invitation record");
       }
       
       console.log("[useInvitationCode] Invitation created successfully:", invitation);
       setInvitationCode(invitation.invitation_token);
+      
       toast({
-        title: "Invitation Link Generated",
-        description: "Share this link with your students",
+        title: "Success",
+        description: "New invitation code generated",
       });
     } catch (error: any) {
-      console.error("[useInvitationCode] Error in generateInviteCode:", error);
+      console.error("[useInvitationCode] Error generating invitation code:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to generate invitation link",
+        description: error.message || "Failed to generate invitation code",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [classroomId, toast]);
 
-  // Get a join URL for the invitation code
-  const getJoinUrl = () => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/join/${invitationCode}`;
-  };
+  // Function to get the full join URL
+  const getJoinUrl = useCallback(() => {
+    if (!invitationCode) return '';
+    return `${window.location.origin}/classes?code=${invitationCode}`;
+  }, [invitationCode]);
 
   return {
-    loading,
     invitationCode,
+    setInvitationCode,
+    loading,
     generateInviteCode,
-    getJoinUrl
+    getJoinUrl,
   };
 };

@@ -14,7 +14,7 @@ export const ClassJoinService = {
   acceptInvitation: EnrollmentService.acceptInvitation,
   
   // Try all possible ways to find a classroom or invitation
-  findClassroomOrInvitation: InvitationMatchingService.findClassroomOrInvitation.bind(InvitationMatchingService)
+  findClassroomOrInvitation: InvitationMatchingService.findClassroomOrInvitation
 };
 
 export type { JoinClassroomResult };
