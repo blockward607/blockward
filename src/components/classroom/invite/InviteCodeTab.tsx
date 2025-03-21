@@ -118,8 +118,8 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
   const getJoinUrl = () => {
     // Use window.location.origin to get the domain (works in both development and production)
     const baseUrl = window.location.origin;
-    // Direct students to the auth page with the join parameter
-    return `${baseUrl}/auth?join=${invitationCode}`;
+    // Direct students to the join page with the code as a parameter
+    return `${baseUrl}/join/${invitationCode}`;
   };
 
   const shareViaGmail = () => {
@@ -130,6 +130,8 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
 I'd like to invite you to join my class ${classroomName} on Blockward. 
 
 Click this link to join directly: ${joinUrl}
+
+Or you can manually enter this code after logging in: ${invitationCode}
 
 Best regards,
 ${teacherName}`);
@@ -167,6 +169,26 @@ ${teacherName}`);
                 size="icon" 
                 onClick={() => copyToClipboard(getJoinUrl())}
                 title="Copy join link"
+                className="bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-gray-400">Or share this code for manual entry:</p>
+            <div className="flex gap-2">
+              <Input 
+                value={invitationCode} 
+                readOnly 
+                className="font-mono bg-black/50 border-purple-500/30 text-sm text-purple-300 text-center tracking-wider"
+              />
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => copyToClipboard(invitationCode)}
+                title="Copy invitation code"
                 className="bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
               >
                 <Copy className="w-4 h-4" />

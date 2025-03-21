@@ -45,20 +45,28 @@ export const CodeEntryTab = () => {
         
         // Check URL query parameters
         const urlParams = new URLSearchParams(window.location.search);
-        code = urlParams.get('code');
+        code = urlParams.get('code') || urlParams.get('join');
         
         // Check location state (from direct link navigation)
         if (!code && location.state && location.state.joinCode) {
           code = location.state.joinCode;
         }
         
+        // Try to extract from the full URL if no explicit code parameter is found
+        if (!code) {
+          const fullUrl = window.location.href;
+          console.log("[CodeEntryTab] Trying to extract code from full URL:", fullUrl);
+          code = fullUrl;
+        }
+        
         if (code) {
-          console.log("[CodeEntryTab] Auto-joining with code:", code);
+          console.log("[CodeEntryTab] Auto-joining with potential code:", code);
           
           // Process the code using the service
           const processedCode = InvitationMatchingService.extractCodeFromInput(code);
           
           if (processedCode) {
+            console.log("[CodeEntryTab] Processed code for auto-join:", processedCode);
             // Set the code in state (already trimmed)
             setInvitationCode(processedCode);
             setAutoJoinAttempted(true);

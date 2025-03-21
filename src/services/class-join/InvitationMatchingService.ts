@@ -26,7 +26,7 @@ export const InvitationMatchingService = {
     
     try {
       // Extract the code from input string (could be URL, pasted text, etc.)
-      const cleanCode = InvitationMatchingService.extractCodeFromInput(code);
+      const cleanCode = this.extractCodeFromInput(code);
       if (!cleanCode) {
         return { 
           data: null, 
@@ -130,12 +130,30 @@ export const InvitationMatchingService = {
     input = input.trim();
     console.log("[InvitationMatchingService] Extracting code from input:", input);
     
+    // Handle direct classroom UUID in URL
+    // This pattern matches the entire URL containing a UUID
+    const uuidInUrlPattern = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+    const uuidMatch = input.match(uuidInUrlPattern);
+    if (uuidMatch && uuidMatch[1]) {
+      console.log("[InvitationMatchingService] Extracted UUID from URL:", uuidMatch[1]);
+      return uuidMatch[1];
+    }
+    
     // Case 1: URL with join parameter
     const joinParamRegex = /[?&]join=([^&]+)/i;
     const joinMatch = input.match(joinParamRegex);
     if (joinMatch && joinMatch[1]) {
       console.log("[InvitationMatchingService] Extracted code from join parameter:", joinMatch[1]);
       return joinMatch[1].toUpperCase();
+    }
+    
+    // Case A: Handle Netlify or other deployment URLs with the invitation code
+    // This matches URLs that might contain the code after the netlify.app/ part
+    const deployUrlRegex = /\/([A-Z0-9]{6,10})(?:\/|$|\?)/i;
+    const deployUrlMatch = input.match(deployUrlRegex);
+    if (deployUrlMatch && deployUrlMatch[1]) {
+      console.log("[InvitationMatchingService] Extracted code from deployment URL:", deployUrlMatch[1]);
+      return deployUrlMatch[1].toUpperCase();
     }
     
     // Case 2: URL with code parameter
@@ -155,9 +173,24 @@ export const InvitationMatchingService = {
     }
     
     // Case 4: Direct code (no URL)
-    // Clean and standardize input - remove spaces, convert to uppercase
+    // Check if input is likely a direct 6-character code (common format for invitation codes)
+    const directCodePattern = /^[A-Z0-9]{6,10}$/i;
+    if (directCodePattern.test(input)) {
+      console.log("[InvitationMatchingService] Input appears to be a direct invitation code");
+      return input.toUpperCase();
+    }
+    
+    // Case 5: Last resort - try to extract any alphanumeric sequence that looks like a code
+    const codePattern = /([A-Z0-9]{6,10})/i;
+    const codePatternMatch = input.match(codePattern);
+    if (codePatternMatch && codePatternMatch[1]) {
+      console.log("[InvitationMatchingService] Extracted possible code pattern:", codePatternMatch[1]);
+      return codePatternMatch[1].toUpperCase();
+    }
+    
+    // Final fallback: Clean and standardize input - remove spaces, convert to uppercase
     const cleanCode = input.replace(/\s+/g, '').toUpperCase();
-    console.log("[InvitationMatchingService] Using direct code:", cleanCode);
+    console.log("[InvitationMatchingService] Using cleaned input as code:", cleanCode);
     return cleanCode;
   }
 };
