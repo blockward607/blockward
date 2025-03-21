@@ -42,10 +42,12 @@ export const DeleteClassroomDialog = ({
     }
     
     setIsDeleting(true);
+    
     try {
-      console.log("Deleting classroom:", classroomId);
+      console.log("Starting deletion process for classroom:", classroomId);
       
       // Delete related records first (class_invitations)
+      console.log("Deleting class invitations...");
       const { error: invitationsError } = await supabase
         .from('class_invitations')
         .delete()
@@ -53,10 +55,12 @@ export const DeleteClassroomDialog = ({
         
       if (invitationsError) {
         console.error("Error deleting invitations:", invitationsError);
-        // Continue with other deletions even if this fails
+      } else {
+        console.log("Class invitations deleted successfully");
       }
 
       // Delete classroom_students records
+      console.log("Deleting classroom students...");
       const { error: studentsError } = await supabase
         .from('classroom_students')
         .delete()
@@ -64,10 +68,12 @@ export const DeleteClassroomDialog = ({
         
       if (studentsError) {
         console.error("Error deleting classroom students:", studentsError);
-        // Continue with other deletions even if this fails
+      } else {
+        console.log("Classroom students deleted successfully");
       }
 
       // Delete seating arrangements
+      console.log("Deleting seating arrangements...");
       const { error: seatingError } = await supabase
         .from('seating_arrangements')
         .delete()
@@ -75,10 +81,12 @@ export const DeleteClassroomDialog = ({
         
       if (seatingError) {
         console.error("Error deleting seating arrangements:", seatingError);
-        // Continue with other deletions even if this fails
+      } else {
+        console.log("Seating arrangements deleted successfully");
       }
 
       // Delete attendance records
+      console.log("Deleting attendance records...");
       const { error: attendanceError } = await supabase
         .from('attendance')
         .delete()
@@ -86,33 +94,36 @@ export const DeleteClassroomDialog = ({
         
       if (attendanceError) {
         console.error("Error deleting attendance records:", attendanceError);
-        // Continue with other deletions even if this fails
+      } else {
+        console.log("Attendance records deleted successfully");
       }
       
       // Finally, delete the classroom
+      console.log("Deleting the classroom itself...");
       const { error: classroomError } = await supabase
         .from('classrooms')
         .delete()
         .eq('id', classroomId);
       
       if (classroomError) {
+        console.error("Error deleting classroom:", classroomError);
         throw classroomError;
       }
       
       console.log("Classroom deleted successfully");
+      
+      // Call the onDelete callback to update UI
+      onDelete(classroomId);
       
       toast({
         title: "Success",
         description: `${classroomName} has been deleted`,
       });
       
-      // Call the onDelete callback to update UI
-      onDelete(classroomId);
-      
-      // Close dialog after successful deletion
+      // Close the dialog
       setIsOpen(false);
     } catch (error: any) {
-      console.error("Error deleting classroom:", error);
+      console.error("Error in delete classroom operation:", error);
       toast({
         variant: "destructive",
         title: "Error",
