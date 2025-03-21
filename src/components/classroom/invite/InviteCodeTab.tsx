@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,14 +91,14 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
       console.log("[InviteCodeTab] Invitation created successfully:", invitation);
       setInvitationCode(invitation.invitation_token);
       toast({
-        title: "Invitation Code Generated",
-        description: "Share this code with your students",
+        title: "Invitation Link Generated",
+        description: "Share this link with your students",
       });
     } catch (error: any) {
       console.error("[InviteCodeTab] Error in generateInviteCode:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to generate invitation code",
+        description: error.message || "Failed to generate invitation link",
         variant: "destructive",
       });
     } finally {
@@ -105,11 +106,11 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
     }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(invitationCode);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
     toast({
       title: "Copied!",
-      description: "Invitation code copied to clipboard",
+      description: "Join link copied to clipboard",
     });
   };
 
@@ -128,8 +129,7 @@ export const InviteCodeTab = ({ classroomId, teacherName = "Your Teacher", class
 
 I'd like to invite you to join my class ${classroomName} on Blockward. 
 
-Use this invitation code: ${invitationCode}
-Or click this link to join directly: ${joinUrl}
+Click this link to join directly: ${joinUrl}
 
 Best regards,
 ${teacherName}`);
@@ -138,7 +138,7 @@ ${teacherName}`);
     
     toast({
       title: "Gmail Opened",
-      description: "Compose window opened with invitation code"
+      description: "Compose window opened with invitation link"
     });
   };
 
@@ -149,26 +149,29 @@ ${teacherName}`);
   return (
     <div className="space-y-4">
       <div className="text-sm text-gray-300">
-        Generate an invitation code that students can use to join your class.
+        Generate an invitation link that students can use to join your class.
       </div>
       
       {invitationCode ? (
         <div className="space-y-4">
-          <div className="flex gap-2">
-            <Input 
-              value={invitationCode} 
-              readOnly 
-              className="font-mono bg-black/50 border-purple-500/30 text-lg"
-            />
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={copyToClipboard}
-              title="Copy to clipboard"
-              className="bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-gray-400">Share this link with your students:</p>
+            <div className="flex gap-2">
+              <Input 
+                value={getJoinUrl()} 
+                readOnly 
+                className="font-mono bg-black/50 border-purple-500/30 text-sm text-purple-300"
+              />
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => copyToClipboard(getJoinUrl())}
+                title="Copy join link"
+                className="bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2">
@@ -194,7 +197,7 @@ ${teacherName}`);
               variant="outline"
             >
               <Link2 className="w-4 h-4 mr-2" />
-              New Code
+              New Link
             </Button>
           </div>
           
@@ -207,7 +210,7 @@ ${teacherName}`);
           )}
           
           <p className="text-xs text-gray-400">
-            This code expires in 7 days. Share it with your students.
+            This link expires in 7 days. Share it with your students.
           </p>
         </div>
       ) : (
@@ -224,7 +227,7 @@ ${teacherName}`);
           ) : (
             <>
               <Link2 className="w-4 h-4 mr-2" />
-              Generate Invitation Code
+              Generate Invitation Link
             </>
           )}
         </Button>

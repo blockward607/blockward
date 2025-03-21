@@ -79,10 +79,9 @@ export const CodeEntryTab = () => {
           value={invitationCode}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Enter classroom code"
-          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg uppercase"
+          placeholder="Enter classroom code or paste join link"
+          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg"
           autoComplete="off"
-          maxLength={10}
           disabled={loading}
         />
         <Button
@@ -105,7 +104,7 @@ export const CodeEntryTab = () => {
       </div>
       
       <p className="text-xs text-gray-400 mt-2">
-        Enter the class code provided by your teacher.
+        Enter the class code or paste the join link provided by your teacher.
       </p>
     </div>
   );
