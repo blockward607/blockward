@@ -45,6 +45,7 @@ export const CodeEntryTab = () => {
       handleJoinClass();
     } else {
       // If code couldn't be processed, try with original input as a fallback
+      console.log("[CodeEntryTab] Using original input as fallback:", enteredCode);
       setInvitationCode(enteredCode);
       handleJoinClass();
     }
@@ -77,13 +78,13 @@ export const CodeEntryTab = () => {
         // Try to extract from the full URL if no explicit code parameter is found
         if (!code) {
           const fullUrl = window.location.href;
-          code = fullUrl;
+          code = ClassJoinService.extractCodeFromInput(fullUrl);
         }
         
         if (code) {
           console.log("[CodeEntryTab] Auto-joining with potential code:", code);
           
-          // Use the service to extract code
+          // Process the code with a more robust extraction logic
           const processedCode = ClassJoinService.extractCodeFromInput(code);
           
           if (processedCode) {
@@ -98,6 +99,8 @@ export const CodeEntryTab = () => {
             setTimeout(() => {
               handleJoinClass();
             }, 500);
+          } else {
+            console.log("[CodeEntryTab] Could not process the code:", code);
           }
         }
       } catch (error) {

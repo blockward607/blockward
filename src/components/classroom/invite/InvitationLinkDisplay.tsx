@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface InvitationLinkDisplayProps {
   invitationCode: string;
@@ -13,6 +13,18 @@ interface InvitationLinkDisplayProps {
 export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: InvitationLinkDisplayProps) => {
   const { toast } = useToast();
   const [copying, setCopying] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  // Check if Web Share API is supported
+  useEffect(() => {
+    // Check if navigator.share exists and is a function
+    const isShareSupported = typeof navigator !== 'undefined' && 
+                             navigator.share !== undefined && 
+                             typeof navigator.share === 'function';
+    
+    setCanShare(isShareSupported);
+    console.log("Web Share API supported:", isShareSupported);
+  }, []);
 
   const copyToClipboard = async (text: string, type: 'link' | 'code') => {
     try {
@@ -36,38 +48,46 @@ export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: Invitation
   };
   
   const handleShare = async () => {
+    const joinUrl = getJoinUrl();
+    console.log("Attempting to share URL:", joinUrl);
+    
     try {
-      // Check if Web Share API is available
-      if (navigator.share && typeof navigator.share === 'function') {
+      // Only try Web Share API if it's confirmed available
+      if (canShare) {
         try {
-          await navigator.share({
-            title: 'Join my class',
+          const shareData = {
+            title: 'Join my Blockward class',
             text: `Join my class with code: ${invitationCode}`,
-            url: getJoinUrl()
-          });
+            url: joinUrl
+          };
+          
+          console.log("Sharing with data:", shareData);
+          await navigator.share(shareData);
           
           toast({
             title: "Shared successfully",
             description: "Invitation link was shared"
           });
         } catch (error: any) {
-          // User cancelled or sharing failed
           console.error("Error in Web Share API:", error);
           
-          // Don't show error toast if user just cancelled
+          // Only show fallback if not user cancellation
           if (error.name !== 'AbortError') {
-            // Fallback to clipboard if sharing fails for reasons other than user cancellation
-            copyToClipboard(getJoinUrl(), 'link');
+            toast({
+              title: "Sharing failed",
+              description: "Copied link to clipboard instead",
+            });
+            copyToClipboard(joinUrl, 'link');
           }
         }
       } else {
         // Fallback for browsers without Web Share API
         console.log("Web Share API not available, falling back to clipboard");
-        copyToClipboard(getJoinUrl(), 'link');
+        copyToClipboard(joinUrl, 'link');
       }
     } catch (error) {
       console.error("Error in share handler:", error);
-      copyToClipboard(getJoinUrl(), 'link');
+      copyToClipboard(joinUrl, 'link');
     }
   };
 

@@ -13,25 +13,12 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
-interface InvitationResult {
-  id: string;
-  classroom_id: string;
-  invitation_token: string;
-  status: string;
-  expires_at: string | null;
-}
-
-interface ClassroomResult {
-  id: string;
-  name: string;
-  description?: string;
-}
-
 export class InvitationMatchingService {
   // Try to find a classroom or invitation with the given code
   static async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
     // Validate input
     if (!code || typeof code !== 'string') {
+      console.error("[InvitationMatchingService] Invalid input:", code);
       return {
         data: null,
         error: { message: "Please provide a valid invitation code" }
@@ -42,6 +29,7 @@ export class InvitationMatchingService {
       // Extract the code from input string (could be URL, pasted text, etc.)
       const cleanCode = this.extractCodeFromInput(code);
       if (!cleanCode) {
+        console.error("[InvitationMatchingService] Could not extract code from:", code);
         return { 
           data: null, 
           error: { message: "Could not recognize a valid code format. Please try again." } 
@@ -50,7 +38,34 @@ export class InvitationMatchingService {
       
       console.log("[InvitationMatchingService] Looking for code:", cleanCode);
       
-      // Try exact match first
+      // Try direct database function first (most efficient)
+      const { data: dbMatchResult, error: dbError } = await supabase
+        .rpc('find_invitation_by_code', { code_param: cleanCode });
+        
+      if (dbError) {
+        console.error("[InvitationMatchingService] DB function error:", dbError);
+      } else if (dbMatchResult && dbMatchResult.length > 0) {
+        console.log("[InvitationMatchingService] Found match from DB function:", dbMatchResult[0]);
+        const matchedInvite = dbMatchResult[0];
+        
+        // Get classroom details
+        const { data: classroom } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', matchedInvite.classroom_id)
+          .maybeSingle();
+          
+        return { 
+          data: { 
+            classroomId: matchedInvite.classroom_id,
+            invitationId: matchedInvite.id,
+            classroom: classroom || undefined
+          }, 
+          error: null 
+        };
+      }
+      
+      // Try exact match next
       const exactMatch = await InvitationMatchingService.findExactMatch(cleanCode);
       if (exactMatch.data) {
         console.log("[InvitationMatchingService] Found exact match:", exactMatch.data);

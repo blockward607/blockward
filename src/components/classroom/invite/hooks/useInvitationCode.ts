@@ -126,10 +126,17 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
   // Function to get the full join URL
   const getJoinUrl = useCallback(() => {
     if (!invitationCode) return '';
-    // Make sure to use the actual domain without the "lovable" part
-    const host = window.location.host.replace('lovable.', '');
+    
+    // Create a clean URL without "lovable" subdomain
+    const currentHost = window.location.host;
+    const cleanHost = currentHost.replace(/^lovable\./, '').replace(/^www\./, '');
+    
+    // Use blockward.app domain for production or the current cleaned domain for development
+    const finalHost = process.env.NODE_ENV === 'production' ? 'blockward.app' : cleanHost;
     const protocol = window.location.protocol;
-    return `${protocol}//${host}/classes?code=${invitationCode}`;
+    
+    // Generate the full URL with the invitation code
+    return `${protocol}//${finalHost}/classes?code=${invitationCode}`;
   }, [invitationCode]);
 
   return {
