@@ -51,14 +51,14 @@ export class InvitationMatchingService {
       console.log("[InvitationMatchingService] Looking for code:", cleanCode);
       
       // Try exact match first
-      const exactMatch = await this.findExactMatch(cleanCode);
+      const exactMatch = await InvitationMatchingService.findExactMatch(cleanCode);
       if (exactMatch.data) {
         console.log("[InvitationMatchingService] Found exact match:", exactMatch.data);
         return exactMatch;
       }
       
       // Try fuzzy matching if no exact match
-      const fuzzyMatch = await this.findFuzzyMatch(cleanCode);
+      const fuzzyMatch = await InvitationMatchingService.findFuzzyMatch(cleanCode);
       if (fuzzyMatch.data) {
         console.log("[InvitationMatchingService] Found fuzzy match:", fuzzyMatch.data);
         return fuzzyMatch;
@@ -80,8 +80,9 @@ export class InvitationMatchingService {
   }
   
   // Find exact match for invitation code
-  private static async findExactMatch(code: string): Promise<JoinClassResult> {
+  static async findExactMatch(code: string): Promise<JoinClassResult> {
     try {
+      console.log("[InvitationMatchingService] Trying exact match for:", code);
       // Try exact match (case insensitive)
       const { data: invitations, error } = await supabase
         .from('class_invitations')
@@ -97,6 +98,7 @@ export class InvitationMatchingService {
         );
         
         if (exactMatch) {
+          console.log("[InvitationMatchingService] Exact match found:", exactMatch);
           // Get classroom details
           const { data: classroom } = await supabase
             .from('classrooms')
@@ -147,8 +149,9 @@ export class InvitationMatchingService {
   }
   
   // Find fuzzy match for invitation code
-  private static async findFuzzyMatch(code: string): Promise<JoinClassResult> {
+  static async findFuzzyMatch(code: string): Promise<JoinClassResult> {
     try {
+      console.log("[InvitationMatchingService] Trying fuzzy match for:", code);
       // Get all valid invitations
       const { data: invitations, error } = await supabase
         .from('class_invitations')
@@ -171,18 +174,19 @@ export class InvitationMatchingService {
         return (
           invCode.includes(inputCode) || // Token contains input
           inputCode.includes(invCode) || // Input contains token
-          this.calculateSimilarity(invCode, inputCode) > 0.7 // Over 70% similar
+          InvitationMatchingService.calculateSimilarity(invCode, inputCode) > 0.7 // Over 70% similar
         );
       });
       
       if (partialMatches.length > 0) {
+        console.log("[InvitationMatchingService] Found partial matches:", partialMatches.length);
         // Sort by similarity
         const sortedMatches = partialMatches.sort((a, b) => {
-          const aSimilarity = this.calculateSimilarity(
+          const aSimilarity = InvitationMatchingService.calculateSimilarity(
             a.invitation_token.toUpperCase(), 
             code.toUpperCase()
           );
-          const bSimilarity = this.calculateSimilarity(
+          const bSimilarity = InvitationMatchingService.calculateSimilarity(
             b.invitation_token.toUpperCase(), 
             code.toUpperCase()
           );
@@ -219,7 +223,7 @@ export class InvitationMatchingService {
   }
   
   // Calculate similarity between two strings (0-1)
-  private static calculateSimilarity(s1: string, s2: string): number {
+  static calculateSimilarity(s1: string, s2: string): number {
     if (s1 === s2) return 1.0; // Identical strings
     
     const len1 = s1.length;
@@ -254,6 +258,7 @@ export class InvitationMatchingService {
     if (!input) return null;
     
     input = input.trim();
+    console.log("[InvitationMatchingService] Extracting code from input:", input);
     
     // Handle full URLs with code parameter
     if (input.includes('code=')) {

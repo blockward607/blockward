@@ -34,6 +34,8 @@ export const CodeEntryTab = () => {
   const handleSubmitCode = () => {
     if (!enteredCode) return;
     
+    console.log("[CodeEntryTab] Processing code for submission:", enteredCode);
+    
     // Process and clean the code before joining
     const processedCode = ClassJoinService.extractCodeFromInput(enteredCode);
     console.log("[CodeEntryTab] Processed code for joining:", processedCode);
@@ -121,7 +123,7 @@ export const CodeEntryTab = () => {
           value={enteredCode}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Enter classroom code (e.g., UK7BAA)"
+          placeholder="Enter classroom code (e.g., UKFCUY)"
           className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg text-center tracking-wider"
           autoComplete="off"
           autoCorrect="off"

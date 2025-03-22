@@ -34,6 +34,27 @@ export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: Invitation
       setTimeout(() => setCopying(false), 1000);
     }
   };
+  
+  const handleShare = () => {
+    try {
+      if (navigator.share) {
+        navigator.share({
+          title: 'Join my class',
+          text: `Join my class with code: ${invitationCode}`,
+          url: getJoinUrl()
+        }).catch(error => {
+          console.error("Error sharing:", error);
+          copyToClipboard(getJoinUrl(), 'link');
+        });
+      } else {
+        // Fallback for browsers without Web Share API
+        copyToClipboard(getJoinUrl(), 'link');
+      }
+    } catch (error) {
+      console.error("Error in share handler:", error);
+      copyToClipboard(getJoinUrl(), 'link');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -77,17 +98,7 @@ export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: Invitation
           <Button
             variant="outline"
             className="w-full bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({
-                  title: 'Join my class',
-                  text: `Join my class with code: ${invitationCode}`,
-                  url: getJoinUrl()
-                });
-              } else {
-                copyToClipboard(getJoinUrl(), 'link');
-              }
-            }}
+            onClick={handleShare}
           >
             <Share2 className="w-4 h-4 mr-2" />
             Share
