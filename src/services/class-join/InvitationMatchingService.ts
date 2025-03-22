@@ -13,6 +13,14 @@ export interface JoinClassResult {
   error: { message: string } | null;
 }
 
+interface InvitationResult {
+  id: string;
+  classroom_id: string;
+  invitation_token: string;
+  status: string;
+  expires_at: string;
+}
+
 export class InvitationMatchingService {
   // Try to find a classroom or invitation with the given code
   static async findClassroomOrInvitation(code: string): Promise<JoinClassResult> {
@@ -152,36 +160,49 @@ export class InvitationMatchingService {
         }
       }
       
-      // DIRECT DATABASE LOOKUP - Use the function we created
+      // DIRECT DATABASE LOOKUP - Use regular query since we can't use the stored function
       try {
-        const { data: functionResult, error: functionError } = await supabase.rpc(
-          'find_invitation_by_code',
-          { code_param: cleanCode }
-        );
-        
-        if (!functionError && functionResult && functionResult.length > 0) {
-          const invitation = functionResult[0];
-          console.log("[InvitationMatchingService] Found invitation via function:", invitation);
+        const { data: dbResults, error: dbError } = await supabase
+          .from('class_invitations')
+          .select('id, classroom_id, invitation_token, status, expires_at')
+          .eq('status', 'pending')
+          .filter('expires_at', 'gte', 'now()')
+          .or(`invitation_token.eq.${cleanCode},invitation_token.ilike.%${cleanCode}%`)
+          .limit(5);
+          
+        if (!dbError && dbResults && dbResults.length > 0) {
+          // Sort to find the most relevant match
+          const sortedResults = dbResults.sort((a, b) => {
+            // Exact matches first
+            if (a.invitation_token === cleanCode) return -1;
+            if (b.invitation_token === cleanCode) return 1;
+            
+            // Then by token length (shortest first)
+            return a.invitation_token.length - b.invitation_token.length;
+          });
+          
+          const bestMatch = sortedResults[0];
+          console.log("[InvitationMatchingService] Found invitation via direct query:", bestMatch);
           
           // Get classroom details
           const { data: classroom } = await supabase
             .from('classrooms')
             .select('id, name')
-            .eq('id', invitation.classroom_id)
+            .eq('id', bestMatch.classroom_id)
             .maybeSingle();
             
           return { 
             data: { 
-              classroomId: invitation.classroom_id,
-              invitationId: invitation.id,
+              classroomId: bestMatch.classroom_id,
+              invitationId: bestMatch.id,
               classroom: classroom || undefined
             }, 
             error: null 
           };
         }
-      } catch (functionCallError) {
-        console.log("[InvitationMatchingService] Function call error:", functionCallError);
-        // Continue to next approach if function call fails
+      } catch (dbQueryError) {
+        console.log("[InvitationMatchingService] Direct query error:", dbQueryError);
+        // Continue to next approach if direct query fails
       }
       
       // No match found
