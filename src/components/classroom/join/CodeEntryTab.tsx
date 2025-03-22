@@ -19,7 +19,7 @@ export const CodeEntryTab = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Store input as user types and remove whitespace
-    setInvitationCode(e.target.value.trim());
+    setInvitationCode(e.target.value.trim().toUpperCase());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -102,21 +102,23 @@ export const CodeEntryTab = () => {
         </Alert>
       )}
       
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3">
         <Input
           ref={inputRef}
           value={invitationCode}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Enter classroom code or paste join link"
-          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg"
+          placeholder="Enter classroom code (e.g., UK7BAA)"
+          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg text-center tracking-wider"
           autoComplete="off"
+          autoCorrect="off"
+          spellCheck="false"
           disabled={loading}
         />
         <Button
           onClick={handleSubmitCode}
           disabled={loading || !invitationCode}
-          className="bg-purple-700 hover:bg-purple-800"
+          className="bg-purple-700 hover:bg-purple-800 py-6"
         >
           {loading ? (
             <>
@@ -126,14 +128,17 @@ export const CodeEntryTab = () => {
           ) : (
             <>
               <UserPlus className="w-4 h-4 mr-2" />
-              Join
+              Join Class
             </>
           )}
         </Button>
       </div>
       
       <p className="text-xs text-gray-400 mt-2">
-        Enter the class code or paste the join link provided by your teacher.
+        Enter the class code provided by your teacher, typically starting with "UK".
+      </p>
+      <p className="text-xs text-gray-400">
+        You can also paste a full invitation link here.
       </p>
     </div>
   );

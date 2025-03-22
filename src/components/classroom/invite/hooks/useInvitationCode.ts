@@ -64,7 +64,7 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
           email: 'general_invitation@blockward.app', // Marker for general invitations
           invitation_token: invitationToken,
           status: 'pending',
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+          expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days from now
         })
         .select()
         .single();

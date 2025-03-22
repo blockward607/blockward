@@ -44,26 +44,24 @@ export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: Invitation
       
       <div className="flex flex-col gap-2">
         <p className="text-xs text-gray-400">Or share this code for manual entry:</p>
+        <div className="p-3 bg-purple-900/20 border border-purple-500/40 rounded-md text-center">
+          <div className="text-2xl font-bold font-mono tracking-wider text-purple-300">{invitationCode}</div>
+          <div className="text-xs text-gray-400 mt-1">Class Invitation Code</div>
+        </div>
         <div className="flex gap-2">
-          <Input 
-            value={invitationCode} 
-            readOnly 
-            className="font-mono bg-black/50 border-purple-500/30 text-sm text-purple-300 text-center tracking-wider"
-          />
           <Button 
             variant="outline" 
-            size="icon" 
+            className="w-full bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
             onClick={() => copyToClipboard(invitationCode)}
-            title="Copy invitation code"
-            className="bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
           >
-            <Copy className="w-4 h-4" />
+            <Copy className="w-4 h-4 mr-2" />
+            Copy Code
           </Button>
         </div>
       </div>
       
       <p className="text-xs text-gray-400 mt-2">
-        This link expires in 7 days. Students need to log in to join your class.
+        This link expires in 90 days. Students need to log in to join your class.
       </p>
     </div>
   );
