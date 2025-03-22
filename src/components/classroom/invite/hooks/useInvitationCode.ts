@@ -22,7 +22,7 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
         // Check if there's an existing invitation code for this classroom
         const { data, error } = await supabase
           .from('class_invitations')
-          .select('invitation_token')
+          .select('invitation_token, expires_at')
           .eq('classroom_id', classroomId)
           .eq('status', 'pending')
           .eq('email', 'general_invitation@blockward.app')
@@ -32,8 +32,17 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          console.log("[useInvitationCode] Found existing invitation code:", data[0].invitation_token);
-          setInvitationCode(data[0].invitation_token);
+          // Check if the invitation is still valid
+          const expiresAt = new Date(data[0].expires_at);
+          const now = new Date();
+          
+          if (expiresAt > now) {
+            console.log("[useInvitationCode] Found existing valid invitation code:", data[0].invitation_token);
+            setInvitationCode(data[0].invitation_token);
+          } else {
+            console.log("[useInvitationCode] Found expired invitation, generating new one");
+            await generateInviteCode();
+          }
         }
       } catch (err) {
         console.error("[useInvitationCode] Error fetching invitation code:", err);
@@ -45,16 +54,35 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
     fetchExistingCode();
   }, [classroomId]);
 
+  // Generate a random alphanumeric code with a consistent format
+  const generateRandomCode = () => {
+    // First 2 characters are always UK (for uniqueness/brand)
+    const prefix = 'UK';
+    
+    // Generate remaining characters (4 random alphanumeric)
+    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar looking characters like 0,O,1,I
+    const length = 4;
+    
+    const randomPart = Array.from(
+      { length }, 
+      () => characters.charAt(Math.floor(Math.random() * characters.length))
+    ).join('');
+    
+    return prefix + randomPart;
+  };
+
   // Generate a new invitation code
   const generateInviteCode = useCallback(async () => {
     setLoading(true);
     try {
       console.log("[useInvitationCode] Generating new invitation code for classroom:", classroomId);
       
-      // Generate a simple, readable alphanumeric code (6 characters)
-      const invitationToken = 'UK' + Array.from({length: 4}, () => 
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
-      ).join('');
+      // Generate a unique, readable code
+      const invitationToken = generateRandomCode();
+      
+      // Calculate expiration (90 days from now)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 90);
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
@@ -64,7 +92,7 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
           email: 'general_invitation@blockward.app', // Marker for general invitations
           invitation_token: invitationToken,
           status: 'pending',
-          expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days from now
+          expires_at: expiresAt.toISOString()
         })
         .select()
         .single();
@@ -80,6 +108,8 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
         title: "Success",
         description: "New invitation code generated",
       });
+      
+      return invitation;
     } catch (error: any) {
       console.error("[useInvitationCode] Error generating invitation code:", error);
       toast({
@@ -87,6 +117,7 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
         description: error.message || "Failed to generate invitation code",
         variant: "destructive",
       });
+      return null;
     } finally {
       setLoading(false);
     }

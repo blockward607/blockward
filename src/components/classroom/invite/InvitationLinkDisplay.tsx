@@ -1,8 +1,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Copy } from "lucide-react";
+import { Copy, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface InvitationLinkDisplayProps {
   invitationCode: string;
@@ -11,13 +12,27 @@ interface InvitationLinkDisplayProps {
 
 export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: InvitationLinkDisplayProps) => {
   const { toast } = useToast();
+  const [copying, setCopying] = useState(false);
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied!",
-      description: "Join link copied to clipboard",
-    });
+  const copyToClipboard = async (text: string, type: 'link' | 'code') => {
+    try {
+      setCopying(true);
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied!",
+        description: type === 'link' ? "Join link copied to clipboard" : "Class code copied to clipboard",
+      });
+    } catch (error) {
+      console.error("Failed to copy:", error);
+      toast({
+        title: "Copy failed",
+        description: "Please try again or copy manually",
+        variant: "destructive"
+      });
+    } finally {
+      setCopying(false);
+      setTimeout(() => setCopying(false), 1000);
+    }
   };
 
   return (
@@ -33,9 +48,10 @@ export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: Invitation
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={() => copyToClipboard(getJoinUrl())}
+            onClick={() => copyToClipboard(getJoinUrl(), 'link')}
             title="Copy join link"
             className="bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
+            disabled={copying}
           >
             <Copy className="w-4 h-4" />
           </Button>
@@ -44,18 +60,37 @@ export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: Invitation
       
       <div className="flex flex-col gap-2">
         <p className="text-xs text-gray-400">Or share this code for manual entry:</p>
-        <div className="p-3 bg-purple-900/20 border border-purple-500/40 rounded-md text-center">
-          <div className="text-2xl font-bold font-mono tracking-wider text-purple-300">{invitationCode}</div>
+        <div className="p-4 bg-purple-900/20 border border-purple-500/40 rounded-md text-center">
+          <div className="text-3xl font-bold font-mono tracking-wider text-purple-300">{invitationCode}</div>
           <div className="text-xs text-gray-400 mt-1">Class Invitation Code</div>
         </div>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
             className="w-full bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
-            onClick={() => copyToClipboard(invitationCode)}
+            onClick={() => copyToClipboard(invitationCode, 'code')}
+            disabled={copying}
           >
             <Copy className="w-4 h-4 mr-2" />
             Copy Code
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full bg-purple-700/30 border-purple-500/30 hover:bg-purple-600/50"
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: 'Join my class',
+                  text: `Join my class with code: ${invitationCode}`,
+                  url: getJoinUrl()
+                });
+              } else {
+                copyToClipboard(getJoinUrl(), 'link');
+              }
+            }}
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Share
           </Button>
         </div>
       </div>

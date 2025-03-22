@@ -14,17 +14,37 @@ export const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, loading, error } = useJoinClassContext();
   const { handleJoinClass } = useJoinClass();
   const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
+  const [enteredCode, setEnteredCode] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Store input as user types and remove whitespace
-    setInvitationCode(e.target.value.trim().toUpperCase());
+    // Store input as user types but don't immediately set the invitationCode
+    // This allows for better validation before submission
+    setEnteredCode(e.target.value.trim().toUpperCase());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && invitationCode) {
+    if (e.key === 'Enter' && enteredCode) {
       handleSubmitCode();
+    }
+  };
+
+  // Handle submit and validation
+  const handleSubmitCode = () => {
+    if (!enteredCode) return;
+    
+    // Process and clean the code before joining
+    const processedCode = ClassJoinService.extractCodeFromInput(enteredCode);
+    console.log("[CodeEntryTab] Processed code for joining:", processedCode);
+    
+    if (processedCode) {
+      setInvitationCode(processedCode);
+      handleJoinClass();
+    } else {
+      // If code couldn't be processed, try with original input as a fallback
+      setInvitationCode(enteredCode);
+      handleJoinClass();
     }
   };
 
@@ -55,7 +75,6 @@ export const CodeEntryTab = () => {
         // Try to extract from the full URL if no explicit code parameter is found
         if (!code) {
           const fullUrl = window.location.href;
-          console.log("[CodeEntryTab] Trying to extract code from full URL:", fullUrl);
           code = fullUrl;
         }
         
@@ -70,6 +89,7 @@ export const CodeEntryTab = () => {
             
             // Set the code in state
             setInvitationCode(processedCode);
+            setEnteredCode(processedCode);
             setAutoJoinAttempted(true);
             
             // Small delay to ensure UI is ready
@@ -86,13 +106,6 @@ export const CodeEntryTab = () => {
     attemptAutoJoin();
   }, [loading, autoJoinAttempted, handleJoinClass, setInvitationCode, location]);
 
-  const handleSubmitCode = () => {
-    if (!invitationCode) return;
-    
-    console.log("[CodeEntryTab] Submitting code:", invitationCode);
-    handleJoinClass();
-  };
-
   return (
     <div className="space-y-4">
       {error && (
@@ -105,7 +118,7 @@ export const CodeEntryTab = () => {
       <div className="flex flex-col gap-3">
         <Input
           ref={inputRef}
-          value={invitationCode}
+          value={enteredCode}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter classroom code (e.g., UK7BAA)"
@@ -117,7 +130,7 @@ export const CodeEntryTab = () => {
         />
         <Button
           onClick={handleSubmitCode}
-          disabled={loading || !invitationCode}
+          disabled={loading || !enteredCode}
           className="bg-purple-700 hover:bg-purple-800 py-6"
         >
           {loading ? (

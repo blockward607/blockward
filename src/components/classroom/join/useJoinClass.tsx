@@ -81,7 +81,8 @@ export const useJoinClass = () => {
           title: "Not authenticated",
           description: "Please log in to join a class"
         });
-        navigate('/auth');
+        // Navigate to auth page with intent to join class
+        navigate('/auth', { state: { joinCode: code } });
         return;
       }
 
@@ -90,7 +91,7 @@ export const useJoinClass = () => {
       // Check if student profile exists or create one
       const studentId = await ensureStudentProfile(session);
       if (!studentId) {
-        setError("Error creating student profile");
+        setError("Error preparing your student profile. Please try again.");
         return;
       }
 
@@ -103,7 +104,7 @@ export const useJoinClass = () => {
       
       if (matchError || !matchData) {
         console.error("Error finding classroom or invitation:", matchError);
-        setError(matchError?.message || "Invalid code. Please try another code or contact your teacher.");
+        setError(matchError?.message || "Invalid code. Please check your code and try again.");
         return;
       }
       
@@ -140,7 +141,7 @@ export const useJoinClass = () => {
         console.log("Student already enrolled in this classroom");
         toast({
           title: "Already enrolled",
-          description: "You are already enrolled in this classroom"
+          description: "You are already a member of this classroom"
         });
         navigate(`/class/${classroomId}`);
         return;
