@@ -160,7 +160,7 @@ export class InvitationMatchingService {
         }
       }
       
-      // DIRECT DATABASE LOOKUP - Use regular query since we can't use the stored function
+      // DIRECT DATABASE LOOKUP with more explicit typing and type guards
       try {
         const { data: dbResults, error: dbError } = await supabase
           .from('class_invitations')
@@ -181,7 +181,7 @@ export class InvitationMatchingService {
             return a.invitation_token.length - b.invitation_token.length;
           });
           
-          const bestMatch = sortedResults[0];
+          const bestMatch = sortedResults[0] as InvitationResult;
           console.log("[InvitationMatchingService] Found invitation via direct query:", bestMatch);
           
           // Get classroom details
@@ -201,7 +201,7 @@ export class InvitationMatchingService {
           };
         }
       } catch (dbQueryError) {
-        console.log("[InvitationMatchingService] Direct query error:", dbQueryError);
+        console.error("[InvitationMatchingService] Direct query error:", dbQueryError);
         // Continue to next approach if direct query fails
       }
       

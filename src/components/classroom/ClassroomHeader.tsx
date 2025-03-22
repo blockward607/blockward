@@ -25,13 +25,17 @@ export const ClassroomHeader = ({
         <p className="text-sm text-gray-400">{description}</p>
       </div>
       {userRole === 'teacher' && (
-        <div className="flex space-x-2">
+        <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
           <DeleteClassroomDialog
             classroomId={id}
             classroomName={name}
             onDelete={onDelete}
           />
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Settings className="w-4 h-4" />
           </Button>
         </div>

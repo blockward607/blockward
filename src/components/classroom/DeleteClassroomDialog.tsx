@@ -141,7 +141,10 @@ export const DeleteClassroomDialog = ({
           variant="ghost" 
           size="icon" 
           className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-          onClick={() => setIsOpen(true)}
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent click from bubbling to parent elements
+            setIsOpen(true);
+          }}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
