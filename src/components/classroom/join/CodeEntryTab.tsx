@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { InvitationMatchingService } from "@/services/class-join/InvitationMatchingService";
+import { ClassJoinService } from "@/services/class-join";
 
 export const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, loading, error } = useJoinClassContext();
@@ -43,7 +43,7 @@ export const CodeEntryTab = () => {
 
         let code = null;
         
-        // Check URL query parameters
+        // Check URL query parameters (highest priority)
         const urlParams = new URLSearchParams(window.location.search);
         code = urlParams.get('code') || urlParams.get('join');
         
@@ -62,12 +62,13 @@ export const CodeEntryTab = () => {
         if (code) {
           console.log("[CodeEntryTab] Auto-joining with potential code:", code);
           
-          // Process the code using the static service method
-          const processedCode = InvitationMatchingService.extractCodeFromInput(code);
+          // Use the service to extract code
+          const processedCode = ClassJoinService.extractCodeFromInput(code);
           
           if (processedCode) {
             console.log("[CodeEntryTab] Processed code for auto-join:", processedCode);
-            // Set the code in state (already trimmed)
+            
+            // Set the code in state
             setInvitationCode(processedCode);
             setAutoJoinAttempted(true);
             

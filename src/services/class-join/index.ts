@@ -14,7 +14,10 @@ export const ClassJoinService = {
   acceptInvitation: EnrollmentService.acceptInvitation,
   
   // Try all possible ways to find a classroom or invitation
-  findClassroomOrInvitation: InvitationMatchingService.findClassroomOrInvitation
+  findClassroomOrInvitation: InvitationMatchingService.findClassroomOrInvitation,
+  
+  // Utility to extract code from various input formats
+  extractCodeFromInput: InvitationMatchingService.extractCodeFromInput
 };
 
 export type { JoinClassroomResult };

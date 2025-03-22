@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,6 +12,39 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Fetch existing invitation code on mount
+  useEffect(() => {
+    const fetchExistingCode = async () => {
+      if (!classroomId) return;
+      
+      try {
+        setLoading(true);
+        // Check if there's an existing invitation code for this classroom
+        const { data, error } = await supabase
+          .from('class_invitations')
+          .select('invitation_token')
+          .eq('classroom_id', classroomId)
+          .eq('status', 'pending')
+          .eq('email', 'general_invitation@blockward.app')
+          .order('created_at', { ascending: false })
+          .limit(1);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          console.log("[useInvitationCode] Found existing invitation code:", data[0].invitation_token);
+          setInvitationCode(data[0].invitation_token);
+        }
+      } catch (err) {
+        console.error("[useInvitationCode] Error fetching invitation code:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchExistingCode();
+  }, [classroomId]);
+
   // Generate a new invitation code
   const generateInviteCode = useCallback(async () => {
     setLoading(true);
@@ -19,7 +52,7 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
       console.log("[useInvitationCode] Generating new invitation code for classroom:", classroomId);
       
       // Generate a simple, readable alphanumeric code (6 characters)
-      const invitationToken = Array.from({length: 6}, () => 
+      const invitationToken = 'UK' + Array.from({length: 4}, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
       
@@ -31,7 +64,7 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
           email: 'general_invitation@blockward.app', // Marker for general invitations
           invitation_token: invitationToken,
           status: 'pending',
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
         })
         .select()
         .single();

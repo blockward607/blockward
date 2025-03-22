@@ -26,7 +26,7 @@ export class InvitationMatchingService {
     
     try {
       // Extract the code from input string (could be URL, pasted text, etc.)
-      const cleanCode = InvitationMatchingService.extractCodeFromInput(code);
+      const cleanCode = this.extractCodeFromInput(code);
       if (!cleanCode) {
         return { 
           data: null, 
@@ -36,56 +36,15 @@ export class InvitationMatchingService {
       
       console.log("[InvitationMatchingService] Looking for code:", cleanCode);
       
-      // First try: Direct match with invitation_token using the database function
-      const { data: invitation, error: invitationError } = await supabase
-        .from('class_invitations')
-        .select('id, classroom_id, invitation_token, status, expires_at')
-        .eq('status', 'pending')
-        .or(`invitation_token.eq.${cleanCode},invitation_token.ilike.${cleanCode}`)
-        .maybeSingle();
-      
-      if (invitationError) {
-        console.error("[InvitationMatchingService] Error looking for invitation:", invitationError);
-      }
-      
-      // Check if we found an invitation
-      if (invitation) {
-        console.log("[InvitationMatchingService] Found matching invitation:", invitation);
-        
-        // Check if invitation is expired
-        if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
-          return { 
-            data: null, 
-            error: { message: "This invitation has expired. Please request a new one." } 
-          };
-        }
-        
-        // Get classroom details
-        const { data: classroom } = await supabase
-          .from('classrooms')
-          .select('id, name')
-          .eq('id', invitation.classroom_id)
-          .maybeSingle();
-          
-        return { 
-          data: { 
-            classroomId: invitation.classroom_id,
-            invitationId: invitation.id,
-            classroom: classroom || undefined
-          }, 
-          error: null 
-        };
-      }
-      
-      // Second try: Direct match with code using exact match
-      const { data: exactInvitation, error: exactInvitationError } = await supabase
+      // DIRECT EXACT MATCH - First approach with highest priority
+      const { data: exactInvitation, error: exactError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, invitation_token, status, expires_at')
         .eq('status', 'pending')
         .eq('invitation_token', cleanCode)
         .maybeSingle();
-
-      if (!exactInvitationError && exactInvitation) {
+      
+      if (!exactError && exactInvitation) {
         console.log("[InvitationMatchingService] Found exact match invitation:", exactInvitation);
         
         // Get classroom details
@@ -105,7 +64,68 @@ export class InvitationMatchingService {
         };
       }
       
-      // Third try: Check if the code is a classroom UUID
+      // CASE INSENSITIVE MATCH - Second approach
+      const { data: caseInsensitiveInvitation, error: caseError } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id, invitation_token, status, expires_at')
+        .eq('status', 'pending')
+        .ilike('invitation_token', cleanCode)
+        .maybeSingle();
+        
+      if (!caseError && caseInsensitiveInvitation) {
+        console.log("[InvitationMatchingService] Found case-insensitive match:", caseInsensitiveInvitation);
+        
+        // Get classroom details
+        const { data: classroom } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', caseInsensitiveInvitation.classroom_id)
+          .maybeSingle();
+          
+        return { 
+          data: { 
+            classroomId: caseInsensitiveInvitation.classroom_id,
+            invitationId: caseInsensitiveInvitation.id,
+            classroom: classroom || undefined
+          }, 
+          error: null 
+        };
+      }
+      
+      // FUZZY MATCH - Try with wildcard matching (in case code has some extra characters)
+      const { data: fuzzyInvitations, error: fuzzyError } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id, invitation_token, status, expires_at')
+        .eq('status', 'pending')
+        .ilike('invitation_token', `%${cleanCode}%`)
+        .limit(5);
+      
+      if (!fuzzyError && fuzzyInvitations && fuzzyInvitations.length > 0) {
+        // Find the closest match (shortest invitation_token)
+        const closestMatch = fuzzyInvitations.sort((a, b) => 
+          a.invitation_token.length - b.invitation_token.length
+        )[0];
+        
+        console.log("[InvitationMatchingService] Found fuzzy match:", closestMatch);
+        
+        // Get classroom details
+        const { data: classroom } = await supabase
+          .from('classrooms')
+          .select('id, name')
+          .eq('id', closestMatch.classroom_id)
+          .maybeSingle();
+          
+        return { 
+          data: { 
+            classroomId: closestMatch.classroom_id,
+            invitationId: closestMatch.id,
+            classroom: classroom || undefined
+          }, 
+          error: null 
+        };
+      }
+      
+      // UUID MATCH - Check if the code is a classroom UUID
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidPattern.test(cleanCode)) {
         console.log("[InvitationMatchingService] Code looks like a UUID, checking for classroom match");
@@ -116,11 +136,7 @@ export class InvitationMatchingService {
           .eq('id', cleanCode)
           .maybeSingle();
           
-        if (classroomError) {
-          console.error("[InvitationMatchingService] Error looking for classroom:", classroomError);
-        }
-        
-        if (classroom) {
+        if (!classroomError && classroom) {
           console.log("[InvitationMatchingService] Found classroom with ID:", classroom.id);
           return { 
             data: { 
@@ -134,6 +150,38 @@ export class InvitationMatchingService {
             error: null 
           };
         }
+      }
+      
+      // DIRECT DATABASE LOOKUP - Use the function we created
+      try {
+        const { data: functionResult, error: functionError } = await supabase.rpc(
+          'find_invitation_by_code',
+          { code_param: cleanCode }
+        );
+        
+        if (!functionError && functionResult && functionResult.length > 0) {
+          const invitation = functionResult[0];
+          console.log("[InvitationMatchingService] Found invitation via function:", invitation);
+          
+          // Get classroom details
+          const { data: classroom } = await supabase
+            .from('classrooms')
+            .select('id, name')
+            .eq('id', invitation.classroom_id)
+            .maybeSingle();
+            
+          return { 
+            data: { 
+              classroomId: invitation.classroom_id,
+              invitationId: invitation.id,
+              classroom: classroom || undefined
+            }, 
+            error: null 
+          };
+        }
+      } catch (functionCallError) {
+        console.log("[InvitationMatchingService] Function call error:", functionCallError);
+        // Continue to next approach if function call fails
       }
       
       // No match found
@@ -167,24 +215,7 @@ export class InvitationMatchingService {
       return uuidMatch[1];
     }
     
-    // Case 1: URL with join parameter
-    const joinParamRegex = /[?&]join=([^&]+)/i;
-    const joinMatch = input.match(joinParamRegex);
-    if (joinMatch && joinMatch[1]) {
-      console.log("[InvitationMatchingService] Extracted code from join parameter:", joinMatch[1]);
-      return joinMatch[1].toUpperCase();
-    }
-    
-    // Case A: Handle Netlify or other deployment URLs with the invitation code
-    // This matches URLs that might contain the code after the netlify.app/ part
-    const deployUrlRegex = /\/([A-Z0-9]{6,10})(?:\/|$|\?)/i;
-    const deployUrlMatch = input.match(deployUrlRegex);
-    if (deployUrlMatch && deployUrlMatch[1]) {
-      console.log("[InvitationMatchingService] Extracted code from deployment URL:", deployUrlMatch[1]);
-      return deployUrlMatch[1].toUpperCase();
-    }
-    
-    // Case 2: URL with code parameter
+    // Case 1: URL with code parameter (highest priority)
     const codeParamRegex = /[?&]code=([^&]+)/i;
     const codeMatch = input.match(codeParamRegex);
     if (codeMatch && codeMatch[1]) {
@@ -192,7 +223,23 @@ export class InvitationMatchingService {
       return codeMatch[1].toUpperCase();
     }
     
-    // Case 3: URL with join path (e.g., /join/CODE)
+    // Case 2: URL with join parameter
+    const joinParamRegex = /[?&]join=([^&]+)/i;
+    const joinMatch = input.match(joinParamRegex);
+    if (joinMatch && joinMatch[1]) {
+      console.log("[InvitationMatchingService] Extracted code from join parameter:", joinMatch[1]);
+      return joinMatch[1].toUpperCase();
+    }
+    
+    // Case 3: Direct code form
+    // Check if input is an alphanumeric code (common format for invitation codes)
+    const directCodePattern = /^[A-Z0-9]{6,10}$/i;
+    if (directCodePattern.test(input)) {
+      console.log("[InvitationMatchingService] Input appears to be a direct invitation code");
+      return input.toUpperCase();
+    }
+    
+    // Case 4: URL with code in path segment (e.g., /join/CODE)
     const joinPathRegex = /\/join\/([A-Za-z0-9]+)/i;
     const joinPathMatch = input.match(joinPathRegex);
     if (joinPathMatch && joinPathMatch[1]) {
@@ -200,15 +247,16 @@ export class InvitationMatchingService {
       return joinPathMatch[1].toUpperCase();
     }
     
-    // Case 4: Direct code (no URL)
-    // Check if input is likely a direct 6-character code (common format for invitation codes)
-    const directCodePattern = /^[A-Z0-9]{6,10}$/i;
-    if (directCodePattern.test(input)) {
-      console.log("[InvitationMatchingService] Input appears to be a direct invitation code");
-      return input.toUpperCase();
+    // Case 5: Extract code from URL path as last resort
+    // This matches URLs like blockward.me/classes?code=UK7BAA or similar patterns
+    const codeInPathRegex = /[/=](UK[A-Z0-9]{4,8})/i;
+    const codeInPathMatch = input.match(codeInPathRegex);
+    if (codeInPathMatch && codeInPathMatch[1]) {
+      console.log("[InvitationMatchingService] Extracted code pattern from URL:", codeInPathMatch[1]);
+      return codeInPathMatch[1].toUpperCase();
     }
     
-    // Case 5: Last resort - try to extract any alphanumeric sequence that looks like a code
+    // Case 6: Last resort - try to extract any alphanumeric sequence that looks like a code
     const codePattern = /([A-Z0-9]{6,10})/i;
     const codePatternMatch = input.match(codePattern);
     if (codePatternMatch && codePatternMatch[1]) {
@@ -217,8 +265,12 @@ export class InvitationMatchingService {
     }
     
     // Final fallback: Clean and standardize input - remove spaces, convert to uppercase
-    const cleanCode = input.replace(/\s+/g, '').toUpperCase();
-    console.log("[InvitationMatchingService] Using cleaned input as code:", cleanCode);
-    return cleanCode;
+    if (input.length >= 4 && input.length <= 20) {
+      const cleanCode = input.replace(/\s+/g, '').toUpperCase();
+      console.log("[InvitationMatchingService] Using cleaned input as code:", cleanCode);
+      return cleanCode;
+    }
+    
+    return null;
   }
 }
