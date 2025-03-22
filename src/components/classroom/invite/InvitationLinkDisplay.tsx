@@ -35,19 +35,34 @@ export const InvitationLinkDisplay = ({ invitationCode, getJoinUrl }: Invitation
     }
   };
   
-  const handleShare = () => {
+  const handleShare = async () => {
     try {
-      if (navigator.share) {
-        navigator.share({
-          title: 'Join my class',
-          text: `Join my class with code: ${invitationCode}`,
-          url: getJoinUrl()
-        }).catch(error => {
-          console.error("Error sharing:", error);
-          copyToClipboard(getJoinUrl(), 'link');
-        });
+      // Check if Web Share API is available
+      if (navigator.share && typeof navigator.share === 'function') {
+        try {
+          await navigator.share({
+            title: 'Join my class',
+            text: `Join my class with code: ${invitationCode}`,
+            url: getJoinUrl()
+          });
+          
+          toast({
+            title: "Shared successfully",
+            description: "Invitation link was shared"
+          });
+        } catch (error: any) {
+          // User cancelled or sharing failed
+          console.error("Error in Web Share API:", error);
+          
+          // Don't show error toast if user just cancelled
+          if (error.name !== 'AbortError') {
+            // Fallback to clipboard if sharing fails for reasons other than user cancellation
+            copyToClipboard(getJoinUrl(), 'link');
+          }
+        }
       } else {
         // Fallback for browsers without Web Share API
+        console.log("Web Share API not available, falling back to clipboard");
         copyToClipboard(getJoinUrl(), 'link');
       }
     } catch (error) {
