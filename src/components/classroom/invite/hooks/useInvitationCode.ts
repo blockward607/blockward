@@ -126,7 +126,10 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
   // Function to get the full join URL
   const getJoinUrl = useCallback(() => {
     if (!invitationCode) return '';
-    return `${window.location.origin}/classes?code=${invitationCode}`;
+    // Make sure to use the actual domain without the "lovable" part
+    const host = window.location.host.replace('lovable.', '');
+    const protocol = window.location.protocol;
+    return `${protocol}//${host}/classes?code=${invitationCode}`;
   }, [invitationCode]);
 
   return {

@@ -2,9 +2,11 @@
 import { useState, useEffect } from "react";
 import { TutorialModal } from "./TutorialModal";
 import { supabase } from "@/integrations/supabase/client";
+import { TutorialStartDialog } from "./TutorialStartDialog";
 
 export const TutorialManager = () => {
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
   const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,9 +48,11 @@ export const TutorialManager = () => {
           .eq('user_id', session.user.id)
           .single();
 
-        // If no preferences record or tutorial not completed, show tutorial
-        const shouldShowTutorial = !preferences || preferences.tutorial_completed !== true;
-        setShowTutorial(shouldShowTutorial);
+        // If no preferences record or tutorial not completed, show tutorial prompt
+        if (!preferences || preferences.tutorial_completed !== true) {
+          setShowPrompt(true);
+        }
+        
         setLoading(false);
       } catch (error) {
         console.error("Error checking tutorial status:", error);
@@ -58,6 +62,11 @@ export const TutorialManager = () => {
 
     checkTutorialStatus();
   }, []);
+
+  const handleStartTutorial = () => {
+    setShowPrompt(false);
+    setShowTutorial(true);
+  };
 
   const handleResetTutorial = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -72,15 +81,28 @@ export const TutorialManager = () => {
     }
   };
 
-  if (loading || !showTutorial) {
+  if (loading) {
     return null;
   }
 
   return (
-    <TutorialModal 
-      userRole={userRole} 
-      onClose={() => setShowTutorial(false)} 
-    />
+    <>
+      {showPrompt && (
+        <TutorialStartDialog
+          userRole={userRole}
+          isOpen={showPrompt}
+          onOpenChange={setShowPrompt}
+          onStartTutorial={handleStartTutorial}
+        />
+      )}
+      
+      {showTutorial && (
+        <TutorialModal 
+          userRole={userRole} 
+          onClose={() => setShowTutorial(false)} 
+        />
+      )}
+    </>
   );
 };
 
