@@ -9,7 +9,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Lazy-loaded components
-const Home = lazy(() => import("@/pages/Home"));
+const Index = lazy(() => import("@/pages/Index"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const SignUp = lazy(() => import("@/pages/SignUp"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -30,6 +30,8 @@ const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
 const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
 const Grades = lazy(() => import("@/pages/Grades"));
 const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
+const ViewStudentDashboard = lazy(() => import("@/pages/StudentDashboard"));
+const ViewTeacherDashboard = lazy(() => import("@/pages/ViewTeacherDashboard"));
 
 function App() {
   return (
@@ -39,12 +41,15 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<MainLayout />}>
-              <Route index element={<Home />} />
+              <Route index element={<Index />} />
               <Route path="auth" element={<Auth />} />
               <Route path="signup" element={<SignUp />} />
               <Route path="reset-password" element={<ResetPassword />} />
               <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
               <Route path="invite/:inviteToken" element={<ClassroomInvite />} />
+              {/* View demo routes */}
+              <Route path="view-student-dashboard" element={<ViewStudentDashboard />} />
+              <Route path="view-teacher-dashboard" element={<ViewTeacherDashboard />} />
               {/* Updated join routes to properly capture and handle codes */}
               <Route path="join/:code" element={<Navigate to="/auth" replace state={{ joinCode: ':code' }} />} />
               <Route path="join" element={<Navigate to="/auth" replace />} />

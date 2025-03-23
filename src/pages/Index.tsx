@@ -11,6 +11,7 @@ import { ClassroomPreview } from "@/components/preview/ClassroomPreview";
 import { EasyToUse } from "@/components/EasyToUse";
 import { BlockwardIntro } from '@/components/intro/BlockwardIntro';
 import { HowItWorks } from '@/components/HowItWorks';
+import { AccessDemoButtons } from '@/components/demo/AccessDemoButtons';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -45,6 +46,11 @@ const Index = () => {
       {/* Hero section */}
       <div id="home" className="pt-20">
         <Hero />
+      </div>
+      
+      {/* Demo access buttons */}
+      <div className="container mx-auto px-4 py-12">
+        <AccessDemoButtons />
       </div>
       
       {/* How it works section */}
