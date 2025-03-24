@@ -4,6 +4,13 @@ export interface JoinClassroomResult {
   error: any;
 }
 
+export interface ClassInvitation {
+  id: string;
+  code: string;
+  classroomId: string;
+  classroomName: string;
+}
+
 export interface Grade {
   id: string;
   student_id: string;

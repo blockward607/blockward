@@ -148,4 +148,93 @@ export class InvitationMatchingService {
       return null;
     }
   }
+
+  /**
+   * Extract a code from a URL, text input, or QR code result
+   * @param input The input text (URL, code, etc)
+   * @returns string | null The extracted code or null if not found
+   */
+  static extractCodeFromInput(input: string): string | null {
+    if (!input) return null;
+    
+    try {
+      // Clean the input first
+      const cleanInput = input.trim();
+      
+      // Case 1: It's already just a simple code
+      if (/^[A-Za-z0-9]{4,8}$/.test(cleanInput)) {
+        return cleanInput.toUpperCase();
+      }
+      
+      // Case 2: It's a URL with a code parameter
+      const urlObj = new URL(cleanInput, window.location.origin);
+      const codeParam = urlObj.searchParams.get('code');
+      if (codeParam) {
+        return codeParam.toUpperCase();
+      }
+      
+      // Case 3: It's a URL with a join path
+      const pathParts = urlObj.pathname.split('/');
+      const joinIndex = pathParts.findIndex(part => part === 'join');
+      if (joinIndex !== -1 && pathParts.length > joinIndex + 1) {
+        return pathParts[joinIndex + 1].toUpperCase();
+      }
+      
+      // If we get here, try to extract any alphanumeric sequence (4-8 chars) as a code
+      const codeMatch = cleanInput.match(/[A-Za-z0-9]{4,8}/);
+      if (codeMatch) {
+        return codeMatch[0].toUpperCase();
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("[InvitationMatchingService] Error extracting code:", error);
+      return null;
+    }
+  }
+  
+  /**
+   * Find a classroom or invitation by code
+   * Combines classroom lookup and invitation lookup
+   * @param code The code to search for
+   * @returns Promise with result data or error
+   */
+  static async findClassroomOrInvitation(code: string): Promise<{ data?: any, error?: any }> {
+    try {
+      if (!code) {
+        return { error: { message: "No code provided" } };
+      }
+      
+      // Clean the code
+      const cleanCode = code.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      console.log("[InvitationMatchingService] Looking for classroom/invitation with code:", cleanCode);
+      
+      // First try to find via invitation code
+      const invitation = await this.findInvitationByCode(cleanCode);
+      
+      if (invitation) {
+        console.log("[InvitationMatchingService] Found via invitation:", invitation);
+        
+        // Return structured data
+        return { 
+          data: {
+            invitationId: invitation.id,
+            classroomId: invitation.classroomId,
+            classroom: {
+              id: invitation.classroomId,
+              name: invitation.classroomName
+            }
+          }
+        };
+      }
+      
+      // If no invitation found, still failed
+      console.log("[InvitationMatchingService] No match found for code:", cleanCode);
+      return { error: { message: "Invalid code. No matching classroom or invitation found." } };
+      
+    } catch (error: any) {
+      console.error("[InvitationMatchingService] Error in findClassroomOrInvitation:", error);
+      return { error: error || { message: "Error processing your request" } };
+    }
+  }
 }
