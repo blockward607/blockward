@@ -7,9 +7,11 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { AssistantBot } from "@/components/assistant/AssistantBot";
 
 // Lazy-loaded components
 const Index = lazy(() => import("@/pages/Index"));
+const Home = lazy(() => import("@/pages/Home"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const SignUp = lazy(() => import("@/pages/SignUp"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -42,6 +44,7 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Index />} />
+              <Route path="home" element={<Home />} />
               <Route path="auth" element={<Auth />} />
               <Route path="signup" element={<SignUp />} />
               <Route path="reset-password" element={<ResetPassword />} />
@@ -86,6 +89,7 @@ function App() {
             </Route>
           </Routes>
         </Suspense>
+        <AssistantBot />
         <Toaster position="top-right" />
       </ThemeProvider>
     </BrowserRouter>

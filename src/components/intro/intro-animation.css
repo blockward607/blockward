@@ -62,3 +62,69 @@
   font-weight: 900;
   letter-spacing: -0.03em;
 }
+
+/* New animations */
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring 3s ease-out infinite;
+}
+
+@keyframes rotate3d {
+  0% {
+    transform: rotate3d(1, 1, 1, 0deg);
+  }
+  100% {
+    transform: rotate3d(1, 1, 1, 360deg);
+  }
+}
+
+.rotate-3d {
+  animation: rotate3d 8s linear infinite;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.ripple {
+  animation: ripple 3s ease-out infinite;
+}
+
+/* Futuristic background grid */
+.futuristic-grid {
+  background-image: 
+    linear-gradient(to right, rgba(50, 50, 77, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(50, 50, 77, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Diamond glow effect */
+.diamond-glow {
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.5));
+}
+
+.diamond-glow:hover {
+  filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.8));
+}

@@ -20,14 +20,13 @@ const Index = () => {
   useEffect(() => {
     // Check if intro has been shown before
     const introShown = localStorage.getItem('introShown');
+    // Reset intro shown flag for testing - remove in production
+    // localStorage.removeItem('introShown');
+    
     if (introShown) {
       setShowIntro(false);
     }
   }, []);
-  
-  const handleSignUp = () => {
-    navigate('/auth');
-  };
   
   const handleEnterSite = () => {
     setShowIntro(false);

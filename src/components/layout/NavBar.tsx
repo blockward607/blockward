@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InteractiveLogo } from "@/components/logo/InteractiveLogo";
+import { DiamondLogo } from "@/components/logo/DiamondLogo";
 
 export const NavBar = () => {
   const navigate = useNavigate();
@@ -28,9 +29,7 @@ export const NavBar = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-purple-900/20">
       <div className="container mx-auto py-4 px-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10">
-            <InteractiveLogo />
-          </div>
+          <DiamondLogo size={32} />
           <h1 className="text-3xl blockward-logo">BlockWard</h1>
         </div>
         
