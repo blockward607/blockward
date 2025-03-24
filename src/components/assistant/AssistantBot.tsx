@@ -1,8 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, MessageSquare, Zap } from 'lucide-react';
+import { Bot, X, MessageSquare, Sparkles, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { searchKnowledge } from "@/data/blockward-knowledge";
 
 interface Message {
   type: 'user' | 'bot';
@@ -30,23 +31,27 @@ export const AssistantBot: React.FC = () => {
     
     // Process and respond
     setTimeout(() => {
-      let response = 'I don\'t have an answer for that yet.';
+      const userInput = input.trim();
       
-      // Simple response logic
-      const lowerInput = input.toLowerCase();
+      // Search knowledge base for relevant information
+      const matchingItems = searchKnowledge(userInput);
       
-      if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-        response = 'Hello there! How can I help you with BlockWard today?';
-      } else if (lowerInput.includes('what is blockward')) {
-        response = 'BlockWard is an educational platform that uses blockchain technology to track student achievements, attendance, and rewards.';
-      } else if (lowerInput.includes('how') && lowerInput.includes('join')) {
-        response = 'To join a class, you\'ll need an invitation code from your teacher. You can enter it on the sign-in page or use the Join Class button once you\'re logged in.';
-      } else if (lowerInput.includes('nft') || lowerInput.includes('reward')) {
-        response = 'BlockWard uses special digital tokens (NFTs) to recognize student achievements. These are stored securely on the blockchain and belong to you forever!';
-      } else if (lowerInput.includes('teacher') || lowerInput.includes('create class')) {
-        response = 'Teachers can create classes, track attendance, issue achievements, and manage students all in one place. Sign up as a teacher to get started!';
-      } else if (lowerInput.includes('thank')) {
-        response = 'You\'re welcome! Is there anything else I can help with?';
+      let response = 'I don\'t have specific information about that yet. Is there something else about BlockWard I can help you with?';
+      
+      if (matchingItems.length > 0) {
+        // Use the most relevant match (first item)
+        response = matchingItems[0].answer;
+        
+        // If we have multiple good matches, add a footer with additional topics
+        if (matchingItems.length > 1) {
+          response += '\n\nYou might also be interested in: ' + 
+            matchingItems.slice(1, 3).map(item => item.question).join(', ') + 
+            '. Feel free to ask me about these topics!';
+        }
+      } else if (userInput.toLowerCase().includes('hello') || userInput.toLowerCase().includes('hi')) {
+        response = 'Hello there! I\'m your BlockWard assistant. I can help you understand how BlockWard works, how to join classes, create NFT awards, and more. What would you like to know?';
+      } else if (userInput.toLowerCase().includes('thank')) {
+        response = 'You\'re welcome! I\'m here to help make your BlockWard experience smooth and enjoyable. Is there anything else I can assist you with?';
       }
       
       setMessages(prev => [...prev, { type: 'bot', text: response }]);
@@ -87,7 +92,7 @@ export const AssistantBot: React.FC = () => {
             <div className="p-3 bg-purple-900/80 flex items-center">
               <Bot className="text-purple-300 mr-2" size={20} />
               <h3 className="font-medium text-white">BlockWard Assistant</h3>
-              <Zap className="ml-2 text-yellow-300" size={14} />
+              <Sparkles className="ml-2 text-yellow-300" size={14} />
             </div>
             
             {/* Messages */}
@@ -104,7 +109,12 @@ export const AssistantBot: React.FC = () => {
                         : 'bg-gray-800 text-gray-200'
                     }`}
                   >
-                    {msg.text}
+                    {msg.text.split('\n').map((line, i) => (
+                      <React.Fragment key={i}>
+                        {line}
+                        {i < msg.text.split('\n').length - 1 && <br />}
+                      </React.Fragment>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -120,7 +130,7 @@ export const AssistantBot: React.FC = () => {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   className="flex-1 bg-gray-900 border border-purple-900/30 rounded-l-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500 text-white"
-                  placeholder="Ask something..."
+                  placeholder="Ask about BlockWard..."
                 />
                 <Button 
                   onClick={handleSendMessage}
@@ -128,6 +138,11 @@ export const AssistantBot: React.FC = () => {
                 >
                   <MessageSquare size={18} />
                 </Button>
+              </div>
+              
+              <div className="mt-2 text-xs text-gray-400 flex items-center">
+                <Search className="h-3 w-3 mr-1 text-purple-400" />
+                Try asking: "What are BlockWard NFTs?" or "How do I join a class?"
               </div>
             </div>
           </motion.div>
