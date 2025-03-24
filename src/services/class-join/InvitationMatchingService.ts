@@ -38,15 +38,20 @@ export class InvitationMatchingService {
       
       console.log("[InvitationMatchingService] Looking for code:", cleanCode);
       
-      // Try direct database function first (most efficient)
-      const { data: dbMatchResult, error: dbError } = await supabase
-        .rpc('find_invitation_by_code', { code_param: cleanCode });
+      // Try direct DB query with proper parameters (most efficient)
+      const { data: invitations, error: dbError } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id, invitation_token, status, expires_at')
+        .eq('status', 'pending')
+        .filter('expires_at', 'gte', 'now()')
+        .ilike('invitation_token', cleanCode)
+        .limit(1);
         
       if (dbError) {
-        console.error("[InvitationMatchingService] DB function error:", dbError);
-      } else if (dbMatchResult && dbMatchResult.length > 0) {
-        console.log("[InvitationMatchingService] Found match from DB function:", dbMatchResult[0]);
-        const matchedInvite = dbMatchResult[0];
+        console.error("[InvitationMatchingService] DB query error:", dbError);
+      } else if (invitations && invitations.length > 0) {
+        console.log("[InvitationMatchingService] Found match from DB query:", invitations[0]);
+        const matchedInvite = invitations[0];
         
         // Get classroom details
         const { data: classroom } = await supabase
