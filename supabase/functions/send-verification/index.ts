@@ -33,8 +33,26 @@ serve(async (req) => {
 
     console.log(`Sending verification email to ${email} with token ${verificationToken}`);
     
+    // Get Resend API key from environment
+    const RESEND_API_KEY = Deno.env.get("Resend");
+    if (!RESEND_API_KEY) {
+      console.error("Missing Resend API key");
+      return new Response(
+        JSON.stringify({
+          error: 'Server configuration error: Missing API key'
+        }),
+        { 
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
+    }
+    
     // Initialize Resend with the API key
-    const resend = new Resend('re_NwHmfv8U_GtGzR7NHyDmHkEhxAsLKdo8t');
+    const resend = new Resend(RESEND_API_KEY);
     
     // Generate the join URL with the token
     const joinUrl = `https://blockward.app/classes?code=${verificationToken}`;

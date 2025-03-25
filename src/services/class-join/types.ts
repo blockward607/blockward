@@ -9,6 +9,8 @@ export interface ClassInvitation {
   code: string;
   classroomId: string;
   classroomName: string;
+  invitationId?: string;
+  classroom?: any;
 }
 
 export interface Grade {
