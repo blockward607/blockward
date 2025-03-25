@@ -129,7 +129,7 @@ export const BLOCKWARD_KNOWLEDGE: BlockWardKnowledgeItem[] = [
     topic: 'support',
     subtopic: 'tutorial',
     question: 'Are there tutorials for BlockWard?',
-    answer: 'BlockWard offers interactive tutorials for both teachers and students. Access them by clicking the "Tutorial" option in your dashboard or the profile menu. They'll guide you through all the key features step by step.',
+    answer: 'BlockWard offers interactive tutorials for both teachers and students. Access them by clicking the "Tutorial" option in your dashboard or the profile menu. They\'ll guide you through all the key features step by step.',
     keywords: ['tutorial', 'guide', 'how to', 'learn', 'walkthrough']
   }
 ];
