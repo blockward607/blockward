@@ -34,6 +34,7 @@ const Grades = lazy(() => import("@/pages/Grades"));
 const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
 const ViewStudentDashboard = lazy(() => import("@/pages/StudentDashboard"));
 const ViewTeacherDashboard = lazy(() => import("@/pages/ViewTeacherDashboard"));
+const GoogleClassroom = lazy(() => import("@/pages/GoogleClassroom"));
 
 function App() {
   return (
@@ -69,6 +70,7 @@ function App() {
             >
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="classes" element={<Classes />} />
+              <Route path="google-classroom" element={<GoogleClassroom />} />
               <Route path="students" element={<Students />} />
               <Route path="attendance" element={<Attendance />} />
               <Route path="classroom/seating" element={<ClassroomSeating />} />

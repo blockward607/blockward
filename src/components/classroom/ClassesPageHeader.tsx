@@ -1,37 +1,51 @@
 
-import { BookOpen, Plus } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus, School } from "lucide-react";
 import { CreateClassroomDialog } from "./CreateClassroomDialog";
-import { Database } from "@/integrations/supabase/types";
-
-type Classroom = Database['public']['Tables']['classrooms']['Row'];
+import { Link } from "react-router-dom";
 
 interface ClassesPageHeaderProps {
   userRole: string | null;
-  onClassroomCreated: (newClassroom: Classroom) => void;
+  onClassroomCreated: (classroom: any) => void;
 }
 
 export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageHeaderProps) => {
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+
   return (
-    <motion.div 
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-      }}
-      className="flex items-center justify-between"
-    >
-      <div className="flex items-center gap-4">
-        <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
-          <BookOpen className="w-8 h-8 text-purple-300" />
-        </div>
-        <h1 className="text-4xl font-bold shimmer-text">
-          {userRole === 'teacher' ? 'My Classes' : 'Enrolled Classes'}
-        </h1>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div>
+        <h1 className="text-3xl font-bold text-white">My Classes</h1>
+        <p className="text-gray-400 mt-1">Manage your classes and students</p>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-3">
+        {userRole === 'teacher' && (
+          <>
+            <Link to="/google-classroom">
+              <Button variant="outline" className="w-full sm:w-auto flex gap-2">
+                <School className="h-4 w-4" />
+                Google Classroom
+              </Button>
+            </Link>
+            <Button 
+              onClick={() => setShowCreateDialog(true)} 
+              className="w-full sm:w-auto flex gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Create Class
+            </Button>
+          </>
+        )}
       </div>
       
-      {userRole === 'teacher' && (
-        <CreateClassroomDialog onClassroomCreated={onClassroomCreated} />
+      {showCreateDialog && (
+        <CreateClassroomDialog 
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onClassroomCreated={onClassroomCreated}
+        />
       )}
-    </motion.div>
+    </div>
   );
 };
