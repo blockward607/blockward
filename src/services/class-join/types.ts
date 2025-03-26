@@ -49,3 +49,30 @@ export interface SupabaseError {
   hint?: string;
   code?: string;
 }
+
+// Grade related interfaces for the grading system
+export interface Grade {
+  id: string;
+  student_id: string;
+  assignment_id: string;
+  points_earned: number;
+  feedback?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Assignment {
+  id: string;
+  title: string;
+  description?: string;
+  points_possible: number;
+  due_date?: string;
+  classroom_id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StudentGrade {
+  assignment: Assignment;
+  grade: Grade | null;
+}
