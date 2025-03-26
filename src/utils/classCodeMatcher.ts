@@ -23,3 +23,8 @@ export function findClassroomByCaseInsensitive(classrooms: any[], code: string):
     c.id.toLowerCase().includes(code.toLowerCase())
   ) || null;
 }
+
+export const classCodeMatcher = {
+  findClassroomByPrefix,
+  findClassroomByCaseInsensitive
+};

@@ -1,166 +1,173 @@
-import { supabase } from "@/integrations/supabase/client";
-import { ClassInvitation } from "./types";
 
-interface InvitationResult {
-  id: string;
-  classroom_id: string;
-  invitation_token: string;
-  status: string;
-  expires_at: string;
-}
+import { supabase } from "@/integrations/supabase/client";
+import type { JoinClassroomResult, SupabaseError } from "./types";
+import { classCodeMatcher } from "@/utils/classCodeMatcher";
 
 export const InvitationMatchingService = {
   /**
-   * Try all possible ways to find a classroom or invitation by code
+   * Extracts a code from various input formats:
+   * - Direct code: "ABC123"
+   * - URL: "https://example.com/join?code=ABC123"
+   * - URL with path: "https://example.com/join/ABC123"
    */
-  findClassroomOrInvitation: async (code: string): Promise<{ data: ClassInvitation | null, error: any }> => {
+  extractCodeFromInput(input: string): string | null {
+    if (!input) return null;
+    
+    // Clean the input
+    input = input.trim();
+    
     try {
-      console.log("Searching for classroom or invitation with code:", code);
-      const cleanCode = code.trim().toUpperCase();
-      
-      // First, try to find a direct class invitation by token
-      const { data: invitationData, error: invitationError } = await supabase
-        .from('class_invitations')
-        .select('id, invitation_token, classroom_id, classrooms(id, name)')
-        .eq('invitation_token', cleanCode)
-        .eq('status', 'pending')
-        .maybeSingle();
-      
-      if (invitationError && !invitationError.message.includes('No rows found')) {
-        console.error("Error finding invitation:", invitationError);
-        throw invitationError;
+      // Check if it's a URL and try to extract code from it
+      if (input.includes('://') || input.startsWith('www.')) {
+        // Try to extract code from URL query parameter
+        try {
+          const url = new URL(input.startsWith('www.') ? `https://${input}` : input);
+          
+          // Check for code in query parameters with different possible names
+          const codeFromQuery = url.searchParams.get('code') || 
+                               url.searchParams.get('join') || 
+                               url.searchParams.get('invite') ||
+                               url.searchParams.get('class');
+          
+          if (codeFromQuery) {
+            return codeFromQuery;
+          }
+          
+          // Check for code in path segments
+          const pathSegments = url.pathname.split('/').filter(segment => segment.length > 0);
+          for (const segment of pathSegments) {
+            // Look for segments that might be codes (alphanumeric, 5-10 chars)
+            if (/^[A-Za-z0-9]{5,10}$/.test(segment)) {
+              return segment;
+            }
+          }
+          
+          // Get the last path segment as a fallback
+          if (pathSegments.length > 0) {
+            return pathSegments[pathSegments.length - 1];
+          }
+        } catch (e) {
+          console.log('Failed to parse URL:', e);
+          // If URL parsing fails, treat as a regular code
+        }
       }
       
-      if (invitationData) {
-        console.log("Found invitation:", invitationData);
-        return {
-          data: {
-            id: invitationData.id,
-            code: invitationData.invitation_token,
-            classroomId: invitationData.classroom_id,
-            classroomName: invitationData.classrooms?.name || "Classroom",
-            invitationId: invitationData.id,
-            classroom: invitationData.classrooms
-          },
-          error: null
-        };
+      // If it looks like a code (5-10 alphanumeric characters), return it
+      if (/^[A-Za-z0-9]{5,10}$/.test(input)) {
+        return input.toUpperCase();
       }
       
-      // Try using regular query as a fallback for DB function
-      // This works around the type issue with the RPC function
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('class_invitations')
-        .select('id, invitation_token, classroom_id, status, expires_at')
-        .eq('invitation_token', cleanCode)
-        .eq('status', 'pending')
-        .lt('expires_at', 'now()')
-        .maybeSingle();
-
-      if (fallbackData) {
-        // Get classroom details
-        const { data: classroomData } = await supabase
-          .from('classrooms')
-          .select('name, id')
-          .eq('id', fallbackData.classroom_id)
-          .maybeSingle();
-        
-        console.log("Found invitation via fallback query:", fallbackData);
-        return {
-          data: {
-            id: fallbackData.id,
-            code: fallbackData.invitation_token,
-            classroomId: fallbackData.classroom_id,
-            classroomName: classroomData?.name || "Classroom",
-            invitationId: fallbackData.id,
-            classroom: classroomData || undefined
-          },
-          error: null
-        };
+      // Try extracting code from text that contains code pattern
+      const codeMatch = input.match(/\b([A-Za-z0-9]{5,10})\b/);
+      if (codeMatch) {
+        return codeMatch[1].toUpperCase();
       }
       
-      // As a fallback, try to look for a classroom with matching code
-      // This is unlikely but we'll keep it for backward compatibility
-      const { data: classroomData, error: classroomError } = await supabase
-        .from('classrooms')
-        .select('id, name')
-        .ilike('name', `%${cleanCode}%`)
-        .limit(1);
-      
-      if (classroomError) {
-        console.error("Error finding classroom:", classroomError);
-        throw classroomError;
+      // If all else fails and the input is reasonably short, return it as-is
+      if (input.length <= 20) {
+        return input.toUpperCase();
       }
-      
-      if (classroomData && classroomData.length > 0) {
-        console.log("Found classroom with matching name:", classroomData[0]);
-        return {
-          data: {
-            id: classroomData[0].id,
-            code: cleanCode,
-            classroomId: classroomData[0].id,
-            classroomName: classroomData[0].name,
-            classroom: classroomData[0]
-          },
-          error: null
-        };
-      }
-      
-      // If we get here, we didn't find anything
-      console.log("No matching invitation or classroom found for code:", cleanCode);
-      return {
-        data: null,
-        error: { message: "Invalid invitation code. Please check and try again." }
-      };
-    } catch (error: any) {
-      console.error("Error in findClassroomOrInvitation:", error);
-      return {
-        data: null,
-        error: { message: error.message || "Error finding classroom" }
-      };
+    } catch (e) {
+      console.error('Error extracting code from input:', e);
     }
+    
+    return null;
   },
   
   /**
-   * Extract and clean a code from various input formats
-   * Handles:
-   * - Plain code (ABC123)
-   * - URL with code parameter (?code=ABC123)
-   * - Full invitation URL (https://domain.com/join?code=ABC123)
+   * Find a classroom or invitation by code using multiple matching strategies
    */
-  extractCodeFromInput: (input: string): string => {
-    if (!input) return '';
+  async findClassroomOrInvitation(code: string): Promise<{ data: JoinClassroomResult | null, error: SupabaseError | null }> {
+    if (!code) {
+      return { 
+        data: null, 
+        error: { message: 'No code provided' } 
+      };
+    }
     
-    // Clean the input string
-    const cleaned = input.trim();
-    
-    // Check if it's a URL with a code parameter
     try {
-      // If it looks like a URL, try to extract code parameter
-      if (cleaned.includes('://') || cleaned.includes('?code=')) {
-        const url = cleaned.includes('://') ? cleaned : `https://example.com/${cleaned}`;
-        const urlObj = new URL(url);
-        const codeParam = urlObj.searchParams.get('code');
-        if (codeParam) {
-          return codeParam.toUpperCase();
+      // First try to match against an invitation token directly
+      console.log('Looking for invitation with token:', code);
+      const { data: invitation, error: inviteError } = await supabase
+        .from('class_invitations')
+        .select('*, classroom:classrooms(*)')
+        .eq('invitation_token', code)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+        
+      if (inviteError && !inviteError.message.includes('No rows found')) {
+        console.error('Error finding invitation:', inviteError);
+        return { data: null, error: inviteError };
+      }
+      
+      if (invitation) {
+        console.log('Found invitation:', invitation);
+        return {
+          data: {
+            classroomId: invitation.classroom_id,
+            invitationId: invitation.id,
+            classroom: invitation.classroom
+          },
+          error: null
+        };
+      }
+      
+      // If no invitation found, try matching against a classroom ID prefix
+      console.log('Looking for classroom with ID starting with:', code);
+      const { data: classrooms, error: classroomError } = await supabase
+        .from('classrooms')
+        .select('*');
+        
+      if (classroomError) {
+        console.error('Error finding classrooms:', classroomError);
+        return { data: null, error: classroomError };
+      }
+      
+      // Try various matching strategies if we have classrooms
+      if (classrooms && classrooms.length > 0) {
+        // Find by ID prefix match
+        const matchedClassroom = classCodeMatcher.findClassroomByPrefix(classrooms, code);
+        
+        if (matchedClassroom) {
+          console.log('Found classroom by ID prefix:', matchedClassroom);
+          return {
+            data: {
+              classroomId: matchedClassroom.id,
+              classroom: matchedClassroom
+            },
+            error: null
+          };
+        }
+        
+        // Find by partial/case-insensitive match
+        const caseInsensitiveMatch = classCodeMatcher.findClassroomByCaseInsensitive(classrooms, code);
+        
+        if (caseInsensitiveMatch) {
+          console.log('Found classroom by case-insensitive match:', caseInsensitiveMatch);
+          return {
+            data: {
+              classroomId: caseInsensitiveMatch.id,
+              classroom: caseInsensitiveMatch
+            },
+            error: null
+          };
         }
       }
-    } catch (e) {
-      // Not a valid URL, continue with other checks
+      
+      // No results found with any strategy
+      return { 
+        data: null, 
+        error: { message: 'No matching class found for this code' } 
+      };
+    } catch (err: any) {
+      console.error('Exception in findClassroomOrInvitation:', err);
+      return { 
+        data: null, 
+        error: { 
+          message: err.message || 'Error finding classroom' 
+        } 
+      };
     }
-    
-    // If the input contains only alphanumeric characters and is reasonably sized,
-    // assume it's a direct code
-    if (/^[A-Za-z0-9]{4,12}$/.test(cleaned)) {
-      return cleaned.toUpperCase();
-    }
-    
-    // Last resort: try to extract alphanumeric sequences that look like codes
-    const matches = cleaned.match(/[A-Za-z0-9]{4,12}/);
-    if (matches && matches.length > 0) {
-      return matches[0].toUpperCase();
-    }
-    
-    // Return the original input if we couldn't extract anything meaningful
-    return cleaned.toUpperCase();
   }
 };
