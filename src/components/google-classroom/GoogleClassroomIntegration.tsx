@@ -29,15 +29,27 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
       try {
         setLoading(true);
         
+        // Check if client ID is valid
+        if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") {
+          console.error("Invalid Google Client ID provided");
+          toast.error("Please configure a valid Google Client ID");
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Initializing Google Classroom with client ID:", clientId);
+        
         // Load Google API script
         await loadGoogleApi();
         
         // Initialize Google Classroom service
         const success = await GoogleClassroomService.initialize(clientId);
+        console.log("Initialization result:", success);
         setInitialized(success);
         
         if (success) {
           const isSignedIn = GoogleClassroomService.isSignedIn();
+          console.log("User is signed in:", isSignedIn);
           setSignedIn(isSignedIn);
           
           if (isSignedIn) {
@@ -58,7 +70,9 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
   const fetchCourses = async () => {
     try {
       setLoading(true);
+      console.log("Fetching courses...");
       const coursesList = await GoogleClassroomService.listCourses();
+      console.log("Courses fetched:", coursesList);
       setCourses(coursesList);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -72,11 +86,14 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
     try {
       setLoading(true);
       if (!initialized) {
+        console.log("Service not initialized, initializing...");
         await GoogleClassroomService.initialize(clientId);
         setInitialized(true);
       }
       
+      console.log("Signing in...");
       const success = await GoogleClassroomService.signIn();
+      console.log("Sign in result:", success);
       setSignedIn(success);
       
       if (success) {
@@ -108,6 +125,7 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
   };
   
   const handleImportClass = (course: GoogleClassroom) => {
+    console.log("Importing course:", course);
     setSelectedCourse(course);
     setShowImportDialog(true);
   };

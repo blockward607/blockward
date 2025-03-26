@@ -3,9 +3,9 @@
  * Service for interacting with Google Classroom API
  */
 import { toast } from "sonner";
+import { loadGoogleApi } from "@/utils/googleApiLoader";
 
 // Google API configuration
-const API_KEY = ""; // This will be populated from environment
 const DISCOVERY_DOCS = ["https://classroom.googleapis.com/$discovery/rest?version=v1"];
 const SCOPES = [
   "https://www.googleapis.com/auth/classroom.courses.readonly",
@@ -22,12 +22,14 @@ export interface GoogleClassroom {
   ownerId: string;
   creationTime?: string;
   courseState?: string;
+  enrollmentCode?: string;
 }
 
 export class GoogleClassroomService {
   private static instance: GoogleClassroomService;
   private isInitialized = false;
   private isLoading = false;
+  private clientId = "";
 
   private constructor() {}
 
@@ -45,30 +47,43 @@ export class GoogleClassroomService {
     if (this.isInitialized) return true;
     if (this.isLoading) return false;
 
+    if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") {
+      console.error("Google Client ID not provided or invalid");
+      toast.error("Google Classroom integration requires a valid client ID");
+      return false;
+    }
+
+    this.clientId = clientId;
     this.isLoading = true;
 
     try {
-      // Wait for gapi to load
+      console.log("Initializing Google API...");
+      
+      // Ensure the Google API script is loaded
+      await loadGoogleApi();
+      
       if (!window.gapi) {
-        console.error("Google API not loaded");
-        toast.error("Failed to load Google API");
-        this.isLoading = false;
-        return false;
+        throw new Error("Google API not loaded");
       }
 
       // Load the client auth2 library
-      await new Promise<void>((resolve) => {
-        window.gapi.load("client:auth2", resolve);
+      await new Promise<void>((resolve, reject) => {
+        console.log("Loading client:auth2...");
+        window.gapi.load("client:auth2", {
+          callback: resolve,
+          onerror: (error: any) => reject(new Error(`Failed to load client:auth2: ${error}`))
+        });
       });
 
       // Initialize the client
+      console.log("Initializing Google API client...");
       await window.gapi.client.init({
-        apiKey: API_KEY,
-        clientId,
+        clientId: this.clientId,
         discoveryDocs: DISCOVERY_DOCS,
         scope: SCOPES.join(" ")
       });
 
+      console.log("Google API client initialized successfully");
       this.isInitialized = true;
       this.isLoading = false;
       return true;
@@ -76,6 +91,7 @@ export class GoogleClassroomService {
       console.error("Error initializing Google API:", error);
       toast.error("Failed to initialize Google Classroom");
       this.isLoading = false;
+      this.isInitialized = false;
       return false;
     }
   }
@@ -84,17 +100,23 @@ export class GoogleClassroomService {
    * Sign in the user to Google and request permissions
    */
   public async signIn(): Promise<boolean> {
-    if (!this.isInitialized) {
-      console.error("Google API not initialized");
-      return false;
+    if (!window.gapi || !window.gapi.auth2) {
+      console.error("Google Auth API not loaded, attempting to initialize");
+      const initialized = await this.initialize(this.clientId);
+      if (!initialized) {
+        return false;
+      }
     }
 
     try {
+      console.log("Attempting to sign in with Google...");
       const authInstance = window.gapi.auth2.getAuthInstance();
       await authInstance.signIn({
         prompt: "select_account"
       });
-      return authInstance.isSignedIn.get();
+      const isSignedIn = authInstance.isSignedIn.get();
+      console.log("Google sign in result:", isSignedIn);
+      return isSignedIn;
     } catch (error) {
       console.error("Error signing in with Google:", error);
       toast.error("Failed to sign in with Google");
@@ -106,11 +128,16 @@ export class GoogleClassroomService {
    * Sign out the user from Google
    */
   public async signOut(): Promise<void> {
-    if (!this.isInitialized) return;
+    if (!window.gapi || !window.gapi.auth2) {
+      console.warn("Google Auth API not loaded, nothing to sign out from");
+      return;
+    }
 
     try {
+      console.log("Signing out from Google...");
       const authInstance = window.gapi.auth2.getAuthInstance();
       await authInstance.signOut();
+      console.log("Signed out from Google");
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -120,11 +147,14 @@ export class GoogleClassroomService {
    * Check if the user is signed in
    */
   public isSignedIn(): boolean {
-    if (!this.isInitialized) return false;
+    if (!window.gapi || !window.gapi.auth2) {
+      return false;
+    }
     
     try {
       return window.gapi.auth2.getAuthInstance().isSignedIn.get();
     } catch (error) {
+      console.error("Error checking if signed in:", error);
       return false;
     }
   }
@@ -133,18 +163,25 @@ export class GoogleClassroomService {
    * Get a list of the user's Google Classroom courses
    */
   public async listCourses(): Promise<GoogleClassroom[]> {
-    if (!this.isInitialized || !this.isSignedIn()) {
-      console.error("Google API not initialized or user not signed in");
+    if (!window.gapi || !window.gapi.client || !window.gapi.client.classroom) {
+      console.error("Google Classroom API not initialized");
+      return [];
+    }
+
+    if (!this.isSignedIn()) {
+      console.error("User not signed in to Google");
       return [];
     }
 
     try {
+      console.log("Fetching Google Classroom courses...");
       const response = await window.gapi.client.classroom.courses.list({
         pageSize: 20,
         courseStates: ["ACTIVE"]
       });
 
       if (response.result.courses && response.result.courses.length > 0) {
+        console.log(`Found ${response.result.courses.length} courses`);
         return response.result.courses.map(course => ({
           id: course.id,
           name: course.name,
@@ -152,10 +189,12 @@ export class GoogleClassroomService {
           description: course.description,
           ownerId: course.ownerId,
           creationTime: course.creationTime,
-          courseState: course.courseState
+          courseState: course.courseState,
+          enrollmentCode: course.enrollmentCode
         }));
       }
       
+      console.log("No courses found");
       return [];
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -168,18 +207,26 @@ export class GoogleClassroomService {
    * Get students for a specific course
    */
   public async listStudents(courseId: string): Promise<any[]> {
-    if (!this.isInitialized || !this.isSignedIn()) {
-      console.error("Google API not initialized or user not signed in");
+    if (!window.gapi || !window.gapi.client || !window.gapi.client.classroom) {
+      console.error("Google Classroom API not initialized");
+      return [];
+    }
+
+    if (!this.isSignedIn()) {
+      console.error("User not signed in to Google");
       return [];
     }
 
     try {
+      console.log(`Fetching students for course ${courseId}...`);
       const response = await window.gapi.client.classroom.courses.students.list({
         courseId: courseId,
         pageSize: 100
       });
 
-      return response.result.students || [];
+      const students = response.result.students || [];
+      console.log(`Found ${students.length} students for course ${courseId}`);
+      return students;
     } catch (error) {
       console.error("Error fetching students:", error);
       toast.error("Failed to fetch students from Google Classroom");
