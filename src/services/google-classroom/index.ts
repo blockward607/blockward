@@ -4,7 +4,7 @@
  */
 import apiClient from "./api-client";
 import courseService from "./course-service";
-import { GoogleClassroom, GoogleClassroomStudent } from "./types";
+import type { GoogleClassroom, GoogleClassroomStudent } from "./types";
 
 class GoogleClassroomService {
   private static instance: GoogleClassroomService;
@@ -62,5 +62,5 @@ class GoogleClassroomService {
 }
 
 // Export the singleton instance and types
-export { GoogleClassroom, GoogleClassroomStudent };
+export type { GoogleClassroom, GoogleClassroomStudent };
 export default GoogleClassroomService.getInstance();

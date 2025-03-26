@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogIn, LogOut, RotateCw, BookOpen } from "lucide-react";
-import GoogleClassroomService, { GoogleClassroom } from '@/services/google-classroom';
+import GoogleClassroomService, { type GoogleClassroom } from '@/services/google-classroom';
 import { GoogleClassroomCourseList } from './GoogleClassroomCourseList';
 import { GoogleClassroomImportDialog } from './GoogleClassroomImportDialog';
 import { toast } from 'sonner';

@@ -41,20 +41,26 @@ class GoogleApiClient {
       await new Promise<void>((resolve) => {
         console.log("Loading client:auth2...");
         window.gapi.load("client:auth2", () => {
+          console.log("client:auth2 loaded successfully");
           resolve();
         });
       });
 
       // Initialize the client with your Google Cloud project
       console.log("Initializing Google API client with client ID:", this.clientId);
-      await window.gapi.client.init({
-        apiKey: null, // Not required for OAuth flows, but the type requires it
-        clientId: this.clientId,
-        discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES.join(" ")
-      });
+      try {
+        await window.gapi.client.init({
+          apiKey: null, // Not required for OAuth flows
+          clientId: this.clientId,
+          discoveryDocs: DISCOVERY_DOCS,
+          scope: SCOPES.join(" ")
+        });
+        console.log("Google API client initialized successfully");
+      } catch (initError) {
+        console.error("Error in gapi.client.init:", initError);
+        throw initError;
+      }
 
-      console.log("Google API client initialized successfully");
       this.isInitialized = true;
       this.isLoading = false;
       return true;
