@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogIn, LogOut, RotateCw, BookOpen } from "lucide-react";
+import { LogIn, LogOut, RotateCw, BookOpen, Link2 } from "lucide-react";
 import GoogleClassroomService, { type GoogleClassroom } from '@/services/google-classroom';
 import { GoogleClassroomCourseList } from './GoogleClassroomCourseList';
 import { GoogleClassroomImportDialog } from './import-dialog/GoogleClassroomImportDialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GoogleClassroomIntegrationProps {
   clientId: string;
@@ -20,11 +21,17 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
   const [courses, setCourses] = useState<GoogleClassroom[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<GoogleClassroom | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  
+  const [accountLinked, setAccountLinked] = useState(false);
+
   useEffect(() => {
     const init = async () => {
       try {
         setLoading(true);
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.user_metadata?.google_classroom_linked) {
+          setAccountLinked(true);
+        }
         
         if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") {
           console.error("Invalid Google Client ID provided");
@@ -116,6 +123,44 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
     }
   };
   
+  const handleLinkAccount = async () => {
+    try {
+      if (signedIn) {
+        await supabase.auth.updateUser({
+          data: {
+            google_classroom_linked: true,
+            google_classroom_linked_at: new Date().toISOString()
+          }
+        });
+        
+        setAccountLinked(true);
+        toast.success("Account successfully linked to Google Classroom");
+      } else {
+        toast.error("Please sign in to Google Classroom first");
+      }
+    } catch (error) {
+      console.error("Error linking account:", error);
+      toast.error("Failed to link account");
+    }
+  };
+  
+  const handleUnlinkAccount = async () => {
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          google_classroom_linked: false,
+          google_classroom_linked_at: null
+        }
+      });
+      
+      setAccountLinked(false);
+      toast.success("Account unlinked from Google Classroom");
+    } catch (error) {
+      console.error("Error unlinking account:", error);
+      toast.error("Failed to unlink account");
+    }
+  };
+  
   const handleImportClass = (course: GoogleClassroom) => {
     console.log("Importing course:", course);
     setSelectedCourse(course);
@@ -161,8 +206,9 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
           </div>
         ) : (
           <Tabs defaultValue="courses">
-            <TabsList className="grid w-full grid-cols-1 mb-4">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="courses">My Courses</TabsTrigger>
+              <TabsTrigger value="account">Account</TabsTrigger>
             </TabsList>
             
             <TabsContent value="courses">
@@ -171,6 +217,39 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
                 onImport={handleImportClass} 
                 onRefresh={fetchCourses} 
               />
+            </TabsContent>
+            
+            <TabsContent value="account">
+              <div className="space-y-4 p-4">
+                <div className="rounded-md bg-muted p-4">
+                  <h3 className="font-medium mb-2">Google Classroom Account</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {accountLinked 
+                      ? "Your BlockWard account is linked to Google Classroom" 
+                      : "Link your BlockWard account to Google Classroom for seamless integration"}
+                  </p>
+                  
+                  {accountLinked ? (
+                    <Button variant="outline" onClick={handleUnlinkAccount} className="w-full sm:w-auto">
+                      Unlink Account
+                    </Button>
+                  ) : (
+                    <Button onClick={handleLinkAccount} className="w-full sm:w-auto flex items-center gap-2">
+                      <Link2 className="h-4 w-4" />
+                      Link Account
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="text-sm">
+                  <p className="font-medium">Benefits of linking:</p>
+                  <ul className="list-disc pl-5 mt-2 space-y-1">
+                    <li>Automatically sync class information</li>
+                    <li>Import students with one click</li>
+                    <li>Keep your BlockWard and Google Classroom data in sync</li>
+                  </ul>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         )}
