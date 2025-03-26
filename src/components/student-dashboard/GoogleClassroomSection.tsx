@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Google, Link2, Unlink, RefreshCw } from "lucide-react";
+import { BookOpen, Link2, Unlink, RefreshCw } from "lucide-react"; // Changed Google to BookOpen
 import GoogleClassroomService from "@/services/google-classroom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -188,7 +188,7 @@ export function GoogleClassroomSection() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Google className="h-5 w-5 text-red-500" />
+          <BookOpen className="h-5 w-5 text-red-500" /> {/* Changed Google to BookOpen */}
           Google Classroom
         </CardTitle>
         <CardDescription>

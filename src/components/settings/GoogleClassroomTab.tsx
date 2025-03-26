@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Google, Link2, Unlink } from "lucide-react";
+import { BookOpen, Link2, Unlink } from "lucide-react"; // Changed Google to BookOpen
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import GoogleClassroomService from "@/services/google-classroom";
@@ -161,7 +161,7 @@ export function GoogleClassroomTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Google className="h-5 w-5 text-red-500" />
+            <BookOpen className="h-5 w-5 text-red-500" /> {/* Changed Google to BookOpen */}
             Google Classroom Connection
           </CardTitle>
           <CardDescription>
