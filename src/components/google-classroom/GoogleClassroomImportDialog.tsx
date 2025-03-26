@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { GoogleClassroom } from "@/services/GoogleClassroomService";
-import GoogleClassroomService from "@/services/GoogleClassroomService";
+import { GoogleClassroom } from "@/services/google-classroom";
+import GoogleClassroomService from "@/services/google-classroom";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 

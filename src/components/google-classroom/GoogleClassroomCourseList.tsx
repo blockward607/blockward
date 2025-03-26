@@ -1,8 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download, RotateCw } from "lucide-react";
-import { GoogleClassroom } from "@/services/GoogleClassroomService";
+import { GoogleClassroom } from "@/services/google-classroom";
 
 interface GoogleClassroomCourseListProps {
   courses: GoogleClassroom[];

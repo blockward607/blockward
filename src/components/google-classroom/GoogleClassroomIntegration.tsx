@@ -1,13 +1,13 @@
+
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogIn, LogOut, RotateCw, BookOpen } from "lucide-react";
-import GoogleClassroomService, { GoogleClassroom } from '@/services/GoogleClassroomService';
+import GoogleClassroomService, { GoogleClassroom } from '@/services/google-classroom';
 import { GoogleClassroomCourseList } from './GoogleClassroomCourseList';
 import { GoogleClassroomImportDialog } from './GoogleClassroomImportDialog';
-import { loadGoogleApi } from '@/utils/googleApiLoader';
 import { toast } from 'sonner';
 
 interface GoogleClassroomIntegrationProps {
