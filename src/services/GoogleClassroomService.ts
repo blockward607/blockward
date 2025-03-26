@@ -67,17 +67,17 @@ export class GoogleClassroomService {
       }
 
       // Load the client auth2 library
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         console.log("Loading client:auth2...");
         window.gapi.load("client:auth2", () => {
           resolve();
         });
       });
 
-      // Initialize the client
-      console.log("Initializing Google API client...");
+      // Initialize the client with your Google Cloud project
+      console.log("Initializing Google API client with client ID:", this.clientId);
       await window.gapi.client.init({
-        apiKey: "", // Empty string for clientId-only auth
+        apiKey: null, // Not required for OAuth flows, but the type requires it
         clientId: this.clientId,
         discoveryDocs: DISCOVERY_DOCS,
         scope: SCOPES.join(" ")

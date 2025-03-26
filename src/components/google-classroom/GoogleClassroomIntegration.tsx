@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,9 +37,6 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
         }
         
         console.log("Initializing Google Classroom with client ID:", clientId);
-        
-        // Load Google API script
-        await loadGoogleApi();
         
         // Initialize Google Classroom service
         const success = await GoogleClassroomService.initialize(clientId);
