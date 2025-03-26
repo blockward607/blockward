@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LogIn, LogOut, RotateCw, BookOpen } from "lucide-react";
 import GoogleClassroomService, { type GoogleClassroom } from '@/services/google-classroom';
 import { GoogleClassroomCourseList } from './GoogleClassroomCourseList';
-import { GoogleClassroomImportDialog } from './GoogleClassroomImportDialog';
+import { GoogleClassroomImportDialog } from './import-dialog/GoogleClassroomImportDialog';
 import { toast } from 'sonner';
 
 interface GoogleClassroomIntegrationProps {
@@ -22,13 +21,11 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
   const [selectedCourse, setSelectedCourse] = useState<GoogleClassroom | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
   
-  // Load Google API
   useEffect(() => {
     const init = async () => {
       try {
         setLoading(true);
         
-        // Check if client ID is valid
         if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") {
           console.error("Invalid Google Client ID provided");
           toast.error("Please configure a valid Google Client ID");
@@ -38,7 +35,6 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
         
         console.log("Initializing Google Classroom with client ID:", clientId);
         
-        // Initialize Google Classroom service
         const success = await GoogleClassroomService.initialize(clientId);
         console.log("Initialization result:", success);
         setInitialized(success);
