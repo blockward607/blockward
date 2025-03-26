@@ -70,7 +70,7 @@ export class GoogleClassroomService {
       await new Promise<void>((resolve, reject) => {
         console.log("Loading client:auth2...");
         window.gapi.load("client:auth2", {
-          callback: resolve,
+          callback: () => resolve(),
           onerror: (error: any) => reject(new Error(`Failed to load client:auth2: ${error}`))
         });
       });

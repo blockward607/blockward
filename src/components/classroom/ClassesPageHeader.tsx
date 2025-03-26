@@ -41,7 +41,6 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
       
       {showCreateDialog && (
         <CreateClassroomDialog 
-          open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
           onClassroomCreated={onClassroomCreated}
         />

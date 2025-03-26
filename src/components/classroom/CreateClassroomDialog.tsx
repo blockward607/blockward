@@ -19,9 +19,10 @@ type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
 interface CreateClassroomDialogProps {
   onClassroomCreated: (newClassroom: Classroom) => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const CreateClassroomDialog = ({ onClassroomCreated }: CreateClassroomDialogProps) => {
+export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: CreateClassroomDialogProps) => {
   const [newClassroom, setNewClassroom] = useState({
     name: "",
     description: "",
@@ -60,6 +61,10 @@ export const CreateClassroomDialog = ({ onClassroomCreated }: CreateClassroomDia
         title: "Success",
         description: "New classroom created successfully"
       });
+      
+      if (onOpenChange) {
+        onOpenChange(false);
+      }
     } catch (error: any) {
       console.error('Error creating classroom:', error);
       toast({
@@ -71,13 +76,7 @@ export const CreateClassroomDialog = ({ onClassroomCreated }: CreateClassroomDia
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2 text-lg py-6 px-4">
-          <Plus className="w-5 h-5" />
-          Create New Class
-        </Button>
-      </DialogTrigger>
+    <Dialog onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
         <DialogHeader>
           <DialogTitle className="text-xl text-center text-white">Create New Classroom</DialogTitle>

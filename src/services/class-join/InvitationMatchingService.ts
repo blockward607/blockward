@@ -1,6 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ClassInvitation } from "./types";
 
+interface InvitationResult {
+  id: string;
+  classroom_id: string;
+  invitation_token: string;
+  status: string;
+  expires_at: string;
+}
+
 export const InvitationMatchingService = {
   /**
    * Try all possible ways to find a classroom or invitation by code
@@ -38,33 +46,33 @@ export const InvitationMatchingService = {
         };
       }
       
-      // Try using the DB function to find invitation (more efficient)
-      const { data: dbFunctionData, error: dbFunctionError } = await supabase
-        .rpc('find_invitation_by_code', { code_param: cleanCode });
-      
-      if (dbFunctionError && !dbFunctionError.message.includes('No rows found')) {
-        console.error("Error using DB function to find invitation:", dbFunctionError);
-        throw dbFunctionError;
-      }
-      
-      if (dbFunctionData && dbFunctionData.length > 0) {
-        const invitation = dbFunctionData[0];
-        
+      // Try using regular query as a fallback for DB function
+      // This works around the type issue with the RPC function
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('class_invitations')
+        .select('id, invitation_token, classroom_id, status, expires_at')
+        .eq('invitation_token', cleanCode)
+        .eq('status', 'pending')
+        .lt('expires_at', 'now()')
+        .maybeSingle();
+
+      if (fallbackData) {
         // Get classroom details
         const { data: classroomData } = await supabase
           .from('classrooms')
-          .select('name')
-          .eq('id', invitation.classroom_id)
+          .select('name, id')
+          .eq('id', fallbackData.classroom_id)
           .maybeSingle();
         
-        console.log("Found invitation via DB function:", invitation);
+        console.log("Found invitation via fallback query:", fallbackData);
         return {
           data: {
-            id: invitation.id,
-            code: invitation.invitation_token,
-            classroomId: invitation.classroom_id,
+            id: fallbackData.id,
+            code: fallbackData.invitation_token,
+            classroomId: fallbackData.classroom_id,
             classroomName: classroomData?.name || "Classroom",
-            invitationId: invitation.id
+            invitationId: fallbackData.id,
+            classroom: classroomData || undefined
           },
           error: null
         };
