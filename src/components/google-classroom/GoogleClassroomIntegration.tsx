@@ -1,9 +1,10 @@
+
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogIn, LogOut, RotateCw, BookOpen, Link2 } from "lucide-react";
+import { LogIn, LogOut, RotateCw, BookOpen, Link2, CheckCircle } from "lucide-react";
 import GoogleClassroomService, { type GoogleClassroom } from '@/services/google-classroom';
 import { GoogleClassroomCourseList } from './GoogleClassroomCourseList';
 import { GoogleClassroomImportDialog } from './import-dialog/GoogleClassroomImportDialog';
@@ -34,8 +35,7 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
         }
         
         if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") {
-          console.error("Invalid Google Client ID provided");
-          toast.error("Please configure a valid Google Client ID");
+          console.log("No Google Client ID provided");
           setLoading(false);
           return;
         }
@@ -57,7 +57,6 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
         }
       } catch (error) {
         console.error("Error initializing Google Classroom:", error);
-        toast.error("Failed to initialize Google Classroom");
       } finally {
         setLoading(false);
       }
@@ -98,6 +97,15 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
       if (success) {
         toast.success("Successfully connected to Google Classroom");
         fetchCourses();
+        
+        // Auto-link account on successful sign-in for better UX
+        await supabase.auth.updateUser({
+          data: {
+            google_classroom_linked: true,
+            google_classroom_linked_at: new Date().toISOString()
+          }
+        });
+        setAccountLinked(true);
       }
     } catch (error) {
       console.error("Error signing in:", error);
@@ -114,50 +122,22 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
       setSignedIn(false);
       setCourses([]);
       setSelectedCourse(null);
-      toast.success("Signed out from Google Classroom");
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Failed to sign out from Google Classroom");
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleLinkAccount = async () => {
-    try {
-      if (signedIn) {
-        await supabase.auth.updateUser({
-          data: {
-            google_classroom_linked: true,
-            google_classroom_linked_at: new Date().toISOString()
-          }
-        });
-        
-        setAccountLinked(true);
-        toast.success("Account successfully linked to Google Classroom");
-      } else {
-        toast.error("Please sign in to Google Classroom first");
-      }
-    } catch (error) {
-      console.error("Error linking account:", error);
-      toast.error("Failed to link account");
-    }
-  };
-  
-  const handleUnlinkAccount = async () => {
-    try {
+      
+      // Auto-unlink account on sign-out for better UX
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: false,
           google_classroom_linked_at: null
         }
       });
-      
       setAccountLinked(false);
-      toast.success("Account unlinked from Google Classroom");
+      
+      toast.success("Disconnected from Google Classroom");
     } catch (error) {
-      console.error("Error unlinking account:", error);
-      toast.error("Failed to unlink account");
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out from Google Classroom");
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -172,9 +152,12 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
     setSelectedCourse(null);
   };
 
+  // Determine if we should show the simple connect UI or the full integration UI
+  const showSimpleConnect = !initialized || !signedIn;
+
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className="w-full shadow-md border-purple-500/20">
+      <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/5 border-b border-purple-500/20">
         <CardTitle className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-purple-500" />
           Google Classroom Integration
@@ -184,31 +167,48 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
         </CardDescription>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="pt-6">
         {loading ? (
           <div className="space-y-3">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-purple-500 rounded-full border-t-transparent"></div>
+            </div>
+            <p className="text-center text-sm text-muted-foreground">Connecting to Google Classroom...</p>
           </div>
-        ) : !initialized ? (
-          <div className="text-center py-6">
-            <p className="text-sm text-gray-400 mb-4">Google Classroom API could not be initialized</p>
-            <Button onClick={handleSignIn}>Try Again</Button>
-          </div>
-        ) : !signedIn ? (
-          <div className="text-center py-6">
-            <p className="text-sm text-gray-400 mb-4">Connect to Google Classroom to import your classes</p>
-            <Button onClick={handleSignIn} className="gap-2">
+        ) : showSimpleConnect ? (
+          <div className="flex flex-col items-center py-10 px-4 space-y-6">
+            <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-2">
+              <BookOpen className="h-8 w-8 text-purple-500" />
+            </div>
+            
+            <div className="text-center space-y-2 max-w-md">
+              <h3 className="text-lg font-medium">Connect to Google Classroom</h3>
+              <p className="text-sm text-muted-foreground">
+                Link your Google Classroom account to import your classes and students with a single click.
+              </p>
+            </div>
+            
+            <Button 
+              onClick={handleSignIn} 
+              className="gap-2 px-6" 
+              size="lg"
+              disabled={loading || !clientId || clientId === "YOUR_GOOGLE_CLIENT_ID"}
+            >
               <LogIn className="h-4 w-4" />
-              Connect Google Classroom
+              Connect with Google
             </Button>
+            
+            {(!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") && (
+              <div className="text-sm text-amber-500 dark:text-amber-400 mt-4 text-center max-w-md">
+                Please provide a valid Google Client ID in the input field above to enable connection.
+              </div>
+            )}
           </div>
         ) : (
-          <Tabs defaultValue="courses">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="courses">My Courses</TabsTrigger>
-              <TabsTrigger value="account">Account</TabsTrigger>
+          <Tabs defaultValue="courses" className="pt-2">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="courses">My Classes</TabsTrigger>
+              <TabsTrigger value="account">Connection Status</TabsTrigger>
             </TabsList>
             
             <TabsContent value="courses">
@@ -220,34 +220,36 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
             </TabsContent>
             
             <TabsContent value="account">
-              <div className="space-y-4 p-4">
-                <div className="rounded-md bg-muted p-4">
-                  <h3 className="font-medium mb-2">Google Classroom Account</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {accountLinked 
-                      ? "Your BlockWard account is linked to Google Classroom" 
-                      : "Link your BlockWard account to Google Classroom for seamless integration"}
+              <div className="space-y-6 p-4">
+                <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                    <h3 className="font-medium">Successfully connected to Google Classroom</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Your BlockWard account is linked to Google Classroom. You can now import classes and students.
                   </p>
-                  
-                  {accountLinked ? (
-                    <Button variant="outline" onClick={handleUnlinkAccount} className="w-full sm:w-auto">
-                      Unlink Account
-                    </Button>
-                  ) : (
-                    <Button onClick={handleLinkAccount} className="w-full sm:w-auto flex items-center gap-2">
-                      <Link2 className="h-4 w-4" />
-                      Link Account
-                    </Button>
-                  )}
                 </div>
                 
-                <div className="text-sm">
-                  <p className="font-medium">Benefits of linking:</p>
-                  <ul className="list-disc pl-5 mt-2 space-y-1">
-                    <li>Automatically sync class information</li>
-                    <li>Import students with one click</li>
-                    <li>Keep your BlockWard and Google Classroom data in sync</li>
-                  </ul>
+                <div className="space-y-4">
+                  <h4 className="font-medium text-sm">Connection summary:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-3 rounded-md bg-muted">
+                      <div className="text-xs text-muted-foreground">Status</div>
+                      <div className="font-medium">Connected</div>
+                    </div>
+                    <div className="p-3 rounded-md bg-muted">
+                      <div className="text-xs text-muted-foreground">Classes available</div>
+                      <div className="font-medium">{courses.length}</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-4">
+                  <Button onClick={handleSignOut} variant="outline" className="w-full sm:w-auto gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Disconnect from Google Classroom
+                  </Button>
                 </div>
               </div>
             </TabsContent>
@@ -255,20 +257,14 @@ export function GoogleClassroomIntegration({ clientId }: GoogleClassroomIntegrat
         )}
       </CardContent>
       
-      <CardFooter className="flex justify-between">
-        {signedIn && (
-          <div className="flex gap-3">
-            <Button variant="outline" size="sm" onClick={fetchCourses} disabled={loading} className="gap-2">
-              <RotateCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut} disabled={loading} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              Disconnect
-            </Button>
-          </div>
-        )}
-      </CardFooter>
+      {!showSimpleConnect && (
+        <CardFooter className="bg-muted/50 flex justify-between">
+          <Button variant="ghost" size="sm" onClick={fetchCourses} disabled={loading} className="gap-2">
+            <RotateCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </CardFooter>
+      )}
       
       {showImportDialog && selectedCourse && (
         <GoogleClassroomImportDialog 
