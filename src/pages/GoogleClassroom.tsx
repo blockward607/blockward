@@ -34,9 +34,9 @@ const GoogleClassroom = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 font-medium">1</div>
                   <div>
-                    <h3 className="font-medium">Click "Connect to Google Classroom"</h3>
+                    <h3 className="font-medium">Click "Sign in with Google"</h3>
                     <p className="text-sm text-muted-foreground">
-                      Use the connect button to start the login process
+                      Use your Google account credentials to connect
                     </p>
                   </div>
                 </div>
@@ -44,9 +44,9 @@ const GoogleClassroom = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 font-medium">2</div>
                   <div>
-                    <h3 className="font-medium">Sign in with Google</h3>
+                    <h3 className="font-medium">Grant access permissions</h3>
                     <p className="text-sm text-muted-foreground">
-                      Enter your Google account credentials to connect
+                      Allow BlockWard to access your Google Classroom data
                     </p>
                   </div>
                 </div>
@@ -54,9 +54,9 @@ const GoogleClassroom = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 font-medium">3</div>
                   <div>
-                    <h3 className="font-medium">Grant permissions</h3>
+                    <h3 className="font-medium">Select and import a class</h3>
                     <p className="text-sm text-muted-foreground">
-                      Allow access to your Google Classroom data
+                      Choose which Google Classroom class to import
                     </p>
                   </div>
                 </div>
@@ -64,9 +64,9 @@ const GoogleClassroom = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 font-medium">4</div>
                   <div>
-                    <h3 className="font-medium">View and import your classes</h3>
+                    <h3 className="font-medium">Start managing your class</h3>
                     <p className="text-sm text-muted-foreground">
-                      After connecting, you can view and import your classes
+                      Use BlockWard features with your imported class data
                     </p>
                   </div>
                 </div>
