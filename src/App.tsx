@@ -9,8 +9,13 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AssistantBot } from "@/components/assistant/AssistantBot";
 
+// Import problematic components directly instead of lazy-loading
+import Index from "@/pages/Index";
+import GoogleClassroom from "@/pages/GoogleClassroom";
+import ViewStudentDashboard from "@/pages/StudentDashboard";
+import ViewTeacherDashboard from "@/pages/ViewTeacherDashboard";
+
 // Lazy-loaded components
-const Index = lazy(() => import("@/pages/Index"));
 const Home = lazy(() => import("@/pages/Home"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const SignUp = lazy(() => import("@/pages/SignUp"));
@@ -32,9 +37,6 @@ const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
 const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
 const Grades = lazy(() => import("@/pages/Grades"));
 const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
-const ViewStudentDashboard = lazy(() => import("@/pages/StudentDashboard"));
-const ViewTeacherDashboard = lazy(() => import("@/pages/ViewTeacherDashboard"));
-const GoogleClassroom = lazy(() => import("@/pages/GoogleClassroom"));
 
 function App() {
   return (

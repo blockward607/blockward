@@ -10,6 +10,17 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    // Improve chunk loading by using regular imports for pages instead of dynamic ones
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@/components/ui']
+        }
+      }
+    }
+  },
   plugins: [
     react(),
     mode === 'development' &&
