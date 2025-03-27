@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,18 +17,20 @@ export function SimpleGoogleClassroomIntegration() {
   // Check if the user has already connected their Google account
   useEffect(() => {
     const checkAccountConnection = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.user_metadata?.google_classroom_linked) {
-        setSignedIn(true);
-        
-        if (session.user.user_metadata.google_email) {
-          setUserEmail(session.user.user_metadata.google_email);
-        }
-        
-        // If we're signed in but don't have courses yet, fetch them
-        if (signedIn && courses.length === 0) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.user_metadata?.google_classroom_linked) {
+          setSignedIn(true);
+          
+          if (session.user.user_metadata.google_email) {
+            setUserEmail(session.user.user_metadata.google_email);
+          }
+          
+          // If we're signed in, immediately fetch courses
           fetchClassroomCourses();
         }
+      } catch (error) {
+        console.error("Error checking account connection:", error);
       }
     };
     
@@ -42,7 +43,7 @@ export function SimpleGoogleClassroomIntegration() {
       setLoading(true);
       
       // In a real implementation, this would call the Google Classroom API
-      // For now, we'll use this placeholder that would be replaced with the actual API call
+      console.log("Fetching Google Classroom courses...");
       
       // Simulate API call latency
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -69,6 +70,7 @@ export function SimpleGoogleClassroomIntegration() {
       });
       
       const data = await response.json();
+      console.log("Retrieved courses:", data.courses || []);
       setCourses(data.courses || []);
       
       toast.success("Connected to Google Classroom successfully");
@@ -112,7 +114,7 @@ export function SimpleGoogleClassroomIntegration() {
       setSignedIn(true);
       toast.success("Connected to Google Classroom");
       
-      // Fetch the user's courses
+      // Fetch the user's courses right after connecting
       fetchClassroomCourses();
       
     } catch (error) {
@@ -212,7 +214,7 @@ export function SimpleGoogleClassroomIntegration() {
             
             <TabsContent value="courses">
               <div className="space-y-4">
-                {courses.length > 0 ? (
+                {courses && courses.length > 0 ? (
                   <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                     {courses.map((course) => (
                       <div 

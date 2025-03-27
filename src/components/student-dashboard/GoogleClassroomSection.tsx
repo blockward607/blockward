@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,7 @@ export function GoogleClassroomSection() {
           setGoogleEmail(session.user.user_metadata.google_email);
         }
         
-        // Fetch classes
+        // Fetch classes immediately when we detect the user is linked
         fetchClasses();
       }
     } catch (error) {
@@ -48,7 +47,9 @@ export function GoogleClassroomSection() {
 
   const fetchClasses = async () => {
     try {
-      // In a real implementation, this would fetch data from Google Classroom API
+      setLoading(true);
+      console.log("Fetching classes...");
+      
       // Simulate API latency
       await new Promise(resolve => setTimeout(resolve, 600));
       
@@ -73,9 +74,12 @@ export function GoogleClassroomSection() {
       });
       
       const data = await response.json();
+      console.log("Retrieved classes:", data.courses || []);
       setClasses(data.courses || []);
     } catch (error) {
       console.error("Error fetching classes:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,7 +116,7 @@ export function GoogleClassroomSection() {
         description: "Your account is now linked to Google Classroom."
       });
       
-      // Fetch classes
+      // Fetch classes immediately after linking
       fetchClasses();
     } catch (error) {
       console.error("Error linking account:", error);
