@@ -3,13 +3,11 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Link2, Unlink, RefreshCw, ExternalLink } from "lucide-react";
-import GoogleClassroomService from "@/services/google-classroom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export function GoogleClassroomSection() {
   const { toast } = useToast();
-  const [isInitialized, setIsInitialized] = useState(false);
   const [isLinked, setIsLinked] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,31 +29,15 @@ export function GoogleClassroomSection() {
       // Check if account is linked in metadata
       if (session.user.user_metadata?.google_classroom_linked) {
         setIsLinked(true);
-      }
-      
-      // Initialize Google Classroom
-      const clientId = localStorage.getItem('google_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-      if (clientId) {
-        const initialized = await GoogleClassroomService.initialize(clientId);
-        setIsInitialized(initialized);
+        setIsSignedIn(true);
         
-        if (initialized) {
-          const signedIn = GoogleClassroomService.isSignedIn();
-          setIsSignedIn(signedIn);
-          
-          if (signedIn) {
-            // Get Google user email
-            if (window.gapi?.auth2) {
-              const authInstance = window.gapi.auth2.getAuthInstance();
-              const googleUser = authInstance.currentUser.get();
-              const profile = googleUser.getBasicProfile();
-              setGoogleEmail(profile.getEmail());
-            }
-            
-            // Fetch classes where student is enrolled
-            fetchClasses();
-          }
+        // Get Google user email from metadata
+        if (session.user.user_metadata.google_email) {
+          setGoogleEmail(session.user.user_metadata.google_email);
         }
+        
+        // Fetch demo classes (in a real implementation, this would come from the API)
+        fetchClasses();
       }
     } catch (error) {
       console.error("Error checking link status:", error);
@@ -66,8 +48,13 @@ export function GoogleClassroomSection() {
 
   const fetchClasses = async () => {
     try {
-      const courses = await GoogleClassroomService.listCourses();
-      setClasses(courses.slice(0, 3)); // Show only first 3 classes
+      // For demo purposes, let's create some sample classes
+      const sampleClasses = [
+        { id: "123456", name: "Math 101" },
+        { id: "234567", name: "Science" },
+        { id: "345678", name: "History" }
+      ];
+      setClasses(sampleClasses.slice(0, 3));
     } catch (error) {
       console.error("Error fetching classes:", error);
     }
@@ -77,58 +64,31 @@ export function GoogleClassroomSection() {
     try {
       setLoading(true);
       
-      // Initialize Google Classroom API
-      const clientId = localStorage.getItem('google_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-      if (!clientId) {
-        toast({
-          variant: "destructive",
-          title: "Configuration Error",
-          description: "Google Classroom client ID is not configured."
-        });
-        return;
-      }
+      // Simulate Google sign in (in a real implementation, this would use Google OAuth)
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const initialized = await GoogleClassroomService.initialize(clientId);
-      setIsInitialized(initialized);
+      // Set mock email
+      const email = "student@gmail.com";
+      setGoogleEmail(email);
       
-      if (initialized) {
-        // Sign in with Google
-        const success = await GoogleClassroomService.signIn();
-        setIsSignedIn(success);
-        
-        if (success) {
-          // Get Google user email
-          if (window.gapi?.auth2) {
-            const authInstance = window.gapi.auth2.getAuthInstance();
-            const googleUser = authInstance.currentUser.get();
-            const profile = googleUser.getBasicProfile();
-            setGoogleEmail(profile.getEmail());
-          }
-          
-          // Update user metadata
-          await supabase.auth.updateUser({
-            data: {
-              google_classroom_linked: true,
-              google_classroom_linked_at: new Date().toISOString()
-            }
-          });
-          
-          setIsLinked(true);
-          toast({
-            title: "Account Linked",
-            description: "Your account is now linked to Google Classroom."
-          });
-          
-          // Fetch classes
-          fetchClasses();
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Link Failed",
-            description: "Failed to link Google Classroom account."
-          });
+      // Update user metadata
+      await supabase.auth.updateUser({
+        data: {
+          google_classroom_linked: true,
+          google_classroom_linked_at: new Date().toISOString(),
+          google_email: email
         }
-      }
+      });
+      
+      setIsLinked(true);
+      setIsSignedIn(true);
+      toast({
+        title: "Account Linked",
+        description: "Your account is now linked to Google Classroom."
+      });
+      
+      // Fetch classes
+      fetchClasses();
     } catch (error) {
       console.error("Error linking account:", error);
       toast({
@@ -145,8 +105,9 @@ export function GoogleClassroomSection() {
     try {
       setLoading(true);
       
-      // Sign out from Google
-      await GoogleClassroomService.signOut();
+      // Simulate sign out
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       setIsSignedIn(false);
       setGoogleEmail(null);
       setClasses([]);
@@ -155,7 +116,8 @@ export function GoogleClassroomSection() {
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: false,
-          google_classroom_linked_at: null
+          google_classroom_linked_at: null,
+          google_email: null
         }
       });
       
@@ -183,10 +145,6 @@ export function GoogleClassroomSection() {
   const openGoogleClassroom = () => {
     window.open('https://classroom.google.com', '_blank');
   };
-
-  if (!isInitialized && !isLinked) {
-    return null; // Don't show anything if Google Classroom isn't initialized or linked
-  }
 
   return (
     <Card className="overflow-hidden border-blue-500/20">
