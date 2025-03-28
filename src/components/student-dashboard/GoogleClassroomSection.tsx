@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Link2, Unlink, RefreshCw, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import GoogleClassroomService from '@/services/google-classroom';
 
 export function GoogleClassroomSection() {
   const { toast } = useToast();
@@ -51,32 +52,54 @@ export function GoogleClassroomSection() {
       setLoading(true);
       console.log("Fetching classes...");
       
-      // Simulate API latency
-      await new Promise(resolve => setTimeout(resolve, 600));
+      let classData = [];
       
-      const response = await fetch('https://classroom.googleapis.com/v1/courses', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('google_access_token')}`,
+      // Try to use the Google Classroom service if possible
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (clientId && isSignedIn) {
+        try {
+          // Initialize and try to use the real service
+          await GoogleClassroomService.initialize(clientId);
+          if (GoogleClassroomService.isSignedIn()) {
+            classData = await GoogleClassroomService.listCourses();
+            console.log("Retrieved classes from Google API:", classData);
+          }
+        } catch (e) {
+          console.error("Error using Google Classroom service:", e);
         }
-      }).catch(error => {
-        console.log('Using mock data because:', error);
-        
-        // Mock response when we can't connect to the real API yet
-        return {
-          ok: true,
-          json: async () => ({
-            courses: [
-              { id: "123456", name: "Math 101", section: "Period 1" },
-              { id: "234567", name: "Science", section: "Period 2" },
-              { id: "345678", name: "History", section: "Period 3" }
-            ]
-          })
-        };
-      });
+      }
       
-      const data = await response.json();
-      console.log("Retrieved classes:", data.courses || []);
-      setClasses(data.courses || []);
+      // If we couldn't get real data, use mock data
+      if (classData.length === 0) {
+        // Simulate API latency
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        const response = await fetch('https://classroom.googleapis.com/v1/courses', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('google_access_token')}`,
+          }
+        }).catch(error => {
+          console.log('Using mock data because:', error);
+          
+          // Mock response when we can't connect to the real API yet
+          return {
+            ok: true,
+            json: async () => ({
+              courses: [
+                { id: "123456", name: "Math 101", section: "Period 1" },
+                { id: "234567", name: "Science", section: "Period 2" },
+                { id: "345678", name: "History", section: "Period 3" }
+              ]
+            })
+          };
+        });
+        
+        const data = await response.json();
+        classData = data.courses || [];
+      }
+      
+      console.log("Final class data:", classData);
+      setClasses(classData);
     } catch (error) {
       console.error("Error fetching classes:", error);
     } finally {
@@ -88,27 +111,49 @@ export function GoogleClassroomSection() {
     try {
       setLoading(true);
       
-      // In a real implementation, this would:
-      // 1. Redirect to Google OAuth flow
-      // 2. Get authorization code
-      // 3. Exchange code for access token
-      // 4. Store the token securely
+      let googleEmail = null;
       
-      // Simulate OAuth flow
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Try to use the actual Google Classroom service for authentication
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (clientId) {
+        try {
+          console.log("Attempting to initialize Google Classroom with client ID");
+          await GoogleClassroomService.initialize(clientId);
+          const success = await GoogleClassroomService.signIn();
+          
+          if (success && window.gapi?.auth2) {
+            // Get the actual Google user email
+            const authInstance = window.gapi.auth2.getAuthInstance();
+            const googleUser = authInstance.currentUser.get();
+            const profile = googleUser.getBasicProfile();
+            googleEmail = profile.getEmail();
+            console.log("Successfully authenticated with Google:", googleEmail);
+          }
+        } catch (e) {
+          console.error("Error using Google Classroom service:", e);
+        }
+      }
       
-      // Get the user's current email from Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
-      // Use the user's actual email instead of hardcoded value
-      const email = session?.user?.email || "";
-      setGoogleEmail(email);
+      // If we couldn't get the Google email, fall back to mock behavior
+      if (!googleEmail) {
+        // Simulate OAuth flow
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Get the user's current email from Supabase session
+        const { data: { session } } = await supabase.auth.getSession();
+        // Use the user's actual email instead of hardcoded value
+        googleEmail = session?.user?.email || "";
+        console.log("Using fallback email:", googleEmail);
+      }
+      
+      setGoogleEmail(googleEmail);
       
       // Update user metadata
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: true,
           google_classroom_linked_at: new Date().toISOString(),
-          google_email: email
+          google_email: googleEmail
         }
       });
       
@@ -137,9 +182,15 @@ export function GoogleClassroomSection() {
     try {
       setLoading(true);
       
-      // In a real implementation:
-      // 1. Revoke Google access token
-      // 2. Clear any stored tokens
+      // Try to sign out using the Google Classroom service
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (clientId) {
+        try {
+          await GoogleClassroomService.signOut();
+        } catch (e) {
+          console.error("Error signing out from Google Classroom service:", e);
+        }
+      }
       
       setIsSignedIn(false);
       setGoogleEmail(null);

@@ -7,6 +7,7 @@ import { LogIn, LogOut, RotateCw, BookOpen, CheckCircle, ExternalLink } from "lu
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import GoogleClassroomService from '@/services/google-classroom';
 
 export function SimpleGoogleClassroomIntegration() {
   const [loading, setLoading] = useState(false);
@@ -87,33 +88,51 @@ export function SimpleGoogleClassroomIntegration() {
     try {
       setLoading(true);
       
-      // This would normally redirect to Google's OAuth flow
-      // We're simulating a successful authentication for now
+      // Initialize Google Classroom Service if available
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      console.log("Attempting to initialize Google Classroom with client ID:", clientId ? "Available" : "Not available");
       
-      // 1. In a real implementation, we would:
-      //    - Redirect to Google's OAuth consent screen
-      //    - Get authorization code
-      //    - Exchange code for access token
-      //    - Store token in localStorage or secure cookie
+      let googleEmail = null;
+
+      if (clientId) {
+        try {
+          // Try to use the actual Google Classroom service
+          await GoogleClassroomService.initialize(clientId);
+          const success = await GoogleClassroomService.signIn();
+          
+          if (success && window.gapi?.auth2) {
+            // Get the actual Google user email
+            const authInstance = window.gapi.auth2.getAuthInstance();
+            const googleUser = authInstance.currentUser.get();
+            const profile = googleUser.getBasicProfile();
+            googleEmail = profile.getEmail();
+            console.log("Successfully got Google email:", googleEmail);
+          }
+        } catch (e) {
+          console.error("Error using Google Classroom service:", e);
+        }
+      }
       
-      // Simulate OAuth flow completion
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // If we couldn't get the Google email, fall back to mock behavior
+      if (!googleEmail) {
+        // Simulate OAuth flow completion for demo purposes
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Get the user's current email as a fallback - in a real implementation
+        // we would never use this, but would instead get the actual Google email
+        const { data: { session } } = await supabase.auth.getSession();
+        googleEmail = session?.user?.email || "";
+        console.log("Using fallback email:", googleEmail);
+      }
       
-      // In real implementation, this would get the actual user's Google email
-      // from the OAuth response, not a hardcoded one
-      
-      // Get the user's current email as a fallback
-      const { data: { session } } = await supabase.auth.getSession();
-      // Use the user's actual email instead of a hardcoded one
-      const email = session?.user?.email || "";
-      setUserEmail(email);
+      setUserEmail(googleEmail);
       
       // Update user metadata in Supabase
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: true,
           google_classroom_linked_at: new Date().toISOString(),
-          google_email: email
+          google_email: googleEmail
         }
       });
       
@@ -135,10 +154,15 @@ export function SimpleGoogleClassroomIntegration() {
     try {
       setLoading(true);
       
-      // In a real implementation:
-      // 1. Revoke Google access token
-      // 2. Clear any stored tokens
-      // 3. Update user metadata
+      // Try to use the actual Google Classroom service to sign out
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (clientId) {
+        try {
+          await GoogleClassroomService.signOut();
+        } catch (e) {
+          console.error("Error signing out from Google Classroom service:", e);
+        }
+      }
       
       await supabase.auth.updateUser({
         data: {
