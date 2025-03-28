@@ -3,17 +3,19 @@ import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogIn, LogOut, RotateCw, BookOpen, CheckCircle, ExternalLink } from "lucide-react";
+import { LogIn, LogOut, RotateCw, BookOpen, CheckCircle, ExternalLink, AlertCircle } from "lucide-react";
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import GoogleClassroomService from '@/services/google-classroom';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function SimpleGoogleClassroomIntegration() {
   const [loading, setLoading] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
+  const [usingDemoMode, setUsingDemoMode] = useState(false);
   const navigate = useNavigate();
 
   // Check if the user has already connected their Google account
@@ -37,6 +39,15 @@ export function SimpleGoogleClassroomIntegration() {
     };
     
     checkAccountConnection();
+  }, []);
+
+  // Check if we have a client ID and set demo mode accordingly
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.log("No Google Client ID available - using demo mode");
+      setUsingDemoMode(true);
+    }
   }, []);
   
   // This would be the actual function to fetch real Google Classroom courses in a full implementation
@@ -66,35 +77,25 @@ export function SimpleGoogleClassroomIntegration() {
         }
       }
       
+      // If no client ID or error, use demo mode with mock data
       // Simulate API call latency
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // This represents where the real API data would be processed
-      const response = await fetch('https://classroom.googleapis.com/v1/courses', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('google_access_token')}`,
-        }
-      }).catch(error => {
-        console.log('Using mock data because:', error);
-        
-        // Mock response when we can't connect to the real API
-        return {
-          ok: true,
-          json: async () => ({
-            courses: [
-              { id: '123456', name: 'Biology 101', section: 'Period 1' },
-              { id: '234567', name: 'Chemistry', section: 'Period 2' },
-              { id: '345678', name: 'Physics', section: 'Period 3' }
-            ]
-          })
-        };
-      });
+      // This is demo mode with sample data
+      const sampleCourses = [
+        { id: '123456', name: 'Biology 101', section: 'Period 1' },
+        { id: '234567', name: 'Chemistry', section: 'Period 2' },
+        { id: '345678', name: 'Physics', section: 'Period 3' }
+      ];
       
-      const data = await response.json();
-      console.log("Retrieved courses:", data.courses || []);
-      setCourses(data.courses || []);
+      console.log("Using demo courses:", sampleCourses);
+      setCourses(sampleCourses);
       
-      toast.success("Connected to Google Classroom successfully");
+      if (usingDemoMode) {
+        toast.success("Demo mode: Showing example classes");
+      } else {
+        toast.success("Connected to Google Classroom successfully");
+      }
     } catch (error) {
       console.error("Error fetching courses:", error);
       toast.error("Could not retrieve your Google Classroom data");
@@ -107,29 +108,52 @@ export function SimpleGoogleClassroomIntegration() {
     try {
       setLoading(true);
       
-      // Initialize Google Classroom Service if available
+      // Check if we're in demo mode
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        console.log("No Google Client ID available - using demo mode");
+        setUsingDemoMode(true);
+        
+        // Use a fake email for demo mode
+        const demoEmail = "demo.user@gmail.com";
+        setGoogleEmail(demoEmail);
+        
+        // Update user metadata
+        await supabase.auth.updateUser({
+          data: {
+            google_classroom_linked: true,
+            google_classroom_linked_at: new Date().toISOString(),
+            google_email: demoEmail
+          }
+        });
+        
+        setSignedIn(true);
+        toast.success(`Demo mode: Connected as ${demoEmail}`);
+        
+        // Fetch demo courses
+        fetchClassroomCourses();
+        return;
+      }
+      
       console.log("Attempting to initialize Google Classroom with client ID:", clientId ? "Available" : "Not available");
       
       let googleEmail = null;
 
-      if (clientId) {
-        try {
-          // Try to use the actual Google Classroom service
-          await GoogleClassroomService.initialize(clientId);
-          const success = await GoogleClassroomService.signIn();
-          
-          if (success && window.gapi?.auth2) {
-            // Get the actual Google user email
-            const authInstance = window.gapi.auth2.getAuthInstance();
-            const googleUser = authInstance.currentUser.get();
-            const profile = googleUser.getBasicProfile();
-            googleEmail = profile.getEmail();
-            console.log("Successfully signed in with Google email:", googleEmail);
-          }
-        } catch (e) {
-          console.error("Error using Google Classroom service:", e);
+      try {
+        // Try to use the actual Google Classroom service
+        await GoogleClassroomService.initialize(clientId);
+        const success = await GoogleClassroomService.signIn();
+        
+        if (success && window.gapi?.auth2) {
+          // Get the actual Google user email
+          const authInstance = window.gapi.auth2.getAuthInstance();
+          const googleUser = authInstance.currentUser.get();
+          const profile = googleUser.getBasicProfile();
+          googleEmail = profile.getEmail();
+          console.log("Successfully signed in with Google email:", googleEmail);
         }
+      } catch (e) {
+        console.error("Error using Google Classroom service:", e);
       }
       
       // If we couldn't get the Google email, show an error
@@ -189,6 +213,7 @@ export function SimpleGoogleClassroomIntegration() {
       setSignedIn(false);
       setCourses([]);
       setGoogleEmail(null);
+      setUsingDemoMode(false);
       toast.success("Disconnected from Google Classroom");
       
     } catch (error) {
@@ -222,6 +247,17 @@ export function SimpleGoogleClassroomIntegration() {
       </CardHeader>
       
       <CardContent className="pt-6">
+        {usingDemoMode && !signedIn && (
+          <Alert className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Demo Mode Active</AlertTitle>
+            <AlertDescription>
+              You're using the free demo version of Google Classroom integration. 
+              Sample data will be shown instead of real Google Classroom data.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10">
             <div className="animate-spin h-8 w-8 border-4 border-purple-500 rounded-full border-t-transparent"></div>
@@ -236,7 +272,9 @@ export function SimpleGoogleClassroomIntegration() {
             <div className="text-center space-y-2 max-w-md">
               <h3 className="text-lg font-medium">Connect to Google Classroom</h3>
               <p className="text-sm text-muted-foreground">
-                Sign in with your Google account to access your classroom data.
+                {usingDemoMode 
+                  ? "Sign in to see example Google Classroom data (demo mode)"
+                  : "Sign in with your Google account to access your classroom data."}
               </p>
             </div>
             
@@ -246,7 +284,7 @@ export function SimpleGoogleClassroomIntegration() {
               size="lg"
             >
               <LogIn className="h-4 w-4" />
-              Sign in with Google
+              {usingDemoMode ? "Try Demo" : "Sign in with Google"}
             </Button>
           </div>
         ) : (
@@ -258,6 +296,16 @@ export function SimpleGoogleClassroomIntegration() {
             
             <TabsContent value="courses">
               <div className="space-y-4">
+                {usingDemoMode && (
+                  <Alert variant="warning" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Demo Mode</AlertTitle>
+                    <AlertDescription>
+                      Showing example classes. Set up your Google Client ID for real data.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 {courses && courses.length > 0 ? (
                   <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                     {courses.map((course) => (
@@ -314,7 +362,9 @@ export function SimpleGoogleClassroomIntegration() {
                     <h3 className="font-medium">Connected to Google Classroom</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Your account is linked with Google Classroom.
+                    {usingDemoMode 
+                      ? "You're using demo mode with sample data"
+                      : "Your account is linked with Google Classroom."}
                   </p>
                 </div>
                 
@@ -322,6 +372,9 @@ export function SimpleGoogleClassroomIntegration() {
                   <div className="p-3 rounded-md bg-muted">
                     <div className="text-xs text-muted-foreground">Connected as</div>
                     <div className="font-medium">{googleEmail}</div>
+                    {usingDemoMode && (
+                      <div className="text-xs text-amber-500 mt-1">(Demo account)</div>
+                    )}
                   </div>
                 )}
                 
