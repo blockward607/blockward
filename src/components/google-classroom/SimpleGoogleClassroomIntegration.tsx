@@ -13,7 +13,7 @@ export function SimpleGoogleClassroomIntegration() {
   const [loading, setLoading] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [googleEmail, setGoogleEmail] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Check if the user has already connected their Google account
@@ -25,7 +25,7 @@ export function SimpleGoogleClassroomIntegration() {
           setSignedIn(true);
           
           if (session.user.user_metadata.google_email) {
-            setUserEmail(session.user.user_metadata.google_email);
+            setGoogleEmail(session.user.user_metadata.google_email);
           }
           
           // If we're signed in, immediately fetch courses
@@ -46,6 +46,25 @@ export function SimpleGoogleClassroomIntegration() {
       
       // In a real implementation, this would call the Google Classroom API
       console.log("Fetching Google Classroom courses...");
+      
+      // Try to use the Google Classroom service if properly initialized
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (clientId && googleEmail) {
+        try {
+          await GoogleClassroomService.initialize(clientId);
+          if (GoogleClassroomService.isSignedIn()) {
+            const realCourses = await GoogleClassroomService.listCourses();
+            if (realCourses && realCourses.length > 0) {
+              console.log("Retrieved courses from API:", realCourses);
+              setCourses(realCourses);
+              toast.success("Connected to Google Classroom successfully");
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("Error using Google Classroom service:", e);
+        }
+      }
       
       // Simulate API call latency
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -106,26 +125,21 @@ export function SimpleGoogleClassroomIntegration() {
             const googleUser = authInstance.currentUser.get();
             const profile = googleUser.getBasicProfile();
             googleEmail = profile.getEmail();
-            console.log("Successfully got Google email:", googleEmail);
+            console.log("Successfully signed in with Google email:", googleEmail);
           }
         } catch (e) {
           console.error("Error using Google Classroom service:", e);
         }
       }
       
-      // If we couldn't get the Google email, fall back to mock behavior
+      // If we couldn't get the Google email, show an error
       if (!googleEmail) {
-        // Simulate OAuth flow completion for demo purposes
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Get the user's current email as a fallback - in a real implementation
-        // we would never use this, but would instead get the actual Google email
-        const { data: { session } } = await supabase.auth.getSession();
-        googleEmail = session?.user?.email || "";
-        console.log("Using fallback email:", googleEmail);
+        toast.error("Failed to connect with Google Classroom. Please try again.");
+        setLoading(false);
+        return;
       }
       
-      setUserEmail(googleEmail);
+      setGoogleEmail(googleEmail);
       
       // Update user metadata in Supabase
       await supabase.auth.updateUser({
@@ -137,7 +151,7 @@ export function SimpleGoogleClassroomIntegration() {
       });
       
       setSignedIn(true);
-      toast.success("Connected to Google Classroom");
+      toast.success(`Connected to Google Classroom with ${googleEmail}`);
       
       // Fetch the user's courses right after connecting
       fetchClassroomCourses();
@@ -174,7 +188,7 @@ export function SimpleGoogleClassroomIntegration() {
       
       setSignedIn(false);
       setCourses([]);
-      setUserEmail(null);
+      setGoogleEmail(null);
       toast.success("Disconnected from Google Classroom");
       
     } catch (error) {
@@ -304,10 +318,10 @@ export function SimpleGoogleClassroomIntegration() {
                   </p>
                 </div>
                 
-                {userEmail && (
+                {googleEmail && (
                   <div className="p-3 rounded-md bg-muted">
                     <div className="text-xs text-muted-foreground">Connected as</div>
-                    <div className="font-medium">{userEmail}</div>
+                    <div className="font-medium">{googleEmail}</div>
                   </div>
                 )}
                 

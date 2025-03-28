@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,8 @@ export function GoogleClassroomTab() {
         return;
       }
 
+      setUserEmail(session.user.email);
+
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
       if (clientId) {
         await GoogleClassroomService.initialize(clientId);
@@ -36,13 +39,21 @@ export function GoogleClassroomTab() {
         setIsLinked(isSignedIn);
         
         if (isSignedIn && window.gapi?.auth2) {
-          const authInstance = window.gapi.auth2.getAuthInstance();
-          const googleUser = authInstance.currentUser.get();
-          const profile = googleUser.getBasicProfile();
-          const email = profile.getEmail();
-          
-          const googleEmail = email.endsWith('@gmail.com') ? email : null;
-          setGoogleEmail(googleEmail);
+          try {
+            const authInstance = window.gapi.auth2.getAuthInstance();
+            const googleUser = authInstance.currentUser.get();
+            const profile = googleUser.getBasicProfile();
+            const email = profile.getEmail();
+            setGoogleEmail(email);
+          } catch (error) {
+            console.error("Error getting Google profile:", error);
+            // Check if metadata has the Google email
+            if (session.user.user_metadata?.google_email) {
+              setGoogleEmail(session.user.user_metadata.google_email);
+            }
+          }
+        } else if (session.user.user_metadata?.google_email) {
+          setGoogleEmail(session.user.user_metadata.google_email);
         }
       }
     } catch (error) {
@@ -76,21 +87,20 @@ export function GoogleClassroomTab() {
         const profile = googleUser.getBasicProfile();
         const email = profile.getEmail();
         
-        const googleEmail = email.endsWith('@gmail.com') ? email : null;
-        setGoogleEmail(googleEmail);
+        setGoogleEmail(email);
         
         await supabase.auth.updateUser({
           data: {
             google_classroom_linked: true,
             google_classroom_linked_at: new Date().toISOString(),
-            google_email: googleEmail
+            google_email: email
           }
         });
         
         setIsLinked(true);
         toast({
           title: "Account Linked",
-          description: "Your BlockWard account is now linked to Google Classroom."
+          description: `Your BlockWard account is now linked to Google Classroom as ${email}`
         });
       } else {
         toast({
@@ -127,7 +137,8 @@ export function GoogleClassroomTab() {
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: false,
-          google_classroom_linked_at: null
+          google_classroom_linked_at: null,
+          google_email: null
         }
       });
     } catch (error) {

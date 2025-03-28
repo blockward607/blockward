@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,11 +114,8 @@ export function GoogleClassroomSection() {
             const authInstance = window.gapi.auth2.getAuthInstance();
             const googleUser = authInstance.currentUser.get();
             const profile = googleUser.getBasicProfile();
-            const email = profile.getEmail();
-            
-            if (email.endsWith('@gmail.com')) {
-              googleEmail = email;
-            }
+            googleEmail = profile.getEmail();
+            console.log("Successfully signed in with Google email:", googleEmail);
           }
         } catch (e) {
           console.error("Error using Google Classroom service:", e);
@@ -125,8 +123,13 @@ export function GoogleClassroomSection() {
       }
       
       if (!googleEmail) {
-        const { data: { session } } = await supabase.auth.getSession();
-        googleEmail = session?.user?.email || "";
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to connect with Google Classroom. Please try again."
+        });
+        setLoading(false);
+        return;
       }
       
       setGoogleEmail(googleEmail);
@@ -143,7 +146,7 @@ export function GoogleClassroomSection() {
       setIsSignedIn(true);
       toast({
         title: "Account Linked",
-        description: "Your account is now linked to Google Classroom."
+        description: `Your account is now linked to Google Classroom as ${googleEmail}`
       });
       
       fetchClasses();
