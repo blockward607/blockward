@@ -1,99 +1,20 @@
 
-import { useState, useEffect } from "react";
-import { Loader2, Camera, CameraOff } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Html5QrcodeScanner } from "html5-qrcode";
 import { useJoinClassContext } from "./JoinClassContext";
-import { useJoinClass } from "./useJoinClass";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { QRCodeScanner } from "../QRCodeScanner";
 
 export const QRScanTab = () => {
-  const { loading, error, setInvitationCode } = useJoinClassContext();
-  const { handleJoinClass } = useJoinClass();
+  const { loading, error, joinClassWithCode } = useJoinClassContext();
   const [scanning, setScanning] = useState(false);
-  const [scannerInitialized, setScannerInitialized] = useState(false);
-  const [scannerMessage, setScannerMessage] = useState("");
 
-  useEffect(() => {
-    let qrScanner: Html5QrcodeScanner | null = null;
-
-    const initializeScanner = () => {
-      if (scanning && !scannerInitialized) {
-        setScannerMessage("Starting camera...");
-
-        // Clean up previous scanner instance if it exists
-        const oldElement = document.getElementById("qr-reader");
-        if (oldElement) {
-          oldElement.innerHTML = "";
-        }
-
-        try {
-          qrScanner = new Html5QrcodeScanner(
-            "qr-reader",
-            { 
-              fps: 10, 
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0,
-              showTorchButtonIfSupported: true,
-              showZoomSliderIfSupported: true,
-            },
-            false
-          );
-
-          qrScanner.render(
-            // Success callback
-            (decodedText) => {
-              console.log("QR Code scanned:", decodedText);
-              setScannerMessage("QR Code detected!");
-              
-              // Stop scanning
-              if (qrScanner) {
-                qrScanner.clear();
-              }
-              
-              // Process the code and join the class
-              setInvitationCode(decodedText);
-              handleJoinClass();
-              setScanning(false);
-            },
-            // Error callback
-            (errorMessage) => {
-              // Ignore errors during scanning - these are usually just frames without QR codes
-              console.debug("QR Scanner error (normal during scanning):", errorMessage);
-            }
-          );
-          
-          setScannerInitialized(true);
-          setScannerMessage("Camera active. Point at a QR code.");
-        } catch (error) {
-          console.error("Error initializing QR scanner:", error);
-          setScannerMessage("Error accessing camera. Please check permissions.");
-          setScanning(false);
-        }
-      }
-    };
-
-    if (scanning) {
-      initializeScanner();
-    }
-
-    return () => {
-      if (qrScanner) {
-        try {
-          qrScanner.clear();
-        } catch (error) {
-          console.error("Error clearing QR scanner:", error);
-        }
-      }
-    };
-  }, [scanning, scannerInitialized, setInvitationCode, handleJoinClass]);
-
-  const toggleScanner = () => {
-    if (scanning) {
-      setScannerInitialized(false);
-    }
-    setScanning(!scanning);
+  const handleQRCodeScanned = (code: string) => {
+    console.log("QR code scanned:", code);
+    setScanning(false);
+    joinClassWithCode(code);
   };
 
   return (
@@ -107,20 +28,14 @@ export const QRScanTab = () => {
       
       <div className="flex flex-col items-center gap-4">
         <Button
-          onClick={toggleScanner}
+          onClick={() => setScanning(!scanning)}
           disabled={loading}
-          variant={scanning ? "destructive" : "default"}
-          className={scanning ? "bg-red-700 hover:bg-red-800" : "bg-purple-700 hover:bg-purple-800"}
+          className="bg-purple-700 hover:bg-purple-800"
         >
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Processing...
-            </>
-          ) : scanning ? (
-            <>
-              <CameraOff className="w-4 h-4 mr-2" />
-              Stop Camera
             </>
           ) : (
             <>
@@ -131,12 +46,11 @@ export const QRScanTab = () => {
         </Button>
         
         {scanning && (
-          <div className="flex flex-col items-center gap-2 w-full">
-            <p className="text-sm text-center text-gray-300">{scannerMessage}</p>
-            <div 
-              id="qr-reader" 
-              className="w-full max-w-[300px] overflow-hidden rounded-lg"
-            ></div>
+          <div className="mt-4 w-full max-w-md bg-black/50 border border-purple-500/30 rounded-lg p-4">
+            <QRCodeScanner
+              onScan={handleQRCodeScanned}
+              onClose={() => setScanning(false)}
+            />
           </div>
         )}
         

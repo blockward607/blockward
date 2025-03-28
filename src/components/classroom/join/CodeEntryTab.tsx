@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, UserPlus } from "lucide-react";
 import { useJoinClassContext } from "./JoinClassContext";
-import { useJoinClass } from "./useJoinClass";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
@@ -11,17 +10,14 @@ import { useLocation } from "react-router-dom";
 import { ClassJoinService } from "@/services/class-join";
 
 export const CodeEntryTab = () => {
-  const { invitationCode, setInvitationCode, loading, error } = useJoinClassContext();
-  const { handleJoinClass } = useJoinClass();
+  const { invitationCode, setInvitationCode, loading, error, joinClassWithCode } = useJoinClassContext();
   const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
   const [enteredCode, setEnteredCode] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Store input as user types but don't immediately set the invitationCode
-    // This allows for better validation before submission
-    setEnteredCode(e.target.value.trim().toUpperCase());
+    setEnteredCode(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -35,20 +31,7 @@ export const CodeEntryTab = () => {
     if (!enteredCode) return;
     
     console.log("[CodeEntryTab] Processing code for submission:", enteredCode);
-    
-    // Process and clean the code before joining
-    const processedCode = ClassJoinService.extractCodeFromInput(enteredCode);
-    console.log("[CodeEntryTab] Processed code for joining:", processedCode);
-    
-    if (processedCode) {
-      setInvitationCode(processedCode);
-      handleJoinClass();
-    } else {
-      // If code couldn't be processed, try with original input as a fallback
-      console.log("[CodeEntryTab] Using original input as fallback:", enteredCode);
-      setInvitationCode(enteredCode);
-      handleJoinClass();
-    }
+    joinClassWithCode(enteredCode);
   };
 
   // Focus the input field when component mounts
@@ -75,33 +58,16 @@ export const CodeEntryTab = () => {
           code = location.state.joinCode;
         }
         
-        // Try to extract from the full URL if no explicit code parameter is found
-        if (!code) {
-          const fullUrl = window.location.href;
-          code = ClassJoinService.extractCodeFromInput(fullUrl);
-        }
-        
         if (code) {
-          console.log("[CodeEntryTab] Auto-joining with potential code:", code);
+          console.log("[CodeEntryTab] Auto-joining with code:", code);
+          setEnteredCode(code);
+          setInvitationCode(code);
+          setAutoJoinAttempted(true);
           
-          // Process the code with a more robust extraction logic
-          const processedCode = ClassJoinService.extractCodeFromInput(code);
-          
-          if (processedCode) {
-            console.log("[CodeEntryTab] Processed code for auto-join:", processedCode);
-            
-            // Set the code in state
-            setInvitationCode(processedCode);
-            setEnteredCode(processedCode);
-            setAutoJoinAttempted(true);
-            
-            // Small delay to ensure UI is ready
-            setTimeout(() => {
-              handleJoinClass();
-            }, 500);
-          } else {
-            console.log("[CodeEntryTab] Could not process the code:", code);
-          }
+          // Small delay to ensure UI is ready
+          setTimeout(() => {
+            joinClassWithCode(code);
+          }, 500);
         }
       } catch (error) {
         console.error("[CodeEntryTab] Error in auto-join:", error);
@@ -109,7 +75,7 @@ export const CodeEntryTab = () => {
     };
     
     attemptAutoJoin();
-  }, [loading, autoJoinAttempted, handleJoinClass, setInvitationCode, location]);
+  }, [loading, autoJoinAttempted, joinClassWithCode, setInvitationCode, location]);
 
   return (
     <div className="space-y-4">

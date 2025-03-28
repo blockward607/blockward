@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Html5Qrcode } from "html5-qrcode";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 interface QRCodeScannerProps {
   onScan: (code: string) => void;
@@ -37,6 +37,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
             },
             (decodedText) => {
               // On QR code detected
+              console.log("QR code detected:", decodedText);
               onScan(decodedText);
               if (scanner) {
                 scanner.stop().catch(error => console.error("Error stopping scanner:", error));

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { ClassJoinService } from '@/services/class-join';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 type JoinClassContextType = {
   invitationCode: string;
@@ -37,8 +38,14 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const joinClassWithCode = useCallback(async (classCode: string) => {
+    if (!classCode.trim()) {
+      setError('Please enter a valid class code');
+      return;
+    }
+
     if (!user) {
       setError('You must be logged in to join a class');
       toast({
@@ -56,7 +63,11 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       const cleanCode = classCode.trim().toUpperCase();
 
-      const { data: foundClass, error: findError } = await ClassJoinService.findClassroomOrInvitation(cleanCode);
+      // Process code to extract the actual invitation code (handle URLs, etc.)
+      const processedCode = ClassJoinService.extractCodeFromInput(cleanCode) || cleanCode;
+      console.log('Processed code for joining:', processedCode);
+      
+      const { data: foundClass, error: findError } = await ClassJoinService.findClassroomOrInvitation(processedCode);
       
       if (findError || !foundClass) {
         console.error('Error finding class:', findError);
@@ -81,11 +92,11 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       
       if (existingEnrollment) {
-        setError('You are already enrolled in this class');
         toast({
           title: 'Already Enrolled',
           description: 'You are already enrolled in this class',
         });
+        navigate(`/class/${foundClass.classroomId}`);
         return;
       }
       
@@ -116,7 +127,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
       
       setInvitationCode('');
-      window.location.href = `/class/${foundClass.classroomId}`;
+      navigate(`/class/${foundClass.classroomId}`);
       
     } catch (err: any) {
       console.error('Exception in joinClassWithCode:', err);
@@ -129,7 +140,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setLoading(false);
     }
-  }, [user, toast, setInvitationCode, setLoading, setError]);
+  }, [user, toast, navigate, setInvitationCode, setLoading, setError]);
 
   const contextValue: JoinClassContextType = {
     invitationCode,

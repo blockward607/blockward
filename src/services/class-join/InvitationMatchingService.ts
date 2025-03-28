@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { JoinClassroomResult, SupabaseError } from "./types";
 import { classCodeMatcher } from "@/utils/classCodeMatcher";
+import { codeExtractor } from "@/utils/codeExtractor";
 
 export const InvitationMatchingService = {
   /**
@@ -11,67 +12,7 @@ export const InvitationMatchingService = {
    * - URL with path: "https://example.com/join/ABC123"
    */
   extractCodeFromInput(input: string): string | null {
-    if (!input) return null;
-    
-    // Clean the input
-    input = input.trim();
-    
-    try {
-      // Check if it's a URL and try to extract code from it
-      if (input.includes('://') || input.startsWith('www.')) {
-        // Try to extract code from URL query parameter
-        try {
-          const url = new URL(input.startsWith('www.') ? `https://${input}` : input);
-          
-          // Check for code in query parameters with different possible names
-          const codeFromQuery = url.searchParams.get('code') || 
-                               url.searchParams.get('join') || 
-                               url.searchParams.get('invite') ||
-                               url.searchParams.get('class');
-          
-          if (codeFromQuery) {
-            return codeFromQuery;
-          }
-          
-          // Check for code in path segments
-          const pathSegments = url.pathname.split('/').filter(segment => segment.length > 0);
-          for (const segment of pathSegments) {
-            // Look for segments that might be codes (alphanumeric, 5-10 chars)
-            if (/^[A-Za-z0-9]{5,10}$/.test(segment)) {
-              return segment;
-            }
-          }
-          
-          // Get the last path segment as a fallback
-          if (pathSegments.length > 0) {
-            return pathSegments[pathSegments.length - 1];
-          }
-        } catch (e) {
-          console.log('Failed to parse URL:', e);
-          // If URL parsing fails, treat as a regular code
-        }
-      }
-      
-      // If it looks like a code (5-10 alphanumeric characters), return it
-      if (/^[A-Za-z0-9]{5,10}$/.test(input)) {
-        return input.toUpperCase();
-      }
-      
-      // Try extracting code from text that contains code pattern
-      const codeMatch = input.match(/\b([A-Za-z0-9]{5,10})\b/);
-      if (codeMatch) {
-        return codeMatch[1].toUpperCase();
-      }
-      
-      // If all else fails and the input is reasonably short, return it as-is
-      if (input.length <= 20) {
-        return input.toUpperCase();
-      }
-    } catch (e) {
-      console.error('Error extracting code from input:', e);
-    }
-    
-    return null;
+    return codeExtractor.extractJoinCode(input);
   },
   
   /**
