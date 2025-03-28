@@ -1,218 +1,168 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { JoinClassroomResult, SupabaseError } from "./types";
-import { classCodeMatcher } from "@/utils/classCodeMatcher";
-import { codeExtractor } from "@/utils/codeExtractor";
+import { toast } from "sonner";
 
-export const InvitationMatchingService = {
-  /**
-   * Extracts a code from various input formats:
-   * - Direct code: "ABC123"
-   * - URL: "https://example.com/join?code=ABC123"
-   * - URL with path: "https://example.com/join/ABC123"
-   */
-  extractCodeFromInput(input: string): string | null {
-    return codeExtractor.extractJoinCode(input);
-  },
-  
-  /**
-   * Find a classroom or invitation by code using multiple matching strategies
-   */
-  async findClassroomOrInvitation(code: string): Promise<{ data: JoinClassroomResult | null, error: SupabaseError | null }> {
-    if (!code) {
-      return { 
-        data: null, 
-        error: { message: 'No code provided' } 
-      };
-    }
-    
+export class InvitationMatchingService {
+  // Try to find and match an invitation code
+  public static async matchInvitationCode(code: string): Promise<{ success: boolean; error?: string; classroomId?: string; invitationId?: string }> {
     try {
-      // Clean and normalize the code
-      const cleanCode = code.trim().toUpperCase();
-      console.log('Looking for invitation with token:', cleanCode);
+      console.log("[InvitationMatchingService] Trying to match invitation code:", code);
       
-      // First try to match against an invitation token directly
-      const { data: invitation, error: inviteError } = await supabase
-        .from('class_invitations')
-        .select('*, classroom:classrooms(*)')
-        .eq('invitation_token', cleanCode)
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
-        
-      if (inviteError && !inviteError.message.includes('No rows found')) {
-        console.error('Error finding invitation:', inviteError);
-        return { data: null, error: inviteError };
+      if (!code) {
+        return { success: false, error: "No invitation code provided" };
       }
-      
+
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        return { success: false, error: "You must be signed in to join a class" };
+      }
+
+      // First, check for direct match on invitation_token
+      let { data: invitation, error } = await supabase
+        .from('class_invitations')
+        .select('id, classroom_id, expires_at, status')
+        .eq('invitation_token', code)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      if (error) {
+        console.error("[InvitationMatchingService] Error checking invitation:", error);
+        return { success: false, error: "Error checking invitation" };
+      }
+
       if (invitation) {
-        console.log('Found invitation directly:', invitation);
-        return {
-          data: {
-            classroomId: invitation.classroom_id,
-            invitationId: invitation.id,
-            classroom: invitation.classroom
-          },
-          error: null
+        // Check if invitation has expired
+        const expiresAt = new Date(invitation.expires_at);
+        const now = new Date();
+        
+        if (expiresAt < now) {
+          return { success: false, error: "This invitation has expired" };
+        }
+        
+        return { 
+          success: true, 
+          classroomId: invitation.classroom_id,
+          invitationId: invitation.id
         };
       }
       
-      // Second, try with more flexible matching for UK-prefixed codes
-      if (/^UK/i.test(cleanCode)) {
-        console.log('Trying flexible matching for UK-prefixed code');
-        const { data: ukInvitations, error: ukError } = await supabase
-          .from('class_invitations')
-          .select('*, classroom:classrooms(*)')
-          .ilike('invitation_token', cleanCode + '%')  // Code as prefix
-          .eq('status', 'pending')
-          .gt('expires_at', new Date().toISOString());
-          
-        if (!ukError && ukInvitations && ukInvitations.length > 0) {
-          console.log('Found invitation with prefix matching:', ukInvitations[0]);
-          return {
-            data: {
-              classroomId: ukInvitations[0].classroom_id,
-              invitationId: ukInvitations[0].id,
-              classroom: ukInvitations[0].classroom
-            },
-            error: null
-          };
-        }
-        
-        // Try exact match by removing any non-alphanumeric characters
-        const cleanedUKCode = cleanCode.replace(/[^A-Z0-9]/g, '');
-        if (cleanedUKCode !== cleanCode) {
-          const { data: cleanInvitations, error: cleanError } = await supabase
-            .from('class_invitations')
-            .select('*, classroom:classrooms(*)')
-            .eq('invitation_token', cleanedUKCode)
-            .eq('status', 'pending')
-            .gt('expires_at', new Date().toISOString())
-            .maybeSingle();
-            
-          if (!cleanError && cleanInvitations) {
-            console.log('Found invitation with cleaned code:', cleanInvitations);
-            return {
-              data: {
-                classroomId: cleanInvitations.classroom_id,
-                invitationId: cleanInvitations.id,
-                classroom: cleanInvitations.classroom
-              },
-              error: null
-            };
-          }
-        }
-      }
-      
-      // Try to find by using the database function (more powerful SQL matching)
-      console.log('Trying database function for flexible matching');
-      const { data: dbMatches, error: dbError } = await supabase
-        .rpc('find_invitation_by_code', { 
-          code_param: cleanCode
-        });
-        
-      if (!dbError && dbMatches && dbMatches.length > 0) {
-        console.log('Found invitation using database function:', dbMatches[0]);
-        
-        // Get the classroom details
-        const { data: classroom, error: classroomError } = await supabase
-          .from('classrooms')
-          .select('*')
-          .eq('id', dbMatches[0].classroom_id)
-          .maybeSingle();
-          
-        if (!classroomError && classroom) {
-          return {
-            data: {
-              classroomId: dbMatches[0].classroom_id,
-              invitationId: dbMatches[0].id,
-              classroom: classroom
-            },
-            error: null
-          };
-        }
-      }
-      
-      // If no invitation found, try matching against a classroom directly
-      console.log('Looking for classroom with code:', cleanCode);
-      const { data: classrooms, error: classroomError } = await supabase
+      // If no direct match, try to find classroom by join code
+      // Some educators might set the classroom ID as the join code (legacy support)
+      const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
-        .select('*');
+        .select('id')
+        .eq('id', code)
+        .maybeSingle();
         
       if (classroomError) {
-        console.error('Error finding classrooms:', classroomError);
-        return { data: null, error: classroomError };
+        console.error("[InvitationMatchingService] Error checking classroom:", classroomError);
       }
       
-      // Try various matching strategies if we have classrooms
-      if (classrooms && classrooms.length > 0) {
-        // Find by ID prefix match
-        const matchedClassroom = classCodeMatcher.findClassroomByPrefix(classrooms, cleanCode);
-        
-        if (matchedClassroom) {
-          console.log('Found classroom by ID prefix:', matchedClassroom);
-          return {
-            data: {
-              classroomId: matchedClassroom.id,
-              classroom: matchedClassroom
-            },
-            error: null
-          };
-        }
-        
-        // Find by partial/case-insensitive match
-        const caseInsensitiveMatch = classCodeMatcher.findClassroomByCaseInsensitive(classrooms, cleanCode);
-        
-        if (caseInsensitiveMatch) {
-          console.log('Found classroom by case-insensitive match:', caseInsensitiveMatch);
-          return {
-            data: {
-              classroomId: caseInsensitiveMatch.id,
-              classroom: caseInsensitiveMatch
-            },
-            error: null
-          };
-        }
+      if (classroom) {
+        return { 
+          success: true, 
+          classroomId: classroom.id
+        };
       }
-      
-      // Special case for general invitations
-      const { data: emailInvitations, error: emailInviteError } = await supabase
-        .from('class_invitations')
-        .select('*, classroom:classrooms(*)')
-        .eq('email', 'general_invitation@blockward.app')
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString());
-        
-      if (!emailInviteError && emailInvitations && emailInvitations.length > 0) {
-        // Look for a matching invitation based on partial code
-        for (const invite of emailInvitations) {
-          if (invite.invitation_token.includes(cleanCode) || cleanCode.includes(invite.invitation_token)) {
-            console.log('Found matching general invitation:', invite);
-            return {
-              data: {
-                classroomId: invite.classroom_id,
-                invitationId: invite.id,
-                classroom: invite.classroom
-              },
-              error: null
-            };
-          }
-        }
-      }
-      
-      // No results found with any strategy
-      return { 
-        data: null, 
-        error: { message: 'No matching class found for this code. Please check the code and try again.' } 
-      };
-    } catch (err: any) {
-      console.error('Exception in findClassroomOrInvitation:', err);
-      return { 
-        data: null, 
-        error: { 
-          message: err.message || 'Error finding classroom' 
-        } 
-      };
+
+      // No matches found
+      return { success: false, error: "Invalid or expired invitation code" };
+    } catch (err) {
+      console.error("[InvitationMatchingService] Error in matchInvitationCode:", err);
+      return { success: false, error: "Something went wrong. Please try again." };
     }
   }
-};
+
+  // Enroll a student in a classroom
+  public static async enrollStudentInClass(userId: string, classroomId: string, invitationId?: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log("[InvitationMatchingService] Enrolling student in class:", { userId, classroomId, invitationId });
+      
+      // First, check if student profile exists
+      const { data: studentProfile, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+        
+      if (studentError) {
+        console.error("[InvitationMatchingService] Error checking student profile:", studentError);
+        return { success: false, error: "Error checking student profile" };
+      }
+      
+      let studentId: string;
+      
+      if (!studentProfile) {
+        // Create a student profile if it doesn't exist
+        const { data: newStudent, error: createError } = await supabase
+          .from('students')
+          .insert({
+            user_id: userId,
+            name: 'New Student', // Default name
+            points: 0
+          })
+          .select('id')
+          .single();
+          
+        if (createError) {
+          console.error("[InvitationMatchingService] Error creating student profile:", createError);
+          return { success: false, error: "Error creating student profile" };
+        }
+        
+        studentId = newStudent.id;
+      } else {
+        studentId = studentProfile.id;
+      }
+      
+      // Check if student is already enrolled in this class
+      const { data: existingEnrollment, error: enrollmentError } = await supabase
+        .from('classroom_students')
+        .select('id')
+        .eq('student_id', studentId)
+        .eq('classroom_id', classroomId)
+        .maybeSingle();
+        
+      if (enrollmentError) {
+        console.error("[InvitationMatchingService] Error checking enrollment:", enrollmentError);
+        return { success: false, error: "Error checking enrollment" };
+      }
+      
+      if (existingEnrollment) {
+        return { success: true }; // Already enrolled, just return success
+      }
+      
+      // Enroll the student in the classroom
+      const { error: joinError } = await supabase
+        .from('classroom_students')
+        .insert({
+          student_id: studentId,
+          classroom_id: classroomId
+        });
+        
+      if (joinError) {
+        console.error("[InvitationMatchingService] Error enrolling student:", joinError);
+        return { success: false, error: "Error enrolling in class" };
+      }
+      
+      // If there was an invitation ID, mark it as accepted
+      if (invitationId) {
+        const { error: updateError } = await supabase
+          .from('class_invitations')
+          .update({ status: 'accepted' })
+          .eq('id', invitationId);
+          
+        if (updateError) {
+          console.error("[InvitationMatchingService] Error updating invitation status:", updateError);
+          // Don't return error here as the student was successfully enrolled
+        }
+      }
+      
+      // Success!
+      return { success: true };
+    } catch (err) {
+      console.error("[InvitationMatchingService] Error in enrollStudentInClass:", err);
+      return { success: false, error: "Something went wrong during enrollment. Please try again." };
+    }
+  }
+}

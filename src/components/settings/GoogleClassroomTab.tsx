@@ -125,7 +125,13 @@ export function GoogleClassroomTab() {
     try {
       setIsLoading(true);
       
-      await GoogleClassroomService.signOut();
+      // Initialize Google API before signing out
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+      if (clientId) {
+        await GoogleClassroomService.initialize(clientId);
+        await GoogleClassroomService.signOut();
+      }
+      
       setIsLinked(false);
       setGoogleEmail(null);
       
