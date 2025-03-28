@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,8 +97,10 @@ export function GoogleClassroomSection() {
       // Simulate OAuth flow
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Set mock email (in real implementation, this would come from Google)
-      const email = "student@gmail.com";
+      // Get the user's current email from Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      // Use the user's actual email instead of hardcoded value
+      const email = session?.user?.email || "";
       setGoogleEmail(email);
       
       // Update user metadata

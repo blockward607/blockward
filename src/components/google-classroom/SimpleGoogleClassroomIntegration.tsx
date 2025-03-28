@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,8 +99,13 @@ export function SimpleGoogleClassroomIntegration() {
       // Simulate OAuth flow completion
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Simulate getting user info from Google
-      const email = "teacher@school.edu";
+      // In real implementation, this would get the actual user's Google email
+      // from the OAuth response, not a hardcoded one
+      
+      // Get the user's current email as a fallback
+      const { data: { session } } = await supabase.auth.getSession();
+      // Use the user's actual email instead of a hardcoded one
+      const email = session?.user?.email || "";
       setUserEmail(email);
       
       // Update user metadata in Supabase
