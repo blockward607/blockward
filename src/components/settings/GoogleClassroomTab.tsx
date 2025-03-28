@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Link2, Unlink } from "lucide-react"; // Changed Google to BookOpen
+import { BookOpen, Link2, Unlink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import GoogleClassroomService from "@/services/google-classroom";
@@ -24,16 +23,12 @@ export function GoogleClassroomTab() {
     try {
       setIsLoading(true);
       
-      // Check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate('/auth');
         return;
       }
 
-      setUserEmail(session.user.email);
-      
-      // Check if Google Classroom service is initialized and user is signed in
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
       if (clientId) {
         await GoogleClassroomService.initialize(clientId);
@@ -44,7 +39,10 @@ export function GoogleClassroomTab() {
           const authInstance = window.gapi.auth2.getAuthInstance();
           const googleUser = authInstance.currentUser.get();
           const profile = googleUser.getBasicProfile();
-          setGoogleEmail(profile.getEmail());
+          const email = profile.getEmail();
+          
+          const googleEmail = email.endsWith('@gmail.com') ? email : null;
+          setGoogleEmail(googleEmail);
         }
       }
     } catch (error) {
@@ -58,7 +56,6 @@ export function GoogleClassroomTab() {
     try {
       setIsLoading(true);
       
-      // Initialize Google Classroom API
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
       if (!clientId) {
         toast({
@@ -66,37 +63,34 @@ export function GoogleClassroomTab() {
           title: "Configuration Error",
           description: "Google Classroom client ID is not configured."
         });
-        navigate('/google-classroom');
         return;
       }
       
       await GoogleClassroomService.initialize(clientId);
       
-      // Sign in with Google
       const success = await GoogleClassroomService.signIn();
       
-      if (success) {
-        setIsLinked(true);
+      if (success && window.gapi?.auth2) {
+        const authInstance = window.gapi.auth2.getAuthInstance();
+        const googleUser = authInstance.currentUser.get();
+        const profile = googleUser.getBasicProfile();
+        const email = profile.getEmail();
         
-        // Get Google user email for display
-        if (window.gapi?.auth2) {
-          const authInstance = window.gapi.auth2.getAuthInstance();
-          const googleUser = authInstance.currentUser.get();
-          const profile = googleUser.getBasicProfile();
-          setGoogleEmail(profile.getEmail());
-        }
+        const googleEmail = email.endsWith('@gmail.com') ? email : null;
+        setGoogleEmail(googleEmail);
         
-        toast({
-          title: "Account Linked",
-          description: "Your BlockWard account is now linked to Google Classroom."
-        });
-        
-        // Save linking status in user metadata
         await supabase.auth.updateUser({
           data: {
             google_classroom_linked: true,
-            google_classroom_linked_at: new Date().toISOString()
+            google_classroom_linked_at: new Date().toISOString(),
+            google_email: googleEmail
           }
+        });
+        
+        setIsLinked(true);
+        toast({
+          title: "Account Linked",
+          description: "Your BlockWard account is now linked to Google Classroom."
         });
       } else {
         toast({
@@ -130,7 +124,6 @@ export function GoogleClassroomTab() {
         description: "Your Google Classroom account has been unlinked."
       });
       
-      // Update user metadata
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: false,
@@ -161,7 +154,7 @@ export function GoogleClassroomTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-red-500" /> {/* Changed Google to BookOpen */}
+            <BookOpen className="h-5 w-5 text-red-500" />
             Google Classroom Connection
           </CardTitle>
           <CardDescription>

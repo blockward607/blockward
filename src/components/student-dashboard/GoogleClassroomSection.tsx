@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,21 +22,17 @@ export function GoogleClassroomSection() {
     try {
       setLoading(true);
       
-      // Check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       
-      // Check if account is linked in metadata
       if (session.user.user_metadata?.google_classroom_linked) {
         setIsLinked(true);
         setIsSignedIn(true);
         
-        // Get Google user email from metadata
         if (session.user.user_metadata.google_email) {
           setGoogleEmail(session.user.user_metadata.google_email);
         }
         
-        // Fetch classes immediately when we detect the user is linked
         fetchClasses();
       }
     } catch (error) {
@@ -54,11 +49,9 @@ export function GoogleClassroomSection() {
       
       let classData = [];
       
-      // Try to use the Google Classroom service if possible
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (clientId && isSignedIn) {
         try {
-          // Initialize and try to use the real service
           await GoogleClassroomService.initialize(clientId);
           if (GoogleClassroomService.isSignedIn()) {
             classData = await GoogleClassroomService.listCourses();
@@ -69,9 +62,7 @@ export function GoogleClassroomSection() {
         }
       }
       
-      // If we couldn't get real data, use mock data
       if (classData.length === 0) {
-        // Simulate API latency
         await new Promise(resolve => setTimeout(resolve, 600));
         
         const response = await fetch('https://classroom.googleapis.com/v1/courses', {
@@ -81,7 +72,6 @@ export function GoogleClassroomSection() {
         }).catch(error => {
           console.log('Using mock data because:', error);
           
-          // Mock response when we can't connect to the real API yet
           return {
             ok: true,
             json: async () => ({
@@ -113,42 +103,34 @@ export function GoogleClassroomSection() {
       
       let googleEmail = null;
       
-      // Try to use the actual Google Classroom service for authentication
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (clientId) {
         try {
-          console.log("Attempting to initialize Google Classroom with client ID");
           await GoogleClassroomService.initialize(clientId);
           const success = await GoogleClassroomService.signIn();
           
           if (success && window.gapi?.auth2) {
-            // Get the actual Google user email
             const authInstance = window.gapi.auth2.getAuthInstance();
             const googleUser = authInstance.currentUser.get();
             const profile = googleUser.getBasicProfile();
-            googleEmail = profile.getEmail();
-            console.log("Successfully authenticated with Google:", googleEmail);
+            const email = profile.getEmail();
+            
+            if (email.endsWith('@gmail.com')) {
+              googleEmail = email;
+            }
           }
         } catch (e) {
           console.error("Error using Google Classroom service:", e);
         }
       }
       
-      // If we couldn't get the Google email, fall back to mock behavior
       if (!googleEmail) {
-        // Simulate OAuth flow
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Get the user's current email from Supabase session
         const { data: { session } } = await supabase.auth.getSession();
-        // Use the user's actual email instead of hardcoded value
         googleEmail = session?.user?.email || "";
-        console.log("Using fallback email:", googleEmail);
       }
       
       setGoogleEmail(googleEmail);
       
-      // Update user metadata
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: true,
@@ -164,7 +146,6 @@ export function GoogleClassroomSection() {
         description: "Your account is now linked to Google Classroom."
       });
       
-      // Fetch classes immediately after linking
       fetchClasses();
     } catch (error) {
       console.error("Error linking account:", error);
@@ -182,7 +163,6 @@ export function GoogleClassroomSection() {
     try {
       setLoading(true);
       
-      // Try to sign out using the Google Classroom service
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (clientId) {
         try {
@@ -196,7 +176,6 @@ export function GoogleClassroomSection() {
       setGoogleEmail(null);
       setClasses([]);
       
-      // Update user metadata
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: false,
