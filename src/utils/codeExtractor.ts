@@ -1,3 +1,4 @@
+
 /**
  * Utility to extract invitation codes from various formats
  */
@@ -46,6 +47,12 @@ export function extractJoinCode(input: string): string | null {
             return codeParam.toUpperCase();
           }
           
+          // Look for UK pattern in the parameter
+          const paramUkMatch = codeParam.match(/UK[A-Z0-9]{4}/i);
+          if (paramUkMatch) {
+            return paramUkMatch[0].toUpperCase();
+          }
+          
           // Otherwise just return the parameter as is
           return codeParam.toUpperCase();
         }
@@ -63,6 +70,12 @@ export function extractJoinCode(input: string): string | null {
           // Look for segments that look like codes (alphanumeric, 4-10 chars)
           if (/^[A-Za-z0-9]{4,10}$/.test(segment)) {
             return segment.toUpperCase();
+          }
+          
+          // Check for UK pattern in segment
+          const segmentUkMatch = segment.match(/UK[A-Z0-9]{4}/i);
+          if (segmentUkMatch) {
+            return segmentUkMatch[0].toUpperCase();
           }
         }
         

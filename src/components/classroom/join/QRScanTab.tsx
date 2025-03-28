@@ -10,9 +10,18 @@ import { QRCodeScanner } from "../QRCodeScanner";
 export const QRScanTab = () => {
   const { loading, error, joinClassWithCode } = useJoinClassContext();
   const [scanning, setScanning] = useState(false);
+  const [lastScannedCode, setLastScannedCode] = useState<string | null>(null);
 
   const handleQRCodeScanned = (code: string) => {
     console.log("QR code scanned:", code);
+    
+    // Prevent duplicate processing of the same code
+    if (lastScannedCode === code) {
+      console.log("Same code scanned again, ignoring");
+      return;
+    }
+    
+    setLastScannedCode(code);
     setScanning(false);
     joinClassWithCode(code);
   };
@@ -40,7 +49,7 @@ export const QRScanTab = () => {
           ) : (
             <>
               <Camera className="w-4 h-4 mr-2" />
-              Scan QR Code
+              {scanning ? "Cancel Scan" : "Scan QR Code"}
             </>
           )}
         </Button>

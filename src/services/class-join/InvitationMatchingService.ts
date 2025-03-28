@@ -46,7 +46,7 @@ export const InvitationMatchingService = {
       }
       
       if (invitation) {
-        console.log('Found invitation:', invitation);
+        console.log('Found invitation directly:', invitation);
         return {
           data: {
             classroomId: invitation.classroom_id,
@@ -57,19 +57,18 @@ export const InvitationMatchingService = {
         };
       }
       
-      // Second, try with wildcards for UK-prefixed codes
-      if (cleanCode.startsWith('UK')) {
+      // Second, try with more flexible matching for UK-prefixed codes
+      if (/^UK/i.test(cleanCode)) {
+        console.log('Trying flexible matching for UK-prefixed code');
         const { data: ukInvitations, error: ukError } = await supabase
           .from('class_invitations')
           .select('*, classroom:classrooms(*)')
-          .ilike('invitation_token', cleanCode)  // Case-insensitive match
+          .ilike('invitation_token', cleanCode + '%')  // Code as prefix
           .eq('status', 'pending')
           .gt('expires_at', new Date().toISOString());
           
-        if (ukError) {
-          console.error('Error finding UK-prefixed invitation:', ukError);
-        } else if (ukInvitations && ukInvitations.length > 0) {
-          console.log('Found UK-prefixed invitation:', ukInvitations[0]);
+        if (!ukError && ukInvitations && ukInvitations.length > 0) {
+          console.log('Found invitation with prefix matching:', ukInvitations[0]);
           return {
             data: {
               classroomId: ukInvitations[0].classroom_id,
@@ -79,10 +78,63 @@ export const InvitationMatchingService = {
             error: null
           };
         }
+        
+        // Try exact match by removing any non-alphanumeric characters
+        const cleanedUKCode = cleanCode.replace(/[^A-Z0-9]/g, '');
+        if (cleanedUKCode !== cleanCode) {
+          const { data: cleanInvitations, error: cleanError } = await supabase
+            .from('class_invitations')
+            .select('*, classroom:classrooms(*)')
+            .eq('invitation_token', cleanedUKCode)
+            .eq('status', 'pending')
+            .gt('expires_at', new Date().toISOString())
+            .maybeSingle();
+            
+          if (!cleanError && cleanInvitations) {
+            console.log('Found invitation with cleaned code:', cleanInvitations);
+            return {
+              data: {
+                classroomId: cleanInvitations.classroom_id,
+                invitationId: cleanInvitations.id,
+                classroom: cleanInvitations.classroom
+              },
+              error: null
+            };
+          }
+        }
       }
       
-      // If no invitation found, try matching against a classroom ID prefix
-      console.log('Looking for classroom with ID starting with:', cleanCode);
+      // Try to find by using the database function (more powerful SQL matching)
+      console.log('Trying database function for flexible matching');
+      const { data: dbMatches, error: dbError } = await supabase
+        .rpc('find_invitation_by_code', { 
+          code_param: cleanCode
+        });
+        
+      if (!dbError && dbMatches && dbMatches.length > 0) {
+        console.log('Found invitation using database function:', dbMatches[0]);
+        
+        // Get the classroom details
+        const { data: classroom, error: classroomError } = await supabase
+          .from('classrooms')
+          .select('*')
+          .eq('id', dbMatches[0].classroom_id)
+          .maybeSingle();
+          
+        if (!classroomError && classroom) {
+          return {
+            data: {
+              classroomId: dbMatches[0].classroom_id,
+              invitationId: dbMatches[0].id,
+              classroom: classroom
+            },
+            error: null
+          };
+        }
+      }
+      
+      // If no invitation found, try matching against a classroom directly
+      console.log('Looking for classroom with code:', cleanCode);
       const { data: classrooms, error: classroomError } = await supabase
         .from('classrooms')
         .select('*');
@@ -123,7 +175,7 @@ export const InvitationMatchingService = {
         }
       }
       
-      // Special case for email invitation links
+      // Special case for general invitations
       const { data: emailInvitations, error: emailInviteError } = await supabase
         .from('class_invitations')
         .select('*, classroom:classrooms(*)')
@@ -135,7 +187,7 @@ export const InvitationMatchingService = {
         // Look for a matching invitation based on partial code
         for (const invite of emailInvitations) {
           if (invite.invitation_token.includes(cleanCode) || cleanCode.includes(invite.invitation_token)) {
-            console.log('Found matching email invitation:', invite);
+            console.log('Found matching general invitation:', invite);
             return {
               data: {
                 classroomId: invite.classroom_id,
@@ -151,7 +203,7 @@ export const InvitationMatchingService = {
       // No results found with any strategy
       return { 
         data: null, 
-        error: { message: 'No matching class found for this code' } 
+        error: { message: 'No matching class found for this code. Please check the code and try again.' } 
       };
     } catch (err: any) {
       console.error('Exception in findClassroomOrInvitation:', err);

@@ -51,11 +51,22 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       try {
         // 1. Check query params
         const searchParams = new URLSearchParams(location.search);
-        let code = searchParams.get('code');
+        let code = searchParams.get('code') || searchParams.get('join');
         
         // 2. Check location state (from redirect)
         if (!code && location.state && location.state.joinCode) {
           code = location.state.joinCode;
+        }
+        
+        // 3. Check URL path segments for code-like patterns
+        if (!code) {
+          const pathSegments = location.pathname.split('/');
+          for (const segment of pathSegments) {
+            if (/^UK[A-Z0-9]{4}$/i.test(segment)) {
+              code = segment;
+              break;
+            }
+          }
         }
         
         if (code) {

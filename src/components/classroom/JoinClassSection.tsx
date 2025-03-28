@@ -1,3 +1,11 @@
 
-// Re-export the JoinClassSection from the join directory
-export { JoinClassSection } from './join/JoinClassSection';
+import { JoinClassProvider } from "./join/JoinClassContext";
+import { JoinClassSection as JoinSection } from "./join/JoinClassSection";
+
+export const JoinClassSection = () => {
+  return (
+    <JoinClassProvider>
+      <JoinSection />
+    </JoinClassProvider>
+  );
+};

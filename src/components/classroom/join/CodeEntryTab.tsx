@@ -6,6 +6,7 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { codeExtractor } from "@/utils/codeExtractor";
 
 export const CodeEntryTab = () => {
   const { 
@@ -25,10 +26,17 @@ export const CodeEntryTab = () => {
     if (invitationCode && !enteredCode) {
       setEnteredCode(invitationCode);
     }
-  }, [invitationCode]);
+  }, [invitationCode, enteredCode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEnteredCode(e.target.value);
+    
+    // Extract code in real-time if it's a URL or complex format
+    const extractedCode = codeExtractor.extractJoinCode(e.target.value);
+    if (extractedCode && extractedCode !== e.target.value) {
+      console.log("Extracted code in real-time:", extractedCode);
+      setEnteredCode(extractedCode);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -41,11 +49,14 @@ export const CodeEntryTab = () => {
   const handleSubmitCode = () => {
     if (!enteredCode) return;
     
-    // Update the context code
-    setInvitationCode(enteredCode);
+    // Try to extract a code if it's a URL or complex format
+    const processedCode = codeExtractor.extractJoinCode(enteredCode) || enteredCode;
     
-    console.log("[CodeEntryTab] Processing code for submission:", enteredCode);
-    joinClassWithCode(enteredCode);
+    // Update the context code
+    setInvitationCode(processedCode);
+    
+    console.log("[CodeEntryTab] Processing code for submission:", processedCode);
+    joinClassWithCode(processedCode);
   };
 
   // Focus the input field when component mounts

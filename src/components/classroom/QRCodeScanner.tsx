@@ -45,15 +45,33 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
               
               if (extractedCode) {
                 console.log("Extracted code from QR:", extractedCode);
-                onScan(extractedCode);
                 
-                // Stop scanning after successful detection
+                // Stop scanning temporarily to prevent multiple scans
                 if (scanner) {
-                  scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                  scanner.pause(true);
+                  
+                  // Small delay to ensure we don't double-process
+                  setTimeout(() => {
+                    onScan(extractedCode);
+                    
+                    // Stop scanner after successful processing
+                    if (scanner) {
+                      scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                    }
+                  }, 500);
                 }
               } else {
-                console.warn("Could not extract a valid code from QR content:", decodedText);
-                // We can optionally show an error to the user here
+                // If no valid code, try to use the raw text
+                if (decodedText && decodedText.trim()) {
+                  console.log("No valid code extracted, using raw QR content");
+                  onScan(decodedText.trim());
+                  
+                  if (scanner) {
+                    scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                  }
+                } else {
+                  console.warn("QR code content is empty or invalid");
+                }
               }
             },
             (errorMessage) => {
