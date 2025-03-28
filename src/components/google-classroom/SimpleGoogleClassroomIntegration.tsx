@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +17,6 @@ export function SimpleGoogleClassroomIntegration() {
   const [usingDemoMode, setUsingDemoMode] = useState(false);
   const navigate = useNavigate();
 
-  // Check if the user has already connected their Google account
   useEffect(() => {
     const checkAccountConnection = async () => {
       try {
@@ -30,7 +28,6 @@ export function SimpleGoogleClassroomIntegration() {
             setGoogleEmail(session.user.user_metadata.google_email);
           }
           
-          // If we're signed in, immediately fetch courses
           fetchClassroomCourses();
         }
       } catch (error) {
@@ -41,7 +38,6 @@ export function SimpleGoogleClassroomIntegration() {
     checkAccountConnection();
   }, []);
 
-  // Check if we have a client ID and set demo mode accordingly
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId) {
@@ -50,15 +46,12 @@ export function SimpleGoogleClassroomIntegration() {
     }
   }, []);
   
-  // This would be the actual function to fetch real Google Classroom courses in a full implementation
   const fetchClassroomCourses = async () => {
     try {
       setLoading(true);
       
-      // In a real implementation, this would call the Google Classroom API
       console.log("Fetching Google Classroom courses...");
       
-      // Try to use the Google Classroom service if properly initialized
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (clientId && googleEmail) {
         try {
@@ -77,11 +70,8 @@ export function SimpleGoogleClassroomIntegration() {
         }
       }
       
-      // If no client ID or error, use demo mode with mock data
-      // Simulate API call latency
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // This is demo mode with sample data
       const sampleCourses = [
         { id: '123456', name: 'Biology 101', section: 'Period 1' },
         { id: '234567', name: 'Chemistry', section: 'Period 2' },
@@ -108,17 +98,14 @@ export function SimpleGoogleClassroomIntegration() {
     try {
       setLoading(true);
       
-      // Check if we're in demo mode
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (!clientId) {
         console.log("No Google Client ID available - using demo mode");
         setUsingDemoMode(true);
         
-        // Use a fake email for demo mode
         const demoEmail = "demo.user@gmail.com";
         setGoogleEmail(demoEmail);
         
-        // Update user metadata
         await supabase.auth.updateUser({
           data: {
             google_classroom_linked: true,
@@ -130,7 +117,6 @@ export function SimpleGoogleClassroomIntegration() {
         setSignedIn(true);
         toast.success(`Demo mode: Connected as ${demoEmail}`);
         
-        // Fetch demo courses
         fetchClassroomCourses();
         return;
       }
@@ -140,12 +126,10 @@ export function SimpleGoogleClassroomIntegration() {
       let googleEmail = null;
 
       try {
-        // Try to use the actual Google Classroom service
         await GoogleClassroomService.initialize(clientId);
         const success = await GoogleClassroomService.signIn();
         
         if (success && window.gapi?.auth2) {
-          // Get the actual Google user email
           const authInstance = window.gapi.auth2.getAuthInstance();
           const googleUser = authInstance.currentUser.get();
           const profile = googleUser.getBasicProfile();
@@ -156,7 +140,6 @@ export function SimpleGoogleClassroomIntegration() {
         console.error("Error using Google Classroom service:", e);
       }
       
-      // If we couldn't get the Google email, show an error
       if (!googleEmail) {
         toast.error("Failed to connect with Google Classroom. Please try again.");
         setLoading(false);
@@ -165,7 +148,6 @@ export function SimpleGoogleClassroomIntegration() {
       
       setGoogleEmail(googleEmail);
       
-      // Update user metadata in Supabase
       await supabase.auth.updateUser({
         data: {
           google_classroom_linked: true,
@@ -177,9 +159,7 @@ export function SimpleGoogleClassroomIntegration() {
       setSignedIn(true);
       toast.success(`Connected to Google Classroom with ${googleEmail}`);
       
-      // Fetch the user's courses right after connecting
       fetchClassroomCourses();
-      
     } catch (error) {
       console.error("Error connecting to Google Classroom:", error);
       toast.error("Failed to connect to Google Classroom");
@@ -192,7 +172,6 @@ export function SimpleGoogleClassroomIntegration() {
     try {
       setLoading(true);
       
-      // Try to use the actual Google Classroom service to sign out
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (clientId) {
         try {
@@ -230,7 +209,6 @@ export function SimpleGoogleClassroomIntegration() {
   
   const importClass = (classId: string) => {
     toast.success("Importing class...");
-    // In a real implementation, this would start the import process
     navigate(`/classes`);
   };
 
@@ -297,7 +275,7 @@ export function SimpleGoogleClassroomIntegration() {
             <TabsContent value="courses">
               <div className="space-y-4">
                 {usingDemoMode && (
-                  <Alert variant="warning" className="mb-4">
+                  <Alert className="mb-4">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Demo Mode</AlertTitle>
                     <AlertDescription>
