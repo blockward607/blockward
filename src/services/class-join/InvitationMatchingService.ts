@@ -27,12 +27,15 @@ export const InvitationMatchingService = {
     }
     
     try {
+      // Clean and normalize the code
+      const cleanCode = code.trim().toUpperCase();
+      console.log('Looking for invitation with token:', cleanCode);
+      
       // First try to match against an invitation token directly
-      console.log('Looking for invitation with token:', code);
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .select('*, classroom:classrooms(*)')
-        .eq('invitation_token', code)
+        .eq('invitation_token', cleanCode)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString())
         .maybeSingle();
@@ -54,8 +57,32 @@ export const InvitationMatchingService = {
         };
       }
       
+      // Second, try with wildcards for UK-prefixed codes
+      if (cleanCode.startsWith('UK')) {
+        const { data: ukInvitations, error: ukError } = await supabase
+          .from('class_invitations')
+          .select('*, classroom:classrooms(*)')
+          .ilike('invitation_token', cleanCode)  // Case-insensitive match
+          .eq('status', 'pending')
+          .gt('expires_at', new Date().toISOString());
+          
+        if (ukError) {
+          console.error('Error finding UK-prefixed invitation:', ukError);
+        } else if (ukInvitations && ukInvitations.length > 0) {
+          console.log('Found UK-prefixed invitation:', ukInvitations[0]);
+          return {
+            data: {
+              classroomId: ukInvitations[0].classroom_id,
+              invitationId: ukInvitations[0].id,
+              classroom: ukInvitations[0].classroom
+            },
+            error: null
+          };
+        }
+      }
+      
       // If no invitation found, try matching against a classroom ID prefix
-      console.log('Looking for classroom with ID starting with:', code);
+      console.log('Looking for classroom with ID starting with:', cleanCode);
       const { data: classrooms, error: classroomError } = await supabase
         .from('classrooms')
         .select('*');
@@ -68,7 +95,7 @@ export const InvitationMatchingService = {
       // Try various matching strategies if we have classrooms
       if (classrooms && classrooms.length > 0) {
         // Find by ID prefix match
-        const matchedClassroom = classCodeMatcher.findClassroomByPrefix(classrooms, code);
+        const matchedClassroom = classCodeMatcher.findClassroomByPrefix(classrooms, cleanCode);
         
         if (matchedClassroom) {
           console.log('Found classroom by ID prefix:', matchedClassroom);
@@ -82,7 +109,7 @@ export const InvitationMatchingService = {
         }
         
         // Find by partial/case-insensitive match
-        const caseInsensitiveMatch = classCodeMatcher.findClassroomByCaseInsensitive(classrooms, code);
+        const caseInsensitiveMatch = classCodeMatcher.findClassroomByCaseInsensitive(classrooms, cleanCode);
         
         if (caseInsensitiveMatch) {
           console.log('Found classroom by case-insensitive match:', caseInsensitiveMatch);
@@ -93,6 +120,31 @@ export const InvitationMatchingService = {
             },
             error: null
           };
+        }
+      }
+      
+      // Special case for email invitation links
+      const { data: emailInvitations, error: emailInviteError } = await supabase
+        .from('class_invitations')
+        .select('*, classroom:classrooms(*)')
+        .eq('email', 'general_invitation@blockward.app')
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString());
+        
+      if (!emailInviteError && emailInvitations && emailInvitations.length > 0) {
+        // Look for a matching invitation based on partial code
+        for (const invite of emailInvitations) {
+          if (invite.invitation_token.includes(cleanCode) || cleanCode.includes(invite.invitation_token)) {
+            console.log('Found matching email invitation:', invite);
+            return {
+              data: {
+                classroomId: invite.classroom_id,
+                invitationId: invite.id,
+                classroom: invite.classroom
+              },
+              error: null
+            };
+          }
         }
       }
       

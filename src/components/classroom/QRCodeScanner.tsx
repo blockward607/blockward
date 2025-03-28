@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Html5Qrcode } from "html5-qrcode";
 import { Loader2, X } from "lucide-react";
+import { codeExtractor } from "@/utils/codeExtractor";
 
 interface QRCodeScannerProps {
   onScan: (code: string) => void;
@@ -38,9 +39,21 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
             (decodedText) => {
               // On QR code detected
               console.log("QR code detected:", decodedText);
-              onScan(decodedText);
-              if (scanner) {
-                scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+              
+              // Use the codeExtractor to process the QR code content
+              const extractedCode = codeExtractor.extractJoinCode(decodedText);
+              
+              if (extractedCode) {
+                console.log("Extracted code from QR:", extractedCode);
+                onScan(extractedCode);
+                
+                // Stop scanning after successful detection
+                if (scanner) {
+                  scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                }
+              } else {
+                console.warn("Could not extract a valid code from QR content:", decodedText);
+                // We can optionally show an error to the user here
               }
             },
             (errorMessage) => {
@@ -104,6 +117,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
             variant="outline" 
             className="mt-2"
           >
+            <X className="w-4 h-4 mr-2" />
             Cancel
           </Button>
         </div>

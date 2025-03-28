@@ -1,8 +1,9 @@
+
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { InviteStudents } from "@/components/classroom/InviteStudents";
-import { JoinClassSection } from "@/components/classroom/join/JoinClassSection";
+import { JoinClassSection } from "@/components/classroom/JoinClassSection";
 import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
 import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
@@ -28,29 +29,8 @@ const Classes = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    // Verify we're on the Classes page
-    console.log("Classes page mounted, current path:", location.pathname);
-    
     // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
-    
-    // Check for invitation code in URL params or state
-    const queryParams = new URLSearchParams(location.search);
-    const inviteCode = queryParams.get('code');
-    
-    if (inviteCode) {
-      console.log("Found invitation code in URL:", inviteCode);
-      // The JoinClassContext will pick this up automatically
-      
-      // Clear the URL parameter after processing to avoid repeated join attempts
-      // But keep the code in state for the component to use
-      if (history.pushState) {
-        const newUrl = window.location.protocol + "//" + 
-                       window.location.host + 
-                       window.location.pathname;
-        window.history.pushState({ joinCode: inviteCode }, '', newUrl);
-      }
-    }
     
     // Check for error in state from a failed join attempt
     if (location.state && location.state.error) {
@@ -63,7 +43,7 @@ const Classes = () => {
       // Clear the error from state
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [refreshClassrooms, location.search, location.pathname, navigate, toast]);
+  }, [refreshClassrooms, location.pathname, navigate, toast, location.state]);
 
   if (loading) {
     return <ClassesLoading />;
@@ -80,54 +60,52 @@ const Classes = () => {
   };
 
   return (
-    <JoinClassProvider>
-      <motion.div
-        initial="hidden"
-        animate="show"
-        variants={containerVariants}
-        className="space-y-8 container px-4 sm:px-6 mx-auto max-w-6xl"
-      >
-        <ClassesPageHeader 
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={containerVariants}
+      className="space-y-8 container px-4 sm:px-6 mx-auto max-w-6xl"
+    >
+      <ClassesPageHeader 
+        userRole={userRole} 
+        onClassroomCreated={handleClassroomCreated} 
+      />
+
+      {userRole === 'student' && (
+        <motion.div variants={{
+          hidden: { opacity: 0, y: 20 },
+          show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+        }}>
+          <JoinClassSection />
+        </motion.div>
+      )}
+      
+      {selectedClassroom && userRole === 'teacher' && (
+        <motion.div variants={{
+          hidden: { opacity: 0, y: 20 },
+          show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+        }}>
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-4 text-white">
+              Invite Students to {selectedClassroom.name}
+            </h2>
+            <InviteStudents classroomId={selectedClassroom.id} />
+          </div>
+        </motion.div>
+      )}
+
+      {classrooms && classrooms.length > 0 ? (
+        <ClassroomsList 
+          classrooms={classrooms} 
           userRole={userRole} 
-          onClassroomCreated={handleClassroomCreated} 
+          onDelete={handleDeleteClassroom}
+          onSelect={setSelectedClassroom}
+          selectedClassroom={selectedClassroom}
         />
-
-        {userRole === 'student' && (
-          <motion.div variants={{
-            hidden: { opacity: 0, y: 20 },
-            show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-          }}>
-            <JoinClassSection />
-          </motion.div>
-        )}
-        
-        {selectedClassroom && userRole === 'teacher' && (
-          <motion.div variants={{
-            hidden: { opacity: 0, y: 20 },
-            show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-          }}>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 text-white">
-                Invite Students to {selectedClassroom.name}
-              </h2>
-              <InviteStudents classroomId={selectedClassroom.id} />
-            </div>
-          </motion.div>
-        )}
-
-        {classrooms && classrooms.length > 0 ? (
-          <ClassroomsList 
-            classrooms={classrooms} 
-            userRole={userRole} 
-            onDelete={handleDeleteClassroom}
-            onSelect={setSelectedClassroom}
-            selectedClassroom={selectedClassroom}
-          />
-        ) : (
-          <EmptyClassState userRole={userRole} />
-        )}
-      </motion.div>
-    </JoinClassProvider>
+      ) : (
+        <EmptyClassState userRole={userRole} />
+      )}
+    </motion.div>
   );
 };
 

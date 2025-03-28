@@ -6,15 +6,26 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
-import { useLocation } from "react-router-dom";
-import { ClassJoinService } from "@/services/class-join";
 
 export const CodeEntryTab = () => {
-  const { invitationCode, setInvitationCode, loading, error, joinClassWithCode } = useJoinClassContext();
-  const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
+  const { 
+    invitationCode, 
+    setInvitationCode, 
+    loading, 
+    error, 
+    joinClassWithCode,
+    autoJoinInProgress
+  } = useJoinClassContext();
+  
   const [enteredCode, setEnteredCode] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const location = useLocation();
+
+  // Set enteredCode to invitationCode when invitationCode changes (from URL)
+  useEffect(() => {
+    if (invitationCode && !enteredCode) {
+      setEnteredCode(invitationCode);
+    }
+  }, [invitationCode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEnteredCode(e.target.value);
@@ -30,52 +41,19 @@ export const CodeEntryTab = () => {
   const handleSubmitCode = () => {
     if (!enteredCode) return;
     
+    // Update the context code
+    setInvitationCode(enteredCode);
+    
     console.log("[CodeEntryTab] Processing code for submission:", enteredCode);
     joinClassWithCode(enteredCode);
   };
 
   // Focus the input field when component mounts
   useEffect(() => {
-    if (inputRef.current) {
+    if (inputRef.current && !autoJoinInProgress) {
       inputRef.current.focus();
     }
-  }, []);
-
-  // Try to join with code from URL query param or state
-  useEffect(() => {
-    const attemptAutoJoin = async () => {
-      try {
-        if (autoJoinAttempted || loading) return;
-
-        let code = null;
-        
-        // Check URL query parameters (highest priority)
-        const urlParams = new URLSearchParams(window.location.search);
-        code = urlParams.get('code') || urlParams.get('join');
-        
-        // Check location state (from direct link navigation)
-        if (!code && location.state && location.state.joinCode) {
-          code = location.state.joinCode;
-        }
-        
-        if (code) {
-          console.log("[CodeEntryTab] Auto-joining with code:", code);
-          setEnteredCode(code);
-          setInvitationCode(code);
-          setAutoJoinAttempted(true);
-          
-          // Small delay to ensure UI is ready
-          setTimeout(() => {
-            joinClassWithCode(code);
-          }, 500);
-        }
-      } catch (error) {
-        console.error("[CodeEntryTab] Error in auto-join:", error);
-      }
-    };
-    
-    attemptAutoJoin();
-  }, [loading, autoJoinAttempted, joinClassWithCode, setInvitationCode, location]);
+  }, [autoJoinInProgress]);
 
   return (
     <div className="space-y-4">

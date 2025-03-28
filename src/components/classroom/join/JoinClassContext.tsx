@@ -1,9 +1,10 @@
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { ClassJoinService } from '@/services/class-join';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { codeExtractor } from '@/utils/codeExtractor';
 
 type JoinClassContextType = {
   invitationCode: string;
@@ -15,6 +16,7 @@ type JoinClassContextType = {
   error: string | null;
   setError: (error: string | null) => void;
   joinClassWithCode: (code: string) => Promise<void>;
+  autoJoinInProgress: boolean;
 };
 
 const JoinClassContext = createContext<JoinClassContextType>({
@@ -27,6 +29,7 @@ const JoinClassContext = createContext<JoinClassContextType>({
   error: null,
   setError: () => {},
   joinClassWithCode: async () => {},
+  autoJoinInProgress: false,
 });
 
 export const useJoinClassContext = () => useContext(JoinClassContext);
@@ -36,12 +39,60 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [scannerOpen, setScannerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoJoinInProgress, setAutoJoinInProgress] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check URL for invitation code
+  useEffect(() => {
+    const checkForInvitationCode = () => {
+      try {
+        // 1. Check query params
+        const searchParams = new URLSearchParams(location.search);
+        let code = searchParams.get('code');
+        
+        // 2. Check location state (from redirect)
+        if (!code && location.state && location.state.joinCode) {
+          code = location.state.joinCode;
+        }
+        
+        if (code) {
+          console.log("Found code in URL or state:", code);
+          const processedCode = codeExtractor.extractJoinCode(code);
+          if (processedCode) {
+            console.log("Processed code:", processedCode);
+            setInvitationCode(processedCode);
+            
+            // Auto-join if user is already logged in
+            if (user) {
+              setAutoJoinInProgress(true);
+              joinClassWithCode(processedCode)
+                .finally(() => setAutoJoinInProgress(false));
+                
+              // Clean up URL
+              if (window.history && window.history.replaceState) {
+                const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
+                window.history.replaceState(
+                  { ...location.state, joinCode: null }, 
+                  document.title, 
+                  newUrl
+                );
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error checking for invitation code:", err);
+      }
+    };
+    
+    checkForInvitationCode();
+  }, [location, user]); // Don't include joinClassWithCode in dependencies
 
   const joinClassWithCode = useCallback(async (classCode: string) => {
-    if (!classCode.trim()) {
+    if (!classCode || !classCode.trim()) {
       setError('Please enter a valid class code');
       return;
     }
@@ -53,6 +104,11 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         description: 'You must be logged in to join a class',
         variant: 'destructive',
       });
+      
+      // Save the code and redirect to auth
+      navigate('/auth', { 
+        state: { joinCode: classCode.trim() } 
+      });
       return;
     }
 
@@ -61,17 +117,17 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setError(null);
       console.log('Attempting to join class with code:', classCode);
 
-      const cleanCode = classCode.trim().toUpperCase();
+      const cleanCode = classCode.trim();
 
       // Process code to extract the actual invitation code (handle URLs, etc.)
-      const processedCode = ClassJoinService.extractCodeFromInput(cleanCode) || cleanCode;
+      const processedCode = codeExtractor.extractJoinCode(cleanCode) || cleanCode;
       console.log('Processed code for joining:', processedCode);
       
       const { data: foundClass, error: findError } = await ClassJoinService.findClassroomOrInvitation(processedCode);
       
       if (findError || !foundClass) {
         console.error('Error finding class:', findError);
-        setError(findError?.message || 'Invalid class code');
+        setError(findError?.message || 'Invalid class code. Please check and try again.');
         toast({
           title: 'Error',
           description: findError?.message || 'Invalid class code',
@@ -140,7 +196,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setLoading(false);
     }
-  }, [user, toast, navigate, setInvitationCode, setLoading, setError]);
+  }, [user, toast, navigate]);
 
   const contextValue: JoinClassContextType = {
     invitationCode,
@@ -152,6 +208,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     error,
     setError,
     joinClassWithCode,
+    autoJoinInProgress,
   };
 
   return (
