@@ -19,9 +19,9 @@ export const EnrollmentService = {
         };
       }
       
-      // Check if enrollment exists
+      // Check if enrollment exists - use 'classroom_students' instead of 'classroom_enrollments'
       const { data, error } = await supabase
-        .from("classroom_enrollments")
+        .from("classroom_students")
         .select("*")
         .eq("classroom_id", classroomId)
         .eq("student_id", session.session.user.id);
@@ -65,9 +65,9 @@ export const EnrollmentService = {
         };
       }
       
-      // Create enrollment record
+      // Create enrollment record - use 'classroom_students' instead of 'classroom_enrollments'
       const { data, error } = await supabase
-        .from("classroom_enrollments")
+        .from("classroom_students")
         .insert({
           classroom_id: classroomId,
           student_id: session.session.user.id

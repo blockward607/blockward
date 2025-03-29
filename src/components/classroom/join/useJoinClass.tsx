@@ -131,13 +131,13 @@ export const useJoinClass = () => {
       
       // Check if already enrolled
       const { data: existingEnrollment, error: enrollmentError } = 
-        await ClassJoinService.checkEnrollment(studentId, classroomId);
+        await ClassJoinService.checkEnrollment(classroomId);
       
       if (enrollmentError) {
         console.error("Error checking enrollment:", enrollmentError);
       }
         
-      if (existingEnrollment) {
+      if (existingEnrollment && existingEnrollment.length > 0) {
         console.log("Student already enrolled in this classroom");
         toast({
           title: "Already enrolled",
@@ -148,8 +148,8 @@ export const useJoinClass = () => {
       }
       
       // Enroll the student
-      console.log("Enrolling student in classroom:", { studentId, classroomId });
-      const { data: enrollData, error: enrollError } = await ClassJoinService.enrollStudent(studentId, classroomId);
+      console.log("Enrolling student in classroom:", { classroomId });
+      const { data: enrollData, error: enrollError } = await ClassJoinService.enrollStudent(classroomId);
       
       if (enrollError) {
         console.error("Error enrolling student:", enrollError);
