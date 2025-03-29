@@ -147,8 +147,8 @@ export const useJoinClass = () => {
         return;
       }
       
-      // Enroll the student
-      console.log("Enrolling student in classroom:", { classroomId });
+      // Enroll the student - passing both parameters correctly
+      console.log("Enrolling student in classroom:", { classroomId, invitationId });
       const { data: enrollData, error: enrollError } = await ClassJoinService.enrollStudent(classroomId, invitationId);
       
       if (enrollError) {
@@ -157,11 +157,6 @@ export const useJoinClass = () => {
         return;
       }
 
-      // If we used an invitation with ID, update its status
-      if (invitationId) {
-        await ClassJoinService.acceptInvitation(invitationId);
-      }
-      
       // Success!
       console.log("Successfully joined classroom:", classroomName);
       toast({

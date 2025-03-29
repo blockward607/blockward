@@ -1,51 +1,63 @@
 
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QRScanTab } from "./QRScanTab";
 import CodeEntryTab from "./CodeEntryTab";
-import { Card } from "@/components/ui/card";
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { codeExtractor } from "@/utils/codeExtractor";
+import { ImportOptions } from "./ImportOptions";
+import { GoogleClassroomImportDialog } from "./GoogleClassroomImportDialog";
+import { useJoinClassContext } from "./JoinClassContext";
 
 export const JoinClassSection = () => {
-  const [activeTab, setActiveTab] = useState('code');
-  const location = useLocation();
+  const [activeTab, setActiveTab] = useState("code");
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const { scannerOpen, setScannerOpen, autoJoinInProgress } = useJoinClassContext();
   
-  // Check if we have a code in the URL that could be scanned via QR
-  useEffect(() => {
-    const checkForQRCode = () => {
-      const searchParams = new URLSearchParams(location.search);
-      const code = searchParams.get('code') || searchParams.get('join');
-      
-      // If code comes from a QR scan (usually contains URL or complex format), show scan tab
-      if (code && (code.includes('://') || code.length > 20)) {
-        const extractedCode = codeExtractor.extractJoinCode(code);
-        if (extractedCode) {
-          setActiveTab('scan');
-        }
-      }
-    };
-    
-    checkForQRCode();
-  }, [location]);
+  // If auto-join is in progress, show the code tab which has loading state
+  if (autoJoinInProgress) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <Card className="glass-card p-6">
+          <h2 className="text-2xl font-bold text-center mb-4 gradient-text">Join Class</h2>
+          <CodeEntryTab />
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <Card className="p-4 bg-black/40 border border-purple-500/30">
-      <h2 className="text-xl font-semibold mb-4 text-white">Join a Class</h2>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6 bg-black/60 border border-purple-500/30">
-          <TabsTrigger value="code">Enter Code</TabsTrigger>
-          <TabsTrigger value="scan">Scan QR</TabsTrigger>
-        </TabsList>
+    <div className="w-full max-w-md mx-auto">
+      <Card className="glass-card p-6">
+        <h2 className="text-2xl font-bold text-center mb-4 gradient-text">Join Class</h2>
         
-        <TabsContent value="code" className="mt-2">
-          <CodeEntryTab />
-        </TabsContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="code">Invitation Code</TabsTrigger>
+            <TabsTrigger value="scan">Scan QR Code</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="code">
+            <CodeEntryTab />
+          </TabsContent>
+          
+          <TabsContent value="scan">
+            <QRScanTab
+              open={scannerOpen}
+              onOpenChange={setScannerOpen}
+              onClose={() => setScannerOpen(false)}
+            />
+          </TabsContent>
+        </Tabs>
         
-        <TabsContent value="scan" className="mt-2">
-          <QRScanTab />
-        </TabsContent>
-      </Tabs>
-    </Card>
+        <div className="mt-6 pt-4 border-t border-gray-800">
+          <ImportOptions onImport={() => setShowImportDialog(true)} />
+        </div>
+      </Card>
+      
+      <GoogleClassroomImportDialog 
+        open={showImportDialog} 
+        onOpenChange={setShowImportDialog} 
+      />
+    </div>
   );
 };

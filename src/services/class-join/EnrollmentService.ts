@@ -19,7 +19,7 @@ export const EnrollmentService = {
         };
       }
       
-      // Check if enrollment exists - use 'classroom_students' instead of 'classroom_enrollments'
+      // Check if enrollment exists - using the correct table name 'classroom_students'
       const { data, error } = await supabase
         .from("classroom_students")
         .select("*")
@@ -61,11 +61,12 @@ export const EnrollmentService = {
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) {
         return { 
+          data: null,
           error: { message: "User not authenticated" } as SupabaseError 
         };
       }
       
-      // Create enrollment record - use 'classroom_students' instead of 'classroom_enrollments'
+      // Create enrollment record - using the correct table name 'classroom_students'
       const { data, error } = await supabase
         .from("classroom_students")
         .insert({
@@ -78,6 +79,7 @@ export const EnrollmentService = {
       if (error) {
         console.error("[EnrollmentService] Error enrolling student:", error);
         return { 
+          data: null,
           error: { message: error.message } as SupabaseError 
         };
       }
@@ -96,6 +98,7 @@ export const EnrollmentService = {
     } catch (err: any) {
       console.error("[EnrollmentService] Unexpected error in enrollStudent:", err);
       return { 
+        data: null,
         error: { message: err.message || "Failed to enroll student" } as SupabaseError 
       };
     }

@@ -117,7 +117,7 @@ export const useJoinClassProvider = () => {
       
       console.log("[useJoinClassProvider] Student not enrolled, proceeding with enrollment");
       
-      // Enroll the student in the classroom
+      // Enroll the student in the classroom - passing both parameters correctly
       const { error: joinError } = await ClassJoinService.enrollStudent(
         result.data.classroomId,
         result.data.invitationId
