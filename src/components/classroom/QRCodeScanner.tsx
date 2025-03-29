@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Html5Qrcode } from "html5-qrcode";
@@ -12,8 +13,9 @@ interface QRCodeScannerProps {
 export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasPermission, setHasPermission] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const qrBoxRef = useRef<HTMLDivElement>(null);
+  const qrBoxId = "qr-reader";
 
   useEffect(() => {
     let scanner: Html5Qrcode | null = null;
@@ -21,9 +23,19 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
     const initScanner = async () => {
       try {
         setIsLoading(true);
-        const qrBoxId = "qr-reader";
         scanner = new Html5Qrcode(qrBoxId);
         scannerRef.current = scanner;
+
+        // Check for camera permissions first
+        try {
+          await navigator.mediaDevices.getUserMedia({ video: true });
+          setHasPermission(true);
+        } catch (permissionError) {
+          console.error("Camera permission denied:", permissionError);
+          setError("Camera access denied. Please enable camera permissions and try again.");
+          setIsLoading(false);
+          return;
+        }
 
         const devices = await Html5Qrcode.getCameras();
         if (devices && devices.length > 0) {
@@ -39,45 +51,62 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
               // On QR code detected
               console.log("QR code detected:", decodedText);
               
-              // Use the codeExtractor to process the QR code content
-              const extractedCode = codeExtractor.extractJoinCode(decodedText);
-              
-              if (extractedCode) {
-                console.log("Extracted code from QR:", extractedCode);
+              try {
+                // Use the codeExtractor to process the QR code content
+                const extractedCode = codeExtractor.extractJoinCode(decodedText);
                 
-                // Stop scanning temporarily to prevent multiple scans
-                if (scanner) {
-                  scanner.pause(true);
+                if (extractedCode) {
+                  console.log("Extracted code from QR:", extractedCode);
                   
-                  // Small delay to ensure we don't double-process
-                  setTimeout(() => {
+                  // Stop scanning to prevent multiple scans
+                  if (scanner) {
+                    scanner.pause();
+                    
+                    // Process the QR code
                     onScan(extractedCode);
                     
                     // Stop scanner after successful processing
-                    if (scanner) {
-                      scanner.stop().catch(error => console.error("Error stopping scanner:", error));
-                    }
-                  }, 500);
-                }
-              } else {
-                // If no valid code, try to use the raw text
-                if (decodedText && decodedText.trim()) {
-                  console.log("No valid code extracted, using raw QR content");
-                  onScan(decodedText.trim());
+                    setTimeout(() => {
+                      if (scanner) {
+                        scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                      }
+                    }, 300);
+                  }
+                } else if (decodedText && decodedText.trim()) {
+                  // If no valid code extracted, use the raw text
+                  console.log("No valid code extracted, using raw QR content:", decodedText.trim());
                   
+                  // Stop scanning
                   if (scanner) {
-                    scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                    scanner.pause();
+                    
+                    // Process the raw QR code
+                    onScan(decodedText.trim());
+                    
+                    // Stop scanner after successful processing
+                    setTimeout(() => {
+                      if (scanner) {
+                        scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                      }
+                    }, 300);
                   }
                 } else {
                   console.warn("QR code content is empty or invalid");
                 }
+              } catch (err) {
+                console.error("Error processing QR code:", err);
               }
             },
             (errorMessage) => {
-              // Ignore errors during scanning
-              console.log(errorMessage);
+              // Ignore continuous scanning errors
+              // console.log("QR scan error:", errorMessage);
             }
-          );
+          ).catch(err => {
+            console.error("Error starting scanner:", err);
+            setError("Error starting the camera. Please try again.");
+            setIsLoading(false);
+          });
+          
           setIsLoading(false);
         } else {
           setError("No camera devices found");
@@ -118,8 +147,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
       )}
 
       <div 
-        id="qr-reader" 
-        ref={qrBoxRef} 
+        id={qrBoxId} 
         className={`w-full max-w-xs ${isLoading || error ? 'hidden' : ''}`}
       >
         {/* Scanner will render here */}
