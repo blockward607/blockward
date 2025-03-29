@@ -1102,6 +1102,22 @@ export type Database = {
         }
         Returns: undefined
       }
+      find_classroom_invitation_matches: {
+        Args: {
+          code: string
+        }
+        Returns: {
+          id: string
+          invitation_token: string
+          classroom_id: string
+          expires_at: string
+          status: string
+          classroom_name: string
+          classroom_description: string
+          classroom_teacher_id: string
+          match_type: string
+        }[]
+      }
       get_conversation_messages: {
         Args: {
           conversation_id_param: string
