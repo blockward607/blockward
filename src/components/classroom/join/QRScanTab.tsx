@@ -30,6 +30,7 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
       // Add some logging to help debug
       console.log("About to join class with code:", code);
       
+      // Directly use the code without processing it
       await joinClassWithCode(code);
       console.log("Successfully joined class");
       toast.success("Successfully joined classroom!");

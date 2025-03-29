@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Html5Qrcode } from "html5-qrcode";
 import { Loader2, X } from "lucide-react";
-import { codeExtractor } from "@/utils/codeExtractor";
-import { LoadingSpinner } from "../ui/loading-spinner";
 
 interface QRCodeScannerProps {
   onScan: (code: string) => void;
@@ -53,77 +51,25 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
               // On QR code detected
               console.log("QR code detected:", decodedText);
               
-              try {
-                // Use the codeExtractor to process the QR code content
-                const extractedCode = codeExtractor.extractJoinCode(decodedText);
+              // Stop scanning to prevent multiple scans
+              if (scanner) {
+                scanner.pause();
                 
-                if (extractedCode) {
-                  console.log("Extracted code from QR:", extractedCode);
-                  
-                  // Stop scanning to prevent multiple scans
+                // Process the QR code directly without any extraction
+                onScan(decodedText.trim());
+                
+                // Stop scanner after successful processing
+                setTimeout(() => {
                   if (scanner) {
-                    scanner.pause();
-                    
-                    // Process the QR code
-                    onScan(extractedCode);
-                    
-                    // Stop scanner after successful processing
-                    setTimeout(() => {
-                      if (scanner) {
-                        scanner.stop().catch(error => console.error("Error stopping scanner:", error));
-                      }
-                    }, 300);
+                    scanner.stop().catch(error => 
+                      console.error("Error stopping scanner:", error)
+                    );
                   }
-                } else {
-                  // Try more permissive extraction method
-                  const permissiveCode = codeExtractor.extractInvitationToken(decodedText);
-                  
-                  if (permissiveCode) {
-                    console.log("Using permissive code extraction for QR:", permissiveCode);
-                    
-                    // Stop scanning
-                    if (scanner) {
-                      scanner.pause();
-                      
-                      // Process with permissive code
-                      onScan(permissiveCode);
-                      
-                      // Stop scanner after successful processing
-                      setTimeout(() => {
-                        if (scanner) {
-                          scanner.stop().catch(error => console.error("Error stopping scanner:", error));
-                        }
-                      }, 300);
-                    }
-                  } else if (decodedText && decodedText.trim()) {
-                    // If no valid code extracted, use the raw text
-                    console.log("No valid code extracted, using raw QR content:", decodedText.trim());
-                    
-                    // Stop scanning
-                    if (scanner) {
-                      scanner.pause();
-                      
-                      // Process the raw QR code
-                      onScan(decodedText.trim());
-                      
-                      // Stop scanner after successful processing
-                      setTimeout(() => {
-                        if (scanner) {
-                          scanner.stop().catch(error => console.error("Error stopping scanner:", error));
-                        }
-                      }, 300);
-                    }
-                  } else {
-                    console.warn("QR code content is empty or invalid");
-                  }
-                }
-              } catch (err) {
-                console.error("Error processing QR code:", err);
+                }, 300);
               }
             },
             (errorMessage) => {
               // Ignore continuous scanning errors
-              // console.log("QR scan error:", errorMessage);
             }
           ).catch(err => {
             console.error("Error starting scanner:", err);

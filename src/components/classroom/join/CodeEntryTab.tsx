@@ -6,14 +6,12 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Clipboard, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { useProcessInvitationCode } from "./hooks/useProcessInvitationCode";
 
 const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, joinClassWithCode, loading, error } = useJoinClassContext();
   const [localError, setLocalError] = useState<string | null>(null);
   const [processingCode, setProcessingCode] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { processInvitationCode } = useProcessInvitationCode();
   
   useEffect(() => {
     if (inputRef.current) {
@@ -33,16 +31,11 @@ const CodeEntryTab = () => {
         return;
       }
       
-      const processedCode = processInvitationCode(trimmedCode);
-      setProcessingCode(processedCode || trimmedCode);
+      // Use the code directly without processing
+      setProcessingCode(trimmedCode);
       
-      if (!processedCode) {
-        setLocalError("Invalid code format");
-        return;
-      }
-      
-      console.log("Submitting code for join:", processedCode);
-      await joinClassWithCode(processedCode);
+      console.log("Submitting code for join:", trimmedCode);
+      await joinClassWithCode(trimmedCode);
     } catch (err: any) {
       console.error("Error in join form:", err);
       setLocalError(err.message || "An unexpected error occurred");
@@ -54,14 +47,8 @@ const CodeEntryTab = () => {
       const clipboardText = await navigator.clipboard.readText();
       console.log("Pasted text:", clipboardText);
       
-      const extractedCode = processInvitationCode(clipboardText);
-      
-      if (extractedCode) {
-        console.log("Extracted code from clipboard:", extractedCode);
-        setInvitationCode(extractedCode);
-      } else {
-        setInvitationCode(clipboardText);
-      }
+      // Set the code directly without processing
+      setInvitationCode(clipboardText.trim());
     } catch (err) {
       console.error("Error accessing clipboard:", err);
       setLocalError("Could not access clipboard. Please paste manually.");

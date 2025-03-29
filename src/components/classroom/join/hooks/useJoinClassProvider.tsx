@@ -3,7 +3,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClassJoinService } from '@/services/class-join';
 import { useToast } from '@/hooks/use-toast';
-import { useProcessInvitationCode } from './useProcessInvitationCode';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,7 +16,6 @@ export const useJoinClassProvider = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { processInvitationCode } = useProcessInvitationCode();
 
   // Auto-extract code from URL if present
   useEffect(() => {
@@ -28,21 +26,18 @@ export const useJoinClassProvider = () => {
         
         if (codeFromUrl) {
           console.log("[useJoinClassProvider] Found code in URL:", codeFromUrl);
-          const processedCode = processInvitationCode(codeFromUrl);
           
-          if (processedCode) {
-            console.log("[useJoinClassProvider] Setting invitation code from URL:", processedCode);
-            setInvitationCode(processedCode);
-            
-            // Only auto-join if we have a valid code and the user is logged in
-            if (user) {
-              console.log("[useJoinClassProvider] User is logged in, attempting auto-join with code:", processedCode);
-              setAutoJoinInProgress(true);
-              joinClassWithCode(processedCode)
-                .finally(() => setAutoJoinInProgress(false));
-            } else {
-              console.log("[useJoinClassProvider] User not logged in, saving code for later join");
-            }
+          // Set the code without processing
+          setInvitationCode(codeFromUrl);
+          
+          // Only auto-join if we have a valid code and the user is logged in
+          if (user) {
+            console.log("[useJoinClassProvider] User is logged in, attempting auto-join with code:", codeFromUrl);
+            setAutoJoinInProgress(true);
+            joinClassWithCode(codeFromUrl)
+              .finally(() => setAutoJoinInProgress(false));
+          } else {
+            console.log("[useJoinClassProvider] User not logged in, saving code for later join");
           }
         }
       } catch (err) {
@@ -73,130 +68,77 @@ export const useJoinClassProvider = () => {
         setError("Please enter an invitation code");
         return;
       }
-
-      // Process the input to extract a valid code
-      const processedCode = processInvitationCode(code);
       
-      if (!processedCode) {
-        setError("Invalid code format");
+      console.log("[useJoinClassProvider] Processing join with code:", code);
+      
+      // Find classroom or invitation using service method
+      const { data: matchData, error: matchError } = 
+        await ClassJoinService.findClassroomOrInvitation(code);
+      
+      console.log("Match result:", matchData, matchError);
+      
+      if (matchError || !matchData) {
+        console.error("[useJoinClassProvider] Error finding classroom or invitation:", matchError);
+        setError(matchError?.message || "Invalid code. Please check your code and try again.");
         return;
       }
       
-      console.log("[useJoinClassProvider] Processing join with cleaned code:", processedCode);
+      // Determine the classroom to join
+      const classroomId = matchData.classroomId;
+      const classroomName = matchData.classroom?.name || "the classroom";
+      const invitationId = matchData.invitationId;
       
-      // First, try to find the class invitation by token
-      const { data: invitation, error: invitationError } = await supabase
-        .from('class_invitations')
-        .select('id, classroom_id, expires_at, status')
-        .eq('invitation_token', processedCode)
-        .eq('status', 'pending')
-        .single();
+      console.log("[useJoinClassProvider] Found classroom to join:", { classroomId, classroomName });
       
-      if (invitationError) {
-        console.error("[useJoinClassProvider] Error finding invitation:", invitationError);
-        setError("Invalid or expired invitation code");
-        return;
-      }
-      
-      if (!invitation) {
-        setError("Invitation not found or expired");
-        return;
-      }
-
-      // Check if the invitation is still valid
-      const expiresAt = new Date(invitation.expires_at);
-      const now = new Date();
-      
-      if (expiresAt < now) {
-        setError("This invitation has expired");
-        return;
-      }
-      
-      console.log("[useJoinClassProvider] Found valid invitation:", invitation);
-      
-      // Check if student is already enrolled in this classroom
-      const { data: enrollments, error: enrollmentError } = await supabase
-        .from('classroom_students')
-        .select('id')
-        .eq('classroom_id', invitation.classroom_id)
-        .eq('student_id', user.id);
+      // Check if already enrolled
+      const { data: existingEnrollment, error: enrollmentError } = 
+        await ClassJoinService.checkEnrollment(classroomId);
       
       if (enrollmentError) {
         console.error("[useJoinClassProvider] Error checking enrollment:", enrollmentError);
-        setError("Error checking enrollment status");
-        return;
       }
-      
-      if (enrollments && enrollments.length > 0) {
-        setError("You are already enrolled in this class");
-        return;
-      }
-      
-      console.log("[useJoinClassProvider] Student not enrolled, proceeding with enrollment");
-      
-      // Get student profile ID using the students table (not student_profiles)
-      const { data: studentProfile, error: profileError } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (profileError || !studentProfile) {
-        console.error("[useJoinClassProvider] Error getting student profile:", profileError);
-        setError("Student profile not found. Make sure your account is set up correctly.");
-        return;
-      }
-      
-      // Enroll the student in the classroom
-      const { error: joinError } = await supabase
-        .from('classroom_students')
-        .insert({
-          classroom_id: invitation.classroom_id,
-          student_id: studentProfile.id
+        
+      if (existingEnrollment && existingEnrollment.length > 0) {
+        console.log("[useJoinClassProvider] Student already enrolled in this classroom");
+        toast({
+          title: "Already enrolled",
+          description: "You are already a member of this classroom"
         });
-      
-      if (joinError) {
-        console.error("[useJoinClassProvider] Error enrolling student:", joinError);
-        setError("Error joining classroom: " + joinError.message);
+        navigate(`/class/${classroomId}`);
         return;
       }
       
-      // Update invitation status to accepted
-      const { error: updateError } = await supabase
-        .from('class_invitations')
-        .update({ status: 'accepted' })
-        .eq('id', invitation.id);
+      // Enroll the student
+      console.log("[useJoinClassProvider] Enrolling student in classroom:", { classroomId, invitationId });
+      const { data: enrollData, error: enrollError } = await ClassJoinService.enrollStudent(classroomId, invitationId);
       
-      if (updateError) {
-        console.warn("[useJoinClassProvider] Error updating invitation status:", updateError);
-        // Not failing the entire operation for this
+      if (enrollError) {
+        console.error("[useJoinClassProvider] Error enrolling student:", enrollError);
+        setError("Error joining classroom: " + (enrollError.message || "Unknown error"));
+        return;
       }
-      
-      console.log("[useJoinClassProvider] Student successfully enrolled");
-      
-      // Get classroom details for the success message
-      const { data: classroom } = await supabase
-        .from('classrooms')
-        .select('name')
-        .eq('id', invitation.classroom_id)
-        .single();
-      
+
       // Success!
+      console.log("[useJoinClassProvider] Successfully joined classroom:", classroomName);
       toast({
         title: "Success!",
-        description: `You've joined ${classroom?.name || 'the classroom'}`
+        description: `You've joined ${classroomName || 'the classroom'}`
       });
       
-      // Navigate to class detail page
-      navigate(`/class/${invitation.classroom_id}`);
+      // Redirect to class details page
+      navigate(`/class/${classroomId}`);
       
-    } catch (err: any) {
-      console.error("[useJoinClassProvider] Unexpected error in joinClassWithCode:", err);
-      setError(err.message || "An unexpected error occurred");
+    } catch (error: any) {
+      console.error("[useJoinClassProvider] Error joining class:", error);
+      setError(error.message || "An unexpected error occurred");
     } finally {
+      setIsJoining(false);
       setLoading(false);
     }
-  }, [navigate, user, toast, processInvitationCode]);
+  }, [invitationCode, setError, setLoading, isJoining, toast, navigate, user]);
+
+  // Workaround for the isJoining variable
+  const [isJoining, setIsJoining] = useState(false);
 
   return {
     invitationCode,
