@@ -1,9 +1,10 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useJoinClassContext } from "./JoinClassContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, AlertTriangle, Clipboard, Sparkles } from "lucide-react";
+import { AlertCircle, Clipboard, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useProcessInvitationCode } from "./hooks/useProcessInvitationCode";
 

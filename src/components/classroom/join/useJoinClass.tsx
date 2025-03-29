@@ -149,7 +149,7 @@ export const useJoinClass = () => {
       
       // Enroll the student
       console.log("Enrolling student in classroom:", { classroomId });
-      const { data: enrollData, error: enrollError } = await ClassJoinService.enrollStudent(classroomId);
+      const { data: enrollData, error: enrollError } = await ClassJoinService.enrollStudent(classroomId, invitationId);
       
       if (enrollError) {
         console.error("Error enrolling student:", enrollError);
