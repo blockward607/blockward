@@ -14,6 +14,7 @@ import Index from "@/pages/Index";
 import GoogleClassroom from "@/pages/GoogleClassroom";
 import ViewStudentDashboard from "@/pages/StudentDashboard";
 import ViewTeacherDashboard from "@/pages/ViewTeacherDashboard";
+import ClassroomInvite from "@/pages/ClassroomInvite";
 
 // Lazy-loaded components
 const Home = lazy(() => import("@/pages/Home"));
@@ -32,7 +33,6 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Progress = lazy(() => import("@/pages/Progress"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const ResetPasswordOTP = lazy(() => import("@/pages/ResetPasswordOTP"));
-const ClassroomInvite = lazy(() => import("@/pages/ClassroomInvite"));
 const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
 const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
 const Grades = lazy(() => import("@/pages/Grades"));
