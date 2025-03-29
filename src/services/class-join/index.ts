@@ -1,6 +1,6 @@
 
 import { EnrollmentService } from './EnrollmentService';
-import { InvitationMatchingService } from './InvitationMatchingService';
+import { InvitationMatchingService } from './invitation/InvitationMatchingService';
 import { JoinClassroomResult } from './types';
 
 export const ClassJoinService = {

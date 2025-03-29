@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState } from 'react';
+import { useJoinClassProvider } from './hooks/useJoinClassProvider';
 
 // Define the context type
 type JoinClassContextType = {
@@ -32,9 +33,9 @@ const JoinClassContext = createContext<JoinClassContextType>({
 // Export the useContext hook
 export const useJoinClassContext = () => useContext(JoinClassContext);
 
-// Export the provider component that uses the implementation from useJoinClassProvider
+// Export the provider component
 export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Import the hook with all the implementation
+  // Use the hook to get all the implementation
   const contextValue = useJoinClassProvider();
   
   return (
@@ -44,5 +45,5 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 };
 
-// Re-export the hook to maintain backward compatibility
+// Re-export the hook
 export { useJoinClassProvider } from './hooks/useJoinClassProvider';
