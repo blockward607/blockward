@@ -1,49 +1,34 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Layers, School } from "lucide-react";
 
-interface ImportOptionsProps {
-  courses: any[];
-  selectedCourse: any;
-  onSelectCourse: (course: any) => void;
-  loading: boolean;
+export interface ImportOptionsProps {
+  onImport: () => void;
 }
 
-export const ImportOptions = ({ courses, selectedCourse, onSelectCourse, loading }: ImportOptionsProps) => {
-  if (loading) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
-  
+export const ImportOptions: React.FC<ImportOptionsProps> = ({ onImport }) => {
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Select a class to import
-        </label>
-        <Select
-          value={selectedCourse?.id || ""}
-          onValueChange={(value) => {
-            const course = courses.find(c => c.id === value);
-            if (course) {
-              onSelectCourse(course);
-            }
-          }}
+    <div className="space-y-2">
+      <p className="text-sm text-gray-400 mb-2">
+        Or import from another platform
+      </p>
+      <div className="grid grid-cols-1 gap-2">
+        <Button
+          variant="outline"
+          onClick={onImport}
+          className="w-full flex items-center justify-start text-left bg-black/20 border-purple-500/30 hover:bg-purple-900/20"
         >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a class" />
-          </SelectTrigger>
-          <SelectContent>
-            {courses.map((course) => (
-              <SelectItem key={course.id} value={course.id}>
-                {course.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <School className="mr-2 h-4 w-4" />
+          Import from Google Classroom
+        </Button>
+        <Button
+          variant="outline"
+          disabled
+          className="w-full flex items-center justify-start text-left bg-black/20 border-purple-500/30 opacity-50 cursor-not-allowed"
+        >
+          <Layers className="mr-2 h-4 w-4" />
+          Import from Microsoft Teams (Coming Soon)
+        </Button>
       </div>
     </div>
   );

@@ -1,87 +1,54 @@
 
-import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Import } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { useGoogleClassroomImport } from "./hooks/useGoogleClassroomImport";
-import { ClassDetails } from "./ClassDetails";
-import { ImportOptions } from "./ImportOptions";
+import { School } from "lucide-react";
 
-export const GoogleClassroomImportDialog = () => {
-  const [open, setOpen] = useState(false);
-  const {
-    courses,
-    selectedCourse,
-    loading,
-    students,
-    studentsLoaded,
-    handleImportClass,
-    handleSelectCourse,
-    handleAuthenticate,
-    isAuthenticated,
-  } = useGoogleClassroomImport();
+export interface GoogleClassroomImportDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
+export const GoogleClassroomImportDialog: React.FC<GoogleClassroomImportDialogProps> = ({
+  open,
+  onOpenChange,
+}) => {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Import className="w-4 h-4 mr-2" /> 
-          Import from Google Classroom
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Import Class from Google Classroom</DialogTitle>
+          <DialogTitle>Import from Google Classroom</DialogTitle>
+          <DialogDescription>
+            Connect your Google Classroom account to import your classes
+          </DialogDescription>
         </DialogHeader>
-        
-        {!isAuthenticated ? (
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Connect to your Google Classroom account to import classes and students.
-            </p>
-            <Button onClick={handleAuthenticate}>
-              Authenticate with Google
-            </Button>
+        <div className="p-4 flex flex-col items-center justify-center">
+          <div className="mb-4 rounded-full bg-purple-800/30 p-4">
+            <School className="h-8 w-8 text-purple-300" />
           </div>
-        ) : (
-          <div className="space-y-4 py-2">
-            <ImportOptions 
-              courses={courses}
-              selectedCourse={selectedCourse}
-              onSelectCourse={handleSelectCourse}
-              loading={loading}
-            />
-            
-            {selectedCourse && (
-              <>
-                <ClassDetails 
-                  course={selectedCourse} 
-                  loading={loading} 
-                  students={students}
-                  studentsLoaded={studentsLoaded}
-                />
-                
-                <div className="pt-4 flex justify-end">
-                  <Button 
-                    onClick={() => {
-                      handleImportClass();
-                      setOpen(false);
-                    }}
-                    disabled={!selectedCourse || loading}
-                  >
-                    Import Class
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+          <p className="text-center mb-4">
+            You will be redirected to Google to authorize this application to
+            access your Google Classroom data.
+          </p>
+        </div>
+        <DialogFooter className="flex space-x-2 sm:space-x-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button type="button" disabled>
+            Connect Google Classroom
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
