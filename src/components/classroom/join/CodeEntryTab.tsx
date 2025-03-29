@@ -1,119 +1,141 @@
+
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, UserPlus } from "lucide-react";
 import { useJoinClassContext } from "./JoinClassContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
-import { codeExtractor } from "@/utils/codeExtractor";
+import { AlertCircle, AlertTriangle, PasteClipboard, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
+import { useProcessInvitationCode } from "./hooks/useProcessInvitationCode";
 
-export const CodeEntryTab = () => {
-  const { 
-    invitationCode, 
-    setInvitationCode, 
-    loading, 
-    error, 
-    joinClassWithCode,
-    autoJoinInProgress
-  } = useJoinClassContext();
-  
-  const [enteredCode, setEnteredCode] = useState("");
+const CodeEntryTab = () => {
+  const { invitationCode, setInvitationCode, joinClassWithCode, loading, error } = useJoinClassContext();
+  const [localError, setLocalError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Set enteredCode to invitationCode when invitationCode changes (from URL)
+  const { processInvitationCode } = useProcessInvitationCode();
+  
+  // Focus input on mount
   useEffect(() => {
-    if (invitationCode && enteredCode !== invitationCode) {
-      console.log("Setting entered code to invitation code:", invitationCode);
-      setEnteredCode(invitationCode);
-    }
-  }, [invitationCode, enteredCode]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEnteredCode(value);
-    
-    // Extract code in real-time if it's a URL or complex format
-    const extractedCode = codeExtractor.extractJoinCode(value);
-    if (extractedCode && extractedCode !== value) {
-      console.log("Extracted code in real-time:", extractedCode);
-      setEnteredCode(extractedCode);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && enteredCode) {
-      handleSubmitCode();
-    }
-  };
-
-  // Handle submit and validation
-  const handleSubmitCode = () => {
-    if (!enteredCode) return;
-    
-    // Try to extract a code if it's a URL or complex format
-    const processedCode = codeExtractor.extractJoinCode(enteredCode) || enteredCode;
-    
-    // Update the context code
-    setInvitationCode(processedCode);
-    
-    console.log("[CodeEntryTab] Processing code for submission:", processedCode);
-    joinClassWithCode(processedCode);
-  };
-
-  // Focus the input field when component mounts
-  useEffect(() => {
-    if (inputRef.current && !autoJoinInProgress) {
+    if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [autoJoinInProgress]);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError(null);
+    
+    try {
+      const trimmedCode = invitationCode.trim();
+      
+      if (!trimmedCode) {
+        setLocalError("Please enter an invitation code");
+        return;
+      }
+      
+      // Extract and validate the code format
+      const processedCode = processInvitationCode(trimmedCode);
+      
+      if (!processedCode) {
+        setLocalError("Invalid code format");
+        return;
+      }
+      
+      // Join with the formatted code
+      await joinClassWithCode(processedCode);
+    } catch (err: any) {
+      console.error("Error in join form:", err);
+      setLocalError(err.message || "An unexpected error occurred");
+    }
+  };
+
+  const handlePaste = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      console.log("Pasted text:", clipboardText);
+      
+      // Process and extract the code from pasted content
+      const extractedCode = processInvitationCode(clipboardText);
+      
+      if (extractedCode) {
+        console.log("Extracted code from clipboard:", extractedCode);
+        setInvitationCode(extractedCode);
+      } else {
+        setInvitationCode(clipboardText);
+      }
+    } catch (err) {
+      console.error("Error accessing clipboard:", err);
+      setLocalError("Could not access clipboard. Please paste manually.");
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      {error && (
-        <Alert variant="destructive" className="bg-red-900/20 border-red-800 text-red-300">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      <div className="flex flex-col gap-3">
-        <Input
-          ref={inputRef}
-          value={enteredCode}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Enter classroom code (e.g., UKFCUY)"
-          className="flex-1 bg-black/60 border-purple-500/30 font-mono text-lg text-center tracking-wider"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck="false"
-          disabled={loading}
-        />
-        <Button
-          onClick={handleSubmitCode}
-          disabled={loading || !enteredCode}
-          className="bg-purple-700 hover:bg-purple-800 py-6"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Joining...
-            </>
-          ) : (
-            <>
-              <UserPlus className="w-4 h-4 mr-2" />
-              Join Class
-            </>
-          )}
-        </Button>
-      </div>
-      
-      <p className="text-xs text-gray-400 mt-2">
-        Enter the class code provided by your teacher, typically starting with "UK".
-      </p>
-      <p className="text-xs text-gray-400">
-        You can also paste a full invitation link here.
-      </p>
+    <div className="p-1">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <div className="relative">
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Enter invitation code (e.g. UK5CRH)"
+              value={invitationCode}
+              onChange={(e) => setInvitationCode(e.target.value)}
+              className="bg-black/20 border-purple-500/30 pr-10 font-mono"
+              disabled={loading}
+              autoFocus
+              autoComplete="off"
+            />
+            {!invitationCode && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1"
+                onClick={handlePaste}
+                disabled={loading}
+              >
+                <PasteClipboard className="h-4 w-4 text-gray-400" />
+              </Button>
+            )}
+          </div>
+          
+          <p className="text-xs text-gray-400">
+            Enter the code shared by your teacher
+          </p>
+        </div>
+
+        {(error || localError) && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Alert variant="destructive" className="bg-red-900/20 border-red-800 text-red-300">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              <AlertDescription>{error || localError}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 py-5"
+          >
+            {loading ? (
+              <span className="flex items-center">
+                <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
+                Joining...
+              </span>
+            ) : (
+              <span>Join Class</span>
+            )}
+          </Button>
+        </motion.div>
+      </form>
     </div>
   );
 };
+
+export default CodeEntryTab;

@@ -11,7 +11,9 @@ export class InvitationMatchingService {
    * Extract code from various input formats (URL, plain code, etc.)
    */
   public static extractCodeFromInput(input: string): string | null {
-    return extractInvitationCode(input);
+    const extractedCode = extractInvitationCode(input);
+    console.log("[InvitationMatchingService] Input:", input, "Extracted code:", extractedCode);
+    return extractedCode;
   }
 
   /**

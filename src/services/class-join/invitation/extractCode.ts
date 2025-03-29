@@ -8,6 +8,32 @@ import { codeExtractor } from "@/utils/codeExtractor";
 export const extractInvitationCode = (input: string): string | null => {
   if (!input) return null;
   
-  // Delegate to the codeExtractor utility
-  return codeExtractor.extractJoinCode(input);
+  // Clean the input
+  const cleanInput = input.trim();
+  
+  try {
+    // First try using the utility
+    const extractedCode = codeExtractor.extractJoinCode(cleanInput);
+    
+    if (extractedCode) {
+      console.log("[extractInvitationCode] Extracted code:", extractedCode);
+      return extractedCode;
+    }
+    
+    // Fallback: Check if the code is directly valid (in case the utility failed)
+    // Common format for invitation codes is 6-10 alphanumeric characters
+    if (/^[A-Za-z0-9]{4,10}$/.test(cleanInput)) {
+      return cleanInput.toUpperCase();
+    }
+    
+    // No valid code found
+    return null;
+  } catch (error) {
+    console.error("[extractInvitationCode] Error extracting code:", error);
+    // Fallback in case of error: just return the cleaned input if it looks reasonable
+    if (cleanInput.length >= 4 && cleanInput.length <= 20) {
+      return cleanInput.toUpperCase();
+    }
+    return null;
+  }
 };

@@ -1,225 +1,163 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { ClassJoinService } from '@/services/class-join';
-import { codeExtractor } from '@/utils/codeExtractor';
+import { useToast } from '@/hooks/use-toast';
 import { useProcessInvitationCode } from './useProcessInvitationCode';
+import { useAuth } from '@/hooks/use-auth';
 
-// Hook that contains all the implementation logic for the JoinClassContext
 export const useJoinClassProvider = () => {
   const [invitationCode, setInvitationCode] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoJoinInProgress, setAutoJoinInProgress] = useState(false);
+  
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const params = useParams<{ inviteToken?: string }>();
-
-  // Process invitation code from URL
   const { processInvitationCode } = useProcessInvitationCode();
-  
-  // Check URL for invitation code
+
+  // Auto-extract code from URL if present
   useEffect(() => {
-    const checkForInvitationCode = async () => {
+    const autoExtractCode = () => {
       try {
-        console.log("Checking for invitation code in URL/params", { location, params });
+        const urlParams = new URLSearchParams(window.location.search);
+        const codeFromUrl = urlParams.get('code');
         
-        // First check URL parameters
-        const { inviteToken } = params;
-        if (inviteToken) {
-          console.log("Found invite token in URL params:", inviteToken);
-          const processedToken = codeExtractor.extractJoinCode(inviteToken) || inviteToken;
-          setInvitationCode(processedToken);
+        if (codeFromUrl) {
+          console.log("[useJoinClassProvider] Found code in URL:", codeFromUrl);
+          const processedCode = processInvitationCode(codeFromUrl);
           
-          // Auto-join if user is already logged in
-          if (user) {
-            setAutoJoinInProgress(true);
-            await joinClassWithCode(processedToken);
-            setAutoJoinInProgress(false);
-          }
-          return;
-        }
-        
-        // Check query params
-        const searchParams = new URLSearchParams(location.search);
-        let code = searchParams.get('code') || searchParams.get('join');
-        
-        // Check location state (from redirect)
-        if (!code && location.state && location.state.joinCode) {
-          code = location.state.joinCode;
-        }
-        
-        // Check URL path segments for code-like patterns
-        if (!code) {
-          const pathSegments = location.pathname.split('/');
-          for (const segment of pathSegments) {
-            if (/^UK[A-Z0-9]{4}$/i.test(segment)) {
-              code = segment;
-              break;
-            }
-          }
-        }
-        
-        if (code) {
-          console.log("Found code in URL or state:", code);
-          const processedCode = codeExtractor.extractJoinCode(code);
           if (processedCode) {
-            console.log("Processed code:", processedCode);
+            console.log("[useJoinClassProvider] Setting invitation code from URL:", processedCode);
             setInvitationCode(processedCode);
             
-            // Auto-join if user is already logged in
+            // Only auto-join if we have a valid code and the user is logged in
             if (user) {
+              console.log("[useJoinClassProvider] User is logged in, attempting auto-join with code:", processedCode);
               setAutoJoinInProgress(true);
-              await joinClassWithCode(processedCode);
-              setAutoJoinInProgress(false);
-              
-              // Clean up URL
-              if (window.history && window.history.replaceState) {
-                const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
-                window.history.replaceState(
-                  { ...location.state, joinCode: null }, 
-                  document.title, 
-                  newUrl
-                );
-              }
+              joinClassWithCode(processedCode)
+                .finally(() => setAutoJoinInProgress(false));
+            } else {
+              console.log("[useJoinClassProvider] User not logged in, saving code for later join");
             }
           }
         }
       } catch (err) {
-        console.error("Error checking for invitation code:", err);
+        console.error("[useJoinClassProvider] Error auto-extracting code:", err);
       }
     };
+
+    autoExtractCode();
+  }, [user]);
+
+  const joinClassWithCode = useCallback(async (code: string) => {
+    setLoading(true);
+    setError(null);
     
-    checkForInvitationCode();
-  }, [location, user, params]); // Don't include joinClassWithCode in dependencies
-
-  // Join class with code
-  const joinClassWithCode = useCallback(async (classCode: string) => {
-    if (!classCode || !classCode.trim()) {
-      setError('Please enter a valid class code');
-      return;
-    }
-
-    if (!user) {
-      setError('You must be logged in to join a class');
-      toast({
-        title: 'Authentication Required',
-        description: 'You must be logged in to join a class',
-        variant: 'destructive',
-      });
-      
-      // Save the code and redirect to auth
-      navigate('/auth', { 
-        state: { joinCode: classCode.trim() } 
-      });
-      return;
-    }
-
     try {
-      setLoading(true);
-      setError(null);
-      console.log('Attempting to join class with code:', classCode);
-
-      const cleanCode = classCode.trim();
-
-      // Process code to extract the actual invitation code (handle URLs, etc.)
-      const processedCode = processInvitationCode(cleanCode);
-      console.log('Processed code for joining:', processedCode);
+      console.log("[useJoinClassProvider] Joining class with code:", code);
       
-      const { data: foundClass, error: findError } = await ClassJoinService.findClassroomOrInvitation(processedCode);
-      
-      if (findError || !foundClass) {
-        console.error('Error finding class:', findError);
-        setError(findError?.message || 'Invalid class code. Please check and try again.');
-        toast({
-          title: 'Error',
-          description: findError?.message || 'Invalid class code',
-          variant: 'destructive',
-        });
+      if (!user) {
+        setError("Please log in to join a class");
+        console.log("[useJoinClassProvider] No user, redirecting to auth");
+        // Save the code to localStorage for after login
+        localStorage.setItem('pendingJoinCode', code);
+        navigate('/auth', { state: { joinCode: code } });
         return;
       }
 
-      console.log('Found class/invitation:', foundClass);
+      if (!code) {
+        setError("Please enter an invitation code");
+        return;
+      }
+
+      // Process the input to extract a valid code
+      const processedCode = processInvitationCode(code);
       
-      const { data: existingEnrollment, error: enrollmentError } = await ClassJoinService.checkEnrollment(
-        user.id,
-        foundClass.classroomId
+      if (!processedCode) {
+        setError("Invalid code format");
+        return;
+      }
+      
+      console.log("[useJoinClassProvider] Processing join with cleaned code:", processedCode);
+      
+      // First, find the classroom or invitation in the database
+      const result = await ClassJoinService.findClassroomOrInvitation(processedCode);
+      
+      if (result.error) {
+        console.error("[useJoinClassProvider] Error finding classroom/invitation:", result.error);
+        setError(result.error.message);
+        return;
+      }
+      
+      if (!result.data) {
+        setError("Invitation not found or expired");
+        return;
+      }
+      
+      console.log("[useJoinClassProvider] Found classroom/invitation:", result.data);
+      
+      // Check if student is already enrolled in this classroom
+      const { isEnrolled, error: enrollmentError } = await ClassJoinService.checkEnrollment(
+        result.data.classroomId
       );
       
       if (enrollmentError) {
-        console.error('Error checking enrollment:', enrollmentError);
-      }
-      
-      if (existingEnrollment) {
-        toast({
-          title: 'Already Enrolled',
-          description: 'You are already enrolled in this class',
-        });
-        navigate(`/class/${foundClass.classroomId}`);
+        console.error("[useJoinClassProvider] Error checking enrollment:", enrollmentError);
+        setError(enrollmentError.message);
         return;
       }
       
-      // Mark invitation as accepted if we're using one
-      if (foundClass.invitationId) {
-        console.log('Accepting invitation:', foundClass.invitationId);
-        await ClassJoinService.acceptInvitation(foundClass.invitationId);
+      if (isEnrolled) {
+        setError("You are already enrolled in this class");
+        return;
       }
       
-      // Enroll the student in the class
-      console.log('Enrolling student in class:', foundClass.classroomId);
-      const { data: enrollment, error: enrollError } = await ClassJoinService.enrollStudent(
-        user.id,
-        foundClass.classroomId
+      console.log("[useJoinClassProvider] Student not enrolled, proceeding with enrollment");
+      
+      // Enroll the student in the classroom
+      const { error: joinError } = await ClassJoinService.enrollStudent(
+        result.data.classroomId,
+        result.data.invitationId
       );
       
-      if (enrollError) {
-        console.error('Error enrolling student:', enrollError);
-        setError(enrollError.message || 'Failed to join class');
-        toast({
-          title: 'Error',
-          description: enrollError.message || 'Failed to join class',
-          variant: 'destructive',
-        });
+      if (joinError) {
+        console.error("[useJoinClassProvider] Error enrolling student:", joinError);
+        setError(joinError.message);
         return;
       }
       
-      console.log('Successfully joined class:', enrollment);
+      console.log("[useJoinClassProvider] Student successfully enrolled");
+      
+      // Success! Navigate to the classroom
       toast({
-        title: 'Success',
-        description: 'You have successfully joined the class',
+        title: "Success!",
+        description: `You've joined ${result.data.classroom?.name || 'the classroom'}`
       });
       
-      setInvitationCode('');
-      navigate(`/class/${foundClass.classroomId}`);
+      // Navigate to class detail page
+      navigate(`/class/${result.data.classroomId}`);
       
     } catch (err: any) {
-      console.error('Exception in joinClassWithCode:', err);
-      setError(err.message || 'An unexpected error occurred');
-      toast({
-        title: 'Error',
-        description: err.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      console.error("[useJoinClassProvider] Unexpected error in joinClassWithCode:", err);
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
-  }, [user, toast, navigate, processInvitationCode]);
+  }, [navigate, user, toast]);
 
   return {
     invitationCode,
     setInvitationCode,
-    scannerOpen, 
+    scannerOpen,
     setScannerOpen,
     loading,
     setLoading,
     error,
     setError,
     joinClassWithCode,
-    autoJoinInProgress,
+    autoJoinInProgress
   };
 };
