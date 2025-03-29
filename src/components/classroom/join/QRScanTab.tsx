@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,7 +25,7 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
           fps: 10,
           qrbox: { width: 250, height: 250 },
           rememberLastUsedCamera: true,
-          supportedScanTypes: [HTML5QrcodeScanType.SCAN_TYPE_CAMERA],
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
         },
         false
       );
