@@ -134,9 +134,9 @@ export const useJoinClassProvider = () => {
       
       console.log("[useJoinClassProvider] Student not enrolled, proceeding with enrollment");
       
-      // Get student profile ID
+      // Get student profile ID using the students table (not student_profiles)
       const { data: studentProfile, error: profileError } = await supabase
-        .from('student_profiles')
+        .from('students')
         .select('id')
         .eq('user_id', user.id)
         .single();
