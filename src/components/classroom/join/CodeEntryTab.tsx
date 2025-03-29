@@ -11,6 +11,7 @@ import { useProcessInvitationCode } from "./hooks/useProcessInvitationCode";
 const CodeEntryTab = () => {
   const { invitationCode, setInvitationCode, joinClassWithCode, loading, error } = useJoinClassContext();
   const [localError, setLocalError] = useState<string | null>(null);
+  const [processingCode, setProcessingCode] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { processInvitationCode } = useProcessInvitationCode();
   
@@ -33,12 +34,14 @@ const CodeEntryTab = () => {
       }
       
       const processedCode = processInvitationCode(trimmedCode);
+      setProcessingCode(processedCode || trimmedCode);
       
       if (!processedCode) {
         setLocalError("Invalid code format");
         return;
       }
       
+      console.log("Submitting code for join:", processedCode);
       await joinClassWithCode(processedCode);
     } catch (err: any) {
       console.error("Error in join form:", err);
@@ -111,6 +114,12 @@ const CodeEntryTab = () => {
               <AlertDescription>{error || localError}</AlertDescription>
             </Alert>
           </motion.div>
+        )}
+
+        {processingCode && !error && !localError && loading && (
+          <p className="text-xs text-gray-400">
+            Attempting to join with code: {processingCode}
+          </p>
         )}
 
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

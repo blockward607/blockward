@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { EnrollmentService } from './EnrollmentService';
 import { InvitationMatchingService } from './invitation/InvitationMatchingService';
@@ -30,45 +31,41 @@ export const ClassJoinService = {
         };
       }
 
-      // Use the new database function to find matches
+      // First try direct database match using DB function
+      console.log("[ClassJoinService] Trying direct DB lookup");
       const { data, error } = await supabase
         .rpc('find_classroom_invitation_matches', { code })
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.error("[ClassJoinService] Error finding match:", error);
+        console.error("[ClassJoinService] Error finding match via DB function:", error);
+      } 
+      else if (data) {
+        console.log("[ClassJoinService] DB function found match:", data);
+        
+        // Transform the database result to match JoinClassroomResult interface
+        const result: JoinClassroomResult = {
+          classroomId: data.classroom_id,
+          invitationId: data.id || undefined,
+          classroom: {
+            id: data.classroom_id,
+            name: data.classroom_name || "Classroom",
+            description: data.classroom_description || "",
+            teacher_id: data.classroom_teacher_id
+          }
+        };
+        
         return { 
-          data: null, 
-          error: { message: error.message || "Error finding classroom or invitation" } 
+          data: result, 
+          error: null 
         };
       }
-
-      if (!data) {
-        console.log("[ClassJoinService] No matching invitation or classroom found for:", code);
-        return { 
-          data: null, 
-          error: { message: "Invalid or expired invitation code" } 
-        };
+      else {
+        console.log("[ClassJoinService] DB function didn't find a match, trying matching service");
       }
 
-      // Transform the database result to match JoinClassroomResult interface
-      const result: JoinClassroomResult = {
-        classroomId: data.classroom_id,
-        invitationId: data.id || undefined,
-        classroom: data.id ? {
-          id: data.classroom_id,
-          name: data.classroom_name,
-          description: data.classroom_description,
-          teacher_id: data.classroom_teacher_id
-        } : undefined
-      };
-
-      console.log("[ClassJoinService] Match found:", result);
-      
-      return { 
-        data: result, 
-        error: null 
-      };
+      // If DB function didn't find anything, try the other methods
+      return await InvitationMatchingService.findClassroomOrInvitation(code);
     } catch (err: any) {
       console.error("[ClassJoinService] Unexpected error:", err);
       return { 

@@ -1,3 +1,4 @@
+
 /**
  * Utility to extract invitation codes from various formats
  */
@@ -149,6 +150,17 @@ export function extractInvitationToken(input: string): string | null {
       
       console.log('Found possible code using permissive matching:', longestMatch);
       return longestMatch.toUpperCase();
+    }
+    
+    // Last resort: try to extract any alphanumeric sequence
+    const anyAlphaNumeric = cleanInput.match(/[A-Za-z0-9]+/g);
+    if (anyAlphaNumeric && anyAlphaNumeric.length > 0) {
+      // Find sequences that are at least 4 characters
+      const validCodes = anyAlphaNumeric.filter(code => code.length >= 4);
+      if (validCodes.length > 0) {
+        console.log('Last resort code extraction:', validCodes[0]);
+        return validCodes[0].toUpperCase();
+      }
     }
   } catch (e) {
     console.error('Error in permissive code extraction:', e);

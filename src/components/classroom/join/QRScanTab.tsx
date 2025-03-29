@@ -15,17 +15,23 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
   const { joinClassWithCode, loading } = useJoinClassContext();
   const [scanComplete, setScanComplete] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [processingCode, setProcessingCode] = useState<string | null>(null);
 
   const handleCodeScanned = async (code: string) => {
     console.log(`QR Code scanned: ${code}`);
     setScanComplete(true);
     setScanError(null);
+    setProcessingCode(code);
 
     try {
       // Display feedback to the user
       toast.info("Code detected! Joining classroom...");
       
+      // Add some logging to help debug
+      console.log("About to join class with code:", code);
+      
       await joinClassWithCode(code);
+      console.log("Successfully joined class");
       toast.success("Successfully joined classroom!");
       onClose(); // Close the dialog after joining
     } catch (error: any) {
@@ -36,6 +42,7 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
       setTimeout(() => {
         setScanComplete(false);
         setScanError(null);
+        setProcessingCode(null);
       }, 3000);
     }
   };
@@ -53,6 +60,9 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
       <div className="p-8 flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-purple-500 mb-4" />
         <p>Joining classroom...</p>
+        {processingCode && (
+          <p className="text-sm text-gray-400 mt-2">Using code: {processingCode}</p>
+        )}
       </div>
     );
   }
@@ -61,6 +71,9 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
     return (
       <div className="p-4 text-center">
         <p className="text-red-400 mb-4">{scanError}</p>
+        {processingCode && (
+          <p className="text-sm text-gray-400 mt-2">Attempted with code: {processingCode}</p>
+        )}
         <p className="text-sm text-gray-300 mt-2">
           Retrying scan in a moment...
         </p>
