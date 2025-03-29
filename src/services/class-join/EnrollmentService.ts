@@ -1,99 +1,133 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { ClassEnrollment, SupabaseError } from "./types";
+import { SupabaseError } from "./types";
 
 export const EnrollmentService = {
   /**
-   * Checks if a student is already enrolled in a classroom
+   * Check if a student is already enrolled in a specific classroom
+   * @param classroomId The ID of the classroom to check enrollment for
    */
-  async checkEnrollment(studentId: string, classroomId: string) {
-    console.log('Checking enrollment:', { studentId, classroomId });
-    
+  checkEnrollment: async (classroomId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('classroom_students')
-        .select('*')
-        .eq('student_id', studentId)
-        .eq('classroom_id', classroomId)
-        .maybeSingle();
-        
-      if (error && !error.message.includes('No rows found')) {
-        console.error('Error checking enrollment:', error);
-        return { data: null, error };
+      console.log("[EnrollmentService] Checking enrollment for classroom:", classroomId);
+      
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        return { 
+          data: null, 
+          error: { message: "User not authenticated" } as SupabaseError 
+        };
       }
       
-      return { data, error: null };
+      // Check if enrollment exists
+      const { data, error } = await supabase
+        .from("classroom_enrollments")
+        .select("*")
+        .eq("classroom_id", classroomId)
+        .eq("student_id", session.session.user.id);
+        
+      if (error) {
+        console.error("[EnrollmentService] Error checking enrollment:", error);
+        return { 
+          data: null, 
+          error: { message: error.message } as SupabaseError 
+        };
+      }
+      
+      console.log("[EnrollmentService] Enrollment check result:", data);
+      
+      return { 
+        data: data, 
+        error: null 
+      };
     } catch (err: any) {
-      console.error('Exception checking enrollment:', err);
+      console.error("[EnrollmentService] Unexpected error in checkEnrollment:", err);
       return { 
         data: null, 
-        error: { 
-          message: err.message || 'Error checking enrollment' 
-        } as SupabaseError 
+        error: { message: err.message || "Failed to check enrollment" } as SupabaseError 
       };
     }
   },
   
   /**
-   * Enrolls a student in a classroom
+   * Enroll a student in a classroom
+   * @param classroomId The ID of the classroom to enroll in
+   * @param invitationId Optional ID of the invitation being accepted
    */
-  async enrollStudent(studentId: string, classroomId: string) {
-    console.log('Enrolling student:', { studentId, classroomId });
-    
+  enrollStudent: async (classroomId: string, invitationId?: string) => {
     try {
+      console.log("[EnrollmentService] Enrolling student in classroom:", classroomId);
+      
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        return { 
+          error: { message: "User not authenticated" } as SupabaseError 
+        };
+      }
+      
+      // Create enrollment record
       const { data, error } = await supabase
-        .from('classroom_students')
+        .from("classroom_enrollments")
         .insert({
-          student_id: studentId,
-          classroom_id: classroomId
+          classroom_id: classroomId,
+          student_id: session.session.user.id
         })
         .select()
         .single();
         
       if (error) {
-        console.error('Error enrolling student:', error);
-        return { data: null, error };
+        console.error("[EnrollmentService] Error enrolling student:", error);
+        return { 
+          error: { message: error.message } as SupabaseError 
+        };
       }
       
-      return { data, error: null };
-    } catch (err: any) {
-      console.error('Exception enrolling student:', err);
+      console.log("[EnrollmentService] Student successfully enrolled:", data);
+      
+      // If we have an invitation ID, update its status
+      if (invitationId) {
+        await EnrollmentService.acceptInvitation(invitationId);
+      }
+      
       return { 
-        data: null, 
-        error: { 
-          message: err.message || 'Error enrolling student' 
-        } as SupabaseError 
+        data: data, 
+        error: null 
+      };
+    } catch (err: any) {
+      console.error("[EnrollmentService] Unexpected error in enrollStudent:", err);
+      return { 
+        error: { message: err.message || "Failed to enroll student" } as SupabaseError 
       };
     }
   },
   
   /**
-   * Accept an invitation (mark it as accepted)
+   * Update invitation status to accepted
+   * @param invitationId The ID of the invitation to mark as accepted
    */
-  async acceptInvitation(invitationId: string) {
-    console.log('Accepting invitation:', invitationId);
-    
+  acceptInvitation: async (invitationId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('class_invitations')
-        .update({ status: 'accepted' })
-        .eq('id', invitationId)
-        .select()
-        .single();
+      console.log("[EnrollmentService] Accepting invitation:", invitationId);
+      
+      const { error } = await supabase
+        .from("class_invitations")
+        .update({ status: "accepted" })
+        .eq("id", invitationId);
         
       if (error) {
-        console.error('Error accepting invitation:', error);
-        return { data: null, error };
+        console.error("[EnrollmentService] Error accepting invitation:", error);
+        return { 
+          error: { message: error.message } as SupabaseError 
+        };
       }
       
-      return { data, error: null };
+      console.log("[EnrollmentService] Invitation successfully accepted");
+      
+      return { error: null };
     } catch (err: any) {
-      console.error('Exception accepting invitation:', err);
+      console.error("[EnrollmentService] Unexpected error in acceptInvitation:", err);
       return { 
-        data: null, 
-        error: { 
-          message: err.message || 'Error accepting invitation' 
-        } as SupabaseError 
+        error: { message: err.message || "Failed to accept invitation" } as SupabaseError 
       };
     }
   }

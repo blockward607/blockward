@@ -1,10 +1,9 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useJoinClassContext } from "./JoinClassContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, AlertTriangle, PasteClipboard, Sparkles } from "lucide-react";
+import { AlertCircle, AlertTriangle, Clipboard, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useProcessInvitationCode } from "./hooks/useProcessInvitationCode";
 
@@ -14,7 +13,6 @@ const CodeEntryTab = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { processInvitationCode } = useProcessInvitationCode();
   
-  // Focus input on mount
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -33,7 +31,6 @@ const CodeEntryTab = () => {
         return;
       }
       
-      // Extract and validate the code format
       const processedCode = processInvitationCode(trimmedCode);
       
       if (!processedCode) {
@@ -41,7 +38,6 @@ const CodeEntryTab = () => {
         return;
       }
       
-      // Join with the formatted code
       await joinClassWithCode(processedCode);
     } catch (err: any) {
       console.error("Error in join form:", err);
@@ -54,7 +50,6 @@ const CodeEntryTab = () => {
       const clipboardText = await navigator.clipboard.readText();
       console.log("Pasted text:", clipboardText);
       
-      // Process and extract the code from pasted content
       const extractedCode = processInvitationCode(clipboardText);
       
       if (extractedCode) {
@@ -94,7 +89,7 @@ const CodeEntryTab = () => {
                 onClick={handlePaste}
                 disabled={loading}
               >
-                <PasteClipboard className="h-4 w-4 text-gray-400" />
+                <Clipboard className="h-4 w-4 text-gray-400" />
               </Button>
             )}
           </div>

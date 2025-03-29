@@ -100,17 +100,17 @@ export const useJoinClassProvider = () => {
       console.log("[useJoinClassProvider] Found classroom/invitation:", result.data);
       
       // Check if student is already enrolled in this classroom
-      const { isEnrolled, error: enrollmentError } = await ClassJoinService.checkEnrollment(
+      const enrollmentCheck = await ClassJoinService.checkEnrollment(
         result.data.classroomId
       );
       
-      if (enrollmentError) {
-        console.error("[useJoinClassProvider] Error checking enrollment:", enrollmentError);
-        setError(enrollmentError.message);
+      if (enrollmentCheck.error) {
+        console.error("[useJoinClassProvider] Error checking enrollment:", enrollmentCheck.error);
+        setError(enrollmentCheck.error.message);
         return;
       }
       
-      if (isEnrolled) {
+      if (enrollmentCheck.data && enrollmentCheck.data.length > 0) {
         setError("You are already enrolled in this class");
         return;
       }

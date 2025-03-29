@@ -1,7 +1,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QRScanTab } from "./QRScanTab";
-import { CodeEntryTab } from "./CodeEntryTab";
+import CodeEntryTab from "./CodeEntryTab";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
