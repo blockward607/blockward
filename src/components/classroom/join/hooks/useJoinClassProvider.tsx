@@ -52,6 +52,7 @@ export const useJoinClassProvider = () => {
   const joinClassWithCode = useCallback(async (code: string) => {
     setLoading(true);
     setError(null);
+    setIsJoining(true);
     
     try {
       console.log("[useJoinClassProvider] Joining class with code:", code);
