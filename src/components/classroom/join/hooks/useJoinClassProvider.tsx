@@ -12,6 +12,7 @@ export const useJoinClassProvider = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoJoinInProgress, setAutoJoinInProgress] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -135,10 +136,7 @@ export const useJoinClassProvider = () => {
       setIsJoining(false);
       setLoading(false);
     }
-  }, [invitationCode, setError, setLoading, isJoining, toast, navigate, user]);
-
-  // Workaround for the isJoining variable
-  const [isJoining, setIsJoining] = useState(false);
+  }, [user, setError, setLoading, toast, navigate]);
 
   return {
     invitationCode,
