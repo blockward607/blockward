@@ -127,6 +127,37 @@ export function extractJoinCode(input: string): string | null {
   }
 }
 
+// Add more robust code extraction methods
+export function extractInvitationToken(input: string): string | null {
+  // First try the standard extraction
+  const extractedCode = extractJoinCode(input);
+  if (extractedCode) return extractedCode;
+  
+  // If that fails, try to handle edge cases
+  try {
+    const cleanInput = input.trim();
+    
+    // Try to find any alphanumeric sequence that could be a code
+    // This is more permissive than the main function
+    const possibleCodeMatches = cleanInput.match(/[A-Za-z0-9]{4,12}/g);
+    if (possibleCodeMatches && possibleCodeMatches.length > 0) {
+      // Return the longest match as it's most likely to be a code
+      const longestMatch = possibleCodeMatches.reduce(
+        (longest, current) => current.length > longest.length ? current : longest, 
+        possibleCodeMatches[0]
+      );
+      
+      console.log('Found possible code using permissive matching:', longestMatch);
+      return longestMatch.toUpperCase();
+    }
+  } catch (e) {
+    console.error('Error in permissive code extraction:', e);
+  }
+  
+  return null;
+}
+
 export const codeExtractor = {
-  extractJoinCode
+  extractJoinCode,
+  extractInvitationToken
 };

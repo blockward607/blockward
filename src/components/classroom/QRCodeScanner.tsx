@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Html5Qrcode } from "html5-qrcode";
 import { Loader2, X } from "lucide-react";
 import { codeExtractor } from "@/utils/codeExtractor";
+import { LoadingSpinner } from "../ui/loading-spinner";
 
 interface QRCodeScannerProps {
   onScan: (code: string) => void;
@@ -16,6 +17,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
   const [hasPermission, setHasPermission] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const qrBoxId = "qr-reader";
+  const [scannerInitialized, setScannerInitialized] = useState(false);
 
   useEffect(() => {
     let scanner: Html5Qrcode | null = null;
@@ -108,6 +110,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
           });
           
           setIsLoading(false);
+          setScannerInitialized(true);
         } else {
           setError("No camera devices found");
           setIsLoading(false);
@@ -158,6 +161,11 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
           <p className="text-sm text-gray-300 mb-2">
             Position the QR code within the box.
           </p>
+          {scannerInitialized && (
+            <p className="text-xs text-green-400 mb-2">
+              Camera active. Scanning for QR codes...
+            </p>
+          )}
           <Button 
             onClick={onClose} 
             variant="outline" 
