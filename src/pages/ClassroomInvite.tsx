@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { InviteStudents } from "@/components/classroom/InviteStudents";
+import { JoinClassSection } from "@/components/classroom/JoinClassSection";
 import { useEffect, useState } from "react";
 
 const ClassroomInvite = () => {
@@ -55,7 +56,7 @@ const ClassroomInvite = () => {
           <h1 className="text-3xl font-bold gradient-text">Join Classroom</h1>
         </div>
         
-        {/* TODO: Add JoinClassSection component here with inviteToken when implementing invitation flow */}
+        <JoinClassSection />
       </div>
     );
   }
