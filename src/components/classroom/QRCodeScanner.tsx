@@ -79,13 +79,14 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
               console.log(errorMessage);
             }
           );
+          setIsLoading(false);
         } else {
           setError("No camera devices found");
+          setIsLoading(false);
         }
       } catch (err) {
         console.error("Error initializing scanner:", err);
         setError("Unable to access camera. Please ensure camera permissions are granted.");
-      } finally {
         setIsLoading(false);
       }
     };

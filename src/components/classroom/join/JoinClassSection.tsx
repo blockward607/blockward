@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QRScanTab } from "./QRScanTab";
@@ -7,19 +7,32 @@ import CodeEntryTab from "./CodeEntryTab";
 import { ImportOptions } from "./ImportOptions";
 import { GoogleClassroomImportDialog } from "./GoogleClassroomImportDialog";
 import { useJoinClassContext } from "./JoinClassContext";
+import { Loader2 } from "lucide-react";
 
 export const JoinClassSection = () => {
   const [activeTab, setActiveTab] = useState("code");
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const { scannerOpen, setScannerOpen, autoJoinInProgress } = useJoinClassContext();
+  const { scannerOpen, setScannerOpen, autoJoinInProgress, loading } = useJoinClassContext();
   
-  // If auto-join is in progress, show the code tab which has loading state
+  // When activating the scan tab, automatically open the scanner
+  useEffect(() => {
+    if (activeTab === "scan") {
+      setScannerOpen(true);
+    } else {
+      setScannerOpen(false);
+    }
+  }, [activeTab, setScannerOpen]);
+  
+  // If auto-join is in progress, show loading state
   if (autoJoinInProgress) {
     return (
       <div className="w-full max-w-md mx-auto">
         <Card className="glass-card p-6">
           <h2 className="text-2xl font-bold text-center mb-4 gradient-text">Join Class</h2>
-          <CodeEntryTab />
+          <div className="flex flex-col items-center justify-center p-8">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-500 mb-4" />
+            <p className="text-center text-gray-300">Joining class...</p>
+          </div>
         </Card>
       </div>
     );
@@ -44,7 +57,10 @@ export const JoinClassSection = () => {
             <QRScanTab
               open={scannerOpen}
               onOpenChange={setScannerOpen}
-              onClose={() => setScannerOpen(false)}
+              onClose={() => {
+                setScannerOpen(false);
+                setActiveTab("code");
+              }}
             />
           </TabsContent>
         </Tabs>
