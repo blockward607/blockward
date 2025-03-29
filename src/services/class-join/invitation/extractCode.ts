@@ -20,6 +20,13 @@ export const extractInvitationCode = (input: string): string | null => {
       return extractedCode;
     }
     
+    // Try permissive extraction if standard fails
+    const permissiveCode = codeExtractor.extractInvitationToken(cleanInput);
+    if (permissiveCode) {
+      console.log("[extractInvitationCode] Using permissive extraction:", permissiveCode);
+      return permissiveCode;
+    }
+    
     // Fallback: Check if the code is directly valid (in case the utility failed)
     // Common format for invitation codes is 6-10 alphanumeric characters
     if (/^[A-Za-z0-9]{4,10}$/.test(cleanInput)) {
@@ -27,6 +34,7 @@ export const extractInvitationCode = (input: string): string | null => {
     }
     
     // No valid code found
+    console.log("[extractInvitationCode] No valid code found in:", cleanInput);
     return null;
   } catch (error) {
     console.error("[extractInvitationCode] Error extracting code:", error);

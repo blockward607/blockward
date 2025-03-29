@@ -74,26 +74,48 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
                       }
                     }, 300);
                   }
-                } else if (decodedText && decodedText.trim()) {
-                  // If no valid code extracted, use the raw text
-                  console.log("No valid code extracted, using raw QR content:", decodedText.trim());
-                  
-                  // Stop scanning
-                  if (scanner) {
-                    scanner.pause();
-                    
-                    // Process the raw QR code
-                    onScan(decodedText.trim());
-                    
-                    // Stop scanner after successful processing
-                    setTimeout(() => {
-                      if (scanner) {
-                        scanner.stop().catch(error => console.error("Error stopping scanner:", error));
-                      }
-                    }, 300);
-                  }
                 } else {
-                  console.warn("QR code content is empty or invalid");
+                  // Try more permissive extraction method
+                  const permissiveCode = codeExtractor.extractInvitationToken(decodedText);
+                  
+                  if (permissiveCode) {
+                    console.log("Using permissive code extraction for QR:", permissiveCode);
+                    
+                    // Stop scanning
+                    if (scanner) {
+                      scanner.pause();
+                      
+                      // Process with permissive code
+                      onScan(permissiveCode);
+                      
+                      // Stop scanner after successful processing
+                      setTimeout(() => {
+                        if (scanner) {
+                          scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                        }
+                      }, 300);
+                    }
+                  } else if (decodedText && decodedText.trim()) {
+                    // If no valid code extracted, use the raw text
+                    console.log("No valid code extracted, using raw QR content:", decodedText.trim());
+                    
+                    // Stop scanning
+                    if (scanner) {
+                      scanner.pause();
+                      
+                      // Process the raw QR code
+                      onScan(decodedText.trim());
+                      
+                      // Stop scanner after successful processing
+                      setTimeout(() => {
+                        if (scanner) {
+                          scanner.stop().catch(error => console.error("Error stopping scanner:", error));
+                        }
+                      }, 300);
+                    }
+                  } else {
+                    console.warn("QR code content is empty or invalid");
+                  }
                 }
               } catch (err) {
                 console.error("Error processing QR code:", err);

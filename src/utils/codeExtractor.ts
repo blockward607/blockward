@@ -1,4 +1,3 @@
-
 /**
  * Utility to extract invitation codes from various formats
  */
@@ -42,6 +41,7 @@ export function extractJoinCode(input: string): string | null {
         // Check for code in query parameters with different possible names
         const codeParam = url.searchParams.get('code') || 
                         url.searchParams.get('join') || 
+                        url.searchParams.get('invitation') ||
                         url.searchParams.get('invite') ||
                         url.searchParams.get('c');
         
