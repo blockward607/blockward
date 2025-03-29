@@ -48,7 +48,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Check URL for invitation code
   useEffect(() => {
-    const checkForInvitationCode = () => {
+    const checkForInvitationCode = async () => {
       try {
         console.log("Checking for invitation code in URL/params", { location, params });
         
@@ -56,13 +56,14 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const { inviteToken } = params;
         if (inviteToken) {
           console.log("Found invite token in URL params:", inviteToken);
-          setInvitationCode(inviteToken);
+          const processedToken = codeExtractor.extractJoinCode(inviteToken) || inviteToken;
+          setInvitationCode(processedToken);
           
           // Auto-join if user is already logged in
           if (user) {
             setAutoJoinInProgress(true);
-            joinClassWithCode(inviteToken)
-              .finally(() => setAutoJoinInProgress(false));
+            await joinClassWithCode(processedToken);
+            setAutoJoinInProgress(false);
           }
           return;
         }
@@ -97,9 +98,9 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             // Auto-join if user is already logged in
             if (user) {
               setAutoJoinInProgress(true);
-              joinClassWithCode(processedCode)
-                .finally(() => setAutoJoinInProgress(false));
-                
+              await joinClassWithCode(processedCode);
+              setAutoJoinInProgress(false);
+              
               // Clean up URL
               if (window.history && window.history.replaceState) {
                 const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;

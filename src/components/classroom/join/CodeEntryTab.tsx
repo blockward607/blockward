@@ -23,17 +23,19 @@ export const CodeEntryTab = () => {
 
   // Set enteredCode to invitationCode when invitationCode changes (from URL)
   useEffect(() => {
-    if (invitationCode && !enteredCode) {
+    if (invitationCode && enteredCode !== invitationCode) {
+      console.log("Setting entered code to invitation code:", invitationCode);
       setEnteredCode(invitationCode);
     }
   }, [invitationCode, enteredCode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEnteredCode(e.target.value);
+    const value = e.target.value;
+    setEnteredCode(value);
     
     // Extract code in real-time if it's a URL or complex format
-    const extractedCode = codeExtractor.extractJoinCode(e.target.value);
-    if (extractedCode && extractedCode !== e.target.value) {
+    const extractedCode = codeExtractor.extractJoinCode(value);
+    if (extractedCode && extractedCode !== value) {
       console.log("Extracted code in real-time:", extractedCode);
       setEnteredCode(extractedCode);
     }
