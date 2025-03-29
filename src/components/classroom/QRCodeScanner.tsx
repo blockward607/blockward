@@ -1,7 +1,6 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Html5Qrcode, Html5QrcodeScanType } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 import { Loader2, X } from "lucide-react";
 import { codeExtractor } from "@/utils/codeExtractor";
 
@@ -34,8 +33,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
             cameraId,
             {
               fps: 10,
-              qrbox: { width: 250, height: 250 },
-              supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+              qrbox: { width: 250, height: 250 }
             },
             (decodedText) => {
               // On QR code detected
