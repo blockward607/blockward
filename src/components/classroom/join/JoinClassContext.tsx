@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { ClassJoinService } from '@/services/class-join';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { codeExtractor } from '@/utils/codeExtractor';
 
 type JoinClassContextType = {
@@ -44,21 +44,39 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams<{ inviteToken?: string }>();
 
   // Check URL for invitation code
   useEffect(() => {
     const checkForInvitationCode = () => {
       try {
-        // 1. Check query params
+        console.log("Checking for invitation code in URL/params", { location, params });
+        
+        // First check URL parameters
+        const { inviteToken } = params;
+        if (inviteToken) {
+          console.log("Found invite token in URL params:", inviteToken);
+          setInvitationCode(inviteToken);
+          
+          // Auto-join if user is already logged in
+          if (user) {
+            setAutoJoinInProgress(true);
+            joinClassWithCode(inviteToken)
+              .finally(() => setAutoJoinInProgress(false));
+          }
+          return;
+        }
+        
+        // Check query params
         const searchParams = new URLSearchParams(location.search);
         let code = searchParams.get('code') || searchParams.get('join');
         
-        // 2. Check location state (from redirect)
+        // Check location state (from redirect)
         if (!code && location.state && location.state.joinCode) {
           code = location.state.joinCode;
         }
         
-        // 3. Check URL path segments for code-like patterns
+        // Check URL path segments for code-like patterns
         if (!code) {
           const pathSegments = location.pathname.split('/');
           for (const segment of pathSegments) {
@@ -100,7 +118,7 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
     
     checkForInvitationCode();
-  }, [location, user]); // Don't include joinClassWithCode in dependencies
+  }, [location, user, params]); // Don't include joinClassWithCode in dependencies
 
   const joinClassWithCode = useCallback(async (classCode: string) => {
     if (!classCode || !classCode.trim()) {
@@ -167,10 +185,14 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
       
+      // Mark invitation as accepted if we're using one
       if (foundClass.invitationId) {
+        console.log('Accepting invitation:', foundClass.invitationId);
         await ClassJoinService.acceptInvitation(foundClass.invitationId);
       }
       
+      // Enroll the student in the class
+      console.log('Enrolling student in class:', foundClass.classroomId);
       const { data: enrollment, error: enrollError } = await ClassJoinService.enrollStudent(
         user.id,
         foundClass.classroomId

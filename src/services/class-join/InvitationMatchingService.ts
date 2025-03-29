@@ -91,7 +91,7 @@ export class InvitationMatchingService {
       }
       
       // If no direct match, try to find classroom by join code
-      // Some educators might set the classroom ID as the join code (legacy support)
+      // Some educators might use a classroom ID as the join code
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
         .select('id')
@@ -117,7 +117,7 @@ export class InvitationMatchingService {
     }
   }
 
-  // Find classroom or invitation by code - our new comprehensive method
+  // Find classroom or invitation by code - our comprehensive method
   public static async findClassroomOrInvitation(code: string): Promise<{ data: JoinClassroomResult | null; error: { message: string } | null }> {
     try {
       console.log("[InvitationMatchingService] Finding classroom or invitation for code:", code);
@@ -140,7 +140,7 @@ export class InvitationMatchingService {
       
       console.log("[InvitationMatchingService] Processed code:", processedCode);
 
-      // First, check for invitation by token
+      // IMPORTANT: First try to find a match on the exact invitation token
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, expires_at, status, classroom:classrooms(id, name, description, teacher_id)')
@@ -180,6 +180,7 @@ export class InvitationMatchingService {
       }
       
       // If no invitation found, try to find classroom by ID (legacy support)
+      // This can happen if a teacher shares a direct classroom ID
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
         .select('id, name, description, teacher_id')
@@ -202,6 +203,51 @@ export class InvitationMatchingService {
           }, 
           error: null 
         };
+      }
+      
+      // Try to find invitation with a code format (UK + digits)
+      // This is our primary invitation code format for students
+      if (/^UK[A-Z0-9]{4,6}$/i.test(processedCode)) {
+        console.log("[InvitationMatchingService] Looking for UK-format invitation code");
+        
+        // Look for invitation codes in the database
+        const { data: ukInvitations, error: ukError } = await supabase
+          .from('class_invitations')
+          .select('id, classroom_id, expires_at, status, classroom:classrooms(id, name, description, teacher_id)')
+          .ilike('invitation_token', `%${processedCode}%`) 
+          .eq('status', 'pending')
+          .limit(1);
+          
+        if (ukError) {
+          console.error("[InvitationMatchingService] Error checking UK-format invitation:", ukError);
+          return { 
+            data: null, 
+            error: { message: "Error checking invitation" } 
+          };
+        }
+        
+        if (ukInvitations && ukInvitations.length > 0) {
+          const invitation = ukInvitations[0];
+          // Check if invitation has expired
+          const expiresAt = new Date(invitation.expires_at);
+          const now = new Date();
+          
+          if (expiresAt < now) {
+            return { 
+              data: null, 
+              error: { message: "This invitation has expired" } 
+            };
+          }
+          
+          return { 
+            data: {
+              classroomId: invitation.classroom_id,
+              invitationId: invitation.id,
+              classroom: invitation.classroom
+            }, 
+            error: null 
+          };
+        }
       }
       
       // No valid matches found

@@ -18,12 +18,12 @@ export function extractJoinCode(input: string): string | null {
   
   try {
     // First check if it's already a valid code format (UKXXXX)
-    if (/^UK[A-Z0-9]{4}$/i.test(cleanInput)) {
+    if (/^UK[A-Z0-9]{4,6}$/i.test(cleanInput)) {
       return cleanInput.toUpperCase();
     }
     
-    // Look for UK + 4 chars pattern anywhere in the string
-    const ukCodeMatch = cleanInput.match(/UK[A-Z0-9]{4}/i);
+    // Look for UK + 4-6 chars pattern anywhere in the string
+    const ukCodeMatch = cleanInput.match(/UK[A-Z0-9]{4,6}/i);
     if (ukCodeMatch) {
       return ukCodeMatch[0].toUpperCase();
     }
@@ -43,12 +43,12 @@ export function extractJoinCode(input: string): string | null {
         
         if (codeParam) {
           // If the param is a valid UKXXXX format or similar, return it
-          if (/^UK[A-Z0-9]{4}$/i.test(codeParam)) {
+          if (/^UK[A-Z0-9]{4,6}$/i.test(codeParam)) {
             return codeParam.toUpperCase();
           }
           
           // Look for UK pattern in the parameter
-          const paramUkMatch = codeParam.match(/UK[A-Z0-9]{4}/i);
+          const paramUkMatch = codeParam.match(/UK[A-Z0-9]{4,6}/i);
           if (paramUkMatch) {
             return paramUkMatch[0].toUpperCase();
           }
@@ -59,7 +59,7 @@ export function extractJoinCode(input: string): string | null {
         
         // Check for UK pattern in the path
         const pathString = url.pathname;
-        const pathUkMatch = pathString.match(/UK[A-Z0-9]{4}/i);
+        const pathUkMatch = pathString.match(/UK[A-Z0-9]{4,6}/i);
         if (pathUkMatch) {
           return pathUkMatch[0].toUpperCase();
         }
@@ -73,7 +73,7 @@ export function extractJoinCode(input: string): string | null {
           }
           
           // Check for UK pattern in segment
-          const segmentUkMatch = segment.match(/UK[A-Z0-9]{4}/i);
+          const segmentUkMatch = segment.match(/UK[A-Z0-9]{4,6}/i);
           if (segmentUkMatch) {
             return segmentUkMatch[0].toUpperCase();
           }
