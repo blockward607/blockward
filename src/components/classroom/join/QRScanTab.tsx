@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { QrCodeIcon } from "lucide-react";
-import { HTML5QrcodeScanType, Html5QrcodeScanner } from "html5-qrcode";
+import { Html5QrcodeScanType, Html5QrcodeScanner } from "html5-qrcode";
 import { useEffect, useRef } from "react";
 import { useJoinClassContext } from "./JoinClassContext";
 
