@@ -4,11 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, X, MessageSquare, Sparkles, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { searchKnowledge } from "@/data/blockward-knowledge";
+import { useToast } from "@/hooks/use-toast";
+import OpenAI from 'openai';
 
 interface Message {
   type: 'user' | 'bot';
   text: string;
 }
+
+// Use a demo API key for development purposes
+// In production, this should be stored securely in environment variables
+const DEMO_MODE = true;
 
 export const AssistantBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,48 +22,90 @@ export const AssistantBot: React.FC = () => {
     { type: 'bot', text: 'Hello! I\'m your BlockWard assistant. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
   // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const processWithOpenAI = async (userInput: string) => {
+    try {
+      if (DEMO_MODE) {
+        // First try to match with our knowledge base
+        const matchingItems = searchKnowledge(userInput);
+        
+        if (matchingItems.length > 0) {
+          return matchingItems[0].answer;
+        }
+        
+        // For demo mode, provide a simulated response based on common questions
+        if (userInput.toLowerCase().includes('join') && userInput.toLowerCase().includes('class')) {
+          return "To join a class, go to the Classes page and use the 'Join Class' section. You'll need an invitation code from your teacher, or you can scan a QR code if available.";
+        } else if (userInput.toLowerCase().includes('nft') || userInput.toLowerCase().includes('award')) {
+          return "BlockWard NFTs are digital certificates of achievement that teachers can award to students. They're stored securely on the blockchain and stay with the student forever.";
+        } else if (userInput.toLowerCase().includes('invite') && userInput.toLowerCase().includes('student')) {
+          return "To invite students to your class, go to your class details page, select the 'Students' tab, and use either the invitation code or QR code to share with your students.";
+        } else {
+          return "I'm here to help with questions about BlockWard. You can ask about joining classes, creating NFT awards, inviting students, and more. What would you like to know?";
+        }
+      } else {
+        // Use the OpenAI API directly
+        const openai = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY || '',
+          dangerouslyAllowBrowser: true // Not recommended for production
+        });
+
+        const knowledgeContext = "BlockWard is an educational platform that allows teachers to create virtual classrooms, invite students, track attendance, and award NFT certificates. Users can join classes with invitation codes, scan QR codes, or import from Google Classroom.";
+        
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: `You are a helpful assistant for BlockWard, an educational platform. Keep responses concise but informative. ${knowledgeContext}` },
+            { role: "user", content: userInput }
+          ],
+          max_tokens: 200,
+        });
+
+        return completion.choices[0].message.content;
+      }
+    } catch (error) {
+      console.error("Error processing with AI:", error);
+      return "I'm having trouble processing your request at the moment. Please try again later.";
+    }
+  };
   
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!input.trim()) return;
     
     // Add user message
-    setMessages(prev => [...prev, { type: 'user', text: input }]);
+    setMessages(prev => [...prev, { type: 'user', text: input.trim() }]);
+    setIsProcessing(true);
     
-    // Process and respond
-    setTimeout(() => {
+    try {
+      // Process and respond
       const userInput = input.trim();
+      const response = await processWithOpenAI(userInput);
       
-      // Search knowledge base for relevant information
-      const matchingItems = searchKnowledge(userInput);
+      setMessages(prev => [...prev, { type: 'bot', text: response || "I'm not sure how to respond to that." }]);
+    } catch (error) {
+      console.error("Error in chat processing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process your message",
+        variant: "destructive"
+      });
       
-      let response = 'I don\'t have specific information about that yet. Is there something else about BlockWard I can help you with?';
-      
-      if (matchingItems.length > 0) {
-        // Use the most relevant match (first item)
-        response = matchingItems[0].answer;
-        
-        // If we have multiple good matches, add a footer with additional topics
-        if (matchingItems.length > 1) {
-          response += '\n\nYou might also be interested in: ' + 
-            matchingItems.slice(1, 3).map(item => item.question).join(', ') + 
-            '. Feel free to ask me about these topics!';
-        }
-      } else if (userInput.toLowerCase().includes('hello') || userInput.toLowerCase().includes('hi')) {
-        response = 'Hello there! I\'m your BlockWard assistant. I can help you understand how BlockWard works, how to join classes, create NFT awards, and more. What would you like to know?';
-      } else if (userInput.toLowerCase().includes('thank')) {
-        response = 'You\'re welcome! I\'m here to help make your BlockWard experience smooth and enjoyable. Is there anything else I can assist you with?';
-      }
-      
-      setMessages(prev => [...prev, { type: 'bot', text: response }]);
-    }, 600);
-    
-    setInput('');
+      setMessages(prev => [...prev, { 
+        type: 'bot', 
+        text: "I'm having trouble understanding right now. Please try again later." 
+      }]);
+    } finally {
+      setIsProcessing(false);
+      setInput('');
+    }
   };
   
   return (
@@ -131,12 +179,18 @@ export const AssistantBot: React.FC = () => {
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   className="flex-1 bg-gray-900 border border-purple-900/30 rounded-l-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500 text-white"
                   placeholder="Ask about BlockWard..."
+                  disabled={isProcessing}
                 />
                 <Button 
                   onClick={handleSendMessage}
                   className="rounded-l-none bg-purple-700 hover:bg-purple-600"
+                  disabled={isProcessing}
                 >
-                  <MessageSquare size={18} />
+                  {isProcessing ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <MessageSquare size={18} />
+                  )}
                 </Button>
               </div>
               
