@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import { useJoinClassProvider } from './hooks/useJoinClassProvider';
+import type { GoogleClassroom } from '@/services/google-classroom';
 
 // Define the context type
 type JoinClassContextType = {
@@ -14,6 +15,7 @@ type JoinClassContextType = {
   setError: (error: string | null) => void;
   joinClassWithCode: (code: string) => Promise<void>;
   autoJoinInProgress: boolean;
+  googleClassrooms: GoogleClassroom[];
 };
 
 // Create the context with default values
@@ -28,6 +30,7 @@ const JoinClassContext = createContext<JoinClassContextType>({
   setError: () => {},
   joinClassWithCode: async () => {},
   autoJoinInProgress: false,
+  googleClassrooms: [],
 });
 
 // Export the useContext hook

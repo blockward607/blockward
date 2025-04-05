@@ -4,9 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ClassJoinService } from '@/services/class-join';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/integrations/supabase/client';
-import { loadGoogleApi } from '@/utils/googleApiLoader';
-import GoogleClassroomService from '@/services/google-classroom';
+import { useGoogleClassroom } from './useGoogleClassroom';
 
 export const useJoinClassProvider = () => {
   const [invitationCode, setInvitationCode] = useState('');
@@ -15,53 +13,16 @@ export const useJoinClassProvider = () => {
   const [error, setError] = useState<string | null>(null);
   const [autoJoinInProgress, setAutoJoinInProgress] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [googleClassrooms, setGoogleClassrooms] = useState<any[]>([]);
   
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-
-  // Fetch Google Classrooms when component mounts
-  useEffect(() => {
-    const fetchGoogleClassrooms = async () => {
-      try {
-        // Initialize Google API client
-        await loadGoogleApi();
-        
-        // Check if Google API is initialized
-        if (window.gapi) {
-          // Initialize with a client ID from environment or use demo mode
-          const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-          
-          if (clientId) {
-            await GoogleClassroomService.initialize(clientId);
-            
-            // Only proceed if user is signed in to Google
-            if (GoogleClassroomService.isSignedIn()) {
-              const courses = await GoogleClassroomService.listCourses();
-              setGoogleClassrooms(courses);
-              console.log("Google Classrooms fetched:", courses);
-            } else {
-              console.log("User not signed in to Google Classroom");
-            }
-          } else {
-            console.log("No Google Client ID available for classroom integration");
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching Google Classrooms:", err);
-        toast({
-          title: "Google Classroom Error",
-          description: "Failed to fetch classrooms",
-          variant: "destructive"
-        });
-      }
-    };
-
-    if (user) {
-      fetchGoogleClassrooms();
-    }
-  }, [user, toast]);
+  
+  // Use our new Google Classroom hook
+  const { 
+    googleClassrooms, 
+    checkGoogleClassroomCode
+  } = useGoogleClassroom(user?.id);
 
   // Auto-extract code from URL if present
   useEffect(() => {
@@ -129,38 +90,17 @@ export const useJoinClassProvider = () => {
         
         // If no local match, try Google Classroom
         try {
-          if (window.gapi) {
-            // Initialize with a client ID from environment
-            const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+          const matchingGoogleClass = await checkGoogleClassroomCode(code);
+          
+          if (matchingGoogleClass) {
+            toast({
+              title: "Google Classroom Found",
+              description: `Imported class: ${matchingGoogleClass.name}`
+            });
             
-            if (clientId) {
-              // Initialize Google Classroom service
-              await GoogleClassroomService.initialize(clientId);
-              
-              // Check if user is signed in to Google
-              if (!GoogleClassroomService.isSignedIn()) {
-                await GoogleClassroomService.signIn();
-              }
-              
-              // Get all courses
-              const courses = await GoogleClassroomService.listCourses();
-              
-              // Find a matching course
-              const matchingGoogleClass = courses.find(
-                (course) => course.id === code || course.enrollmentCode === code
-              );
-              
-              if (matchingGoogleClass) {
-                toast({
-                  title: "Google Classroom Found",
-                  description: `Imported class: ${matchingGoogleClass.name}`
-                });
-                
-                // Here you could add logic to save the Google Classroom to your local database
-                navigate('/dashboard');
-                return;
-              }
-            }
+            // Here you could add logic to save the Google Classroom to your local database
+            navigate('/dashboard');
+            return;
           }
         } catch (googleError) {
           console.error("Error checking Google Classroom:", googleError);
@@ -222,7 +162,7 @@ export const useJoinClassProvider = () => {
       setIsJoining(false);
       setLoading(false);
     }
-  }, [user, navigate, toast]);
+  }, [user, navigate, toast, checkGoogleClassroomCode]);
 
   return {
     invitationCode,
