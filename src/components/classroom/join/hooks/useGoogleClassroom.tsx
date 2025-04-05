@@ -8,7 +8,7 @@ import type { GoogleClassroom } from '@/services/google-classroom';
 export interface UseGoogleClassroomReturn {
   googleClassrooms: GoogleClassroom[];
   loadingClassrooms: boolean;
-  fetchGoogleClassrooms: () => Promise<void>;
+  fetchGoogleClassrooms: () => Promise<GoogleClassroom[]>;
   checkGoogleClassroomCode: (code: string) => Promise<GoogleClassroom | null>;
   isAuthenticated: boolean;
   authenticateWithGoogle: () => Promise<boolean>;
@@ -58,7 +58,7 @@ export const useGoogleClassroom = (userId?: string): UseGoogleClassroomReturn =>
   }, [userId]);
 
   // Fetch Google Classrooms
-  const fetchGoogleClassrooms = useCallback(async () => {
+  const fetchGoogleClassrooms = useCallback(async (): Promise<GoogleClassroom[]> => {
     try {
       setLoadingClassrooms(true);
       console.log("Fetching Google Classrooms...");
@@ -181,4 +181,3 @@ export const useGoogleClassroom = (userId?: string): UseGoogleClassroomReturn =>
     authenticateWithGoogle
   };
 };
-
