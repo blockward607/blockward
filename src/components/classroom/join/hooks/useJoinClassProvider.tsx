@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClassJoinService } from '@/services/class-join';
@@ -13,10 +12,40 @@ export const useJoinClassProvider = () => {
   const [error, setError] = useState<string | null>(null);
   const [autoJoinInProgress, setAutoJoinInProgress] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [googleClassrooms, setGoogleClassrooms] = useState<any[]>([]);
   
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Fetch Google Classrooms when component mounts
+  useEffect(() => {
+    const fetchGoogleClassrooms = async () => {
+      try {
+        // Ensure gapi is loaded
+        if (window.gapi && window.gapi.client) {
+          await window.gapi.client.load('classroom', 'v1');
+          const response = await window.gapi.client.classroom.courses.list({
+            pageSize: 10
+          });
+          
+          setGoogleClassrooms(response.result.courses || []);
+          console.log("Google Classrooms fetched:", response.result.courses);
+        }
+      } catch (err) {
+        console.error("Error fetching Google Classrooms:", err);
+        toast({
+          title: "Google Classroom Error",
+          description: "Failed to fetch classrooms",
+          variant: "destructive"
+        });
+      }
+    };
+
+    if (user) {
+      fetchGoogleClassrooms();
+    }
+  }, [user]);
 
   // Auto-extract code from URL if present
   useEffect(() => {
@@ -73,7 +102,7 @@ export const useJoinClassProvider = () => {
       
       console.log("[useJoinClassProvider] Processing join with code:", code);
       
-      // Find classroom or invitation using service method
+      // First try local matching
       const { data: matchData, error: matchError } = 
         await ClassJoinService.findClassroomOrInvitation(code);
       
@@ -81,6 +110,33 @@ export const useJoinClassProvider = () => {
       
       if (matchError || !matchData) {
         console.error("[useJoinClassProvider] Error finding classroom or invitation:", matchError);
+        
+        // If no local match, try Google Classroom
+        if (window.gapi && window.gapi.client) {
+          try {
+            const googleClassResponse = await window.gapi.client.classroom.courses.list({
+              courseStates: ['ACTIVE'],
+            });
+            
+            const matchingGoogleClass = googleClassResponse.result.courses?.find(
+              (course: any) => course.id === code
+            );
+            
+            if (matchingGoogleClass) {
+              toast({
+                title: "Google Classroom Found",
+                description: `Imported class: ${matchingGoogleClass.name}`
+              });
+              
+              // Here you could add logic to save the Google Classroom to your local database
+              navigate('/dashboard');
+              return;
+            }
+          } catch (googleError) {
+            console.error("Error checking Google Classroom:", googleError);
+          }
+        }
+        
         setError(matchError?.message || "Invalid code. Please check your code and try again.");
         return;
       }
@@ -149,6 +205,7 @@ export const useJoinClassProvider = () => {
     error,
     setError,
     joinClassWithCode,
-    autoJoinInProgress
+    autoJoinInProgress,
+    googleClassrooms,
   };
 };
