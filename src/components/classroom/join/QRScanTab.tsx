@@ -4,6 +4,7 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { QRCodeScanner } from "../QRCodeScanner";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ClassJoinService } from "@/services/class-join";
 
 export interface QRScanTabProps {
   open: boolean;
@@ -12,7 +13,7 @@ export interface QRScanTabProps {
 }
 
 export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClose }) => {
-  const { joinClassWithCode, loading } = useJoinClassContext();
+  const { loading, setLoading } = useJoinClassContext();
   const [scanComplete, setScanComplete] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [processingCode, setProcessingCode] = useState<string | null>(null);
@@ -43,13 +44,38 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
     try {
       // Display feedback to the user
       toast.info("Code detected! Joining classroom...");
+      setLoading(true);
       
-      // Add some logging to help debug
-      console.log("About to join class with code:", code);
+      // Use ClassJoinService instead of directly calling joinClassWithCode
+      // This ensures we use the proper service with appropriate permissions
+      const { data, error } = await ClassJoinService.findClassroomOrInvitation(code);
       
-      // Directly use the code without processing it
-      await joinClassWithCode(code);
-      console.log("Successfully joined class");
+      if (error || !data) {
+        throw new Error(error?.message || "Invalid invitation code");
+      }
+      
+      // Check if already enrolled
+      const { data: enrollment, error: enrollmentError } = 
+        await ClassJoinService.checkEnrollment(data.classroomId);
+      
+      if (enrollmentError) {
+        console.error("Error checking enrollment:", enrollmentError);
+      }
+        
+      if (enrollment && enrollment.length > 0) {
+        toast.success("You are already enrolled in this classroom");
+        setTimeout(() => onClose(), 1000);
+        return;
+      }
+      
+      // Use the service to enroll the student
+      const { data: joinData, error: joinError } = 
+        await ClassJoinService.enrollStudent(data.classroomId, data.invitationId);
+        
+      if (joinError) {
+        throw new Error(joinError.message || "Error joining classroom");
+      }
+      
       toast.success("Successfully joined classroom!");
       
       // Close the dialog after joining (with a slight delay to see success feedback)
@@ -69,6 +95,8 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
         setIsHandlingCode(false);
       }, 3000);
     } finally {
+      setLoading(false);
+      
       // In case we don't hit the setTimeout above (e.g. if component unmounts)
       // Make sure to eventually reset the handling state
       if (isHandlingCode) {

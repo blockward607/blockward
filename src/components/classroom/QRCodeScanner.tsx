@@ -155,7 +155,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
         stopScanner();
       }
     };
-  }, [onScan]);
+  }, [scannerInitialized, isStopping]);
 
   // Safely handle successful scan and stop scanner
   const handleSuccessfulScan = async (scanner: Html5Qrcode | null, decodedText: string) => {
