@@ -1,45 +1,74 @@
 
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { User, Users } from "lucide-react";
+import { GoogleClassroom } from "@/services/google-classroom";
 
 interface ClassDetailsProps {
-  course: any;
+  course: GoogleClassroom;
   loading: boolean;
   students: any[];
   studentsLoaded: boolean;
 }
 
-export const ClassDetails = ({ course, loading, students, studentsLoaded }: ClassDetailsProps) => {
-  if (loading) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-5/6" />
-      </div>
-    );
-  }
-  
+export function ClassDetails({ 
+  course, 
+  loading, 
+  students, 
+  studentsLoaded 
+}: ClassDetailsProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-md font-medium">Class Details</h3>
-      <div className="space-y-2">
-        <p className="text-sm"><span className="font-medium">Name:</span> {course.name}</p>
-        {course.section && (
-          <p className="text-sm"><span className="font-medium">Section:</span> {course.section}</p>
-        )}
-        {course.description && (
-          <p className="text-sm"><span className="font-medium">Description:</span> {course.description}</p>
-        )}
-      </div>
+      <h3 className="text-lg font-medium">Class Details</h3>
       
-      <div>
-        <h4 className="text-sm font-medium mb-2">Students</h4>
-        {studentsLoaded ? (
-          <p className="text-sm">{students.length} students will be imported</p>
-        ) : (
-          <Skeleton className="h-4 w-32" />
-        )}
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <dl className="space-y-3">
+            <div className="flex flex-col">
+              <dt className="text-sm text-muted-foreground">Class Name</dt>
+              <dd className="font-medium">{course.name}</dd>
+            </div>
+            
+            {course.section && (
+              <div className="flex flex-col">
+                <dt className="text-sm text-muted-foreground">Section</dt>
+                <dd>{course.section}</dd>
+              </div>
+            )}
+            
+            <div className="flex flex-col">
+              <dt className="text-sm text-muted-foreground">Enrollment Code</dt>
+              <dd>{course.enrollmentCode || "Not available"}</dd>
+            </div>
+            
+            <div className="flex flex-col">
+              <dt className="flex items-center text-sm text-muted-foreground">
+                <Users className="h-4 w-4 mr-1" />
+                Students
+              </dt>
+              <dd>
+                {loading ? (
+                  <div className="space-y-2 mt-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ) : studentsLoaded ? (
+                  <span>{students.length} students</span>
+                ) : (
+                  <span className="text-muted-foreground italic">Click Import to load students</span>
+                )}
+              </dd>
+            </div>
+            
+            {course.description && (
+              <div className="flex flex-col">
+                <dt className="text-sm text-muted-foreground">Description</dt>
+                <dd className="text-sm">{course.description}</dd>
+              </div>
+            )}
+          </dl>
+        </CardContent>
+      </Card>
     </div>
   );
-};
+}

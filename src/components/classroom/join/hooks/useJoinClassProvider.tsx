@@ -14,6 +14,7 @@ export const useJoinClassProvider = () => {
   const [error, setError] = useState<string | null>(null);
   const [autoJoinInProgress, setAutoJoinInProgress] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -22,9 +23,14 @@ export const useJoinClassProvider = () => {
   const { 
     googleClassrooms, 
     checkGoogleClassroomCode,
-    authenticateWithGoogle,
-    isAuthenticated
+    authenticateWithGoogle: authenticate,
+    isAuthenticated: googleAuthenticated
   } = useGoogleClassroom(user?.id);
+
+  // Sync isAuthenticated status from the googleAuthenticated value
+  useEffect(() => {
+    setIsAuthenticated(googleAuthenticated);
+  }, [googleAuthenticated]);
 
   // Auto-extract code from URL if present
   useEffect(() => {
@@ -56,6 +62,26 @@ export const useJoinClassProvider = () => {
 
     autoExtractCode();
   }, [user]);
+
+  const authenticateWithGoogle = async () => {
+    try {
+      console.log("Attempting to authenticate with Google...");
+      const success = await authenticate();
+      if (success) {
+        console.log("Successfully authenticated with Google Classroom");
+        toast.success("Successfully connected to Google Classroom");
+        return true;
+      } else {
+        console.log("Failed to authenticate with Google Classroom");
+        toast.error("Could not connect to Google Classroom");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error authenticating with Google:", err);
+      toast.error("Error connecting to Google Classroom");
+      return false;
+    }
+  };
 
   const joinClassWithCode = useCallback(async (code: string) => {
     setLoading(true);
@@ -105,7 +131,7 @@ export const useJoinClassProvider = () => {
           const matchingGoogleClass = await checkGoogleClassroomCode(code);
           
           if (matchingGoogleClass) {
-            toast.success(`Imported class: ${matchingGoogleClass.name}`);
+            toast.success(`Found Google Classroom: ${matchingGoogleClass.name}`);
             
             // Here you could add logic to save the Google Classroom to your local database
             navigate('/dashboard');
@@ -168,7 +194,7 @@ export const useJoinClassProvider = () => {
       setIsJoining(false);
       setLoading(false);
     }
-  }, [user, navigate, checkGoogleClassroomCode, isAuthenticated, authenticateWithGoogle]);
+  }, [user, navigate, checkGoogleClassroomCode, isAuthenticated]);
 
   return {
     invitationCode,

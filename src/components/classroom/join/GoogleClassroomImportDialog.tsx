@@ -11,12 +11,10 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { GoogleClassroom } from "@/services/google-classroom";
 import { ImportOptions } from "./ImportOptions";
 import { ClassDetails } from "./ClassDetails";
 import { useImportDialog } from "./hooks/useImportDialog";
-import { ClassJoinService } from "@/services/class-join";
 
 interface GoogleClassroomImportDialogProps {
   open: boolean;
@@ -63,65 +61,8 @@ export function GoogleClassroomImportDialog({
     importOptions,
     setImportOptions,
     handleImport,
-    loadStudents
+    handleJoinClass
   } = useImportDialog(course, () => onOpenChange(false));
-  
-  // Load students when component mounts
-  useEffect(() => {
-    if (course && !studentsLoaded) {
-      loadStudents();
-    }
-  }, [course, studentsLoaded]);
-  
-  // Function to handle direct join to Google Classroom
-  const handleDirectJoin = async () => {
-    try {
-      setJoining(true);
-      console.log("Attempting to join Google Classroom directly with code:", course.enrollmentCode || course.id);
-      
-      // Try with enrollment code first, fallback to ID
-      const classCode = course.enrollmentCode || course.id;
-      
-      if (!classCode) {
-        toast.error("This classroom doesn't have a valid enrollment code");
-        return;
-      }
-      
-      // Use the class join service to join directly with the code
-      const { data: matchData, error: matchError } = 
-        await ClassJoinService.findClassroomOrInvitation(classCode);
-      
-      if (matchError || !matchData) {
-        console.log("No local match found, creating new class...");
-        // If no match, proceed with normal import flow
-        await handleImport();
-        return;
-      }
-      
-      // If we found a match, attempt to enroll the student
-      const { data: enrollData, error: enrollError } = 
-        await ClassJoinService.enrollStudent(matchData.classroomId, matchData.invitationId);
-      
-      if (enrollError) {
-        console.error("Error joining classroom:", enrollError);
-        toast.error(enrollError.message || "Could not join this classroom");
-        return;
-      }
-      
-      // Success!
-      toast.success(`You've successfully joined ${course.name}`);
-      
-      // Navigate to class details page
-      navigate(`/class/${matchData.classroomId}`);
-      
-    } catch (error) {
-      console.error("Error joining Google Classroom directly:", error);
-      toast.error("An error occurred while joining the classroom");
-    } finally {
-      setJoining(false);
-      onOpenChange(false);
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,7 +98,7 @@ export function GoogleClassroomImportDialog({
           <div className="flex space-x-2">
             <Button 
               variant="secondary" 
-              onClick={handleDirectJoin} 
+              onClick={handleJoinClass} 
               disabled={importing || joining}
               className="flex-1"
             >
