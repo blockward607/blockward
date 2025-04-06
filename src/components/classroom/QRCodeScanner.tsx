@@ -132,13 +132,12 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
           try {
             // Check if scanner is running before stopping
             if (scannerRef.current) {
-              const isScanning = scannerRef.current.getState() === Html5Qrcode.SCAN_TYPE_CAMERA;
-              
-              if (isScanning) {
+              // Instead of checking scanner state, just try stopping and handle any errors
+              try {
                 await scannerRef.current.stop();
                 console.log("Scanner stopped successfully on unmount");
-              } else {
-                console.log("Scanner was not running, no need to stop");
+              } catch (stopError) {
+                console.log("Scanner was not running, no need to stop:", stopError);
               }
             }
           } catch (error) {
@@ -193,12 +192,9 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
         try {
           if (scannerRef.current) {
             try {
-              const isScanning = scannerRef.current.getState() === Html5Qrcode.SCAN_TYPE_CAMERA;
-              
-              if (isScanning) {
-                await scannerRef.current.stop();
-                console.log("Scanner stopped before close");
-              }
+              // Instead of checking the scanner state, try stopping and catch any errors
+              await scannerRef.current.stop();
+              console.log("Scanner stopped before close");
             } catch (stopError) {
               console.log("Error stopping scanner before close (can be ignored):", stopError);
             }
