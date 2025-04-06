@@ -1,11 +1,10 @@
 
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { GoogleClassroom } from "@/services/google-classroom";
 import GoogleClassroomService from "@/services/google-classroom";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export function useImportDialog(course: GoogleClassroom, onClose: () => void) {
   const [loading, setLoading] = useState(false);

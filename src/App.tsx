@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -8,6 +7,7 @@ import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AssistantBot } from "@/components/assistant/AssistantBot";
+import TutorialPage from "./pages/TutorialPage";
 
 // Import problematic components directly instead of lazy-loading
 import Index from "@/pages/Index";
@@ -90,6 +90,7 @@ function App() {
               <Route path="class/:classroomId" element={<ClassDetails />} />
               <Route path="class/:classroomId/grades" element={<Grades />} />
               <Route path="auth/wallet-verify" element={<WalletVerify />} />
+              <Route path="/tutorial/:role" element={<TutorialPage />} />
             </Route>
           </Routes>
         </Suspense>
