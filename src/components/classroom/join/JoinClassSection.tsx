@@ -8,11 +8,20 @@ import { ImportOptions } from "./ImportOptions";
 import { GoogleClassroomImportDialog } from "./GoogleClassroomImportDialog";
 import { useJoinClassContext } from "./JoinClassContext";
 import { Loader2 } from "lucide-react";
+import { GoogleClassroom } from "@/services/google-classroom";
 
 export const JoinClassSection = () => {
   const [activeTab, setActiveTab] = useState("code");
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const { scannerOpen, setScannerOpen, autoJoinInProgress, loading } = useJoinClassContext();
+  const [selectedCourse, setSelectedCourse] = useState<GoogleClassroom | undefined>(undefined);
+  
+  const { 
+    scannerOpen, 
+    setScannerOpen, 
+    autoJoinInProgress, 
+    loading,
+    googleClassrooms 
+  } = useJoinClassContext();
   
   // When activating the scan tab, automatically open the scanner
   useEffect(() => {
@@ -22,6 +31,12 @@ export const JoinClassSection = () => {
       setScannerOpen(false);
     }
   }, [activeTab, setScannerOpen]);
+  
+  // Handle selecting a Google Classroom course
+  const handleSelectCourse = (course: GoogleClassroom) => {
+    setSelectedCourse(course);
+    setShowImportDialog(true);
+  };
   
   // If auto-join is in progress, show loading state
   if (autoJoinInProgress) {
@@ -66,13 +81,18 @@ export const JoinClassSection = () => {
         </Tabs>
         
         <div className="mt-6 pt-4 border-t border-gray-800">
-          <ImportOptions onImport={() => setShowImportDialog(true)} />
+          <ImportOptions 
+            onImport={() => setShowImportDialog(true)}
+            googleClassrooms={googleClassrooms}
+            onSelectCourse={handleSelectCourse}
+          />
         </div>
       </Card>
       
       <GoogleClassroomImportDialog 
         open={showImportDialog} 
-        onOpenChange={setShowImportDialog} 
+        onOpenChange={setShowImportDialog}
+        course={selectedCourse}
       />
     </div>
   );

@@ -48,9 +48,13 @@ class GoogleApiClient {
 
       // Initialize the client with your Google Cloud project
       console.log("Initializing Google API client with client ID:", this.clientId);
+      
+      // Get API key from environment variables
+      const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || "";
+      
       try {
         await window.gapi.client.init({
-          apiKey: null, // Not required for OAuth flows
+          apiKey: apiKey, // Use API key if available
           clientId: this.clientId,
           discoveryDocs: DISCOVERY_DOCS,
           scope: SCOPES.join(" ")

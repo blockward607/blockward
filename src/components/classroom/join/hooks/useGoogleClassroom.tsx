@@ -93,7 +93,7 @@ export const useGoogleClassroom = (userId?: string): UseGoogleClassroomReturn =>
       if (!clientId) {
         toast({
           title: "Configuration Error",
-          description: "Google Client ID is not configured",
+          description: "Google Client ID is not configured. Please make sure you've set it in your environment variables.",
           variant: "destructive"
         });
         return false;
@@ -106,7 +106,7 @@ export const useGoogleClassroom = (userId?: string): UseGoogleClassroomReturn =>
       if (!initialized) {
         toast({
           title: "Initialization Failed",
-          description: "Could not initialize Google Classroom API",
+          description: "Could not initialize Google Classroom API. Please check your configuration.",
           variant: "destructive"
         });
         return false;
@@ -129,7 +129,7 @@ export const useGoogleClassroom = (userId?: string): UseGoogleClassroomReturn =>
       console.error("Error authenticating with Google:", err);
       toast({
         title: "Authentication Failed",
-        description: "Could not connect to Google Classroom",
+        description: "Could not connect to Google Classroom. Please check your API key configuration.",
         variant: "destructive"
       });
       return false;

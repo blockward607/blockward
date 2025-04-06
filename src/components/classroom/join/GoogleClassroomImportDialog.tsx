@@ -1,6 +1,4 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,105 +7,181 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { School, Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { useGoogleClassroom } from "./hooks/useGoogleClassroom";
-import { GoogleClassroomCourseList } from "@/components/google-classroom/GoogleClassroomCourseList";
-import type { GoogleClassroom } from "@/services/google-classroom";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { GoogleClassroom } from "@/services/google-classroom";
+import { ImportOptions } from "./ImportOptions";
+import { ClassDetails } from "./ClassDetails";
+import { useImportDialog } from "./useImportDialog";
+import { ClassJoinService } from "@/services/class-join";
 
-export interface GoogleClassroomImportDialogProps {
+interface GoogleClassroomImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  course?: GoogleClassroom;
 }
 
-export const GoogleClassroomImportDialog: React.FC<GoogleClassroomImportDialogProps> = ({
-  open,
+export function GoogleClassroomImportDialog({ 
+  open, 
   onOpenChange,
-}) => {
-  const { user } = useAuth();
-  const { 
-    googleClassrooms, 
-    loadingClassrooms, 
-    fetchGoogleClassrooms, 
-    isAuthenticated,
-    authenticateWithGoogle
-  } = useGoogleClassroom(user?.id);
+  course 
+}: GoogleClassroomImportDialogProps) {
+  const [joining, setJoining] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
-  const [selectedCourse, setSelectedCourse] = useState<GoogleClassroom | null>(null);
+  // If no course is selected yet, show loading or empty state
+  if (!course) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Import Google Classroom</DialogTitle>
+            <DialogDescription>
+              Select a Google Classroom course to import
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center items-center py-8">
+            <p className="text-muted-foreground">No course selected</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
-  const handleImport = async (course: GoogleClassroom) => {
-    setSelectedCourse(course);
-    // In a real implementation, you might save this to your database
-    // For now, just close the dialog after selecting
-    onOpenChange(false);
+  // If a course is selected, use the useImportDialog hook
+  const {
+    loading,
+    students,
+    studentsLoaded,
+    importing,
+    importOptions,
+    setImportOptions,
+    handleImport
+  } = useImportDialog(course, () => onOpenChange(false));
+  
+  // Function to handle direct join to Google Classroom
+  const handleDirectJoin = async () => {
+    try {
+      setJoining(true);
+      console.log("Attempting to join Google Classroom directly with code:", course.enrollmentCode || course.id);
+      
+      // Try with enrollment code first, fallback to ID
+      const classCode = course.enrollmentCode || course.id;
+      
+      if (!classCode) {
+        toast({
+          variant: "destructive",
+          title: "Missing Code",
+          description: "This classroom doesn't have a valid enrollment code"
+        });
+        return;
+      }
+      
+      // Use the class join service to join directly with the code
+      const { data: matchData, error: matchError } = 
+        await ClassJoinService.findClassroomOrInvitation(classCode);
+      
+      if (matchError || !matchData) {
+        console.log("No local match found, creating new class...");
+        // If no match, proceed with normal import flow
+        await handleImport();
+        return;
+      }
+      
+      // If we found a match, attempt to enroll the student
+      const { data: enrollData, error: enrollError } = 
+        await ClassJoinService.enrollStudent(matchData.classroomId, matchData.invitationId);
+      
+      if (enrollError) {
+        console.error("Error joining classroom:", enrollError);
+        toast({
+          variant: "destructive",
+          title: "Join Failed",
+          description: enrollError.message || "Could not join this classroom"
+        });
+        return;
+      }
+      
+      // Success!
+      toast({
+        title: "Joined Success!",
+        description: `You've successfully joined ${course.name}`
+      });
+      
+      // Navigate to class details page
+      navigate(`/class/${matchData.classroomId}`);
+      
+    } catch (error) {
+      console.error("Error joining Google Classroom directly:", error);
+      toast({
+        variant: "destructive", 
+        title: "Join Failed",
+        description: "An error occurred while joining the classroom"
+      });
+    } finally {
+      setJoining(false);
+      onOpenChange(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Import from Google Classroom</DialogTitle>
+          <DialogTitle>Google Classroom: {course.name}</DialogTitle>
           <DialogDescription>
-            Connect your Google Classroom account to import your classes
+            Join or import this Google Classroom
           </DialogDescription>
         </DialogHeader>
-        
-        {!isAuthenticated ? (
-          <div className="p-4 flex flex-col items-center justify-center">
-            <div className="mb-4 rounded-full bg-purple-800/30 p-4">
-              <School className="h-8 w-8 text-purple-300" />
-            </div>
-            <p className="text-center mb-4">
-              You will be redirected to Google to authorize this application to
-              access your Google Classroom data.
-            </p>
-            <DialogFooter className="flex space-x-2 sm:space-x-0 w-full">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="button" 
-                onClick={authenticateWithGoogle} 
-                disabled={loadingClassrooms}
-                className="w-full sm:w-auto"
-              >
-                {loadingClassrooms ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  "Connect Google Classroom"
-                )}
-              </Button>
-            </DialogFooter>
+
+        <div className="py-4 space-y-4">
+          <ImportOptions 
+            importOptions={importOptions} 
+            setImportOptions={setImportOptions} 
+          />
+
+          <ClassDetails 
+            course={course} 
+            loading={loading} 
+            students={students} 
+            studentsLoaded={studentsLoaded} 
+          />
+        </div>
+
+        <DialogFooter className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={importing || joining}>
+            Cancel
+          </Button>
+          
+          <div className="flex space-x-2">
+            <Button 
+              variant="secondary" 
+              onClick={handleDirectJoin} 
+              disabled={importing || joining}
+              className="flex-1"
+            >
+              {joining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {joining ? "Joining..." : "Join Class"}
+            </Button>
+            
+            <Button 
+              onClick={handleImport} 
+              disabled={importing || joining || loading}
+              className="flex-1"
+            >
+              {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {importing ? "Importing..." : "Import Class"}
+            </Button>
           </div>
-        ) : (
-          <>
-            <div className="py-2">
-              <GoogleClassroomCourseList 
-                courses={googleClassrooms} 
-                onImport={handleImport} 
-                onRefresh={fetchGoogleClassrooms}
-              />
-            </div>
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
-              >
-                Close
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}
