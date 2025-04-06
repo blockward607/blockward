@@ -24,7 +24,6 @@ export const findExactInvitationMatch = async (code: string): Promise<{
       .select("id, classroom_id, invitation_token, status, expires_at, classroom:classrooms(*)")
       .ilike("invitation_token", normalizedCode)
       .eq("status", "pending")
-      .is("expires_at", null, { negate: true })
       .gt("expires_at", new Date().toISOString())
       .limit(1);
 

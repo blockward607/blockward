@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useJoinClassContext } from "./JoinClassContext";
+import { useJoinClassContext } from "../JoinClassContext";
 import { ClassJoinService } from "@/services/class-join";
 import { StudentProfileService } from "@/services/StudentProfileService";
 import { toast } from "sonner";
@@ -76,11 +76,9 @@ export const useJoinClass = () => {
       // Check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Not authenticated",
-          description: "Please log in to join a class"
-        });
+        // Fix the toast calls by using sonner toast instead of toast component
+        toast.error("Not authenticated. Please log in to join a class");
+        
         // Navigate to auth page with intent to join class
         navigate('/auth', { state: { joinCode: code } });
         return;
@@ -151,10 +149,8 @@ export const useJoinClass = () => {
         
       if (existingEnrollment && existingEnrollment.length > 0) {
         console.log("Student already enrolled in this classroom");
-        toast({
-          title: "Already enrolled",
-          description: "You are already a member of this classroom"
-        });
+        // Fix the toast call
+        toast.success("You are already a member of this classroom");
         navigate(`/class/${classroomId}`);
         return;
       }
@@ -192,10 +188,8 @@ export const useJoinClass = () => {
 
       // Success!
       console.log("Successfully joined classroom:", classroomName);
-      toast({
-        title: "Success!",
-        description: `You've joined ${classroomName || 'the classroom'}`
-      });
+      // Fix the toast call
+      toast.success(`You've joined ${classroomName || 'the classroom'}`);
       
       // Redirect to class details page
       navigate(`/class/${classroomId}`);
@@ -207,7 +201,7 @@ export const useJoinClass = () => {
       setIsJoining(false);
       setLoading(false);
     }
-  }, [invitationCode, setError, setLoading, isJoining, toast, navigate]);
+  }, [invitationCode, setError, setLoading, isJoining, navigate]);
 
   return { handleJoinClass };
 };
