@@ -18,10 +18,12 @@ export const useJoinClassProvider = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Use our new Google Classroom hook
+  // Use our Google Classroom hook
   const { 
     googleClassrooms, 
-    checkGoogleClassroomCode
+    checkGoogleClassroomCode,
+    authenticateWithGoogle,
+    isAuthenticated
   } = useGoogleClassroom(user?.id);
 
   // Auto-extract code from URL if present
@@ -90,6 +92,16 @@ export const useJoinClassProvider = () => {
         
         // If no local match, try Google Classroom
         try {
+          // If not authenticated with Google yet, try to authenticate
+          if (!isAuthenticated) {
+            const didAuthenticate = await authenticateWithGoogle();
+            if (!didAuthenticate) {
+              setError("Could not authenticate with Google Classroom. Please try again.");
+              return;
+            }
+          }
+          
+          // Now check for matching Google class
           const matchingGoogleClass = await checkGoogleClassroomCode(code);
           
           if (matchingGoogleClass) {
@@ -101,12 +113,15 @@ export const useJoinClassProvider = () => {
             // Here you could add logic to save the Google Classroom to your local database
             navigate('/dashboard');
             return;
+          } else {
+            // No match found in Google Classroom either
+            setError(matchError?.message || "Invalid code. Could not find a matching class.");
           }
         } catch (googleError) {
           console.error("Error checking Google Classroom:", googleError);
+          setError("Could not verify Google Classroom code. Please try again.");
         }
         
-        setError(matchError?.message || "Invalid code. Please check your code and try again.");
         return;
       }
       
@@ -162,7 +177,7 @@ export const useJoinClassProvider = () => {
       setIsJoining(false);
       setLoading(false);
     }
-  }, [user, navigate, toast, checkGoogleClassroomCode]);
+  }, [user, navigate, toast, checkGoogleClassroomCode, isAuthenticated, authenticateWithGoogle]);
 
   return {
     invitationCode,
