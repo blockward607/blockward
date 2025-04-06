@@ -17,6 +17,15 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
   const qrBoxId = "qr-reader";
   const [scannerInitialized, setScannerInitialized] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    // Set up cleanup function for component unmount
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let scanner: Html5Qrcode | null = null;
@@ -24,8 +33,26 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
     const initScanner = async () => {
       try {
         setIsLoading(true);
-        scanner = new Html5Qrcode(qrBoxId);
-        scannerRef.current = scanner;
+        setError(null);
+        
+        // Check if the DOM element exists before creating scanner
+        const qrReaderElement = document.getElementById(qrBoxId);
+        if (!qrReaderElement) {
+          console.error("QR reader element not found");
+          setError("QR scanner initialization failed. Please try again.");
+          setIsLoading(false);
+          return;
+        }
+
+        // Only create a new scanner if we don't have one already
+        if (!scannerRef.current) {
+          console.log("Creating new QR scanner instance");
+          scanner = new Html5Qrcode(qrBoxId);
+          scannerRef.current = scanner;
+        } else {
+          console.log("Using existing QR scanner instance");
+          scanner = scannerRef.current;
+        }
 
         // Check for camera permissions first
         try {
@@ -42,101 +69,152 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
         if (devices && devices.length > 0) {
           const cameraId = devices[0].id;
           
-          await scanner.start(
-            cameraId,
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 }
-            },
-            (decodedText) => {
-              // On QR code detected
-              console.log("QR code detected:", decodedText);
-              
-              // Process the QR code directly without any extraction
-              handleSuccessfulScan(scanner, decodedText.trim());
-            },
-            (errorMessage) => {
-              // Ignore continuous scanning errors
+          // Only start scanning if we haven't already
+          if (!scannerInitialized && !isStopping) {
+            console.log("Starting QR scanner");
+            await scanner.start(
+              cameraId,
+              {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+              },
+              (decodedText) => {
+                // On QR code detected
+                console.log("QR code detected:", decodedText);
+                
+                // Process the QR code directly without any extraction
+                if (mountedRef.current) {
+                  handleSuccessfulScan(scanner, decodedText.trim());
+                }
+              },
+              (errorMessage) => {
+                // Ignore continuous scanning errors
+              }
+            ).catch(err => {
+              if (mountedRef.current) {
+                console.error("Error starting scanner:", err);
+                setError("Error starting the camera. Please try again.");
+                setIsLoading(false);
+              }
+            });
+            
+            if (mountedRef.current) {
+              setIsLoading(false);
+              setScannerInitialized(true);
+              setIsPaused(false);
             }
-          ).catch(err => {
-            console.error("Error starting scanner:", err);
-            setError("Error starting the camera. Please try again.");
-            setIsLoading(false);
-          });
-          
-          setIsLoading(false);
-          setScannerInitialized(true);
+          }
         } else {
-          setError("No camera devices found");
-          setIsLoading(false);
+          if (mountedRef.current) {
+            setError("No camera devices found");
+            setIsLoading(false);
+          }
         }
       } catch (err) {
-        console.error("Error initializing scanner:", err);
-        setError("Unable to access camera. Please ensure camera permissions are granted.");
-        setIsLoading(false);
+        if (mountedRef.current) {
+          console.error("Error initializing scanner:", err);
+          setError("Unable to access camera. Please ensure camera permissions are granted.");
+          setIsLoading(false);
+        }
       }
     };
 
     // Only initialize the scanner if the component is mounted
-    const qrReaderElement = document.getElementById(qrBoxId);
-    if (qrReaderElement) {
-      initScanner();
-    } else {
-      console.error("QR reader element not found");
-      setError("QR scanner initialization failed. Please try again.");
-      setIsLoading(false);
-    }
+    initScanner();
 
     return () => {
       // Make sure we don't try to stop an already stopped scanner
       if (scannerRef.current && scannerInitialized && !isStopping) {
+        console.log("Cleaning up QR scanner on unmount");
         setIsStopping(true);
-        scannerRef.current
-          .stop()
-          .then(() => {
-            console.log("Scanner stopped successfully");
-            scannerRef.current = null;
-          })
-          .catch(error => {
+        
+        const stopScanner = async () => {
+          try {
+            // Check if scanner is running before stopping
+            if (scannerRef.current) {
+              const isScanning = scannerRef.current.getState() === Html5Qrcode.SCAN_TYPE_CAMERA;
+              
+              if (isScanning) {
+                await scannerRef.current.stop();
+                console.log("Scanner stopped successfully on unmount");
+              } else {
+                console.log("Scanner was not running, no need to stop");
+              }
+            }
+          } catch (error) {
             // Just log the error but don't throw it to prevent crashing
             console.log("Safe scanner stop error (can be ignored):", error);
-          })
-          .finally(() => {
-            setIsStopping(false);
-          });
+          } finally {
+            scannerRef.current = null;
+            if (mountedRef.current) {
+              setScannerInitialized(false);
+              setIsStopping(false);
+            }
+          }
+        };
+        
+        stopScanner();
       }
     };
   }, [onScan]);
 
   // Safely handle successful scan and stop scanner
   const handleSuccessfulScan = async (scanner: Html5Qrcode | null, decodedText: string) => {
-    if (!scanner) return;
+    if (!scanner || isStopping || isPaused) return;
     
     try {
-      // Pause scanning to prevent multiple scans
-      await scanner.pause(true);
+      console.log("QR code scan successful, pausing scanner");
+      setIsPaused(true);
+      
+      // Safely pause scanning to prevent multiple scans
+      try {
+        await scanner.pause(true);
+      } catch (pauseError) {
+        console.log("Non-critical error pausing scanner:", pauseError);
+      }
       
       // Process the code
       onScan(decodedText);
       
-      // Safely stop the scanner after successful processing
-      setIsStopping(true);
-      try {
-        await scanner.stop();
-        console.log("Scanner stopped after successful scan");
-      } catch (stopError) {
-        console.log("Error while stopping scanner (can be ignored):", stopError);
-      } finally {
-        setIsStopping(false);
-      }
+      // We don't immediately stop the scanner here anymore
+      // It will be stopped when the component unmounts or is closed
     } catch (error) {
       console.error("Error in scan handler:", error);
-      // If there's an error processing, we should still try to stop the scanner
-      try {
-        await scanner.stop();
-      } catch (stopError) {
-        // Ignore second-level errors
-      }
+      setIsPaused(false);
+    }
+  };
+
+  const handleClose = () => {
+    // Safe cleanup before calling onClose
+    if (scannerRef.current && !isStopping) {
+      setIsStopping(true);
+      
+      const stopBeforeClose = async () => {
+        try {
+          if (scannerRef.current) {
+            try {
+              const isScanning = scannerRef.current.getState() === Html5Qrcode.SCAN_TYPE_CAMERA;
+              
+              if (isScanning) {
+                await scannerRef.current.stop();
+                console.log("Scanner stopped before close");
+              }
+            } catch (stopError) {
+              console.log("Error stopping scanner before close (can be ignored):", stopError);
+            }
+            
+            scannerRef.current = null;
+          }
+        } finally {
+          setScannerInitialized(false);
+          setIsStopping(false);
+          onClose();
+        }
+      };
+      
+      stopBeforeClose();
+    } else {
+      onClose();
     }
   };
 
@@ -152,7 +230,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
       {error && (
         <div className="py-8 text-center">
           <p className="text-red-400 mb-4">{error}</p>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={handleClose}>Close</Button>
         </div>
       )}
 
@@ -168,13 +246,18 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
           <p className="text-sm text-gray-300 mb-2">
             Position the QR code within the box.
           </p>
-          {scannerInitialized && (
+          {scannerInitialized && !isPaused && (
             <p className="text-xs text-green-400 mb-2">
               Camera active. Scanning for QR codes...
             </p>
           )}
+          {isPaused && (
+            <p className="text-xs text-amber-400 mb-2">
+              QR code detected. Processing...
+            </p>
+          )}
           <Button 
-            onClick={onClose} 
+            onClick={handleClose} 
             variant="outline" 
             className="mt-2"
           >

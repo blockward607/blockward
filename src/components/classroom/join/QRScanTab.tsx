@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useJoinClassContext } from "./JoinClassContext";
 import { QRCodeScanner } from "../QRCodeScanner";
 import { Loader2 } from "lucide-react";
@@ -16,11 +16,26 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
   const [scanComplete, setScanComplete] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [processingCode, setProcessingCode] = useState<string | null>(null);
+  const [isHandlingCode, setIsHandlingCode] = useState(false);
+
+  // Reset state when tab opens/closes
+  useEffect(() => {
+    if (!open) {
+      // Small delay to prevent flashing of old error messages
+      const timer = setTimeout(() => {
+        setScanError(null);
+        setProcessingCode(null);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   const handleCodeScanned = async (code: string) => {
-    if (!code || scanComplete) return;
+    // Prevent duplicate scans or handling when already processing
+    if (!code || scanComplete || isHandlingCode) return;
     
     console.log(`QR Code scanned: ${code}`);
+    setIsHandlingCode(true);
     setScanComplete(true);
     setScanError(null);
     setProcessingCode(code);
@@ -36,17 +51,31 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
       await joinClassWithCode(code);
       console.log("Successfully joined class");
       toast.success("Successfully joined classroom!");
-      onClose(); // Close the dialog after joining
+      
+      // Close the dialog after joining (with a slight delay to see success feedback)
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     } catch (error: any) {
       console.error("Error joining class after QR scan:", error);
       setScanError(error.message || "Failed to join the class. Please try manual code entry.");
       toast.error("Failed to join classroom. Please try again.");
+      
       // Reset scan state after a delay to allow for another attempt
       setTimeout(() => {
         setScanComplete(false);
         setScanError(null);
         setProcessingCode(null);
+        setIsHandlingCode(false);
       }, 3000);
+    } finally {
+      // In case we don't hit the setTimeout above (e.g. if component unmounts)
+      // Make sure to eventually reset the handling state
+      if (isHandlingCode) {
+        setTimeout(() => {
+          setIsHandlingCode(false);
+        }, 5000);
+      }
     }
   };
 
