@@ -66,15 +66,28 @@ export const EnrollmentService = {
         };
       }
       
-      // Create enrollment record - using the correct table name 'classroom_students'
-      const { data, error } = await supabase
-        .from("classroom_students")
-        .insert({
-          classroom_id: classroomId,
-          student_id: session.session.user.id
-        })
-        .select()
-        .single();
+      // Use the secure database function to enroll the student
+      // This bypasses RLS policies as it's a SECURITY DEFINER function
+      let result;
+      if (invitationId) {
+        // If we have an invitation ID, use the enroll_student function
+        result = await supabase.rpc('enroll_student', { 
+          invitation_token: invitationId, 
+          student_id: session.session.user.id 
+        });
+      } else {
+        // Create enrollment record directly - used as fallback
+        result = await supabase
+          .from("classroom_students")
+          .insert({
+            classroom_id: classroomId,
+            student_id: session.session.user.id
+          })
+          .select()
+          .single();
+      }
+      
+      const { data, error } = result;
         
       if (error) {
         console.error("[EnrollmentService] Error enrolling student:", error);
@@ -85,11 +98,6 @@ export const EnrollmentService = {
       }
       
       console.log("[EnrollmentService] Student successfully enrolled:", data);
-      
-      // If we have an invitation ID, update its status
-      if (invitationId) {
-        await EnrollmentService.acceptInvitation(invitationId);
-      }
       
       return { 
         data: data, 
