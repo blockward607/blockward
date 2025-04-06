@@ -14,7 +14,7 @@ export const useGoogleClassroomImport = () => {
 
   const {
     googleClassrooms: courses,
-    loadingClassrooms: loading,
+    loading, // Changed from loadingClassrooms to match the property name in useGoogleClassroom
     fetchGoogleClassrooms,
     isAuthenticated,
     authenticateWithGoogle: handleAuthenticate
