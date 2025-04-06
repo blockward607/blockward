@@ -1,47 +1,50 @@
 
-import { codeExtractor } from "@/utils/codeExtractor";
-
 /**
- * Extract and format invitation code from various input formats
- * Acts as a facade for the codeExtractor utility
+ * Extracts an invitation code from different input formats
  */
 export const extractInvitationCode = (input: string): string | null => {
-  if (!input) return null;
+  if (!input || typeof input !== 'string') return null;
   
-  // Clean the input
-  const cleanInput = input.trim();
+  // Clean up the input string
+  const cleanInput = input.trim().toUpperCase();
   
-  try {
-    // First try using the utility
-    const extractedCode = codeExtractor.extractJoinCode(cleanInput);
-    
-    if (extractedCode) {
-      console.log("[extractInvitationCode] Extracted code:", extractedCode);
-      return extractedCode;
-    }
-    
-    // Try permissive extraction if standard fails
-    const permissiveCode = codeExtractor.extractInvitationToken(cleanInput);
-    if (permissiveCode) {
-      console.log("[extractInvitationCode] Using permissive extraction:", permissiveCode);
-      return permissiveCode;
-    }
-    
-    // Fallback: Check if the code is directly valid (in case the utility failed)
-    // Common format for invitation codes is 6-10 alphanumeric characters
-    if (/^[A-Za-z0-9]{4,10}$/.test(cleanInput)) {
-      return cleanInput.toUpperCase();
-    }
-    
-    // No valid code found
-    console.log("[extractInvitationCode] No valid code found in:", cleanInput);
-    return null;
-  } catch (error) {
-    console.error("[extractInvitationCode] Error extracting code:", error);
-    // Fallback in case of error: just return the cleaned input if it looks reasonable
-    if (cleanInput.length >= 4 && cleanInput.length <= 20) {
-      return cleanInput.toUpperCase();
-    }
-    return null;
+  // If it's already in the expected format (e.g. UK1234), return it directly
+  if (/^UK[A-Z0-9]{4}$/i.test(cleanInput)) {
+    return cleanInput;
   }
+  
+  // Try to extract a UK code pattern
+  const ukCodeMatch = cleanInput.match(/UK[A-Z0-9]{4}/i);
+  if (ukCodeMatch) {
+    return ukCodeMatch[0];
+  }
+  
+  // If input is a URL, try to extract code from URL parameters
+  if (cleanInput.includes('://')) {
+    try {
+      const url = new URL(cleanInput);
+      const code = url.searchParams.get('code');
+      if (code) {
+        return code.toUpperCase();
+      }
+    } catch (error) {
+      console.error("Error parsing URL:", error);
+    }
+  }
+  
+  // If it looks like a regular code (4-8 alphanumeric characters), return it
+  if (/^[A-Z0-9]{4,8}$/i.test(cleanInput)) {
+    return cleanInput;
+  }
+  
+  // If all else fails, just return the input as is
+  return cleanInput;
+};
+
+/**
+ * Helper function to normalize codes for comparison
+ */
+export const normalizeCode = (code: string): string => {
+  if (!code) return '';
+  return code.trim().toUpperCase().replace(/\s+/g, '');
 };

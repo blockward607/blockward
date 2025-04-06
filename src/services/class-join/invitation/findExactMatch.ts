@@ -1,55 +1,66 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { JoinClassroomResult } from "../types";
+import { normalizeCode } from "./extractCode";
 
-/**
- * Attempts to find an exact match for an invitation by token
- */
-export const findExactInvitationMatch = async (
-  processedCode: string
-): Promise<{ data: JoinClassroomResult | null; error: { message: string } | null }> => {
-  // Try to find a match on the exact invitation token
-  console.log("[findExactInvitationMatch] Looking for exact match:", processedCode);
-  const { data: invitation, error: inviteError } = await supabase
-    .from('class_invitations')
-    .select('id, classroom_id, expires_at, status, classroom:classrooms(id, name, description, teacher_id)')
-    .eq('invitation_token', processedCode)
-    .eq('status', 'pending')
-    .maybeSingle();
-    
-  if (inviteError && !inviteError.message.includes('No rows found')) {
-    console.error("[findExactInvitationMatch] Error checking invitation:", inviteError);
-    return { 
-      data: null, 
-      error: { message: "Error checking invitation" } 
-    };
-  }
-  
-  // If valid invitation found
-  if (invitation) {
-    // Check if invitation has expired
-    const expiresAt = new Date(invitation.expires_at);
-    const now = new Date();
-    
-    if (expiresAt < now) {
-      return { 
-        data: null, 
-        error: { message: "This invitation has expired" } 
+export const findExactInvitationMatch = async (code: string): Promise<{
+  data: JoinClassroomResult | null;
+  error: { message: string } | null;
+}> => {
+  try {
+    if (!code) {
+      return {
+        data: null,
+        error: { message: "No invitation code provided" }
       };
     }
     
-    console.log("[findExactInvitationMatch] Found matching invitation:", invitation);
+    const normalizedCode = normalizeCode(code);
+    console.log("[findExactInvitationMatch] Looking for invitation with normalized code:", normalizedCode);
     
-    return { 
+    // Look for a case-insensitive match
+    const { data: invitations, error: invitationError } = await supabase
+      .from("class_invitations")
+      .select("id, classroom_id, invitation_token, status, expires_at, classroom:classrooms(*)")
+      .ilike("invitation_token", normalizedCode)
+      .eq("status", "pending")
+      .is("expires_at", null, { negate: true })
+      .gt("expires_at", new Date().toISOString())
+      .limit(1);
+
+    if (invitationError) {
+      console.error("[findExactInvitationMatch] Error:", invitationError);
+      return {
+        data: null,
+        error: {
+          message: invitationError.message || "Error finding invitation"
+        }
+      };
+    }
+
+    if (!invitations || invitations.length === 0) {
+      return {
+        data: null,
+        error: { message: "Invitation not found or expired" }
+      };
+    }
+
+    const invitation = invitations[0];
+    console.log("[findExactInvitationMatch] Found invitation:", invitation);
+
+    return {
       data: {
         classroomId: invitation.classroom_id,
         invitationId: invitation.id,
         classroom: invitation.classroom
-      }, 
-      error: null 
+      },
+      error: null
+    };
+  } catch (error: any) {
+    console.error("[findExactInvitationMatch] Unexpected error:", error);
+    return {
+      data: null,
+      error: { message: error.message || "Unexpected error finding invitation" }
     };
   }
-  
-  // No exact match found
-  return { data: null, error: null };
 };
