@@ -16,6 +16,9 @@ type JoinClassContextType = {
   joinClassWithCode: (code: string) => Promise<void>;
   autoJoinInProgress: boolean;
   googleClassrooms: GoogleClassroom[];
+  // Add these properties to fix the errors
+  isAuthenticated: boolean;
+  authenticateWithGoogle: () => Promise<boolean>;
 };
 
 // Create the context with default values
@@ -31,6 +34,9 @@ const JoinClassContext = createContext<JoinClassContextType>({
   joinClassWithCode: async () => {},
   autoJoinInProgress: false,
   googleClassrooms: [],
+  // Add default values for new properties
+  isAuthenticated: false,
+  authenticateWithGoogle: async () => false,
 });
 
 // Export the useContext hook

@@ -5,6 +5,7 @@ import { ClassJoinService } from '@/services/class-join';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useGoogleClassroom } from './useGoogleClassroom';
+import { toast } from 'sonner';
 
 export const useJoinClassProvider = () => {
   const [invitationCode, setInvitationCode] = useState('');
@@ -16,7 +17,6 @@ export const useJoinClassProvider = () => {
   
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   
   // Use our Google Classroom hook
   const { 
@@ -105,10 +105,7 @@ export const useJoinClassProvider = () => {
           const matchingGoogleClass = await checkGoogleClassroomCode(code);
           
           if (matchingGoogleClass) {
-            toast({
-              title: "Google Classroom Found",
-              description: `Imported class: ${matchingGoogleClass.name}`
-            });
+            toast.success(`Imported class: ${matchingGoogleClass.name}`);
             
             // Here you could add logic to save the Google Classroom to your local database
             navigate('/dashboard');
@@ -142,10 +139,7 @@ export const useJoinClassProvider = () => {
         
       if (existingEnrollment && existingEnrollment.length > 0) {
         console.log("[useJoinClassProvider] Student already enrolled in this classroom");
-        toast({
-          title: "Already enrolled",
-          description: "You are already a member of this classroom"
-        });
+        toast.success("You are already a member of this classroom");
         navigate(`/class/${classroomId}`);
         return;
       }
@@ -162,10 +156,7 @@ export const useJoinClassProvider = () => {
 
       // Success!
       console.log("[useJoinClassProvider] Successfully joined classroom:", classroomName);
-      toast({
-        title: "Success!",
-        description: `You've joined ${classroomName || 'the classroom'}`
-      });
+      toast.success(`You've joined ${classroomName || 'the classroom'}`);
       
       // Redirect to class details page
       navigate(`/class/${classroomId}`);
@@ -177,7 +168,7 @@ export const useJoinClassProvider = () => {
       setIsJoining(false);
       setLoading(false);
     }
-  }, [user, navigate, toast, checkGoogleClassroomCode, isAuthenticated, authenticateWithGoogle]);
+  }, [user, navigate, checkGoogleClassroomCode, isAuthenticated, authenticateWithGoogle]);
 
   return {
     invitationCode,
@@ -191,5 +182,8 @@ export const useJoinClassProvider = () => {
     joinClassWithCode,
     autoJoinInProgress,
     googleClassrooms,
+    // Add these properties to match the context type
+    isAuthenticated,
+    authenticateWithGoogle
   };
 };

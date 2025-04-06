@@ -8,14 +8,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { GoogleClassroom } from "@/services/google-classroom";
 import { ImportOptions } from "./ImportOptions";
 import { ClassDetails } from "./ClassDetails";
-import { useImportDialog } from "./useImportDialog";
+import { useImportDialog } from "./hooks/useImportDialog";
 import { ClassJoinService } from "@/services/class-join";
 
 interface GoogleClassroomImportDialogProps {
@@ -30,7 +30,6 @@ export function GoogleClassroomImportDialog({
   course 
 }: GoogleClassroomImportDialogProps) {
   const [joining, setJoining] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
   
   // If no course is selected yet, show loading or empty state
@@ -63,8 +62,16 @@ export function GoogleClassroomImportDialog({
     importing,
     importOptions,
     setImportOptions,
-    handleImport
+    handleImport,
+    loadStudents
   } = useImportDialog(course, () => onOpenChange(false));
+  
+  // Load students when component mounts
+  useEffect(() => {
+    if (course && !studentsLoaded) {
+      loadStudents();
+    }
+  }, [course, studentsLoaded]);
   
   // Function to handle direct join to Google Classroom
   const handleDirectJoin = async () => {
@@ -76,11 +83,7 @@ export function GoogleClassroomImportDialog({
       const classCode = course.enrollmentCode || course.id;
       
       if (!classCode) {
-        toast({
-          variant: "destructive",
-          title: "Missing Code",
-          description: "This classroom doesn't have a valid enrollment code"
-        });
+        toast.error("This classroom doesn't have a valid enrollment code");
         return;
       }
       
@@ -101,30 +104,19 @@ export function GoogleClassroomImportDialog({
       
       if (enrollError) {
         console.error("Error joining classroom:", enrollError);
-        toast({
-          variant: "destructive",
-          title: "Join Failed",
-          description: enrollError.message || "Could not join this classroom"
-        });
+        toast.error(enrollError.message || "Could not join this classroom");
         return;
       }
       
       // Success!
-      toast({
-        title: "Joined Success!",
-        description: `You've successfully joined ${course.name}`
-      });
+      toast.success(`You've successfully joined ${course.name}`);
       
       // Navigate to class details page
       navigate(`/class/${matchData.classroomId}`);
       
     } catch (error) {
       console.error("Error joining Google Classroom directly:", error);
-      toast({
-        variant: "destructive", 
-        title: "Join Failed",
-        description: "An error occurred while joining the classroom"
-      });
+      toast.error("An error occurred while joining the classroom");
     } finally {
       setJoining(false);
       onOpenChange(false);
@@ -144,7 +136,9 @@ export function GoogleClassroomImportDialog({
         <div className="py-4 space-y-4">
           <ImportOptions 
             importOptions={importOptions} 
-            setImportOptions={setImportOptions} 
+            setImportOptions={setImportOptions}
+            onImport={() => {}} // Add empty function to satisfy the type
+            onSelectCourse={() => {}} // Add empty function to satisfy the type
           />
 
           <ClassDetails 
