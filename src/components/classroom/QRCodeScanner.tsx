@@ -16,6 +16,7 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const qrBoxId = "qr-reader";
   const [scannerInitialized, setScannerInitialized] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
 
   useEffect(() => {
     let scanner: Html5Qrcode | null = null;
@@ -51,22 +52,8 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
               // On QR code detected
               console.log("QR code detected:", decodedText);
               
-              // Stop scanning to prevent multiple scans
-              if (scanner) {
-                scanner.pause();
-                
-                // Process the QR code directly without any extraction
-                onScan(decodedText.trim());
-                
-                // Stop scanner after successful processing
-                setTimeout(() => {
-                  if (scanner) {
-                    scanner.stop().catch(error => 
-                      console.error("Error stopping scanner:", error)
-                    );
-                  }
-                }, 300);
-              }
+              // Process the QR code directly without any extraction
+              handleSuccessfulScan(scanner, decodedText.trim());
             },
             (errorMessage) => {
               // Ignore continuous scanning errors
@@ -90,16 +77,68 @@ export const QRCodeScanner = ({ onScan, onClose }: QRCodeScannerProps) => {
       }
     };
 
-    initScanner();
+    // Only initialize the scanner if the component is mounted
+    const qrReaderElement = document.getElementById(qrBoxId);
+    if (qrReaderElement) {
+      initScanner();
+    } else {
+      console.error("QR reader element not found");
+      setError("QR scanner initialization failed. Please try again.");
+      setIsLoading(false);
+    }
 
     return () => {
-      if (scannerRef.current) {
+      // Make sure we don't try to stop an already stopped scanner
+      if (scannerRef.current && scannerInitialized && !isStopping) {
+        setIsStopping(true);
         scannerRef.current
           .stop()
-          .catch(error => console.error("Error stopping scanner:", error));
+          .then(() => {
+            console.log("Scanner stopped successfully");
+            scannerRef.current = null;
+          })
+          .catch(error => {
+            // Just log the error but don't throw it to prevent crashing
+            console.log("Safe scanner stop error (can be ignored):", error);
+          })
+          .finally(() => {
+            setIsStopping(false);
+          });
       }
     };
   }, [onScan]);
+
+  // Safely handle successful scan and stop scanner
+  const handleSuccessfulScan = async (scanner: Html5Qrcode | null, decodedText: string) => {
+    if (!scanner) return;
+    
+    try {
+      // Pause scanning to prevent multiple scans
+      await scanner.pause(true);
+      
+      // Process the code
+      onScan(decodedText);
+      
+      // Safely stop the scanner after successful processing
+      setIsStopping(true);
+      try {
+        await scanner.stop();
+        console.log("Scanner stopped after successful scan");
+      } catch (stopError) {
+        console.log("Error while stopping scanner (can be ignored):", stopError);
+      } finally {
+        setIsStopping(false);
+      }
+    } catch (error) {
+      console.error("Error in scan handler:", error);
+      // If there's an error processing, we should still try to stop the scanner
+      try {
+        await scanner.stop();
+      } catch (stopError) {
+        // Ignore second-level errors
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col items-center p-4">

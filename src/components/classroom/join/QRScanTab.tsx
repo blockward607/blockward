@@ -18,6 +18,8 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
   const [processingCode, setProcessingCode] = useState<string | null>(null);
 
   const handleCodeScanned = async (code: string) => {
+    if (!code || scanComplete) return;
+    
     console.log(`QR Code scanned: ${code}`);
     setScanComplete(true);
     setScanError(null);
@@ -48,6 +50,7 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
     }
   };
 
+  // If the scanner isn't open, don't render it at all
   if (!open) {
     return (
       <div className="p-4 text-center">
