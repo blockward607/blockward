@@ -8,6 +8,7 @@ export * from "./InviteStudents";
 export * from "./JoinClassSection";
 export * from "./QRCodeDisplay";
 export * from "./QRCodeScanner";
+export * from "./scanner";
 export * from "./invite/ClassroomInvite";
 export * from "./invite/EmailInviteTab";
 export * from "./invite/InviteCodeTab";
