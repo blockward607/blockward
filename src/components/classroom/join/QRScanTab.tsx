@@ -64,121 +64,80 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
 
       if (studentError || !studentData) {
         console.error("Error getting student ID:", studentError);
-        throw new Error(studentError?.message || "Student profile not found");
+        throw new Error("Student profile not found. Make sure you're signed in with a student account.");
       }
-      
-      // Direct lookup of invitation code
+
+      // Look for invitation by direct code match (case-insensitive)
       const { data: invitationData, error: invitationError } = await supabase
         .from("class_invitations")
         .select("id, classroom_id")
-        .eq("invitation_token", code)
+        .ilike("invitation_token", code)
         .eq("status", "pending")
-        .single();
-        
-      if (invitationError) {
-        console.log("Direct invitation lookup failed, trying secondary matching");
-        // If direct lookup fails, try matching with classroom ID
+        .maybeSingle();
+      
+      let classroomId;
+      let invitationId;
+      
+      if (invitationData) {
+        // Found invitation
+        classroomId = invitationData.classroom_id;
+        invitationId = invitationData.id;
+        console.log("Found invitation match:", invitationData);
+      } else {
+        // Try matching by classroom ID directly
         const { data: classroomData, error: classroomError } = await supabase
           .from("classrooms")
           .select("id")
           .eq("id", code)
-          .single();
+          .maybeSingle();
           
-        if (classroomError) {
-          throw new Error("Invalid invitation code");
+        if (classroomData) {
+          classroomId = classroomData.id;
+          console.log("Found classroom by ID:", classroomData);
+        } else {
+          throw new Error("Invalid invitation code. Please try again or enter the code manually.");
         }
-        
-        // We found the classroom directly by ID
-        const classroomId = classroomData.id;
-        
-        // Check if already enrolled
-        const { data: enrollment, error: enrollmentError } = await supabase
-          .from("classroom_students")
-          .select("id")
-          .eq("classroom_id", classroomId)
-          .eq("student_id", studentData.id);
+      }
+      
+      if (!classroomId) {
+        throw new Error("Could not find a valid classroom with this code");
+      }
+      
+      // Check if already enrolled
+      const { data: enrollment, error: enrollmentError } = await supabase
+        .from("classroom_students")
+        .select("id")
+        .eq("classroom_id", classroomId)
+        .eq("student_id", studentData.id);
           
-        if (enrollmentError) {
-          console.error("Error checking enrollment:", enrollmentError);
-        }
+      if (enrollmentError) {
+        console.error("Error checking enrollment:", enrollmentError);
+      }
           
-        if (enrollment && enrollment.length > 0) {
-          toast.success("You are already enrolled in this classroom");
-          setTimeout(() => onClose(), 1000);
-          return;
-        }
-        
-        // Use direct database insert (bypassing RLS with function)
-        const { data: insertData, error: insertError } = await supabase.rpc(
-          'enroll_student',
-          { 
-            invitation_token: code,
-            student_id: studentData.id
-          }
-        );
-        
-        if (insertError) {
-          // Fallback to direct insert
-          const { error: directInsertError } = await supabase
-            .from("classroom_students")
-            .insert({
-              classroom_id: classroomId,
-              student_id: studentData.id
-            });
-            
-          if (directInsertError) {
-            throw new Error("Error joining classroom: " + directInsertError.message);
-          }
-        }
-      } else {
-        // We found a valid invitation
-        const classroomId = invitationData.classroom_id;
-        
-        // Check if already enrolled
-        const { data: enrollment, error: enrollmentError } = await supabase
-          .from("classroom_students")
-          .select("id")
-          .eq("classroom_id", classroomId)
-          .eq("student_id", studentData.id);
+      if (enrollment && enrollment.length > 0) {
+        toast.success("You are already enrolled in this classroom");
+        setTimeout(() => onClose(), 1000);
+        return;
+      }
+      
+      // Enroll student
+      const { error: enrollError } = await supabase
+        .from("classroom_students")
+        .insert({
+          classroom_id: classroomId,
+          student_id: studentData.id
+        });
           
-        if (enrollmentError) {
-          console.error("Error checking enrollment:", enrollmentError);
-        }
-          
-        if (enrollment && enrollment.length > 0) {
-          toast.success("You are already enrolled in this classroom");
-          setTimeout(() => onClose(), 1000);
-          return;
-        }
+      if (enrollError) {
+        throw new Error("Error joining classroom: " + enrollError.message);
+      }
         
-        // Use RPC function to handle enrollment
-        const { error: enrollError } = await supabase.rpc(
-          'enroll_student',
-          { 
-            invitation_token: code,
-            student_id: studentData.id
-          }
-        );
-        
-        if (enrollError) {
-          // Fallback to direct insert
-          const { error: directInsertError } = await supabase
-            .from("classroom_students")
-            .insert({
-              classroom_id: classroomId,
-              student_id: studentData.id
-            });
-            
-          if (directInsertError) {
-            throw new Error("Error joining classroom: " + directInsertError.message);
-          }
-          
-          // Mark invitation as accepted
-          await supabase
-            .from("class_invitations")
-            .update({ status: "accepted" })
-            .eq("id", invitationData.id);
-        }
+      // If we had an invitation ID, mark it as accepted
+      if (invitationId) {
+        await supabase
+          .from("class_invitations")
+          .update({ status: "accepted" })
+          .eq("id", invitationId);
       }
       
       toast.success("Successfully joined classroom!");
