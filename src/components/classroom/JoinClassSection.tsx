@@ -9,7 +9,7 @@ export const JoinClassSection = () => {
   
   return (
     <JoinClassProvider>
-      <JoinSection />
+      <JoinSection initialCode={inviteToken} />
     </JoinClassProvider>
   );
 };

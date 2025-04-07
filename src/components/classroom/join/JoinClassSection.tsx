@@ -10,7 +10,11 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { Loader2 } from "lucide-react";
 import { GoogleClassroom } from "@/services/google-classroom";
 
-export const JoinClassSection = () => {
+interface JoinClassSectionProps {
+  initialCode?: string;
+}
+
+export const JoinClassSection = ({ initialCode }: JoinClassSectionProps) => {
   const [activeTab, setActiveTab] = useState("code");
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<GoogleClassroom | undefined>(undefined);
@@ -20,8 +24,29 @@ export const JoinClassSection = () => {
     setScannerOpen, 
     autoJoinInProgress, 
     loading,
-    googleClassrooms 
+    googleClassrooms,
+    setInvitationCode,
+    joinClassWithCode
   } = useJoinClassContext();
+  
+  // When initialCode is provided, set it in the context
+  useEffect(() => {
+    if (initialCode) {
+      console.log("Initial code provided:", initialCode);
+      setInvitationCode(initialCode);
+      
+      // Auto-join with the code if provided
+      const autoJoin = async () => {
+        try {
+          await joinClassWithCode(initialCode);
+        } catch (error) {
+          console.error("Error auto-joining with code:", error);
+        }
+      };
+      
+      autoJoin();
+    }
+  }, [initialCode, setInvitationCode, joinClassWithCode]);
   
   // When activating the scan tab, automatically open the scanner
   useEffect(() => {

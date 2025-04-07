@@ -34,11 +34,15 @@ export class InvitationMatchingService {
         };
       }
 
+      // Remove any spaces and convert to uppercase for consistent matching
+      const cleanedCode = code.trim().toUpperCase();
+      console.log("[InvitationMatchingService] Using cleaned code:", cleanedCode);
+
       // Simple direct database check first - most reliable way to verify
       const { data: directMatches, error: matchError } = await supabase
         .from('class_invitations')
         .select('id, classroom_id, classroom:classrooms(id, name, description, teacher_id)')
-        .eq('invitation_token', code.toUpperCase())
+        .eq('invitation_token', cleanedCode)
         .eq('status', 'pending')
         .maybeSingle();
       
@@ -56,21 +60,28 @@ export class InvitationMatchingService {
       }
 
       // Try exact code match next
-      const exactMatch = await findExactInvitationMatch(code);
+      const exactMatch = await findExactInvitationMatch(cleanedCode);
       if (exactMatch.data) {
         console.log("[InvitationMatchingService] Found exact match:", exactMatch.data);
         return exactMatch;
       }
       
       // Try classroom ID match (for direct classroom ID input)
-      const classroomMatch = await findClassroomById(code);
+      const classroomMatch = await findClassroomById(cleanedCode);
       if (classroomMatch.data) {
         console.log("[InvitationMatchingService] Found classroom match:", classroomMatch.data);
         return classroomMatch;
       }
       
+      // Try partial match (for codes like UK5CRH)
+      const partialMatch = await findPartialInvitationMatch(cleanedCode);
+      if (partialMatch.data) {
+        console.log("[InvitationMatchingService] Found partial match:", partialMatch.data);
+        return partialMatch;
+      }
+      
       // Try case insensitive match
-      const caseInsensitiveMatch = await findCaseInsensitiveMatch(code);
+      const caseInsensitiveMatch = await findCaseInsensitiveMatch(cleanedCode);
       if (caseInsensitiveMatch.data) {
         console.log("[InvitationMatchingService] Found case-insensitive match:", caseInsensitiveMatch.data);
         return caseInsensitiveMatch;
