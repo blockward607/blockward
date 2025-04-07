@@ -6,11 +6,15 @@ import { useJoinClassContext } from "./JoinClassContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Clipboard, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { ClassJoinService } from "@/services/class-join";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const CodeEntryTab = () => {
-  const { invitationCode, setInvitationCode, joinClassWithCode, loading, error } = useJoinClassContext();
+  const { invitationCode, setInvitationCode, loading, setLoading, setError, error } = useJoinClassContext();
   const [localError, setLocalError] = useState<string | null>(null);
   const [processingCode, setProcessingCode] = useState<string | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
@@ -23,6 +27,9 @@ const CodeEntryTab = () => {
     e.preventDefault();
     setLocalError(null);
     
+    if (isJoining) return;
+    setIsJoining(true);
+    
     try {
       const trimmedCode = invitationCode.trim();
       
@@ -33,12 +40,58 @@ const CodeEntryTab = () => {
       
       // Use the code directly without processing
       setProcessingCode(trimmedCode);
+      setLoading(true);
       
       console.log("Submitting code for join:", trimmedCode);
-      await joinClassWithCode(trimmedCode);
+      
+      // First check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You need to be logged in to join a class");
+      }
+      
+      // Process the join with ClassJoinService
+      const { data, error } = await ClassJoinService.findClassroomOrInvitation(trimmedCode);
+      
+      if (error || !data) {
+        throw new Error(error?.message || "Invalid invitation code");
+      }
+      
+      // Check if already enrolled
+      const { data: enrollment, error: enrollmentError } = 
+        await ClassJoinService.checkEnrollment(data.classroomId);
+      
+      if (enrollmentError) {
+        console.error("Error checking enrollment:", enrollmentError);
+      }
+        
+      if (enrollment && enrollment.length > 0) {
+        toast.success("You are already enrolled in this classroom");
+        return;
+      }
+      
+      // Use the service to enroll the student - this handles the RLS bypass
+      const { data: joinData, error: joinError } = 
+        await ClassJoinService.enrollStudent(data.classroomId, data.invitationId);
+        
+      if (joinError) {
+        throw new Error(joinError.message || "Error joining classroom");
+      }
+      
+      toast.success("Successfully joined classroom!");
+      
+      // Refresh the classroom list to show the newly joined class
+      setTimeout(() => {
+        window.location.reload(); // Force refresh to update the class list
+      }, 1000);
+      
     } catch (err: any) {
       console.error("Error in join form:", err);
       setLocalError(err.message || "An unexpected error occurred");
+      toast.error(err.message || "Failed to join classroom");
+    } finally {
+      setLoading(false);
+      setIsJoining(false);
     }
   };
 
@@ -112,7 +165,7 @@ const CodeEntryTab = () => {
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             type="submit"
-            disabled={loading}
+            disabled={loading || isJoining}
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 py-5"
           >
             {loading ? (

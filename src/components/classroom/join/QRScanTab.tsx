@@ -5,6 +5,7 @@ import { QRCodeScanner } from "../QRCodeScanner";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ClassJoinService } from "@/services/class-join";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface QRScanTabProps {
   open: boolean;
@@ -13,7 +14,7 @@ export interface QRScanTabProps {
 }
 
 export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClose }) => {
-  const { loading, setLoading } = useJoinClassContext();
+  const { loading, setLoading, joinClassWithCode } = useJoinClassContext();
   const [scanComplete, setScanComplete] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [processingCode, setProcessingCode] = useState<string | null>(null);
@@ -46,8 +47,13 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
       toast.info("Code detected! Joining classroom...");
       setLoading(true);
       
-      // Use ClassJoinService instead of directly calling joinClassWithCode
-      // This ensures we use the proper service with appropriate permissions
+      // First check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You need to be logged in to join a class");
+      }
+      
+      // Use ClassJoinService to process the join
       const { data, error } = await ClassJoinService.findClassroomOrInvitation(code);
       
       if (error || !data) {
@@ -68,7 +74,7 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
         return;
       }
       
-      // Use the service to enroll the student
+      // Use the service to enroll the student - this handles the RLS bypass
       const { data: joinData, error: joinError } = 
         await ClassJoinService.enrollStudent(data.classroomId, data.invitationId);
         
@@ -78,13 +84,13 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
       
       toast.success("Successfully joined classroom!");
       
-      // Close the dialog after joining (with a slight delay to see success feedback)
+      // Refresh the classroom list to show the newly joined class
       setTimeout(() => {
-        onClose();
+        window.location.reload(); // Force refresh to update the class list
       }, 1000);
     } catch (error: any) {
       console.error("Error joining class after QR scan:", error);
-      setScanError(error.message || "Failed to join the class. Please try manual code entry.");
+      setScanError(error.message || "Failed to join the class. Please try again.");
       toast.error("Failed to join classroom. Please try again.");
       
       // Reset scan state after a delay to allow for another attempt

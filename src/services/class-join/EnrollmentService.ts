@@ -90,7 +90,28 @@ export const EnrollmentService = {
         };
       }
 
-      // Directly insert the enrollment record
+      // Try to use the security definer RPC function first for enrolling
+      if (invitationId) {
+        try {
+          // If we have an invitation, use the specialized enroll function
+          const { data: enrollData, error: enrollError } = await supabase
+            .rpc('enroll_student', { 
+              invitation_token: invitationId,
+              student_id: studentData.id 
+            });
+
+          if (!enrollError) {
+            return { data: enrollData, error: null };
+          } else {
+            console.warn("[EnrollmentService] RPC enroll failed, falling back to direct insert:", enrollError);
+          }
+        } catch (rpcError) {
+          console.warn("[EnrollmentService] RPC enroll function error, using direct insert:", rpcError);
+          // Continue to direct insert as fallback
+        }
+      }
+
+      // Directly insert the enrollment record as fallback
       const { data: enrollmentData, error: enrollmentError } = await supabase
         .from("classroom_students")
         .insert({
