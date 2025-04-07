@@ -2,10 +2,10 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ChartBar, Trophy, Star, Loader2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Progress as ProgressBar } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 
-const Progress = () => {
+const ProgressPage = () => {
   const [loading, setLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
   const [stats, setStats] = useState({
@@ -149,4 +149,4 @@ const Progress = () => {
   );
 };
 
-export default Progress;
+export default ProgressPage;
