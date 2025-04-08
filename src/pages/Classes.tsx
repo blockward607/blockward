@@ -9,8 +9,7 @@ import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { EmptyClassState } from "@/components/classroom/EmptyClassState";
-import { JoinClassProvider } from "@/components/classroom/join/JoinClassContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const Classes = () => {
   const { 
@@ -26,24 +25,19 @@ const Classes = () => {
   
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   useEffect(() => {
     // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
     
     // Check for error in state from a failed join attempt
-    if (location.state && location.state.error) {
-      toast({
-        title: "Error Joining Class",
-        description: location.state.error,
-        variant: "destructive"
-      });
+    if (location.state && location.state.errorMessage) {
+      toast.error(location.state.errorMessage);
       
       // Clear the error from state
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [refreshClassrooms, location.pathname, navigate, toast, location.state]);
+  }, [refreshClassrooms, location.pathname, navigate, location.state]);
 
   if (loading) {
     return <ClassesLoading />;
