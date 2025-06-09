@@ -16,10 +16,10 @@ import GoogleClassroom from "@/pages/GoogleClassroom";
 import ViewStudentDashboard from "@/pages/StudentDashboard";
 import ViewTeacherDashboard from "@/pages/ViewTeacherDashboard";
 import ClassroomInvite from "@/pages/ClassroomInvite";
+import Auth from "@/pages/Auth";
 
 // Lazy-loaded components
 const Home = lazy(() => import("@/pages/Home"));
-const Auth = lazy(() => import("@/pages/Auth"));
 const SignUp = lazy(() => import("@/pages/SignUp"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Classes = lazy(() => import("@/pages/Classes"));
