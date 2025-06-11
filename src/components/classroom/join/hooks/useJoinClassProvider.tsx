@@ -1,7 +1,7 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClassJoinService } from '@/services/class-join';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useGoogleClassroom } from './useGoogleClassroom';
 import { toast } from 'sonner';
@@ -112,6 +112,12 @@ export const useJoinClassProvider = () => {
           const didAuthenticate = await authenticateWithGoogle();
           if (!didAuthenticate) {
             setError("Could not authenticate with Google Classroom. Please try again.");
+            // Redirect to classes page after error
+            setTimeout(() => {
+              navigate('/classes', { 
+                state: { errorMessage: "Could not authenticate with Google Classroom" } 
+              });
+            }, 2000);
             return;
           }
         }
@@ -123,11 +129,16 @@ export const useJoinClassProvider = () => {
           navigate('/dashboard');
           return;
         } else {
-          setError(matchError?.message || "Invalid code. Could not find a matching class.");
+          const errorMsg = matchError?.message || "Invalid code. Could not find a matching class.";
+          setError(errorMsg);
+          toast.error(errorMsg);
           
+          // Always redirect to classes page after error with a delay
           setTimeout(() => {
-            navigate('/classes', { state: { errorMessage: "No matching class found" } });
-          }, 3000);
+            navigate('/classes', { 
+              state: { errorMessage: "No matching class found for this code" } 
+            });
+          }, 2000);
           
           return;
         }
@@ -158,11 +169,16 @@ export const useJoinClassProvider = () => {
       
       if (enrollError) {
         console.error("[useJoinClassProvider] Error enrolling student:", enrollError);
-        setError("Error joining classroom: " + (enrollError.message || "Unknown error"));
+        const errorMsg = "Error joining classroom: " + (enrollError.message || "Unknown error");
+        setError(errorMsg);
+        toast.error(errorMsg);
         
+        // Redirect to classes page after error
         setTimeout(() => {
-          navigate('/classes');
-        }, 3000);
+          navigate('/classes', { 
+            state: { errorMessage: errorMsg } 
+          });
+        }, 2000);
         
         return;
       }
@@ -174,11 +190,16 @@ export const useJoinClassProvider = () => {
       
     } catch (error: any) {
       console.error("[useJoinClassProvider] Error joining class:", error);
-      setError(error.message || "An unexpected error occurred");
+      const errorMsg = error.message || "An unexpected error occurred";
+      setError(errorMsg);
+      toast.error(errorMsg);
       
+      // Always redirect to classes page after error
       setTimeout(() => {
-        navigate('/classes');
-      }, 3000);
+        navigate('/classes', { 
+          state: { errorMessage: errorMsg } 
+        });
+      }, 2000);
     } finally {
       setIsJoining(false);
       setLoading(false);
