@@ -11,12 +11,11 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   build: {
-    // Improve chunk loading by using regular imports for pages instead of dynamic ones
+    // Remove the problematic manual chunks configuration that was causing the build error
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['@/components/ui']
+          'react-vendor': ['react', 'react-dom', 'react-router-dom']
         }
       }
     }
