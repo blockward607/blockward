@@ -11,6 +11,12 @@ import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showError, setShowError] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,11 +58,29 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="signin">
-              <SignInForm onForgotPassword={() => setActiveTab("forgot")} />
+              <SignInForm 
+                email={email}
+                setEmail={setEmail}
+                password={password}
+                setPassword={setPassword}
+                setErrorMessage={setErrorMessage}
+                setShowError={setShowError}
+                setLoading={setLoading}
+                onForgotPasswordClick={() => setActiveTab("forgot")} 
+              />
             </TabsContent>
             
             <TabsContent value="signup">
-              <SignUpForm />
+              <SignUpForm 
+                role="student"
+                email={email}
+                setEmail={setEmail}
+                password={password}
+                setPassword={setPassword}
+                setErrorMessage={setErrorMessage}
+                setShowError={setShowError}
+                setLoading={setLoading}
+              />
             </TabsContent>
           </Tabs>
 
@@ -66,7 +90,14 @@ const Auth = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <ForgotPasswordForm onBack={() => setActiveTab("signin")} />
+              <ForgotPasswordForm 
+                email={email}
+                setEmail={setEmail}
+                setErrorMessage={setErrorMessage}
+                setShowError={setShowError}
+                setLoading={setLoading}
+                onBackToSignIn={() => setActiveTab("signin")} 
+              />
             </motion.div>
           )}
         </Card>
