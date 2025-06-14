@@ -51,14 +51,14 @@ export const useJoinClassProvider = () => {
         .eq('user_id', session.user.id)
         .maybeSingle();
           
-      console.log("Student profile check result:", { student, studentError });
+      console.log("[useJoinClassProvider] Student profile check result:", { student, studentError });
 
       if (student?.id) {
         return student.id;
       }
 
       // Create student profile if it doesn't exist
-      console.log("Creating student profile for user:", session.user.id);
+      console.log("[useJoinClassProvider] Creating student profile for user:", session.user.id);
       
       const { data: newStudent, error: createError } = await supabase
         .from('students')
@@ -70,11 +70,11 @@ export const useJoinClassProvider = () => {
         .single();
 
       if (createError) {
-        console.error("Error creating student profile:", createError);
+        console.error("[useJoinClassProvider] Error creating student profile:", createError);
         return null;
       }
       
-      console.log("Student profile created:", newStudent);
+      console.log("[useJoinClassProvider] Student profile created:", newStudent);
 
       // Set user role as student
       const { error: roleError } = await supabase
@@ -85,12 +85,12 @@ export const useJoinClassProvider = () => {
         });
 
       if (roleError) {
-        console.error("Error setting user role:", roleError);
+        console.error("[useJoinClassProvider] Error setting user role:", roleError);
       }
 
       return newStudent.id;
     } catch (error) {
-      console.error("Error in ensureStudentProfile:", error);
+      console.error("[useJoinClassProvider] Error in ensureStudentProfile:", error);
       return null;
     }
   };
@@ -135,8 +135,8 @@ export const useJoinClassProvider = () => {
         return;
       }
 
-      // Look for valid invitation with this code
-      console.log("Looking for invitation with code:", normalizedCode);
+      // Look for valid invitation with this code - use a more direct approach
+      console.log("[useJoinClassProvider] Looking for invitation with code:", normalizedCode);
       const { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .select(`
@@ -153,18 +153,56 @@ export const useJoinClassProvider = () => {
         `)
         .eq('invitation_token', normalizedCode)
         .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
         .maybeSingle();
         
       if (inviteError) {
-        console.error("Error looking up invitation:", inviteError);
+        console.error("[useJoinClassProvider] Error looking up invitation:", inviteError);
         setError("Error looking up invitation code");
         return;
       }
       
       if (!invitation) {
-        console.log("No valid invitation found for code:", normalizedCode);
-        setError("Invalid or expired invitation code. Please check your code and try again.");
+        console.log("[useJoinClassProvider] No invitation found for code:", normalizedCode);
+        
+        // Try a case-insensitive search as fallback
+        const { data: fallbackInvitation, error: fallbackError } = await supabase
+          .from('class_invitations')
+          .select(`
+            id,
+            classroom_id,
+            invitation_token,
+            expires_at,
+            status,
+            classroom:classrooms(
+              id,
+              name,
+              description
+            )
+          `)
+          .ilike('invitation_token', normalizedCode)
+          .eq('status', 'pending')
+          .maybeSingle();
+          
+        if (fallbackError) {
+          console.error("[useJoinClassProvider] Error in fallback search:", fallbackError);
+        }
+        
+        if (!fallbackInvitation) {
+          setError("Invalid invitation code. Please check your code and try again.");
+          return;
+        }
+        
+        // Use the fallback invitation
+        invitation = fallbackInvitation;
+      }
+      
+      // Check if invitation has expired
+      const expiresAt = new Date(invitation.expires_at);
+      const now = new Date();
+      
+      if (expiresAt < now) {
+        console.log("[useJoinClassProvider] Invitation has expired:", { expiresAt, now });
+        setError("This invitation has expired. Please ask your teacher for a new code.");
         return;
       }
       
@@ -172,7 +210,7 @@ export const useJoinClassProvider = () => {
       const classroomName = invitation.classroom?.name || "the classroom";
       const invitationId = invitation.id;
       
-      console.log("Found valid invitation:", { classroomId, classroomName, invitationId });
+      console.log("[useJoinClassProvider] Found valid invitation:", { classroomId, classroomName, invitationId });
       
       // Check if already enrolled
       const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
@@ -183,18 +221,18 @@ export const useJoinClassProvider = () => {
         .maybeSingle();
       
       if (enrollmentCheckError) {
-        console.error("Error checking enrollment:", enrollmentCheckError);
+        console.error("[useJoinClassProvider] Error checking enrollment:", enrollmentCheckError);
       }
         
       if (existingEnrollment) {
-        console.log("Student already enrolled in this classroom");
+        console.log("[useJoinClassProvider] Student already enrolled in this classroom");
         toast.success("You are already a member of this classroom");
         navigate(`/class/${classroomId}`);
         return;
       }
       
       // Enroll the student
-      console.log("Enrolling student in classroom:", { classroomId, studentId });
+      console.log("[useJoinClassProvider] Enrolling student in classroom:", { classroomId, studentId });
       const { data: enrollData, error: enrollError } = await supabase
         .from('classroom_students')
         .insert({
@@ -204,7 +242,7 @@ export const useJoinClassProvider = () => {
         .select();
       
       if (enrollError) {
-        console.error("Error enrolling student:", enrollError);
+        console.error("[useJoinClassProvider] Error enrolling student:", enrollError);
         setError("Error joining classroom: " + (enrollError.message || "Unknown error"));
         return;
       }
@@ -216,11 +254,11 @@ export const useJoinClassProvider = () => {
         .eq('id', invitationId);
         
       if (updateError) {
-        console.error("Error updating invitation status:", updateError);
+        console.error("[useJoinClassProvider] Error updating invitation status:", updateError);
         // Non-blocking error, continue
       }
 
-      console.log("Successfully joined classroom:", classroomName);
+      console.log("[useJoinClassProvider] Successfully joined classroom:", classroomName);
       toast.success(`You've joined ${classroomName}`);
       
       navigate(`/class/${classroomId}`);

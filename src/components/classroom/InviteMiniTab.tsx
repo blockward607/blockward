@@ -16,15 +16,28 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
   const [joinLink, setJoinLink] = useState("");
   const { toast } = useToast();
   
+  // Generate a standardized 6-character alphanumeric code
+  const generateRandomCode = () => {
+    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar looking characters
+    const length = 6;
+    
+    return Array.from(
+      { length }, 
+      () => characters.charAt(Math.floor(Math.random() * characters.length))
+    ).join('');
+  };
+  
   // Check for existing invitation code on component mount
   useEffect(() => {
     const checkExistingCode = async () => {
       if (!classroomId) return;
       
       try {
+        console.log("[InviteMiniTab] Checking for existing code for classroom:", classroomId);
+        
         const { data, error } = await supabase
           .from('class_invitations')
-          .select('invitation_token')
+          .select('invitation_token, expires_at')
           .eq('classroom_id', classroomId)
           .eq('status', 'pending')
           .eq('email', 'general_invitation@blockward.app')
@@ -34,13 +47,22 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          const code = data[0].invitation_token;
-          setInvitationCode(code);
-          // Create join link with the code
-          setJoinLink(`${window.location.origin}/classes?code=${code}`);
+          // Check if the invitation is still valid
+          const expiresAt = new Date(data[0].expires_at);
+          const now = new Date();
+          
+          if (expiresAt > now) {
+            const code = data[0].invitation_token;
+            console.log("[InviteMiniTab] Found existing valid code:", code);
+            setInvitationCode(code);
+            // Create join link with the code
+            setJoinLink(`${window.location.origin}/classes?code=${code}`);
+          } else {
+            console.log("[InviteMiniTab] Found expired invitation");
+          }
         }
       } catch (error) {
-        console.error("Error checking for existing invitation code:", error);
+        console.error("[InviteMiniTab] Error checking for existing invitation code:", error);
       }
     };
     
@@ -50,16 +72,18 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
   const generateInviteCode = async () => {
     setLoading(true);
     try {
-      // Generate a simple, readable alphanumeric code
-      const invitationToken = Array.from({length: 6}, () => 
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
-      ).join('');
+      // Generate a standardized code
+      const invitationToken = generateRandomCode();
       
       if (!classroomId) {
         throw new Error("No classroom ID provided");
       }
       
-      console.log("Generating new invitation code for classroom:", classroomId);
+      console.log("[InviteMiniTab] Generating new invitation code for classroom:", classroomId, "Token:", invitationToken);
+      
+      // Calculate expiration (90 days from now to match other components)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 90);
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
@@ -69,7 +93,7 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
           email: 'general_invitation@blockward.app', // Marker for general invitations
           invitation_token: invitationToken,
           status: 'pending',
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+          expires_at: expiresAt.toISOString()
         })
         .select()
         .single();
@@ -78,7 +102,7 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
         throw new Error(inviteError.message || 'Failed to generate invitation code');
       }
       
-      console.log("Invitation created successfully:", invitation);
+      console.log("[InviteMiniTab] Invitation created successfully:", invitation);
       setInvitationCode(invitation.invitation_token);
       
       // Create a link with the invitation code
@@ -90,7 +114,7 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
         description: "Share this link with your students",
       });
     } catch (error: any) {
-      console.error("Error in generateInviteCode:", error);
+      console.error("[InviteMiniTab] Error in generateInviteCode:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate invitation link",
@@ -131,7 +155,7 @@ export const InviteMiniTab = ({ classroomId }: InviteMiniTabProps) => {
           </div>
           
           <p className="text-xs text-gray-400">
-            This join link expires in 7 days. Share it with your students.
+            This join link expires in 90 days. Share it with your students.
           </p>
         </div>
       ) : (

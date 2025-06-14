@@ -12,6 +12,17 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Generate a standardized 6-character alphanumeric code
+  const generateRandomCode = () => {
+    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar looking characters
+    const length = 6;
+    
+    return Array.from(
+      { length }, 
+      () => characters.charAt(Math.floor(Math.random() * characters.length))
+    ).join('');
+  };
+
   // Fetch existing invitation code on mount
   useEffect(() => {
     const fetchExistingCode = async () => {
@@ -19,6 +30,8 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
       
       try {
         setLoading(true);
+        console.log("[useInvitationCode] Fetching existing code for classroom:", classroomId);
+        
         // Check if there's an existing invitation code for this classroom
         const { data, error } = await supabase
           .from('class_invitations')
@@ -54,23 +67,6 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
     fetchExistingCode();
   }, [classroomId]);
 
-  // Generate a random alphanumeric code with a consistent format
-  const generateRandomCode = () => {
-    // First 2 characters are always UK (for uniqueness/brand)
-    const prefix = 'UK';
-    
-    // Generate remaining characters (4 random alphanumeric)
-    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar looking characters like 0,O,1,I
-    const length = 4;
-    
-    const randomPart = Array.from(
-      { length }, 
-      () => characters.charAt(Math.floor(Math.random() * characters.length))
-    ).join('');
-    
-    return prefix + randomPart;
-  };
-
   // Generate a new invitation code
   const generateInviteCode = useCallback(async () => {
     setLoading(true);
@@ -83,6 +79,8 @@ export const useInvitationCode = ({ classroomId }: UseInvitationCodeProps) => {
       // Calculate expiration (90 days from now)
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 90);
+      
+      console.log("[useInvitationCode] Creating invitation with token:", invitationToken);
       
       // Store the invitation code in Supabase
       const { data: invitation, error: inviteError } = await supabase
