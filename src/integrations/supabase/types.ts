@@ -1113,6 +1113,10 @@ export type Database = {
           match_type: string
         }[]
       }
+      generate_invitation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_conversation_messages: {
         Args: { conversation_id_param: string }
         Returns: {
