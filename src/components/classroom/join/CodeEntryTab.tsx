@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const CodeEntryTab = () => {
-  const { invitationCode, setInvitationCode, loading, setError, error, joinClassWithCode } = useJoinClassContext();
+  const { classroomCode, setClassroomCode, loading, setError, error, joinClassWithCode } = useJoinClassContext();
   const [localError, setLocalError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,16 +27,16 @@ const CodeEntryTab = () => {
     
     if (isJoining || loading) return;
     
-    const trimmedCode = invitationCode.trim().toUpperCase();
+    const trimmedCode = classroomCode.trim().toUpperCase();
     
     if (!trimmedCode) {
-      setLocalError("Please enter an invitation code");
+      setLocalError("Please enter a classroom code");
       return;
     }
     
     // Basic validation - codes should be at least 4 characters
     if (trimmedCode.length < 4) {
-      setLocalError("Invitation codes must be at least 4 characters long");
+      setLocalError("Classroom codes must be at least 4 characters long");
       return;
     }
     
@@ -62,7 +62,7 @@ const CodeEntryTab = () => {
       
       // Clean up the pasted text and convert to uppercase
       const cleanedText = clipboardText.trim().toUpperCase();
-      setInvitationCode(cleanedText);
+      setClassroomCode(cleanedText);
       setLocalError(null);
       setError(null);
     } catch (err) {
@@ -74,7 +74,7 @@ const CodeEntryTab = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Convert to uppercase and remove spaces as user types
     const value = e.target.value.toUpperCase().replace(/\s/g, '');
-    setInvitationCode(value);
+    setClassroomCode(value);
     setLocalError(null);
     setError(null);
   };
@@ -87,8 +87,8 @@ const CodeEntryTab = () => {
             <Input
               ref={inputRef}
               type="text"
-              placeholder="Enter invitation code (e.g. UK5CRH)"
-              value={invitationCode}
+              placeholder="Enter classroom code (e.g. UK5CRH)"
+              value={classroomCode}
               onChange={handleInputChange}
               className="bg-black/20 border-purple-500/30 pr-10 font-mono text-center text-lg tracking-wider"
               disabled={loading || isJoining}
@@ -96,7 +96,7 @@ const CodeEntryTab = () => {
               autoComplete="off"
               maxLength={10}
             />
-            {!invitationCode && (
+            {!classroomCode && (
               <Button
                 type="button"
                 variant="ghost"
@@ -131,7 +131,7 @@ const CodeEntryTab = () => {
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             type="submit"
-            disabled={loading || isJoining || !invitationCode.trim()}
+            disabled={loading || isJoining || !classroomCode.trim()}
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 py-5"
           >
             {loading || isJoining ? (

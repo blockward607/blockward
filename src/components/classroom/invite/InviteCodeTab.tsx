@@ -1,13 +1,12 @@
 
-import { useInvitationCode } from "./hooks/useInvitationCode";
+import { useClassroomCode } from "./hooks/useClassroomCode";
 import { InvitationLinkDisplay } from "./InvitationLinkDisplay";
 import { SharingActions } from "./SharingActions";
 import { GenerateInviteButton } from "./GenerateInviteButton";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ServerOff } from "lucide-react";
+import { ServerOff } from "lucide-react";
 
 interface InviteCodeTabProps {
   classroomId: string;
@@ -20,71 +19,46 @@ export const InviteCodeTab = ({
   teacherName = "Your Teacher", 
   classroomName = "the class" 
 }: InviteCodeTabProps) => {
-  const { loading, invitationCode, generateInviteCode, getJoinUrl, setInvitationCode } = useInvitationCode({ 
+  const { loading, classroomCode, generateClassroomCode, getJoinUrl, setClassroomCode } = useClassroomCode({ 
     classroomId 
   });
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Fetch or create an invitation code when component mounts
+  // Auto-generate code if none exists
   useEffect(() => {
-    const fetchOrCreateCode = async () => {
-      if (!classroomId) return;
+    const autoGenerateCode = async () => {
+      if (!classroomId || classroomCode) return;
       
       try {
         setError(null);
-        // Check if there's an existing invitation code for this classroom
-        const { data, error } = await supabase
-          .from('class_invitations')
-          .select('invitation_token, expires_at')
-          .eq('classroom_id', classroomId)
-          .eq('status', 'pending')
-          .eq('email', 'general_invitation@blockward.app')
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          // Check if invitation is still valid
-          const expiresAt = new Date(data[0].expires_at);
-          const now = new Date();
-          
-          if (expiresAt > now) {
-            console.log("[InviteCodeTab] Found existing valid invitation code:", data[0].invitation_token);
-            setInvitationCode(data[0].invitation_token);
-          } else {
-            console.log("[InviteCodeTab] Found expired invitation, generating new one");
-            generateInviteCode();
-          }
-        } else {
-          // No existing code, auto-generate one
-          console.log("[InviteCodeTab] No existing code found, generating one");
-          generateInviteCode();
-        }
+        console.log("[InviteCodeTab] Auto-generating code for classroom:", classroomId);
+        await generateClassroomCode();
       } catch (err: any) {
-        console.error("[InviteCodeTab] Error fetching invitation code:", err);
-        setError(err.message || "Failed to load invitation code");
+        console.error("[InviteCodeTab] Error auto-generating code:", err);
+        setError(err.message || "Failed to generate classroom code");
         toast({
           title: "Error", 
-          description: "Failed to load invitation code",
+          description: "Failed to generate classroom code",
           variant: "destructive"
         });
       }
     };
     
-    fetchOrCreateCode();
-  }, [classroomId, generateInviteCode, setInvitationCode, toast]);
+    // Small delay to ensure component is mounted
+    const timer = setTimeout(autoGenerateCode, 100);
+    return () => clearTimeout(timer);
+  }, [classroomId, classroomCode, generateClassroomCode, toast]);
 
   const handleGenerateNew = () => {
     setError(null);
-    generateInviteCode();
+    generateClassroomCode();
   };
 
   return (
     <div className="space-y-4">
       <div className="text-sm text-gray-300">
-        Generate an invitation link that students can use to join your class.
+        Generate a classroom code that students can use to join your class.
       </div>
       
       {error && (
@@ -94,15 +68,15 @@ export const InviteCodeTab = ({
         </Alert>
       )}
       
-      {invitationCode ? (
+      {classroomCode ? (
         <div className="space-y-4">
           <InvitationLinkDisplay 
-            invitationCode={invitationCode} 
+            invitationCode={classroomCode} 
             getJoinUrl={getJoinUrl} 
           />
           
           <SharingActions 
-            invitationCode={invitationCode}
+            invitationCode={classroomCode}
             getJoinUrl={getJoinUrl}
             onGenerateNew={handleGenerateNew}
             teacherName={teacherName}

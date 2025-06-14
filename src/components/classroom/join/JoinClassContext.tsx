@@ -1,11 +1,11 @@
 
-import React, { createContext, useContext, useState } from 'react';
-import { useJoinClassProvider } from './hooks/useJoinClassProvider';
+import React, { createContext, useContext } from 'react';
+import { useJoinClassroomCode } from './hooks/useJoinClassroomCode';
 
 // Define the context type
 type JoinClassContextType = {
-  invitationCode: string;
-  setInvitationCode: (code: string) => void;
+  classroomCode: string;
+  setClassroomCode: (code: string) => void;
   scannerOpen: boolean;
   setScannerOpen: (open: boolean) => void;
   loading: boolean;
@@ -18,8 +18,8 @@ type JoinClassContextType = {
 
 // Create the context with default values
 const JoinClassContext = createContext<JoinClassContextType>({
-  invitationCode: '',
-  setInvitationCode: () => {},
+  classroomCode: '',
+  setClassroomCode: () => {},
   scannerOpen: false,
   setScannerOpen: () => {},
   loading: false,
@@ -36,7 +36,7 @@ export const useJoinClassContext = () => useContext(JoinClassContext);
 // Export the provider component
 export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Use the hook to get all the implementation
-  const contextValue = useJoinClassProvider();
+  const contextValue = useJoinClassroomCode();
   
   return (
     <JoinClassContext.Provider value={contextValue}>
@@ -46,4 +46,4 @@ export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 };
 
 // Re-export the hook
-export { useJoinClassProvider } from './hooks/useJoinClassProvider';
+export { useJoinClassroomCode } from './hooks/useJoinClassroomCode';

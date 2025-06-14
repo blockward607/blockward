@@ -252,6 +252,50 @@ export type Database = {
           },
         ]
       }
+      classroom_codes: {
+        Row: {
+          classroom_id: string
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          usage_count: number
+        }
+        Insert: {
+          classroom_id: string
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          usage_count?: number
+        }
+        Update: {
+          classroom_id?: string
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_codes_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classroom_students: {
         Row: {
           classroom_id: string | null
@@ -1095,6 +1139,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_classroom_code: {
+        Args: { p_classroom_id: string; p_created_by: string }
+        Returns: string
+      }
       enroll_student: {
         Args: { invitation_token: string; student_id: string }
         Returns: undefined
@@ -1112,6 +1160,10 @@ export type Database = {
           classroom_teacher_id: string
           match_type: string
         }[]
+      }
+      generate_classroom_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       generate_invitation_code: {
         Args: Record<PropertyKey, never>
@@ -1142,6 +1194,10 @@ export type Database = {
       increment_student_points: {
         Args: { student_id: string; points_to_add: number }
         Returns: undefined
+      }
+      join_classroom_with_code: {
+        Args: { p_code: string; p_student_id: string }
+        Returns: Json
       }
       mark_messages_as_read: {
         Args: { message_ids: string[]; user_id_param: string }
