@@ -90,82 +90,90 @@ export const SignUpFormFields = ({
   };
 
   return (
-    <form onSubmit={handleSignup} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="signup-name" className="text-white">Full Name</Label>
-        <Input 
-          id="signup-name"
-          type="text"
-          placeholder="Your Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="glass-input text-white"
-        />
+    <div className="space-y-4">
+      <div className="text-center mb-4">
+        <p className="text-sm text-gray-400">
+          Creating account as <span className="text-purple-400 font-medium">{role}</span>
+        </p>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="signup-email" className="text-white">Email</Label>
-        <Input 
-          id="signup-email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="glass-input text-white"
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="signup-password" className="text-white">Password</Label>
-        <Input 
-          id="signup-password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="glass-input text-white"
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="signup-school" className="text-white">School Name</Label>
-        <Input 
-          id="signup-school"
-          type="text"
-          placeholder="Enter school name"
-          value={schoolName}
-          onChange={(e) => setSchoolName(e.target.value)}
-          required
-          className="glass-input text-white"
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="signup-country" className="text-white">Country</Label>
-        <Input 
-          id="signup-country"
-          type="text"
-          placeholder="Enter country"
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          required
-          className="glass-input text-white"
-        />
-      </div>
-      
-      <Button type="submit" className="w-full" disabled={emailLoading}>
-        {emailLoading ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Creating Account...
-          </>
-        ) : (
-          "Create Account"
-        )}
-      </Button>
-    </form>
+      <form onSubmit={handleSignup} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="signup-name" className="text-white">Full Name</Label>
+          <Input 
+            id="signup-name"
+            type="text"
+            placeholder="Your Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="glass-input text-white"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="signup-email" className="text-white">Email</Label>
+          <Input 
+            id="signup-email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="glass-input text-white"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="signup-password" className="text-white">Password</Label>
+          <Input 
+            id="signup-password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="glass-input text-white"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="signup-school" className="text-white">School Name</Label>
+          <Input 
+            id="signup-school"
+            type="text"
+            placeholder="Enter school name"
+            value={schoolName}
+            onChange={(e) => setSchoolName(e.target.value)}
+            required
+            className="glass-input text-white"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="signup-country" className="text-white">Country</Label>
+          <Input 
+            id="signup-country"
+            type="text"
+            placeholder="Enter country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            required
+            className="glass-input text-white"
+          />
+        </div>
+        
+        <Button type="submit" className="w-full" disabled={emailLoading}>
+          {emailLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating Account...
+            </>
+          ) : (
+            `Create ${role === 'teacher' ? 'Teacher' : 'Student'} Account`
+          )}
+        </Button>
+      </form>
+    </div>
   );
 };

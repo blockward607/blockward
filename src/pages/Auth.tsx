@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState("signin");
+  const [role, setRole] = useState<'teacher' | 'student'>('student');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -51,6 +52,32 @@ const Auth = () => {
             <p className="text-gray-400 mt-2">Welcome to the future of education</p>
           </div>
 
+          {/* Role Selection */}
+          <div className="mb-6">
+            <div className="flex rounded-lg overflow-hidden">
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'teacher'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('teacher')}
+              >
+                Teacher
+              </button>
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'student'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('student')}
+              >
+                Student
+              </button>
+            </div>
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -59,6 +86,7 @@ const Auth = () => {
             
             <TabsContent value="signin">
               <SignInForm 
+                role={role}
                 email={email}
                 setEmail={setEmail}
                 password={password}
@@ -72,7 +100,7 @@ const Auth = () => {
             
             <TabsContent value="signup">
               <SignUpForm 
-                role="student"
+                role={role}
                 email={email}
                 setEmail={setEmail}
                 password={password}
@@ -99,6 +127,12 @@ const Auth = () => {
                 onBackToSignIn={() => setActiveTab("signin")} 
               />
             </motion.div>
+          )}
+
+          {showError && (
+            <div className="mt-4 p-3 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+              {errorMessage}
+            </div>
           )}
         </Card>
       </motion.div>

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 interface SignInFormProps {
+  role: 'teacher' | 'student';
   email: string;
   setEmail: (email: string) => void;
   password: string;
@@ -19,6 +20,7 @@ interface SignInFormProps {
 }
 
 export const SignInForm = ({
+  role,
   email,
   setEmail,
   password,
@@ -59,9 +61,27 @@ export const SignInForm = ({
         setErrorMessage(error.message);
         setShowError(true);
         console.error("Login error:", error);
-      } else {
-        // Navigate directly to dashboard without any hooks or redirects
-        navigate('/dashboard', { replace: true });
+      } else if (data.user) {
+        // Check if the user's role matches the selected role
+        const { data: userRole, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (roleError) {
+          console.error("Error checking user role:", roleError);
+          // If we can't check the role, proceed anyway
+          navigate('/dashboard', { replace: true });
+        } else if (userRole && userRole.role !== role) {
+          setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role.`);
+          setShowError(true);
+          // Sign out the user since role doesn't match
+          await supabase.auth.signOut();
+        } else {
+          // Navigate directly to dashboard
+          navigate('/dashboard', { replace: true });
+        }
       }
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -74,6 +94,12 @@ export const SignInForm = ({
 
   return (
     <div className="space-y-4">
+      <div className="text-center mb-4">
+        <p className="text-sm text-gray-400">
+          Signing in as <span className="text-purple-400 font-medium">{role}</span>
+        </p>
+      </div>
+      
       <form onSubmit={handleSignIn} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
@@ -98,7 +124,7 @@ export const SignInForm = ({
           />
         </div>
         <Button type="submit" className="w-full">
-          Sign In
+          Sign In as {role === 'teacher' ? 'Teacher' : 'Student'}
         </Button>
         <div className="text-center mt-4">
           <button 
