@@ -5,6 +5,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define the expected response type from the database function
+interface JoinClassroomResponse {
+  success: boolean;
+  error?: string;
+  classroom_id?: string;
+  classroom_name?: string;
+}
+
 export const useJoinClassroomCode = () => {
   const [classroomCode, setClassroomCode] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -151,15 +159,18 @@ export const useJoinClassroomCode = () => {
       
       console.log("[useJoinClassroomCode] Join function result:", result);
       
-      if (!result.success) {
-        setError(result.error);
+      // Type assertion to handle the JSON response
+      const response = result as JoinClassroomResponse;
+      
+      if (!response.success) {
+        setError(response.error || "Failed to join classroom");
         return;
       }
       
-      console.log("[useJoinClassroomCode] Successfully joined classroom:", result.classroom_name);
-      toast.success(`You've joined ${result.classroom_name}`);
+      console.log("[useJoinClassroomCode] Successfully joined classroom:", response.classroom_name);
+      toast.success(`You've joined ${response.classroom_name}`);
       
-      navigate(`/class/${result.classroom_id}`);
+      navigate(`/class/${response.classroom_id}`);
       
     } catch (error: any) {
       console.error("[useJoinClassroomCode] Error joining class:", error);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useJoinClassContext } from "./JoinClassContext";
@@ -12,7 +13,7 @@ export interface QRScanTabProps {
 }
 
 export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClose }) => {
-  const { loading, setLoading, setInvitationCode, joinClassWithCode } = useJoinClassContext();
+  const { loading, setLoading, setClassroomCode, joinClassWithCode } = useJoinClassContext();
   const [scanComplete, setScanComplete] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [processingCode, setProcessingCode] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export const QRScanTab: React.FC<QRScanTabProps> = ({ open, onOpenChange, onClos
       setLoading(true);
       
       // Set the invitation code
-      setInvitationCode(code);
+      setClassroomCode(code);
       
       // Use the joinClassWithCode function from context
       await joinClassWithCode(code);

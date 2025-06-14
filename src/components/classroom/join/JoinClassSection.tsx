@@ -18,7 +18,7 @@ export const JoinClassSection = ({ initialCode }: JoinClassSectionProps) => {
     scannerOpen, 
     setScannerOpen, 
     autoJoinInProgress, 
-    setInvitationCode,
+    setClassroomCode,
     joinClassWithCode
   } = useJoinClassContext();
   
@@ -26,7 +26,7 @@ export const JoinClassSection = ({ initialCode }: JoinClassSectionProps) => {
   useEffect(() => {
     if (initialCode) {
       console.log("Initial code provided:", initialCode);
-      setInvitationCode(initialCode);
+      setClassroomCode(initialCode);
       
       // Auto-join with the code if provided
       const autoJoin = async () => {
@@ -39,7 +39,7 @@ export const JoinClassSection = ({ initialCode }: JoinClassSectionProps) => {
       
       autoJoin();
     }
-  }, [initialCode, setInvitationCode, joinClassWithCode]);
+  }, [initialCode, setClassroomCode, joinClassWithCode]);
   
   // When activating the scan tab, automatically open the scanner
   useEffect(() => {
