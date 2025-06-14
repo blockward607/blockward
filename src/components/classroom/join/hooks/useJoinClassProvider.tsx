@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -135,9 +134,9 @@ export const useJoinClassProvider = () => {
         return;
       }
 
-      // Look for valid invitation with this code - use a more direct approach
+      // Look for valid invitation with this code - use let instead of const
       console.log("[useJoinClassProvider] Looking for invitation with code:", normalizedCode);
-      const { data: invitation, error: inviteError } = await supabase
+      let { data: invitation, error: inviteError } = await supabase
         .from('class_invitations')
         .select(`
           id,
@@ -192,7 +191,7 @@ export const useJoinClassProvider = () => {
           return;
         }
         
-        // Use the fallback invitation
+        // Use the fallback invitation - now this works because invitation is declared with let
         invitation = fallbackInvitation;
       }
       
