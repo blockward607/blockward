@@ -1,9 +1,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, School } from "lucide-react";
+import { Plus } from "lucide-react";
 import { CreateClassroomDialog } from "./CreateClassroomDialog";
-import { Link } from "react-router-dom";
 
 interface ClassesPageHeaderProps {
   userRole: string | null;
@@ -21,21 +20,13 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
       </div>
       <div className="flex flex-col sm:flex-row gap-3">
         {userRole === 'teacher' && (
-          <>
-            <Link to="/google-classroom">
-              <Button variant="outline" className="w-full sm:w-auto flex gap-2">
-                <School className="h-4 w-4" />
-                Google Classroom
-              </Button>
-            </Link>
-            <Button 
-              onClick={() => setShowCreateDialog(true)} 
-              className="w-full sm:w-auto flex gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Create Class
-            </Button>
-          </>
+          <Button 
+            onClick={() => setShowCreateDialog(true)} 
+            className="w-full sm:w-auto flex gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Create Class
+          </Button>
         )}
       </div>
       

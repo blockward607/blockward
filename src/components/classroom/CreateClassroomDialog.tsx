@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -11,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Database } from "@/integrations/supabase/types";
 
@@ -19,7 +17,7 @@ type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
 interface CreateClassroomDialogProps {
   onClassroomCreated: (newClassroom: Classroom) => void;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
 }
 
 export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: CreateClassroomDialogProps) => {
@@ -27,25 +25,56 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
     name: "",
     description: "",
   });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const createNewClass = async () => {
-    try {
-      const { data: teacherProfile } = await supabase
-        .from('teacher_profiles')
-        .select('id')
-        .single();
+    if (!newClassroom.name.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a classroom name"
+      });
+      return;
+    }
 
-      if (!teacherProfile) {
-        throw new Error('Teacher profile not found');
+    try {
+      setLoading(true);
+      
+      // Get user session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "You must be logged in to create a classroom"
+        });
+        return;
       }
 
+      // Get teacher profile
+      const { data: teacherProfile, error: profileError } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (profileError || !teacherProfile) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Teacher profile not found"
+        });
+        return;
+      }
+
+      // Create the classroom
       const { data: newClassroomData, error } = await supabase
         .from('classrooms')
         .insert([
           {
-            name: newClassroom.name,
-            description: newClassroom.description,
+            name: newClassroom.name.trim(),
+            description: newClassroom.description.trim() || null,
             teacher_id: teacherProfile.id
           }
         ])
@@ -54,50 +83,70 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
 
       if (error) throw error;
 
+      // Reset form
       setNewClassroom({ name: "", description: "" });
+      
+      // Call the callback to update the parent component
       onClassroomCreated(newClassroomData);
+      
+      // Close dialog
+      onOpenChange(false);
       
       toast({
         title: "Success",
-        description: "New classroom created successfully"
+        description: "Classroom created successfully"
       });
-      
-      if (onOpenChange) {
-        onOpenChange(false);
-      }
     } catch (error: any) {
       console.error('Error creating classroom:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create new classroom"
+        description: error.message || "Failed to create classroom"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Dialog onOpenChange={onOpenChange}>
+    <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
         <DialogHeader>
           <DialogTitle className="text-xl text-center text-white">Create New Classroom</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Input
-            placeholder="Classroom name"
+            placeholder="Classroom name *"
             value={newClassroom.name}
             onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
             className="bg-black/50 border-purple-500/30 text-white"
+            disabled={loading}
           />
           <Textarea
-            placeholder="Description"
+            placeholder="Description (optional)"
             value={newClassroom.description}
             onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
             className="bg-black/50 border-purple-500/30 text-white min-h-[100px]"
+            disabled={loading}
           />
         </div>
-        <Button onClick={createNewClass} className="w-full bg-purple-600 hover:bg-purple-700 py-6 text-lg">
-          Create Classroom
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="flex-1"
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={createNewClass} 
+            className="flex-1 bg-purple-600 hover:bg-purple-700"
+            disabled={loading || !newClassroom.name.trim()}
+          >
+            {loading ? "Creating..." : "Create Classroom"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
