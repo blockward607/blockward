@@ -173,7 +173,7 @@ Your Teacher`);
             <>
               <Link2 className="w-5 h-5" />
               Generate Classroom Code
-            </Button>
+            </>
           )}
         </Button>
       )}
