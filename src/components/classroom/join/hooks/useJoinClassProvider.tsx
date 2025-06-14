@@ -3,7 +3,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClassJoinService } from '@/services/class-join';
 import { useAuth } from '@/hooks/use-auth';
-import { useGoogleClassroom } from './useGoogleClassroom';
 import { toast } from 'sonner';
 
 export const useJoinClassProvider = () => {
@@ -13,21 +12,9 @@ export const useJoinClassProvider = () => {
   const [error, setError] = useState<string | null>(null);
   const [autoJoinInProgress, setAutoJoinInProgress] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const { 
-    googleClassrooms, 
-    checkGoogleClassroomCode,
-    authenticateWithGoogle: authenticate,
-    isAuthenticated: googleAuthenticated
-  } = useGoogleClassroom(user?.id);
-
-  useEffect(() => {
-    setIsAuthenticated(googleAuthenticated);
-  }, [googleAuthenticated]);
 
   useEffect(() => {
     const autoExtractCode = () => {
@@ -56,26 +43,6 @@ export const useJoinClassProvider = () => {
 
     autoExtractCode();
   }, [user]);
-
-  const authenticateWithGoogle = async () => {
-    try {
-      console.log("Attempting to authenticate with Google...");
-      const success = await authenticate();
-      if (success) {
-        console.log("Successfully authenticated with Google Classroom");
-        toast.success("Successfully connected to Google Classroom");
-        return true;
-      } else {
-        console.log("Failed to authenticate with Google Classroom");
-        toast.error("Could not connect to Google Classroom");
-        return false;
-      }
-    } catch (err) {
-      console.error("Error authenticating with Google:", err);
-      toast.error("Error connecting to Google Classroom");
-      return false;
-    }
-  };
 
   const joinClassWithCode = useCallback(async (code: string) => {
     setLoading(true);
@@ -108,40 +75,18 @@ export const useJoinClassProvider = () => {
       if (matchError || !matchData) {
         console.error("[useJoinClassProvider] Error finding classroom or invitation:", matchError);
         
-        if (!isAuthenticated) {
-          const didAuthenticate = await authenticateWithGoogle();
-          if (!didAuthenticate) {
-            setError("Could not authenticate with Google Classroom. Please try again.");
-            // Redirect to classes page after error
-            setTimeout(() => {
-              navigate('/classes', { 
-                state: { errorMessage: "Could not authenticate with Google Classroom" } 
-              });
-            }, 2000);
-            return;
-          }
-        }
+        const errorMsg = matchError?.message || "Invalid code. Could not find a matching class.";
+        setError(errorMsg);
+        toast.error(errorMsg);
         
-        const matchingGoogleClass = await checkGoogleClassroomCode(code);
+        // Always redirect to classes page after error with a delay
+        setTimeout(() => {
+          navigate('/classes', { 
+            state: { errorMessage: "No matching class found for this code" } 
+          });
+        }, 2000);
         
-        if (matchingGoogleClass) {
-          toast.success(`Found Google Classroom: ${matchingGoogleClass.name}`);
-          navigate('/dashboard');
-          return;
-        } else {
-          const errorMsg = matchError?.message || "Invalid code. Could not find a matching class.";
-          setError(errorMsg);
-          toast.error(errorMsg);
-          
-          // Always redirect to classes page after error with a delay
-          setTimeout(() => {
-            navigate('/classes', { 
-              state: { errorMessage: "No matching class found for this code" } 
-            });
-          }, 2000);
-          
-          return;
-        }
+        return;
       }
       
       const classroomId = matchData.classroomId;
@@ -204,7 +149,7 @@ export const useJoinClassProvider = () => {
       setIsJoining(false);
       setLoading(false);
     }
-  }, [user, navigate, checkGoogleClassroomCode, isAuthenticated]);
+  }, [user, navigate]);
 
   return {
     invitationCode,
@@ -216,9 +161,6 @@ export const useJoinClassProvider = () => {
     error,
     setError,
     joinClassWithCode,
-    autoJoinInProgress,
-    googleClassrooms,
-    isAuthenticated,
-    authenticateWithGoogle
+    autoJoinInProgress
   };
 };
