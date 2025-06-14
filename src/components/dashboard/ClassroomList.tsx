@@ -27,10 +27,21 @@ export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
     name: "",
     description: "",
   });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleCreateClassroom = async () => {
+    if (!newClassroom.name.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a classroom name"
+      });
+      return;
+    }
+
     try {
+      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -70,13 +81,31 @@ export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
 
       if (error) throw error;
 
+      // Automatically generate a classroom code for the new classroom
+      console.log("[ClassroomList] Generating classroom code for new classroom:", data.id);
+      
+      const { data: classroomCode, error: codeError } = await supabase.rpc('create_classroom_code', {
+        p_classroom_id: data.id,
+        p_created_by: session.user.id
+      });
+
+      if (codeError) {
+        console.error("[ClassroomList] Error generating classroom code:", codeError);
+        toast({
+          title: "Classroom Created",
+          description: "Classroom created successfully, but there was an issue generating the join code. You can generate one later."
+        });
+      } else {
+        console.log("[ClassroomList] Classroom code generated successfully:", classroomCode);
+        toast({
+          title: "Success",
+          description: `Classroom created successfully with join code: ${classroomCode}`
+        });
+      }
+
       window.location.reload();
 
       setNewClassroom({ name: "", description: "" });
-      toast({
-        title: "Success",
-        description: "Classroom created successfully"
-      });
     } catch (error) {
       console.error('Error creating classroom:', error);
       toast({
@@ -84,6 +113,8 @@ export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
         title: "Error",
         description: "Failed to create classroom"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -109,15 +140,21 @@ export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
                 placeholder="Classroom name"
                 value={newClassroom.name}
                 onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
+                disabled={loading}
               />
               <Textarea
                 placeholder="Description"
                 value={newClassroom.description}
                 onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
+                disabled={loading}
               />
             </div>
-            <Button onClick={handleCreateClassroom} className="w-full bg-purple-600 hover:bg-purple-700">
-              Create Classroom
+            <Button 
+              onClick={handleCreateClassroom} 
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              disabled={loading || !newClassroom.name.trim()}
+            >
+              {loading ? "Creating..." : "Create Classroom"}
             </Button>
           </DialogContent>
         </Dialog>

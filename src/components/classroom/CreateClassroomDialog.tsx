@@ -83,6 +83,29 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
 
       if (error) throw error;
 
+      // Automatically generate a classroom code for the new classroom
+      console.log("[CreateClassroomDialog] Generating classroom code for new classroom:", newClassroomData.id);
+      
+      const { data: classroomCode, error: codeError } = await supabase.rpc('create_classroom_code', {
+        p_classroom_id: newClassroomData.id,
+        p_created_by: session.user.id
+      });
+
+      if (codeError) {
+        console.error("[CreateClassroomDialog] Error generating classroom code:", codeError);
+        // Don't fail the classroom creation if code generation fails
+        toast({
+          title: "Classroom Created",
+          description: "Classroom created successfully, but there was an issue generating the join code. You can generate one later."
+        });
+      } else {
+        console.log("[CreateClassroomDialog] Classroom code generated successfully:", classroomCode);
+        toast({
+          title: "Success",
+          description: `Classroom created successfully with join code: ${classroomCode}`
+        });
+      }
+
       // Reset form
       setNewClassroom({ name: "", description: "" });
       
@@ -92,10 +115,6 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
       // Close dialog
       onOpenChange(false);
       
-      toast({
-        title: "Success",
-        description: "Classroom created successfully"
-      });
     } catch (error: any) {
       console.error('Error creating classroom:', error);
       toast({

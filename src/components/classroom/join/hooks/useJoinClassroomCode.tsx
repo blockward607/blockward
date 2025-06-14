@@ -159,8 +159,8 @@ export const useJoinClassroomCode = () => {
       
       console.log("[useJoinClassroomCode] Join function result:", result);
       
-      // Type assertion to handle the JSON response
-      const response = result as JoinClassroomResponse;
+      // Safely handle the JSON response by converting to unknown first
+      const response = result as unknown as JoinClassroomResponse;
       
       if (!response.success) {
         setError(response.error || "Failed to join classroom");
