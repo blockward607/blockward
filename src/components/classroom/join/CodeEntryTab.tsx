@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,16 +7,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Clipboard, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 const CodeEntryTab = () => {
-  const { invitationCode, setInvitationCode, loading, setLoading, setError, error, joinClassWithCode } = useJoinClassContext();
+  const { invitationCode, setInvitationCode, loading, setError, error, joinClassWithCode } = useJoinClassContext();
   const [localError, setLocalError] = useState<string | null>(null);
-  const [processingCode, setProcessingCode] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
   
   useEffect(() => {
     if (inputRef.current) {
@@ -26,38 +23,34 @@ const CodeEntryTab = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
+    setError(null);
     
-    if (isJoining) return;
+    if (isJoining || loading) return;
+    
+    const trimmedCode = invitationCode.trim().toUpperCase();
+    
+    if (!trimmedCode) {
+      setLocalError("Please enter an invitation code");
+      return;
+    }
+    
+    // Basic validation - codes should be at least 4 characters
+    if (trimmedCode.length < 4) {
+      setLocalError("Invitation codes must be at least 4 characters long");
+      return;
+    }
+    
     setIsJoining(true);
     
     try {
-      const trimmedCode = invitationCode.trim();
-      
-      if (!trimmedCode) {
-        setLocalError("Please enter an invitation code");
-        return;
-      }
-      
-      // Use the code directly without processing
-      setProcessingCode(trimmedCode);
-      setLoading(true);
-      
       console.log("Submitting code for join:", trimmedCode);
-      
-      // Use the centralized joinClassWithCode instead of duplicating logic
       await joinClassWithCode(trimmedCode);
-      
     } catch (err: any) {
       console.error("Error in join form:", err);
-      setLocalError(err.message || "An unexpected error occurred");
-      toast.error(err.message || "Failed to join classroom");
-      
-      // After a brief delay, redirect back to classes page if there was an error
-      setTimeout(() => {
-        navigate('/classes');
-      }, 3000);
+      const errorMessage = err.message || "Failed to join classroom";
+      setLocalError(errorMessage);
+      toast.error(errorMessage);
     } finally {
-      setLoading(false);
       setIsJoining(false);
     }
   };
@@ -67,12 +60,23 @@ const CodeEntryTab = () => {
       const clipboardText = await navigator.clipboard.readText();
       console.log("Pasted text:", clipboardText);
       
-      // Set the code directly without processing
-      setInvitationCode(clipboardText.trim());
+      // Clean up the pasted text and convert to uppercase
+      const cleanedText = clipboardText.trim().toUpperCase();
+      setInvitationCode(cleanedText);
+      setLocalError(null);
+      setError(null);
     } catch (err) {
       console.error("Error accessing clipboard:", err);
       setLocalError("Could not access clipboard. Please paste manually.");
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Convert to uppercase and remove spaces as user types
+    const value = e.target.value.toUpperCase().replace(/\s/g, '');
+    setInvitationCode(value);
+    setLocalError(null);
+    setError(null);
   };
 
   return (
@@ -85,11 +89,12 @@ const CodeEntryTab = () => {
               type="text"
               placeholder="Enter invitation code (e.g. UK5CRH)"
               value={invitationCode}
-              onChange={(e) => setInvitationCode(e.target.value)}
-              className="bg-black/20 border-purple-500/30 pr-10 font-mono"
-              disabled={loading}
+              onChange={handleInputChange}
+              className="bg-black/20 border-purple-500/30 pr-10 font-mono text-center text-lg tracking-wider"
+              disabled={loading || isJoining}
               autoFocus
               autoComplete="off"
+              maxLength={10}
             />
             {!invitationCode && (
               <Button
@@ -98,14 +103,14 @@ const CodeEntryTab = () => {
                 size="icon"
                 className="absolute right-1 top-1"
                 onClick={handlePaste}
-                disabled={loading}
+                disabled={loading || isJoining}
               >
                 <Clipboard className="h-4 w-4 text-gray-400" />
               </Button>
             )}
           </div>
           
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 text-center">
             Enter the code shared by your teacher
           </p>
         </div>
@@ -123,19 +128,13 @@ const CodeEntryTab = () => {
           </motion.div>
         )}
 
-        {processingCode && !error && !localError && loading && (
-          <p className="text-xs text-gray-400">
-            Attempting to join with code: {processingCode}
-          </p>
-        )}
-
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             type="submit"
-            disabled={loading || isJoining}
+            disabled={loading || isJoining || !invitationCode.trim()}
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 py-5"
           >
-            {loading ? (
+            {loading || isJoining ? (
               <span className="flex items-center">
                 <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
                 Joining...

@@ -1,9 +1,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClassJoinService } from '@/services/class-join';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useJoinClassProvider = () => {
   const [invitationCode, setInvitationCode] = useState('');
@@ -24,7 +24,6 @@ export const useJoinClassProvider = () => {
         
         if (codeFromUrl) {
           console.log("[useJoinClassProvider] Found code in URL:", codeFromUrl);
-          
           setInvitationCode(codeFromUrl);
           
           if (user) {
@@ -32,8 +31,6 @@ export const useJoinClassProvider = () => {
             setAutoJoinInProgress(true);
             joinClassWithCode(codeFromUrl)
               .finally(() => setAutoJoinInProgress(false));
-          } else {
-            console.log("[useJoinClassProvider] User not logged in, saving code for later join");
           }
         }
       } catch (err) {
@@ -43,6 +40,60 @@ export const useJoinClassProvider = () => {
 
     autoExtractCode();
   }, [user]);
+
+  // Helper function to ensure student profile exists
+  const ensureStudentProfile = async (session: any): Promise<string | null> => {
+    try {
+      // Check if student profile exists
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+          
+      console.log("Student profile check result:", { student, studentError });
+
+      if (student?.id) {
+        return student.id;
+      }
+
+      // Create student profile if it doesn't exist
+      console.log("Creating student profile for user:", session.user.id);
+      
+      const { data: newStudent, error: createError } = await supabase
+        .from('students')
+        .insert({
+          user_id: session.user.id,
+          name: session.user.email?.split('@')[0] || 'Student'
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error("Error creating student profile:", createError);
+        return null;
+      }
+      
+      console.log("Student profile created:", newStudent);
+
+      // Set user role as student
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: session.user.id,
+          role: 'student'
+        });
+
+      if (roleError) {
+        console.error("Error setting user role:", roleError);
+      }
+
+      return newStudent.id;
+    } catch (error) {
+      console.error("Error in ensureStudentProfile:", error);
+      return null;
+    }
+  };
 
   const joinClassWithCode = useCallback(async (code: string) => {
     setLoading(true);
@@ -60,76 +111,117 @@ export const useJoinClassProvider = () => {
         return;
       }
 
-      if (!code) {
+      if (!code.trim()) {
         setError("Please enter an invitation code");
         return;
       }
       
-      console.log("[useJoinClassProvider] Processing join with code:", code);
+      // Normalize the code - remove spaces and convert to uppercase
+      const normalizedCode = code.trim().toUpperCase();
+      console.log("[useJoinClassProvider] Processing join with normalized code:", normalizedCode);
       
-      const { data: matchData, error: matchError } = 
-        await ClassJoinService.findClassroomOrInvitation(code);
-      
-      console.log("Match result:", matchData, matchError);
-      
-      if (matchError || !matchData) {
-        console.error("[useJoinClassProvider] Error finding classroom or invitation:", matchError);
+      // Get user session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError("Please log in to join a class");
+        navigate('/auth', { state: { joinCode: code } });
+        return;
+      }
+
+      // Ensure student profile exists
+      const studentId = await ensureStudentProfile(session);
+      if (!studentId) {
+        setError("Error preparing your student profile. Please try again.");
+        return;
+      }
+
+      // Look for valid invitation with this code
+      console.log("Looking for invitation with code:", normalizedCode);
+      const { data: invitation, error: inviteError } = await supabase
+        .from('class_invitations')
+        .select(`
+          id,
+          classroom_id,
+          invitation_token,
+          expires_at,
+          status,
+          classroom:classrooms(
+            id,
+            name,
+            description
+          )
+        `)
+        .eq('invitation_token', normalizedCode)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
         
-        const errorMsg = matchError?.message || "Invalid code. Could not find a matching class.";
-        setError(errorMsg);
-        toast.error(errorMsg);
-        
-        // Always redirect to classes page after error with a delay
-        setTimeout(() => {
-          navigate('/classes', { 
-            state: { errorMessage: "No matching class found for this code" } 
-          });
-        }, 2000);
-        
+      if (inviteError) {
+        console.error("Error looking up invitation:", inviteError);
+        setError("Error looking up invitation code");
         return;
       }
       
-      const classroomId = matchData.classroomId;
-      const classroomName = matchData.classroom?.name || "the classroom";
-      const invitationId = matchData.invitationId;
+      if (!invitation) {
+        console.log("No valid invitation found for code:", normalizedCode);
+        setError("Invalid or expired invitation code. Please check your code and try again.");
+        return;
+      }
       
-      console.log("[useJoinClassProvider] Found classroom to join:", { classroomId, classroomName });
+      const classroomId = invitation.classroom_id;
+      const classroomName = invitation.classroom?.name || "the classroom";
+      const invitationId = invitation.id;
       
-      const { data: existingEnrollment, error: enrollmentError } = 
-        await ClassJoinService.checkEnrollment(classroomId);
+      console.log("Found valid invitation:", { classroomId, classroomName, invitationId });
       
-      if (enrollmentError) {
-        console.error("[useJoinClassProvider] Error checking enrollment:", enrollmentError);
+      // Check if already enrolled
+      const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
+        .from('classroom_students')
+        .select('id')
+        .eq('classroom_id', classroomId)
+        .eq('student_id', studentId)
+        .maybeSingle();
+      
+      if (enrollmentCheckError) {
+        console.error("Error checking enrollment:", enrollmentCheckError);
       }
         
-      if (existingEnrollment && existingEnrollment.length > 0) {
-        console.log("[useJoinClassProvider] Student already enrolled in this classroom");
+      if (existingEnrollment) {
+        console.log("Student already enrolled in this classroom");
         toast.success("You are already a member of this classroom");
         navigate(`/class/${classroomId}`);
         return;
       }
       
-      console.log("[useJoinClassProvider] Enrolling student in classroom:", { classroomId, invitationId });
-      const { data: enrollData, error: enrollError } = await ClassJoinService.enrollStudent(classroomId, invitationId);
+      // Enroll the student
+      console.log("Enrolling student in classroom:", { classroomId, studentId });
+      const { data: enrollData, error: enrollError } = await supabase
+        .from('classroom_students')
+        .insert({
+          classroom_id: classroomId,
+          student_id: studentId
+        })
+        .select();
       
       if (enrollError) {
-        console.error("[useJoinClassProvider] Error enrolling student:", enrollError);
-        const errorMsg = "Error joining classroom: " + (enrollError.message || "Unknown error");
-        setError(errorMsg);
-        toast.error(errorMsg);
-        
-        // Redirect to classes page after error
-        setTimeout(() => {
-          navigate('/classes', { 
-            state: { errorMessage: errorMsg } 
-          });
-        }, 2000);
-        
+        console.error("Error enrolling student:", enrollError);
+        setError("Error joining classroom: " + (enrollError.message || "Unknown error"));
         return;
       }
 
-      console.log("[useJoinClassProvider] Successfully joined classroom:", classroomName);
-      toast.success(`You've joined ${classroomName || 'the classroom'}`);
+      // Mark invitation as accepted
+      const { error: updateError } = await supabase
+        .from('class_invitations')
+        .update({ status: 'accepted' })
+        .eq('id', invitationId);
+        
+      if (updateError) {
+        console.error("Error updating invitation status:", updateError);
+        // Non-blocking error, continue
+      }
+
+      console.log("Successfully joined classroom:", classroomName);
+      toast.success(`You've joined ${classroomName}`);
       
       navigate(`/class/${classroomId}`);
       
@@ -138,13 +230,6 @@ export const useJoinClassProvider = () => {
       const errorMsg = error.message || "An unexpected error occurred";
       setError(errorMsg);
       toast.error(errorMsg);
-      
-      // Always redirect to classes page after error
-      setTimeout(() => {
-        navigate('/classes', { 
-          state: { errorMessage: errorMsg } 
-        });
-      }, 2000);
     } finally {
       setIsJoining(false);
       setLoading(false);
