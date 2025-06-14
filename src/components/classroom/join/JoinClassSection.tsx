@@ -4,11 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QRScanTab } from "./QRScanTab";
 import CodeEntryTab from "./CodeEntryTab";
-import { ImportOptions } from "./ImportOptions";
-import { GoogleClassroomImportDialog } from "./GoogleClassroomImportDialog";
 import { useJoinClassContext } from "./JoinClassContext";
 import { Loader2 } from "lucide-react";
-import { GoogleClassroom } from "@/services/google-classroom";
 
 interface JoinClassSectionProps {
   initialCode?: string;
@@ -16,15 +13,11 @@ interface JoinClassSectionProps {
 
 export const JoinClassSection = ({ initialCode }: JoinClassSectionProps) => {
   const [activeTab, setActiveTab] = useState("code");
-  const [showImportDialog, setShowImportDialog] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<GoogleClassroom | undefined>(undefined);
   
   const { 
     scannerOpen, 
     setScannerOpen, 
     autoJoinInProgress, 
-    loading,
-    googleClassrooms,
     setInvitationCode,
     joinClassWithCode
   } = useJoinClassContext();
@@ -56,12 +49,6 @@ export const JoinClassSection = ({ initialCode }: JoinClassSectionProps) => {
       setScannerOpen(false);
     }
   }, [activeTab, setScannerOpen]);
-  
-  // Handle selecting a Google Classroom course
-  const handleSelectCourse = (course: GoogleClassroom) => {
-    setSelectedCourse(course);
-    setShowImportDialog(true);
-  };
   
   // If auto-join is in progress, show loading state
   if (autoJoinInProgress) {
@@ -104,21 +91,7 @@ export const JoinClassSection = ({ initialCode }: JoinClassSectionProps) => {
             />
           </TabsContent>
         </Tabs>
-        
-        <div className="mt-6 pt-4 border-t border-gray-800">
-          <ImportOptions 
-            onImport={() => setShowImportDialog(true)}
-            googleClassrooms={googleClassrooms}
-            onSelectCourse={handleSelectCourse}
-          />
-        </div>
       </Card>
-      
-      <GoogleClassroomImportDialog 
-        open={showImportDialog} 
-        onOpenChange={setShowImportDialog}
-        course={selectedCourse}
-      />
     </div>
   );
 };

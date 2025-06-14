@@ -1,5 +1,5 @@
 
-import { Settings as SettingsIcon, Bell, Shield, Palette, User, Award, Calendar, BookOpen } from "lucide-react";
+import { Settings as SettingsIcon, Bell, Shield, Palette, User, Award, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import {
@@ -14,7 +14,6 @@ import ProfileTab from "@/components/settings/ProfileTab";
 import NotificationsTab from "@/components/settings/NotificationsTab";
 import { AppearanceTab } from "@/components/settings/AppearanceTab";
 import SecurityTab from "@/components/settings/SecurityTab";
-import { GoogleClassroomTab } from "@/components/settings/GoogleClassroomTab";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -28,7 +27,7 @@ const Settings = () => {
         <h1 className="text-3xl font-bold gradient-text">Settings</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card 
           className="p-6 hover:bg-purple-900/10 transition-all cursor-pointer"
           onClick={() => navigate('/rewards')}
@@ -54,29 +53,15 @@ const Settings = () => {
             </div>
           </div>
         </Card>
-        
-        <Card 
-          className="p-6 hover:bg-purple-900/10 transition-all cursor-pointer"
-          onClick={() => navigate('/google-classroom')}
-        >
-          <div className="flex items-center gap-3">
-            <BookOpen className="w-6 h-6 text-green-400" />
-            <div>
-              <h3 className="font-semibold">Google Classroom</h3>
-              <p className="text-sm text-gray-400">Google Classroom integration settings</p>
-            </div>
-          </div>
-        </Card>
       </div>
 
       <Card className="p-6">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:w-[500px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[400px]">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="classroom">Classroom</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile">
@@ -93,10 +78,6 @@ const Settings = () => {
 
           <TabsContent value="security">
             <SecurityTab />
-          </TabsContent>
-          
-          <TabsContent value="classroom">
-            <GoogleClassroomTab />
           </TabsContent>
         </Tabs>
       </Card>

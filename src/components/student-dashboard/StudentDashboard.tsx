@@ -2,7 +2,6 @@
 import { StudentInfoCard } from "./StudentInfoCard";
 import { NFTCard } from "./NFTCard";
 import { WalletSection } from "./WalletSection";
-import { GoogleClassroomSection } from "./GoogleClassroomSection";
 import { DemoBanner } from "./DemoBanner";
 import { useStudentData } from "./hooks/useStudentData";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +26,6 @@ export function StudentDashboard() {
             studentPoints={studentData?.points || 0} 
             loading={loading} 
           />
-          <GoogleClassroomSection />
         </div>
         
         <div className="space-y-6">

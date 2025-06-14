@@ -12,7 +12,6 @@ import TutorialPage from "./pages/TutorialPage";
 
 // Import problematic components directly instead of lazy-loading
 import Index from "@/pages/Index";
-import GoogleClassroom from "@/pages/GoogleClassroom";
 import ViewStudentDashboard from "@/pages/StudentDashboard";
 import ViewTeacherDashboard from "@/pages/ViewTeacherDashboard";
 import ClassroomInvite from "@/pages/ClassroomInvite";
@@ -73,7 +72,6 @@ function App() {
             >
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="classes" element={<Classes />} />
-              <Route path="google-classroom" element={<GoogleClassroom />} />
               <Route path="students" element={<Students />} />
               <Route path="attendance" element={<Attendance />} />
               <Route path="classroom/seating" element={<ClassroomSeating />} />
