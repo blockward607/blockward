@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { GoogleClassroom } from "@/services/google-classroom";
-import GoogleClassroomService from "@/services/google-classroom";
 import { supabase } from "@/integrations/supabase/client";
 import { ClassJoinService } from "@/services/class-join";
 
@@ -18,7 +17,7 @@ export function useImportDialog(course: GoogleClassroom, onClose: () => void) {
   });
   const navigate = useNavigate();
 
-  // Load students when component mounts
+  // Load students when component mounts - now returns empty array since Google Classroom is removed
   useEffect(() => {
     const loadStudents = async () => {
       if (studentsLoaded) return;
@@ -26,13 +25,14 @@ export function useImportDialog(course: GoogleClassroom, onClose: () => void) {
       try {
         setLoading(true);
         console.log("Loading students for course:", course.id);
-        const studentsList = await GoogleClassroomService.listStudents(course.id);
+        // Since Google Classroom is removed, return empty array
+        const studentsList: any[] = [];
         console.log("Retrieved students:", studentsList.length);
         setStudents(studentsList);
         setStudentsLoaded(true);
       } catch (error) {
         console.error("Error loading students:", error);
-        toast.error("Could not retrieve students from Google Classroom");
+        toast.error("Could not retrieve students");
       } finally {
         setLoading(false);
       }
@@ -72,9 +72,8 @@ export function useImportDialog(course: GoogleClassroom, onClose: () => void) {
           .from('classrooms')
           .insert([{
             name: course.name,
-            description: course.description || `Imported from Google Classroom: ${course.name}`,
+            description: course.description || `Imported classroom: ${course.name}`,
             teacher_id: teacherProfile.id,
-            google_classroom_id: course.id,
             section: course.section || null
           }])
           .select()
@@ -90,35 +89,33 @@ export function useImportDialog(course: GoogleClassroom, onClose: () => void) {
         // Import students if option is selected
         if (importOptions.importStudents && students.length > 0) {
           console.log(`Creating invitations for ${students.length} students`);
-          // This would typically include code to insert students into your database
-          // or send invitations to students to join the class
           toast.success(`${students.length} students will be invited to join the class`);
         }
 
-        toast.success("Google Classroom has been imported successfully");
+        toast.success("Classroom has been imported successfully");
 
         // Navigate to the classes page
         navigate('/classes');
       }
     } catch (error) {
       console.error("Import error:", error);
-      toast.error("Failed to import Google Classroom");
+      toast.error("Failed to import classroom");
     } finally {
       setImporting(false);
       onClose();
     }
   };
 
-  // Add a function to directly join a Google Classroom
+  // Add a function to directly join a classroom - simplified without Google Classroom
   const handleJoinClass = async () => {
     try {
       setImporting(true);
-      console.log("Attempting to join Google Classroom:", course.name);
+      console.log("Attempting to join classroom:", course.name);
       
-      // Check for enrollment code
-      const classCode = course.enrollmentCode || course.id;
+      // Try to find a match or create local representation
+      const classCode = course.id;
       if (!classCode) {
-        toast.error("This classroom doesn't have a valid enrollment code");
+        toast.error("This classroom doesn't have a valid code");
         return;
       }
       
