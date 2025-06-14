@@ -1,21 +1,29 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Grid } from "lucide-react";
 import { DraggableSeatingChart } from "./DraggableSeatingChart";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FrontOfClass } from "./FrontOfClass";
+import { Shuffle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface SeatingChartProps {
   classroomId: string;
 }
 
 export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
+  const { toast } = useToast();
+  const [shuffleFlag, setShuffleFlag] = useState(0);
+
+  const handleRandomize = () => {
+    setShuffleFlag((f) => f + 1);
+    toast({
+      title: "Seating randomized!",
+      description: "Student seats have been shuffled.",
+    });
+  };
+
   return (
     <Card className="p-6 glass-card">
       <Tabs defaultValue="draggable">
@@ -25,7 +33,17 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
         </TabsList>
         
         <TabsContent value="draggable">
-          <DraggableSeatingChart classroomId={classroomId} />
+          <FrontOfClass />
+          <DraggableSeatingChart
+            classroomId={classroomId}
+            shuffleFlag={shuffleFlag}
+          />
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={handleRandomize}>
+              <Shuffle className="w-4 h-4 mr-2" />
+              Randomize Seats
+            </Button>
+          </div>
         </TabsContent>
         
         <TabsContent value="grid">

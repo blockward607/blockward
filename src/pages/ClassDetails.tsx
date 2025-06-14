@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { AnnouncementStream } from "@/components/classroom/AnnouncementStream";
 
 type Student = ReturnType<typeof useClassroomStudents>['students'][0];
 
@@ -38,6 +38,25 @@ const ClassDetails = () => {
   const [reason, setReason] = useState("");
   const [isAwardingPoints, setIsAwardingPoints] = useState(false);
   const [isAwardPointsDialogOpen, setIsAwardPointsDialogOpen] = useState(false);
+
+  // Role check (is current user teacher of this class?)
+  const [isTeacher, setIsTeacher] = useState(false);
+
+  useEffect(() => {
+    async function checkIsTeacher() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session || !classroom) return setIsTeacher(false);
+        const { data: tProfile } = await supabase
+          .from("teacher_profiles")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .single();
+        setIsTeacher(tProfile && classroom.teacher_id === tProfile.id);
+      } catch { setIsTeacher(false); }
+    }
+    checkIsTeacher();
+  }, [classroom]);
 
   useEffect(() => {
     const fetchClassroom = async () => {
@@ -125,7 +144,6 @@ const ClassDetails = () => {
     }
   };
 
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -167,7 +185,7 @@ const ClassDetails = () => {
             </TabsList>
             
             <TabsContent value="stream" className="min-h-[200px] p-4">
-              <div className="text-white">Announcements will be displayed here.</div>
+              <AnnouncementStream classroomId={classroomId || ""} isTeacher={isTeacher} />
             </TabsContent>
             
             <TabsContent value="students" className="min-h-[200px] p-4">
@@ -262,4 +280,3 @@ const ClassDetails = () => {
 };
 
 export default ClassDetails;
-
