@@ -30,6 +30,11 @@ const Dashboard = () => {
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
 
+  // Add a debug log when role and showAnnouncementForm change
+  useEffect(() => {
+    console.log("userRole:", userRole, "showAnnouncementForm:", showAnnouncementForm);
+  }, [userRole, showAnnouncementForm]);
+
   useEffect(() => {
     checkAuth();
     fetchAnnouncements();
@@ -135,8 +140,12 @@ const Dashboard = () => {
             
             {userRole === 'teacher' && !showAnnouncementForm && (
               <Button 
-                onClick={() => setShowAnnouncementForm(true)}
+                onClick={() => {
+                  console.log('Create Announcement button clicked');
+                  setShowAnnouncementForm(true)
+                }}
                 className="bg-purple-600 hover:bg-purple-700"
+                data-testid="create-announcement-btn"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 New Announcement
@@ -148,7 +157,10 @@ const Dashboard = () => {
             <Card className="p-6 mb-6 border-purple-500/30 bg-black/50">
               <TeacherAnnouncementForm 
                 onSuccess={handleAnnouncementCreated}
-                onCancel={() => setShowAnnouncementForm(false)}
+                onCancel={() => {
+                  console.log('Announcement form canceled');
+                  setShowAnnouncementForm(false)
+                }}
               />
             </Card>
           )}
