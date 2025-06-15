@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -6,7 +7,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -15,16 +15,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
-  Home,
-  Users,
-  Settings,
-  Calendar,
-  Wallet,
   BookOpen,
   Megaphone,
   ChevronsLeft,
   ChevronsRight,
-  LogOut
+  LogOut,
+  Wallet,
+  Calendar,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -72,67 +70,21 @@ export function AppSidebar() {
     setIsMinimized(!isMinimized);
   };
 
-  const teacherNavGroups = [
-    {
-      name: "Main",
-      items: [
-        { name: "Announcements", href: "/dashboard", icon: Megaphone },
-      ]
-    },
-    {
-      name: "Classes",
-      items: [
-        { name: "Classes", href: "/classes", icon: BookOpen },
-      ]
-    },
-    {
-      name: "Teaching",
-      items: [
-        { name: "Attendance", href: "/attendance", icon: Calendar },
-      ]
-    },
-    {
-      name: "Wallet",
-      items: [
-        { name: "NFT Wallet", href: "/wallet", icon: Wallet },
-      ]
-    },
-    {
-      name: "Analysis",
-      items: [
-        { name: "Settings", href: "/settings", icon: Settings },
-      ]
-    }
+  // Flat list of nav items for students and teachers, no group headers
+  const teacherNav = [
+    { name: "Announcements", href: "/dashboard", icon: Megaphone },
+    { name: "Classes", href: "/classes", icon: BookOpen },
+    { name: "Attendance", href: "/attendance", icon: Calendar },
+    { name: "NFT Wallet", href: "/wallet", icon: Wallet },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
-
-  const studentNavGroups = [
-    {
-      name: "Main",
-      items: [
-        { name: "Announcements", href: "/dashboard", icon: Megaphone },
-      ]
-    },
-    {
-      name: "Classes",
-      items: [
-        { name: "Classes", href: "/classes", icon: BookOpen },
-      ]
-    },
-    {
-      name: "Wallet",
-      items: [
-        { name: "NFT Wallet", href: "/wallet", icon: Wallet },
-      ]
-    },
-    {
-      name: "Communication",
-      items: [
-        { name: "Settings", href: "/settings", icon: Settings },
-      ]
-    }
+  const studentNav = [
+    { name: "Announcements", href: "/dashboard", icon: Megaphone },
+    { name: "Classes", href: "/classes", icon: BookOpen },
+    { name: "NFT Wallet", href: "/wallet", icon: Wallet },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
-
-  const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
+  const navItems = userRole === 'teacher' ? teacherNav : studentNav;
   
   return (
     <>
@@ -159,7 +111,7 @@ export function AppSidebar() {
           <SidebarHeader className="flex items-center px-6 py-6">
             {!isMinimized && (
               <div 
-                className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 cursor-pointer" 
+                className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 cursor-pointer select-none" 
                 onClick={() => handleNavigate('/dashboard')}
               >
                 BlockWard
@@ -168,14 +120,18 @@ export function AppSidebar() {
           </SidebarHeader>
           
           <SidebarContent className="flex-1 overflow-y-auto w-full">
-            {navGroups.map((group) => (
-              <SidebarGroup key={group.name} className="w-full">
-                {!isMinimized && (
-                  <SidebarGroupLabel className="text-gray-300 font-semibold px-4">{group.name}</SidebarGroupLabel>
-                )}
-                <SidebarGroupContent className="w-full">
-                  <SidebarMenu className="w-full">
-                    {group.items.map((item) => {
+            <SidebarGroup className={cn("w-full")}>
+              <SidebarGroupContent className="w-full">
+                {/* Visual container for nav buttons - glassy/card effect */}
+                <div
+                  className={cn(
+                    "w-[90%] mx-auto mt-2 flex flex-col gap-2 rounded-2xl shadow-2xl border border-purple-700/30",
+                    "bg-gradient-to-br from-purple-800/30 via-transparent to-purple-950/50 backdrop-blur-sm",
+                    "p-2 sm:p-3 transition-all duration-300"
+                  )}
+                >
+                  <SidebarMenu className="w-full flex flex-col gap-1">
+                    {navItems.map((item) => {
                       const isActive = location.pathname === item.href;
                       const Icon = item.icon;
                       
@@ -186,8 +142,10 @@ export function AppSidebar() {
                             isActive={isActive}
                             tooltip={isMinimized ? item.name : undefined}
                             className={cn(
-                              "p-3 rounded-lg hover:bg-purple-700/30 transition-all duration-300 w-full",
-                              isActive && "bg-purple-600/40 shadow-lg border border-purple-500/30"
+                              "p-3 rounded-xl hover:bg-purple-700/30 transition-all duration-300 w-full",
+                              isActive && "bg-purple-600/50 shadow-lg border border-purple-400/40 scale-[1.02]",
+                              "outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60",
+                              "flex items-center"
                             )}
                           >
                             <div 
@@ -198,7 +156,7 @@ export function AppSidebar() {
                               }} 
                               className={cn(
                                 "cursor-pointer flex items-center w-full",
-                                isActive ? "text-white font-semibold" : "text-gray-300"
+                                isActive ? "text-white font-semibold" : "text-gray-200"
                               )}
                             >
                               <Icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
@@ -209,9 +167,9 @@ export function AppSidebar() {
                       );
                     })}
                   </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            ))}
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
           </SidebarContent>
           
           <SidebarFooter className="mt-auto px-4 py-4">
