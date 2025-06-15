@@ -22,8 +22,65 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { AnnouncementStream } from "@/components/classroom/AnnouncementStream";
 import { StudentAttendanceView } from '@/components/attendance/StudentAttendanceView';
+import { SchedulePanel } from "@/components/classroom/SchedulePanel";
 
 type Student = ReturnType<typeof useClassroomStudents>['students'][0];
+
+const StudentPointsSummary = ({ studentId }: { studentId: string }) => {
+  const [positive, setPositive] = useState(0);
+  const [negative, setNegative] = useState(0);
+  const [achievements, setAchievements] = useState(0);
+
+  useEffect(() => {
+    async function fetchPoints() {
+      // Query behavior records for positive/negative
+      let { data: behavior, error: behErr } = await supabase
+        .from('behavior_records')
+        .select('points')
+        .eq('student_id', studentId);
+
+      if (!behErr && behavior) {
+        setPositive(behavior.filter((r: any) => r.points > 0).reduce((a: number, b: any) => a + b.points, 0));
+        setNegative(behavior.filter((r: any) => r.points < 0).reduce((a: number, b: any) => a + b.points, 0));
+      }
+
+      // Query achievements (each = 1 point in this UI)
+      let { data: ach, error: aErr } = await supabase
+        .from('student_achievements')
+        .select('id')
+        .eq('student_id', studentId);
+
+      if (!aErr && ach) {
+        setAchievements(ach.length);
+      }
+    }
+    fetchPoints();
+  }, [studentId]);
+
+  if (positive === 0 && negative === 0 && achievements === 0) {
+    return <span className="text-xs text-gray-400">No points yet</span>;
+  }
+
+  return (
+    <div className="flex items-center gap-3 mt-1">
+      {positive !== 0 && (
+        <span className="flex items-center gap-1 text-green-400 text-xs">
+          <Star className="w-4 h-4" /> +{positive}
+        </span>
+      )}
+      {negative !== 0 && (
+        <span className="flex items-center gap-1 text-red-400 text-xs">
+          <Minus className="w-4 h-4" /> {negative}
+        </span>
+      )}
+      {achievements !== 0 && (
+        <span className="flex items-center gap-1 text-yellow-300 text-xs">
+          <Award className="w-4 h-4" /> {achievements}
+        </span>
+      )}
+    </div>
+  );
+};
 
 const ClassDetails = () => {
   const { classroomId } = useParams<{ classroomId: string }>();
@@ -167,6 +224,7 @@ const ClassDetails = () => {
         { value: "students", label: "Students" },
         { value: "assignments", label: "Assignments & Grades" },
         { value: "seating", label: "Seating Plan" },
+        { value: "schedule", label: "Schedule" },
         { value: "resources", label: "Resources" },
       ]
     : [
@@ -174,6 +232,7 @@ const ClassDetails = () => {
         { value: "assignments", label: "Assignments & Grades" },
         { value: "seating", label: "Seating Plan" },
         { value: "attendance", label: "Attendance" },
+        { value: "schedule", label: "Schedule" },
         // Optionally: "Messages" tab in the future
       ];
 
@@ -197,7 +256,7 @@ const ClassDetails = () => {
       <Card className="w-full mt-8 bg-black/40 border-purple-500/30">
         <CardContent className="p-4">
           <Tabs defaultValue="stream" value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className={`grid w-full mb-6 ${isTeacher ? "grid-cols-5" : "grid-cols-4"}`}>
+            <TabsList className={`grid w-full mb-6 ${isTeacher ? "grid-cols-6" : "grid-cols-5"}`}>
               {visibleTabs.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
               ))}
@@ -231,7 +290,10 @@ const ClassDetails = () => {
                               <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${student.name}`} />
                               <AvatarFallback>{student.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <p className="font-medium text-sm">{student.name}</p>
+                            <div className="flex flex-col flex-1">
+                              <p className="font-medium text-sm">{student.name}</p>
+                              <StudentPointsSummary studentId={student.id} />
+                            </div>
                           </Card>
                         ))}
                       </div>
@@ -291,6 +353,10 @@ const ClassDetails = () => {
               </TabsContent>
             )}
             
+            <TabsContent value="schedule" className="min-h-[200px] p-4">
+              <SchedulePanel />
+            </TabsContent>
+
             {/* Teachers only see "Resources" tab */}
             {isTeacher && (
               <TabsContent value="resources" className="min-h-[200px] p-4">
