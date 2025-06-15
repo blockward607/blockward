@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -22,7 +21,10 @@ import {
   Calendar,
   Wallet,
   BookOpen,
-  Megaphone
+  Megaphone,
+  ChevronsLeft,
+  ChevronsRight,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
