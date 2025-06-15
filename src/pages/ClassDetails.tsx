@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,12 +42,15 @@ const ClassDetails = () => {
 
   // Role check (is current user teacher of this class?)
   const [isTeacher, setIsTeacher] = useState(false);
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
 
   useEffect(() => {
     async function checkIsTeacher() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session || !classroom) return setIsTeacher(false);
+        if (!session) return setIsTeacher(false);
+        setSessionUserId(session.user.id);
+        if (!classroom) return setIsTeacher(false);
         const { data: tProfile } = await supabase
           .from("teacher_profiles")
           .select("id")
@@ -156,6 +160,22 @@ const ClassDetails = () => {
     return <div className="container mx-auto py-8 px-4">Classroom not found.</div>;
   }
 
+  // Decide visible tabs for students and teachers
+  const visibleTabs = isTeacher
+    ? [
+        { value: "stream", label: "Stream" },
+        { value: "students", label: "Students" },
+        { value: "assignments", label: "Assignments & Grades" },
+        { value: "seating", label: "Seating Plan" },
+        { value: "resources", label: "Resources" },
+      ]
+    : [
+        { value: "stream", label: "Stream" },
+        { value: "assignments", label: "Assignments & Grades" },
+        { value: "seating", label: "Seating Plan" },
+        // Optionally: "Messages" tab in the future
+      ];
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex items-center mb-6">
@@ -176,105 +196,129 @@ const ClassDetails = () => {
       <Card className="w-full mt-8 bg-black/40 border-purple-500/30">
         <CardContent className="p-4">
           <Tabs defaultValue="stream" value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
-              <TabsTrigger value="stream">Stream</TabsTrigger>
-              <TabsTrigger value="students">Students</TabsTrigger>
-              <TabsTrigger value="assignments">Assignments & Grades</TabsTrigger>
-              <TabsTrigger value="seating">Seating Plan</TabsTrigger>
-              <TabsTrigger value="resources">Resources</TabsTrigger>
+            <TabsList className={`grid w-full mb-6 ${isTeacher ? "grid-cols-5" : "grid-cols-3"}`}>
+              {visibleTabs.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+              ))}
             </TabsList>
             
             <TabsContent value="stream" className="min-h-[200px] p-4">
+              {/* Only teachers can post announcements. AnnouncementStream already enforces this. */}
               <AnnouncementStream classroomId={classroomId || ""} isTeacher={isTeacher} />
             </TabsContent>
             
-            <TabsContent value="students" className="min-h-[200px] p-4">
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-white">Invite Students</h2>
-                <div className="max-w-md">
-                  {classroomId && <InviteCodeTab classroomId={classroomId} />}
+            {isTeacher && (
+              <TabsContent value="students" className="min-h-[200px] p-4">
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-white">Invite Students</h2>
+                  <div className="max-w-md">
+                    {classroomId && <InviteCodeTab classroomId={classroomId} />}
+                  </div>
+                  <div className="text-white mt-6">
+                    <h3 className="text-lg font-medium mb-3">Enrolled Students</h3>
+                    {loadingStudents ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+                    ) : classroomStudents.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {classroomStudents.map((student) => (
+                          <Card 
+                            key={student.id} 
+                            className="p-3 bg-black/50 flex items-center gap-3 hover:bg-black/70 transition-colors cursor-pointer"
+                            onClick={() => openAwardPointsDialog(student)}
+                          >
+                            <Avatar>
+                              <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${student.name}`} />
+                              <AvatarFallback>{student.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <p className="font-medium text-sm">{student.name}</p>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400">No students have joined this class yet.</p>
+                    )}
+                  </div>
                 </div>
-                <div className="text-white mt-6">
-                  <h3 className="text-lg font-medium mb-3">Enrolled Students</h3>
-                  {loadingStudents ? (
-                     <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
-                  ) : classroomStudents.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {classroomStudents.map((student) => (
-                        <Card 
-                          key={student.id} 
-                          className="p-3 bg-black/50 flex items-center gap-3 hover:bg-black/70 transition-colors cursor-pointer"
-                          onClick={() => openAwardPointsDialog(student)}
-                        >
-                           <Avatar>
-                            <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${student.name}`} />
-                            <AvatarFallback>{student.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <p className="font-medium text-sm">{student.name}</p>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-400">No students have joined this class yet.</p>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
+            )}
             
             <TabsContent value="assignments" className="min-h-[200px] p-4">
-              {classroomId && <TeacherGradePanel classroomId={classroomId} />}
+              {/* Teachers see grade panel, students see alternative */}
+              {isTeacher ? (
+                classroomId && <TeacherGradePanel classroomId={classroomId} />
+              ) : (
+                // For students, just show the student grades/assignment view component.
+                <div>
+                  {/* Student view for assignments goes here, or a message if not implemented */}
+                  <div className="text-gray-300">
+                    {/* If you have a StudentGradePanel, render it here */}
+                    Assignment submission & grades are accessible for students here.
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
-             <TabsContent value="seating" className="min-h-[200px] p-4">
-              {classroomId && <SeatingChart classroomId={classroomId} />}
+            <TabsContent value="seating" className="min-h-[200px] p-4">
+              {/* Seating chart visible to both */}
+              {classroomId && (
+                <SeatingChart classroomId={classroomId}
+                  {...(!isTeacher && sessionUserId ? { highlightUserId: sessionUserId } : {})}
+                />
+              )}
             </TabsContent>
             
-            <TabsContent value="resources" className="min-h-[200px] p-4">
-              <div className="text-white">Resources Content</div>
-            </TabsContent>
+            {/* Teachers only see "Resources" tab */}
+            {isTeacher && (
+              <TabsContent value="resources" className="min-h-[200px] p-4">
+                <div className="text-white">Resources Content</div>
+              </TabsContent>
+            )}
             
           </Tabs>
         </CardContent>
       </Card>
       
-      <Dialog open={isAwardPointsDialogOpen} onOpenChange={setIsAwardPointsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-center text-white">Award Points to {selectedStudent?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Input
-              type="number"
-              placeholder="Enter points (e.g., 5 or -5)"
-              value={points === 0 ? '' : points}
-              onChange={(e) => setPoints(parseInt(e.target.value) || 0)}
-              className="bg-black/50 border-purple-500/30 text-white"
-            />
-            <Textarea
-              placeholder="Reason for awarding points (optional)"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="bg-black/50 border-purple-500/30 text-white min-h-[100px]"
-            />
-          </div>
-          <DialogFooter className="flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAwardPointsDialogOpen(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAwardPoints} 
-              disabled={isAwardingPoints}
-              className="flex-1 bg-purple-600 hover:bg-purple-700"
-            >
-              {isAwardingPoints ? "Awarding..." : "Award Points"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Teacher's point dialog only */}
+      {isTeacher && (
+        <Dialog open={isAwardPointsDialogOpen} onOpenChange={setIsAwardPointsDialogOpen}>
+          <DialogContent className="sm:max-w-[425px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
+            <DialogHeader>
+              <DialogTitle className="text-xl text-center text-white">Award Points to {selectedStudent?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Input
+                type="number"
+                placeholder="Enter points (e.g., 5 or -5)"
+                value={points === 0 ? '' : points}
+                onChange={(e) => setPoints(parseInt(e.target.value) || 0)}
+                className="bg-black/50 border-purple-500/30 text-white"
+              />
+              <Textarea
+                placeholder="Reason for awarding points (optional)"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="bg-black/50 border-purple-500/30 text-white min-h-[100px]"
+              />
+            </div>
+            <DialogFooter className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAwardPointsDialogOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAwardPoints} 
+                disabled={isAwardingPoints}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+              >
+                {isAwardingPoints ? "Awarding..." : "Award Points"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
