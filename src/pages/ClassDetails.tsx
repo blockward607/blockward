@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { AnnouncementStream } from "@/components/classroom/AnnouncementStream";
+import { StudentAttendanceView } from '@/components/attendance/StudentAttendanceView';
 
 type Student = ReturnType<typeof useClassroomStudents>['students'][0];
 
@@ -173,6 +173,7 @@ const ClassDetails = () => {
         { value: "stream", label: "Stream" },
         { value: "assignments", label: "Assignments & Grades" },
         { value: "seating", label: "Seating Plan" },
+        { value: "attendance", label: "Attendance" },
         // Optionally: "Messages" tab in the future
       ];
 
@@ -196,7 +197,7 @@ const ClassDetails = () => {
       <Card className="w-full mt-8 bg-black/40 border-purple-500/30">
         <CardContent className="p-4">
           <Tabs defaultValue="stream" value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className={`grid w-full mb-6 ${isTeacher ? "grid-cols-5" : "grid-cols-3"}`}>
+            <TabsList className={`grid w-full mb-6 ${isTeacher ? "grid-cols-5" : "grid-cols-4"}`}>
               {visibleTabs.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
               ))}
@@ -266,6 +267,13 @@ const ClassDetails = () => {
                 />
               )}
             </TabsContent>
+            
+            {/* Student attendance tab only (students only) */}
+            {!isTeacher && (
+              <TabsContent value="attendance" className="min-h-[200px] p-4">
+                {classroomId && <StudentAttendanceView classroomId={classroomId} />}
+              </TabsContent>
+            )}
             
             {/* Teachers only see "Resources" tab */}
             {isTeacher && (
