@@ -230,7 +230,6 @@ const ClassDetails = () => {
     : [
         { value: "stream", label: "Stream" },
         { value: "assignments", label: "Assignments & Grades" },
-        { value: "seating", label: "Seating Plan" },
         { value: "attendance", label: "Attendance" },
         { value: "schedule", label: "Schedule" },
         // Optionally: "Messages" tab in the future
@@ -310,37 +309,32 @@ const ClassDetails = () => {
               {isTeacher ? (
                 classroomId && <TeacherGradePanel classroomId={classroomId} />
               ) : (
-                // For students, just show the student grades/assignment view component.
                 <div>
-                  {/* Student view for assignments goes here, or a message if not implemented */}
                   <div className="text-gray-300">
-                    {/* If you have a StudentGradePanel, render it here */}
                     Assignment submission & grades are accessible for students here.
                   </div>
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="seating" className="min-h-[200px] p-4">
-              {/* Seating chart visible to both */}
-              {classroomId && (
-                <SeatingChart classroomId={classroomId}
-                  {...(!isTeacher && sessionUserId ? { highlightUserId: sessionUserId } : {})}
-                />
-              )}
-            </TabsContent>
+            {isTeacher && (
+              <TabsContent value="seating" className="min-h-[200px] p-4">
+                {classroomId && (
+                  <SeatingChart classroomId={classroomId}
+                    {...(sessionUserId ? { highlightUserId: sessionUserId } : {})}
+                  />
+                )}
+              </TabsContent>
+            )}
             
-            {/* Student attendance tab only (students only) */}
             {!isTeacher && (
               <TabsContent value="attendance" className="min-h-[200px] p-4">
                 {classroomId && <StudentAttendanceView classroomId={classroomId} />}
               </TabsContent>
             )}
             
-            {/* Teacher attendance quick mode (panel, just a button to open attendance page for now) */}
             {isTeacher && (
               <TabsContent value="attendance" className="min-h-[200px] p-4">
-                {/* Link to attendance page or just show current period (for further enhancement) */}
                 <div className="flex flex-col items-center justify-center py-3">
                   <span className="text-white mb-3">Go to Attendance tab to track students!</span>
                   <Button
@@ -357,7 +351,6 @@ const ClassDetails = () => {
               <SchedulePanel />
             </TabsContent>
 
-            {/* Teachers only see "Resources" tab */}
             {isTeacher && (
               <TabsContent value="resources" className="min-h-[200px] p-4">
                 <div className="text-white">Resources Content</div>
