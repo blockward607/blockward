@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { TeacherAnnouncementForm } from "@/components/announcements/TeacherAnnouncementForm";
 import { AnnouncementList } from "@/components/announcements/AnnouncementList";
 import { useTutorial } from "@/hooks/useTutorial";
-import type { Notification } from "@/types/notification";
 
 type Notification = {
   id: string;

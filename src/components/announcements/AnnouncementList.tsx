@@ -15,7 +15,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import type { Notification } from "@/types/notification";
 
 // Minimal Notification type definition
 export interface Notification {

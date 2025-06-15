@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { StudentInfoCard } from "@/components/student-dashboard/StudentInfoCard";
 import { DemoBanner } from "@/components/student-dashboard/DemoBanner";
 import { useStudentData } from "@/components/student-dashboard/hooks/useStudentData";
-import type { Notification } from "@/types/notification";
 import { AnnouncementList } from "@/components/announcements/AnnouncementList";
 
 type Notification = {
