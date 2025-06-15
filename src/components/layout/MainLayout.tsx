@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
@@ -53,22 +52,7 @@ const teacherNavGroups = [
       { name: "NFT Wallet", href: "/wallet", icon: Wallet },
     ]
   },
-  {
-    name: "Communication",
-    items: [
-      { name: "Messages", href: "/messages", icon: MessageSquare },
-      { name: "Notifications", href: "/notifications", icon: Bell },
-    ]
-  },
-  {
-    name: "Analysis",
-    items: [
-      { name: "Analytics", href: "/analytics", icon: BarChart },
-      { name: "Settings", href: "/settings", icon: Settings },
-    ]
-  }
 ];
-
 const studentNavGroups = [
   {
     name: "Main",
@@ -93,14 +77,6 @@ const studentNavGroups = [
       { name: "Wallet", href: "/wallet", icon: Wallet },
     ]
   },
-  {
-    name: "Communication",
-    items: [
-      { name: "Messages", href: "/messages", icon: MessageSquare },
-      { name: "Notifications", href: "/notifications", icon: Bell },
-      { name: "Settings", href: "/settings", icon: Settings },
-    ]
-  }
 ];
 
 export const MainLayout = () => {

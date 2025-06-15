@@ -19,15 +19,8 @@ import {
   Home,
   Users,
   Settings,
-  Bell,
   Calendar,
   Wallet,
-  BarChart,
-  MessageSquare,
-  LogOut,
-  ChevronsLeft,
-  ChevronsRight,
-  ChartBar,
   BookOpen,
   Megaphone
 } from "lucide-react";
@@ -64,10 +57,7 @@ export function AppSidebar() {
   };
 
   const handleNavigate = (path: string) => {
-    console.log(`Navigating to: ${path}`);
-    // Prevent any default behavior that might cause redirects
     if (path === '/classes') {
-      // Force route to classes without any redirects
       window.history.pushState({}, '', path);
       navigate(path, { replace: true });
     } else {
@@ -80,7 +70,6 @@ export function AppSidebar() {
     setIsMinimized(!isMinimized);
   };
 
-  // Move classes to its own navigation group
   const teacherNavGroups = [
     {
       name: "Main",
@@ -107,16 +96,8 @@ export function AppSidebar() {
       ]
     },
     {
-      name: "Communication",
-      items: [
-        { name: "Messages", href: "/messages", icon: MessageSquare },
-        { name: "Notifications", href: "/notifications", icon: Bell },
-      ]
-    },
-    {
       name: "Analysis",
       items: [
-        { name: "Analytics", href: "/analytics", icon: BarChart },
         { name: "Settings", href: "/settings", icon: Settings },
       ]
     }
@@ -136,12 +117,6 @@ export function AppSidebar() {
       ]
     },
     {
-      name: "Learning",
-      items: [
-        { name: "Progress", href: "/progress", icon: ChartBar },
-      ]
-    },
-    {
       name: "Wallet",
       items: [
         { name: "NFT Wallet", href: "/wallet", icon: Wallet },
@@ -150,8 +125,6 @@ export function AppSidebar() {
     {
       name: "Communication",
       items: [
-        { name: "Messages", href: "/messages", icon: MessageSquare },
-        { name: "Notifications", href: "/notifications", icon: Bell },
         { name: "Settings", href: "/settings", icon: Settings },
       ]
     }
