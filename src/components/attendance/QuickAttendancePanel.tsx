@@ -42,14 +42,14 @@ export const QuickAttendancePanel: React.FC<QuickAttendancePanelProps> = ({
       </div>
       <div className="flex justify-center gap-8 mt-5">
         <Button
-          size="xl"
+          size="lg"
           className="bg-green-600 hover:bg-green-700 text-xl px-8 py-4"
           onClick={() => mark("present")}
         >
           <Check className="mr-2" /> Present (P)
         </Button>
         <Button
-          size="xl"
+          size="lg"
           className="bg-red-600 hover:bg-red-700 text-xl px-8 py-4"
           onClick={() => mark("absent")}
         >
