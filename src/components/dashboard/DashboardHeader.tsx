@@ -1,8 +1,7 @@
 
-import { ArrowLeft, Bell } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { WalletPanel } from "@/components/wallet/WalletPanel";
 import { useTutorial } from "@/hooks/useTutorial";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,10 +56,6 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
   const handleBackClick = () => {
     navigate('/');
   };
-  
-  const handleNotificationsClick = () => {
-    navigate('/notifications');
-  };
 
   return (
     <div className="flex justify-between items-center mb-8">
@@ -78,18 +73,8 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
           <p className="text-gray-400">Welcome back, {userName || 'User'}</p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleNotificationsClick}
-          className="bg-purple-700/20 border-purple-500/30 hover:bg-purple-700/30"
-        >
-          <Bell className="w-4 h-4 mr-2" />
-          Notifications
-        </Button>
-        <WalletPanel />
-      </div>
+      {/* Removed WalletPanel and Notifications button as per user request */}
     </div>
   );
 };
+
