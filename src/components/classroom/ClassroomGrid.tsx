@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
@@ -144,7 +145,88 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {}, userRole }: Clas
     navigate(`/class/${classroom.id}`);
   };
 
-  // Render student classroom card
+  // Helper: handle code copy UI for teacher
+  const handleCopyCode = async (code: string | null) => {
+    if (code) {
+      await navigator.clipboard.writeText(code);
+      toast({
+        title: "Code copied",
+        description: `Class code ${code} copied to clipboard.`,
+      });
+    }
+  };
+
+  // Render for teacher: show code active for class
+  if (userRole === "teacher") {
+    // Fetch code: Use effect to get latest code for each class
+    const [classCode, setClassCode] = React.useState<string | null>(null);
+    React.useEffect(() => {
+      let ignore = false;
+      const fetchCode = async () => {
+        const { data, error } = await supabase
+          .from("classroom_codes")
+          .select("code")
+          .eq("classroom_id", classroom.id)
+          .eq("is_active", true)
+          .gt("expires_at", new Date().toISOString())
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!ignore && !error && data?.code) setClassCode(data.code);
+        else if (!ignore) setClassCode(null);
+      };
+      fetchCode();
+      return () => { ignore = true; };
+    }, [classroom.id]);
+
+    return (
+      <div className="space-y-4">
+        <Card 
+          className="p-4 glass-card hover:bg-purple-900/10 transition-all cursor-pointer"
+          onClick={() => navigate(`/class/${classroom.id}`)}
+        >
+          <div className="flex flex-col h-full gap-2">
+            <div className="flex flex-col gap-1">
+              <ClassroomHeader
+                name={classroom.name}
+                description={classroom.description}
+                id={classroom.id}
+                userRole={userRole || detectedRole}
+                onDelete={onDelete}
+              />
+              <div className="flex items-center gap-2 mb-1">
+                {classCode ? (
+                  <>
+                    <span className="text-sm bg-purple-700/20 border border-purple-700/30 px-2 py-[2px] font-mono rounded text-purple-200">{classCode}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="px-2 py-1 text-purple-400"
+                      onClick={e => {e.stopPropagation(); handleCopyCode(classCode);}}
+                      title="Copy code"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <span className="text-xs text-gray-400 italic">No active code</span>
+                )}
+              </div>
+            </div>
+            <div className="mt-auto">
+              <StudentCountIndicator count={studentCount} />
+              <ClassroomActions 
+                userRole={userRole || detectedRole}
+                classroomId={classroom.id}
+              />
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Student card (no change except code removed, join handled by modal)
   if (userRole === "student") {
     return (
       <Card
@@ -161,25 +243,6 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {}, userRole }: Clas
           {classroom.description && (
             <p className="text-sm text-purple-100/80 truncate">{classroom.description}</p>
           )}
-        </div>
-        <div className="flex items-center justify-between p-3 pt-2">
-          {classCode ?
-            <span className="text-[13px] bg-white/10 border border-white/10 px-3 py-[2px] font-mono rounded text-white tracking-[0.12em]" style={{letterSpacing: "0.15em"}}>
-              {classCode}
-            </span>
-            :
-            <span className="text-xs text-purple-100/80 italic">No code</span>
-          }
-          <Button
-            type="button"
-            size="sm"
-            className="bg-white/90 hover:bg-white/100 text-purple-700 font-semibold rounded-full px-5 py-1 shadow"
-            style={{ fontSize: "13px" }}
-            disabled={joining || !classCode}
-            onClick={e => { e.stopPropagation(); handleJoinClass(); }}
-          >
-            {joining ? <Loader2 className="animate-spin w-4 h-4" /> : "Join"}
-          </Button>
         </div>
       </Card>
     );

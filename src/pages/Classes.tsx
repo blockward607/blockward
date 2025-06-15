@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -10,6 +9,8 @@ import { ClassesLoading } from "@/components/classroom/ClassesLoading";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { EmptyClassState } from "@/components/classroom/EmptyClassState";
 import { toast } from "sonner";
+import { useState } from "react";
+import { JoinClassModal } from "@/components/classroom/join/JoinClassModal";
 
 const Classes = () => {
   const { 
@@ -26,6 +27,8 @@ const Classes = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
+
   useEffect(() => {
     // Force refresh classrooms data when visiting the Classes page
     refreshClassrooms();
@@ -64,15 +67,18 @@ const Classes = () => {
         userRole={userRole} 
         onClassroomCreated={handleClassroomCreated} 
       />
-
       {userRole === 'student' && (
-        <motion.div variants={{
-          hidden: { opacity: 0, y: 20 },
-          show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-        }}>
-          <JoinClassSection />
-        </motion.div>
+        <div className="w-full flex justify-end mb-2">
+          <button
+            onClick={() => setJoinModalOpen(true)}
+            className="flex items-center px-5 py-2 text-sm font-semibold rounded-md bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow hover:from-purple-700 hover:to-indigo-700 transition-all"
+          >
+            + Join Class
+          </button>
+          <JoinClassModal open={joinModalOpen} onOpenChange={setJoinModalOpen} />
+        </div>
       )}
+      {/* Removed: <JoinClassSection /> */}
       
       {selectedClassroom && userRole === 'teacher' && (
         <motion.div variants={{
