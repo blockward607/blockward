@@ -1,11 +1,15 @@
+
 import React, { useEffect, useState } from "react";
 import { useClassroomStudents } from "@/hooks/use-classroom-students";
 import { Seat, Student } from "./types";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 interface DraggableSeatingChartProps {
   classroomId: string;
   shuffleFlag: number;
+  highlightUserId?: string;
 }
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -22,20 +26,12 @@ export const DraggableSeatingChart = ({
   classroomId,
   shuffleFlag,
   highlightUserId,
-}: DraggableSeatingChartProps & { highlightUserId?: string }) => {
+}: DraggableSeatingChartProps) => {
   const { students, loading } = useClassroomStudents(classroomId);
-  const [seats, setSeats] = useState<(Student | null)[]>(
-    Array(18).fill(null)
-  );
-  const [draggedStudentIndex, setDraggedStudentIndex] = useState<number | null>(
-    null
-  );
-  // Find the seat index for the logged in student, if applicable
-  const highlightSeatIdx = highlightUserId
-    ? seats.findIndex((s) => s && s.id === highlightUserId)
-    : -1;
+  const [seats, setSeats] = useState<(Student | null)[]>(Array(18).fill(null));
+  const [draggedStudent, setDraggedStudent] = useState<Student | null>(null);
 
-  // On data load or shuffleFlag update, assign students seat order
+  // Assign students to seats (on shuffle or changes)
   useEffect(() => {
     if (students.length === 0) return;
     let arranged = shuffleFlag > 0 ? shuffleArray(students) : [...students];
@@ -49,20 +45,25 @@ export const DraggableSeatingChart = ({
     // eslint-disable-next-line
   }, [students, shuffleFlag]);
 
-  // Basic drag-n-drop handlers
-  const handleDragStart = (idx: number) => setDraggedStudentIndex(idx);
+  // Find the seat index for "you"
+  const highlightSeatIdx = highlightUserId
+    ? seats.findIndex((s) => s && s.id === highlightUserId)
+    : -1;
 
-  const handleDrop = (toIdx: number) => {
-    if (draggedStudentIndex === null) return;
+  // Drag-and-drop handlers for students
+  const handleDragStart = (student: Student) => {
+    setDraggedStudent(student);
+  };
+  const handleDropOnSeat = (seatIdx: number) => {
+    if (!draggedStudent) return;
     setSeats((prev) => {
-      const cp = [...prev];
-      [cp[toIdx], cp[draggedStudentIndex]] = [
-        cp[draggedStudentIndex],
-        cp[toIdx],
-      ];
-      return cp;
+      // Remove student from previous seat
+      let arr = prev.map((s) => (s && s.id === draggedStudent.id ? null : s));
+      // Place in the dropped seat (replace if another student is there)
+      arr[seatIdx] = draggedStudent;
+      return arr;
     });
-    setDraggedStudentIndex(null);
+    setDraggedStudent(null);
   };
 
   if (loading) {
@@ -81,40 +82,84 @@ export const DraggableSeatingChart = ({
     );
   }
 
+  // Roster of all students (draggable avatars)
+  const roster = (
+    <div className="flex flex-wrap gap-3 mb-4">
+      {students.map((student) => {
+        const alreadySeated = seats.some((seatStu) => seatStu && seatStu.id === student.id);
+        return (
+          <div
+            key={student.id}
+            draggable={!alreadySeated}
+            onDragStart={() => handleDragStart(student)}
+            className={`flex flex-col items-center cursor-${alreadySeated ? "not-allowed" : "grab"} mx-1`}
+            style={{
+              opacity: alreadySeated ? 0.5 : 1,
+              pointerEvents: alreadySeated ? "none" : "auto",
+            }}
+          >
+            <Avatar className={`border-2 ${alreadySeated ? "border-gray-400" : "border-purple-500/50"}`}>
+              <AvatarFallback>{student.name[0]}</AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-white">{student.name}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <div className="flex flex-wrap gap-4 justify-center items-start">
-      {[...Array(3)].map((_, rowIdx) => (
-        <div key={rowIdx} className="flex flex-col gap-4">
-          {[...Array(6)].map((_, colIdx) => {
-            const idx = rowIdx * 6 + colIdx;
-            const student = seats[idx];
-            const isHighlighted = idx === highlightSeatIdx;
-            return (
-              <Card
-                key={idx}
-                className={`w-24 h-24 flex items-center justify-center border-2
-                  ${isHighlighted ? "border-yellow-400 bg-yellow-200/90 text-black" : "border-purple-400 bg-black/60"}
-                  select-none`}
-                draggable={!!student}
-                onDragStart={() => handleDragStart(idx)}
-                onDragOver={(e) => { e.preventDefault(); }}
-                onDrop={() => handleDrop(idx)}
-              >
-                {student ? (
-                  <span className="font-semibold text-sm">
-                    {student.name}
-                  </span>
-                ) : (
-                  <span className="text-gray-500">Empty</span>
-                )}
-                {isHighlighted && (
-                  <span className="absolute bottom-1 left-1 text-[10px] bg-yellow-300 px-1 py-[1px] rounded text-black font-bold shadow">You</span>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      ))}
+    <div>
+      {roster}
+      <div className="flex flex-wrap gap-4 justify-center items-start">
+        {[...Array(3)].map((_, rowIdx) => (
+          <div key={rowIdx} className="flex flex-col gap-4">
+            {[...Array(6)].map((_, colIdx) => {
+              const idx = rowIdx * 6 + colIdx;
+              const student = seats[idx];
+              const isHighlighted = idx === highlightSeatIdx;
+              return (
+                <Card
+                  key={idx}
+                  className={`w-24 h-24 flex flex-col items-center justify-center border-2 group relative
+                    ${isHighlighted ? "border-yellow-400 bg-yellow-200/90 text-black" : "border-purple-400 bg-black/60"}
+                    select-none`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                  }}
+                  onDrop={() => handleDropOnSeat(idx)}
+                >
+                  {student ? (
+                    <>
+                      <Avatar>
+                        <AvatarFallback>{student.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold text-xs mt-1">{student.name}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSeats((prev) =>
+                            prev.map((s, i) => (i === idx ? null : s))
+                          )
+                        }
+                        className="absolute right-1 top-1 text-xs bg-red-600 text-white px-1 rounded opacity-0 group-hover:opacity-100 transition"
+                        title="Remove student from seat"
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-gray-500">Empty</span>
+                  )}
+                  {isHighlighted && (
+                    <span className="absolute bottom-1 left-1 text-[10px] bg-yellow-300 px-1 py-[1px] rounded text-black font-bold shadow">You</span>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

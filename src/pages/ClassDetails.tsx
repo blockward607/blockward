@@ -275,6 +275,22 @@ const ClassDetails = () => {
               </TabsContent>
             )}
             
+            {/* Teacher attendance quick mode (panel, just a button to open attendance page for now) */}
+            {isTeacher && (
+              <TabsContent value="attendance" className="min-h-[200px] p-4">
+                {/* Link to attendance page or just show current period (for further enhancement) */}
+                <div className="flex flex-col items-center justify-center py-3">
+                  <span className="text-white mb-3">Go to Attendance tab to track students!</span>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open("/attendance", "_blank")}
+                  >
+                    Open Full Attendance Tracker
+                  </Button>
+                </div>
+              </TabsContent>
+            )}
+            
             {/* Teachers only see "Resources" tab */}
             {isTeacher && (
               <TabsContent value="resources" className="min-h-[200px] p-4">
