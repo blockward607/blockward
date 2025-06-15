@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +7,15 @@ import { DemoBanner } from "@/components/student-dashboard/DemoBanner";
 import { useStudentData } from "@/components/student-dashboard/hooks/useStudentData";
 import type { Notification } from "@/types/notification";
 import { AnnouncementList } from "@/components/announcements/AnnouncementList";
+
+type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  created_at: string;
+  classroom_id?: string | null;
+  type?: string;
+};
 
 const StudentDashboard = () => {
   const navigate = useNavigate();

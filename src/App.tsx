@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -26,9 +25,6 @@ const Students = lazy(() => import("@/pages/Students"));
 const Attendance = lazy(() => import("@/pages/Attendance"));
 const Rewards = lazy(() => import("@/pages/Rewards"));
 const Wallet = lazy(() => import("@/pages/Wallet"));
-const Messages = lazy(() => import("@/pages/Messages"));
-const Notifications = lazy(() => import("@/pages/Notifications"));
-const Analytics = lazy(() => import("@/pages/Analytics"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const ProgressPage = lazy(() => import("@/pages/Progress"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
@@ -81,9 +77,6 @@ function App() {
               <Route path="achievements" element={<Navigate to="/wallet" replace />} />
               <Route path="rewards" element={<Rewards />} />
               <Route path="wallet" element={<Wallet />} />
-              <Route path="messages" element={<Messages />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="analytics" element={<Analytics />} />
               <Route path="settings" element={<Settings />} />
               <Route path="progress" element={<ProgressPage />} />
               <Route path="class/:classroomId" element={<ClassDetails />} />

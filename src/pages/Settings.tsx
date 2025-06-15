@@ -1,4 +1,3 @@
-
 import { Settings as SettingsIcon, Bell, Shield, Palette, User, Award, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -11,7 +10,7 @@ import {
 
 // Import our custom components
 import ProfileTab from "@/components/settings/ProfileTab";
-import NotificationsTab from "@/components/settings/NotificationsTab";
+// import NotificationsTab from "@/components/settings/NotificationsTab";
 import { AppearanceTab } from "@/components/settings/AppearanceTab";
 import SecurityTab from "@/components/settings/SecurityTab";
 
@@ -59,7 +58,7 @@ const Settings = () => {
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="grid w-full grid-cols-4 lg:w-[400px]">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            {/* <TabsTrigger value="notifications">Notifications</TabsTrigger> */}
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
@@ -68,9 +67,9 @@ const Settings = () => {
             <ProfileTab />
           </TabsContent>
 
-          <TabsContent value="notifications">
+          {/* <TabsContent value="notifications">
             <NotificationsTab />
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="appearance">
             <AppearanceTab />

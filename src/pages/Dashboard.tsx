@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +10,15 @@ import { TeacherAnnouncementForm } from "@/components/announcements/TeacherAnnou
 import { AnnouncementList } from "@/components/announcements/AnnouncementList";
 import { useTutorial } from "@/hooks/useTutorial";
 import type { Notification } from "@/types/notification";
+
+type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  created_at: string;
+  classroom_id?: string | null;
+  type?: string;
+};
 
 const Dashboard = () => {
   const { toast } = useToast();

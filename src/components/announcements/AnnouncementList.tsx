@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
@@ -17,6 +16,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import type { Notification } from "@/types/notification";
+
+// Minimal Notification type definition
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  created_at: string;
+  classroom_id?: string | null;
+  type?: string;
+}
 
 interface AnnouncementListProps {
   announcements: Notification[];
