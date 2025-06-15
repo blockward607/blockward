@@ -32,7 +32,7 @@ export const DraggableSeatingChart = ({
   );
   // Find the seat index for the logged in student, if applicable
   const highlightSeatIdx = highlightUserId
-    ? seats.findIndex((s) => s && s.id && s.user_id === highlightUserId)
+    ? seats.findIndex((s) => s && s.id === highlightUserId)
     : -1;
 
   // On data load or shuffleFlag update, assign students seat order
