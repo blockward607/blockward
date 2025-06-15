@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -29,13 +28,14 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  // State for new announcement
   const [form, setForm] = useState({ title: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchAnnouncements = async () => {
     try {
       setLoading(true);
+      setErrorMessage(null);
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
@@ -43,7 +43,8 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
         .order("created_at", { ascending: false });
       if (error) throw error;
       setAnnouncements(data || []);
-    } catch (error) {
+    } catch (error: any) {
+      setErrorMessage(error.message || "Failed to fetch announcements.");
       toast({
         variant: "destructive",
         title: "Error",
@@ -61,6 +62,7 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (!form.title.trim() || !form.message.trim()) {
       toast({
         variant: "destructive",
@@ -71,16 +73,37 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
     }
     try {
       setSubmitting(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      const { error } = await supabase.from("notifications").insert({
-        title: form.title,
-        message: form.message,
+      console.log("Fetching session for posting announcement...");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Session fetch error:", sessionError);
+        setErrorMessage(sessionError.message || "Failed to get session");
+        throw sessionError;
+      }
+      if (!session) {
+        setErrorMessage("You are not logged in. Please refresh the page and login again.");
+        throw new Error("Not authenticated");
+      }
+      console.log("Session found:", session);
+      
+      const payload = {
+        title: form.title.trim(),
+        message: form.message.trim(),
         classroom_id: classroomId,
         created_by: session.user.id,
         type: "announcement",
-      });
-      if (error) throw error;
+      };
+      console.log("Announcement payload to insert:", payload);
+
+      const {error: insertError} = await supabase
+        .from("notifications")
+        .insert(payload);
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        setErrorMessage(insertError.message || "Failed to post announcement.");
+        throw insertError;
+      }
+
       toast({
         title: "Announcement Posted",
         description: "The announcement is now visible to your students.",
@@ -91,7 +114,7 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: error.message || error.toString(),
       });
     } finally {
       setSubmitting(false);
@@ -116,6 +139,9 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
               disabled={submitting}
               rows={3}
             />
+            {errorMessage && (
+              <div className="text-red-500 text-xs">{errorMessage}</div>
+            )}
             <div className="flex justify-end">
               <Button type="submit" disabled={submitting || !form.title.trim()}>
                 {submitting ? "Posting..." : "Post Announcement"}
@@ -124,7 +150,6 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
           </form>
         </Card>
       )}
-
       <div>
         {loading ? (
           <div className="flex justify-center py-8">
@@ -132,7 +157,9 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
           </div>
         ) : announcements.length === 0 ? (
           <Card className="p-4 bg-black/40 border-purple-500/20 text-center">
-            <span className="text-gray-400">No announcements yet</span>
+            <span className="text-gray-400">
+              {errorMessage ? errorMessage : "No announcements yet"}
+            </span>
           </Card>
         ) : (
           <div className="space-y-4">
