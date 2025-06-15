@@ -1,3 +1,4 @@
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Database } from "@/integrations/supabase/types";
 import { ClassroomHeader } from "./ClassroomHeader";
