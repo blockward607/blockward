@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Database } from "@/integrations/supabase/types";
 import { ClassroomHeader } from "./ClassroomHeader";
@@ -115,7 +114,12 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {}, userRole }: Clas
       p_student_id: studentProfile.id
     });
     setJoining(false);
-    if (error || !data) {
+
+    // Type guard: ensure data is object with correct shape
+    const isJoinResult = (val: unknown): val is { success: boolean; error?: string } =>
+      !!val && typeof val === "object" && "success" in val;
+
+    if (error || !data || !isJoinResult(data)) {
       toast({
         variant: "destructive",
         title: "Join Failed",
@@ -207,4 +211,3 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {}, userRole }: Clas
     </div>
   );
 };
-
