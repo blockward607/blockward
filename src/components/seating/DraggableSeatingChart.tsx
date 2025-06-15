@@ -61,11 +61,23 @@ export const DraggableSeatingChart = ({
     setDraggedStudentIndex(null);
   };
 
-  return loading ? (
-    <div className="py-6 flex justify-center items-center">
-      Loading seating...
-    </div>
-  ) : (
+  if (loading) {
+    return (
+      <div className="py-6 flex justify-center items-center">
+        Loading seating...
+      </div>
+    );
+  }
+
+  if (students.length === 0) {
+    return (
+      <div className="py-6 text-center text-gray-400">
+        No students are enrolled in this classroom. Invite students to begin arranging your seating plan!
+      </div>
+    );
+  }
+
+  return (
     <div className="flex flex-wrap gap-4 justify-center items-start">
       {[...Array(3)].map((_, rowIdx) => (
         <div key={rowIdx} className="flex flex-col gap-4">

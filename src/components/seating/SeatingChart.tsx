@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ interface SeatingChartProps {
 export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
   const { toast } = useToast();
   const [shuffleFlag, setShuffleFlag] = useState(0);
+  const [activeTab, setActiveTab] = useState("draggable");
 
   const handleRandomize = () => {
     setShuffleFlag((f) => f + 1);
@@ -26,7 +28,7 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
 
   return (
     <Card className="p-6 glass-card">
-      <Tabs defaultValue="draggable">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="draggable">Draggable Seating Plan</TabsTrigger>
           <TabsTrigger value="grid">Grid Seating</TabsTrigger>
@@ -56,12 +58,7 @@ export const SeatingChart = ({ classroomId }: SeatingChartProps) => {
           </div>
           <Button 
             variant="outline" 
-            onClick={() => {
-              const draggableTab = document.querySelector('button[value="draggable"]');
-              if (draggableTab instanceof HTMLElement) {
-                draggableTab.click();
-              }
-            }}
+            onClick={() => setActiveTab("draggable")}
           >
             Switch to Draggable Layout
           </Button>
