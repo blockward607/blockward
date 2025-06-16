@@ -306,8 +306,8 @@ const WalletPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-              )}
-            </TabsContent>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>
