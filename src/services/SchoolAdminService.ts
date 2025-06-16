@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { SecurityService } from './SecurityService';
 
 export interface School {
   id: string;
@@ -47,21 +46,30 @@ export interface Subject {
   created_at: string;
 }
 
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>]/g, '');
+};
+
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 export const SchoolAdminService = {
   // School Management
   async createSchool(schoolData: Partial<School>) {
     const sanitizedData = {
-      name: SecurityService.sanitizeInput(schoolData.name || ''),
-      contact_email: schoolData.contact_email ? SecurityService.sanitizeInput(schoolData.contact_email) : null,
-      domain: schoolData.domain ? SecurityService.sanitizeInput(schoolData.domain) : null,
-      address: schoolData.address ? SecurityService.sanitizeInput(schoolData.address) : null,
-      phone: schoolData.phone ? SecurityService.sanitizeInput(schoolData.phone) : null,
-      website: schoolData.website ? SecurityService.sanitizeInput(schoolData.website) : null,
+      name: sanitizeInput(schoolData.name || ''),
+      contact_email: schoolData.contact_email ? sanitizeInput(schoolData.contact_email) : null,
+      domain: schoolData.domain ? sanitizeInput(schoolData.domain) : null,
+      address: schoolData.address ? sanitizeInput(schoolData.address) : null,
+      phone: schoolData.phone ? sanitizeInput(schoolData.phone) : null,
+      website: schoolData.website ? sanitizeInput(schoolData.website) : null,
       settings: schoolData.settings || {}
     };
 
     const { data, error } = await supabase
-      .from('schools')
+      .from('schools' as any)
       .insert(sanitizedData)
       .select()
       .single();
@@ -75,17 +83,17 @@ export const SchoolAdminService = {
   },
 
   async getSchoolByAdmin(userId: string) {
-    if (!SecurityService.isValidUUID(userId)) {
+    if (!isValidUUID(userId)) {
       throw new Error('Invalid user ID format');
     }
 
     const { data, error } = await supabase
-      .from('schools')
+      .from('admin_profiles' as any)
       .select(`
         *,
-        admin_profiles!inner(user_id)
+        schools:school_id (*)
       `)
-      .eq('admin_profiles.user_id', userId)
+      .eq('user_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') {
@@ -93,22 +101,22 @@ export const SchoolAdminService = {
       throw error;
     }
 
-    return data;
+    return data?.schools || null;
   },
 
   async updateSchool(schoolId: string, updates: Partial<School>) {
-    if (!SecurityService.isValidUUID(schoolId)) {
+    if (!isValidUUID(schoolId)) {
       throw new Error('Invalid school ID format');
     }
 
     const sanitizedUpdates = {
       ...updates,
-      name: updates.name ? SecurityService.sanitizeInput(updates.name) : undefined,
-      contact_email: updates.contact_email ? SecurityService.sanitizeInput(updates.contact_email) : undefined
+      name: updates.name ? sanitizeInput(updates.name) : undefined,
+      contact_email: updates.contact_email ? sanitizeInput(updates.contact_email) : undefined
     };
 
     const { data, error } = await supabase
-      .from('schools')
+      .from('schools' as any)
       .update(sanitizedUpdates)
       .eq('id', schoolId)
       .select()
@@ -126,13 +134,13 @@ export const SchoolAdminService = {
   async createYearGroup(yearGroupData: Partial<YearGroup>) {
     const sanitizedData = {
       school_id: yearGroupData.school_id,
-      name: SecurityService.sanitizeInput(yearGroupData.name || ''),
-      description: yearGroupData.description ? SecurityService.sanitizeInput(yearGroupData.description) : null,
+      name: sanitizeInput(yearGroupData.name || ''),
+      description: yearGroupData.description ? sanitizeInput(yearGroupData.description) : null,
       sort_order: yearGroupData.sort_order || 0
     };
 
     const { data, error } = await supabase
-      .from('year_groups')
+      .from('year_groups' as any)
       .insert(sanitizedData)
       .select()
       .single();
@@ -146,12 +154,12 @@ export const SchoolAdminService = {
   },
 
   async getYearGroups(schoolId: string) {
-    if (!SecurityService.isValidUUID(schoolId)) {
+    if (!isValidUUID(schoolId)) {
       throw new Error('Invalid school ID format');
     }
 
     const { data, error } = await supabase
-      .from('year_groups')
+      .from('year_groups' as any)
       .select('*')
       .eq('school_id', schoolId)
       .order('sort_order', { ascending: true });
@@ -168,14 +176,14 @@ export const SchoolAdminService = {
   async createSubject(subjectData: Partial<Subject>) {
     const sanitizedData = {
       school_id: subjectData.school_id,
-      name: SecurityService.sanitizeInput(subjectData.name || ''),
-      code: subjectData.code ? SecurityService.sanitizeInput(subjectData.code) : null,
-      description: subjectData.description ? SecurityService.sanitizeInput(subjectData.description) : null,
-      color: subjectData.color ? SecurityService.sanitizeInput(subjectData.color) : null
+      name: sanitizeInput(subjectData.name || ''),
+      code: subjectData.code ? sanitizeInput(subjectData.code) : null,
+      description: subjectData.description ? sanitizeInput(subjectData.description) : null,
+      color: subjectData.color ? sanitizeInput(subjectData.color) : null
     };
 
     const { data, error } = await supabase
-      .from('subjects')
+      .from('subjects' as any)
       .insert(sanitizedData)
       .select()
       .single();
@@ -189,12 +197,12 @@ export const SchoolAdminService = {
   },
 
   async getSubjects(schoolId: string) {
-    if (!SecurityService.isValidUUID(schoolId)) {
+    if (!isValidUUID(schoolId)) {
       throw new Error('Invalid school ID format');
     }
 
     const { data, error } = await supabase
-      .from('subjects')
+      .from('subjects' as any)
       .select('*')
       .eq('school_id', schoolId)
       .order('name', { ascending: true });
@@ -212,13 +220,13 @@ export const SchoolAdminService = {
     const sanitizedData = {
       user_id: adminData.user_id,
       school_id: adminData.school_id,
-      full_name: adminData.full_name ? SecurityService.sanitizeInput(adminData.full_name) : null,
-      position: adminData.position ? SecurityService.sanitizeInput(adminData.position) : null,
+      full_name: adminData.full_name ? sanitizeInput(adminData.full_name) : null,
+      position: adminData.position ? sanitizeInput(adminData.position) : null,
       permissions: adminData.permissions || {}
     };
 
     const { data, error } = await supabase
-      .from('admin_profiles')
+      .from('admin_profiles' as any)
       .insert(sanitizedData)
       .select()
       .single();
@@ -232,7 +240,7 @@ export const SchoolAdminService = {
   },
 
   async isSchoolAdmin(userId: string, schoolId?: string) {
-    if (!SecurityService.isValidUUID(userId)) {
+    if (!isValidUUID(userId)) {
       return false;
     }
 
@@ -256,14 +264,14 @@ export const SchoolAdminService = {
     entityId?: string,
     details?: any
   ) {
-    if (!SecurityService.isValidUUID(schoolId)) {
+    if (!isValidUUID(schoolId)) {
       throw new Error('Invalid school ID format');
     }
 
     const { data, error } = await supabase.rpc('log_admin_action', {
       p_school_id: schoolId,
-      p_action: SecurityService.sanitizeInput(action),
-      p_entity_type: entityType ? SecurityService.sanitizeInput(entityType) : null,
+      p_action: sanitizeInput(action),
+      p_entity_type: entityType ? sanitizeInput(entityType) : null,
       p_entity_id: entityId || null,
       p_details: details || {}
     });
@@ -277,12 +285,12 @@ export const SchoolAdminService = {
   },
 
   async getAuditLogs(schoolId: string, limit: number = 50) {
-    if (!SecurityService.isValidUUID(schoolId)) {
+    if (!isValidUUID(schoolId)) {
       throw new Error('Invalid school ID format');
     }
 
     const { data, error } = await supabase
-      .from('audit_logs')
+      .from('audit_logs' as any)
       .select('*')
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })

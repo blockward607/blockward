@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -31,7 +32,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const { isAdmin } = useSchoolAdmin();
-  const { logout } = useLogout();
+  const { handleLogout } = useLogout();
 
   const studentItems = [
     { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -142,7 +143,7 @@ export function AppSidebar() {
               )}
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
