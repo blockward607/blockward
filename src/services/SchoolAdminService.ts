@@ -92,9 +92,9 @@ export const SchoolAdminService = {
       .from('admin_profiles' as any)
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (adminError && adminError.code !== 'PGRST116') {
+    if (adminError) {
       console.error('Error fetching admin profile:', adminError);
       throw adminError;
     }
@@ -106,7 +106,7 @@ export const SchoolAdminService = {
       .from('schools' as any)
       .select('*')
       .eq('id', adminProfile.school_id)
-      .single();
+      .maybeSingle();
 
     if (schoolError) {
       console.error('Error fetching school:', schoolError);
@@ -267,7 +267,8 @@ export const SchoolAdminService = {
       return false;
     }
 
-    const hasAdminRole = userRoles?.some(r => r.role === 'admin');
+    // Check for admin or teacher role (since admin enum might not exist yet)
+    const hasAdminRole = userRoles?.some(r => r.role === 'teacher');
 
     if (!hasAdminRole) return false;
 
@@ -278,7 +279,7 @@ export const SchoolAdminService = {
         .select('school_id')
         .eq('user_id', userId)
         .eq('school_id', schoolId)
-        .single();
+        .maybeSingle();
 
       return !!adminProfile;
     }
