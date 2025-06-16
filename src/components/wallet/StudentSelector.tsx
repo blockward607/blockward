@@ -41,7 +41,7 @@ export const StudentSelector = ({
         </SelectTrigger>
         <SelectContent>
           {students.length === 0 ? (
-            <SelectItem value="none" disabled>
+            <SelectItem value="no-students" disabled>
               {loading ? "Loading students..." : "No students available"}
             </SelectItem>
           ) : (

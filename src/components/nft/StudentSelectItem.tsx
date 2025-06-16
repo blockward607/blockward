@@ -11,8 +11,11 @@ interface StudentSelectItemProps {
 }
 
 export const StudentSelectItem: React.FC<StudentSelectItemProps> = ({ student }) => {
+  // Ensure we always have a valid value that's not an empty string
+  const studentValue = student.id || `student-${student.name}`;
+  
   return (
-    <SelectItem key={student.id} value={student.id} className="focus:bg-purple-500/20">
+    <SelectItem key={student.id} value={studentValue} className="focus:bg-purple-500/20">
       <div className="flex items-center gap-3">
         <Avatar className={`h-7 w-7 border ${getAvatarBorderColor(student.points || 0)}`}>
           <AvatarImage src={`https://api.dicebear.com/7.x/micah/svg?seed=${student.name}&backgroundColor=b6e3f4,c0aede,d1d4f9`} />

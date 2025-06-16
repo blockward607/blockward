@@ -41,7 +41,7 @@ export const NFTSelector = ({
         </SelectTrigger>
         <SelectContent>
           {nfts.length === 0 ? (
-            <SelectItem value="none" disabled>
+            <SelectItem value="no-nfts" disabled>
               No available BlockWards
             </SelectItem>
           ) : (
