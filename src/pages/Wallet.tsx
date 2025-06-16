@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -5,9 +6,8 @@ import {
   Trophy, 
   Send, 
   Plus, 
-  AlertTriangle,
   ShieldCheck,
-  ArrowRight,
+  ArrowLeft,
   Tag,
   Zap
 } from "lucide-react";
@@ -69,7 +69,7 @@ const WalletPage = () => {
       if (!session) {
         toast({
           variant: "destructive",
-          title: "Not authenticated",
+          title: "Authentication required",
           description: "Please log in to access your wallet"
         });
         navigate('/auth');
@@ -166,35 +166,37 @@ const WalletPage = () => {
 
   return (
     <div className="space-y-8">
+      {/* Navigation */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/dashboard')}
+          className="text-gray-400 hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      </div>
+
       {/* Header Section */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/50 to-indigo-900/50 p-8 shadow-lg">
         <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rotate-12 bg-purple-500/10 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-32 w-32 -rotate-12 bg-indigo-500/10 blur-3xl"></div>
         
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
               <Zap className="w-8 h-8 text-purple-300" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold shimmer-text">
-                Blockchain Wallet
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                Your BlockWard Wallet
               </h1>
               <p className="text-gray-400">
-                Virtual wallet with real blockchain integration
+                Secure digital wallet with blockchain integration
               </p>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Card className="bg-purple-900/20 border-purple-500/20">
-              <CardContent className="p-3 flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-purple-400" />
-                <span className="text-sm">
-                  Polygon Mumbai
-                </span>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
@@ -220,7 +222,7 @@ const WalletPage = () => {
               <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Send className="h-5 w-5 text-purple-400" />
-                  Teacher Actions
+                  Teacher Tools
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
@@ -237,7 +239,7 @@ const WalletPage = () => {
               {canMintNFTs && (
                 <TabsTrigger value="create" className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
-                  Create NFTs
+                  Create Awards
                 </TabsTrigger>
               )}
               {canMintNFTs && (
@@ -248,7 +250,7 @@ const WalletPage = () => {
               )}
               <TabsTrigger value="collection" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
-                {canMintNFTs ? "Sent NFTs" : "My Collection"}
+                {canMintNFTs ? "Sent Awards" : "My Awards"}
               </TabsTrigger>
             </TabsList>
             
@@ -264,10 +266,10 @@ const WalletPage = () => {
                   <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Trophy className="h-5 w-5 text-purple-400" />
-                      NFT Library
+                      NFT Award Library
                     </CardTitle>
                     <CardDescription>
-                      Manage your created blockchain NFTs - send to students or delete
+                      Manage your created NFT awards - send to students or delete
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-4">
@@ -282,10 +284,13 @@ const WalletPage = () => {
                 <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Trophy className="h-5 w-5 text-purple-400" />
-                    Blockchain NFT Collection
+                    {canMintNFTs ? "Distributed Awards" : "My Award Collection"}
                   </CardTitle>
                   <CardDescription>
-                    Your blockchain-verified digital achievements
+                    {canMintNFTs 
+                      ? "NFT awards that have been sent to students" 
+                      : "Your blockchain-verified digital achievements"
+                    }
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4">
