@@ -111,7 +111,7 @@ export const BlockchainNFTCreator = () => {
         creator_wallet_id: teacherWallet.id,
         owner_wallet_id: teacherWallet.id, // This ensures it goes to teacher's library
         image_url: imageUrl,
-        network: "polygon-mumbai", // Use correct network value
+        network: "polygon-mumbai",
         blockchain_token_id: parseInt(mintResult.tokenId.replace('sim-', '') || '0'),
         transaction_hash: mintResult.transactionHash,
         blockchain_status: useBlockchain ? 'minted' : 'pending',
