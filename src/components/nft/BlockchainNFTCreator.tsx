@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,13 +9,11 @@ import { Trophy, Loader2, Zap, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BlockchainNFTService } from "@/services/BlockchainNFTService";
-import { StudentSelect } from "./StudentSelect";
 import { NFTImageUpload } from "./NFTImageUpload";
 
 export const BlockchainNFTCreator = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [useBlockchain, setUseBlockchain] = useState(false);
   const [formData, setFormData] = useState({
@@ -27,11 +26,11 @@ export const BlockchainNFTCreator = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!imageUrl || !selectedStudent) {
+    if (!imageUrl) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please select a student and upload an image"
+        description: "Please upload an image"
       });
       return;
     }
@@ -41,17 +40,6 @@ export const BlockchainNFTCreator = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
-
-      // Get student's wallet address
-      const { data: studentWallet, error: walletError } = await supabase
-        .from('encrypted_wallets')
-        .select('wallet_address')
-        .eq('user_id', selectedStudent)
-        .single();
-
-      if (walletError || !studentWallet) {
-        throw new Error("Student wallet not found");
-      }
 
       // Prepare NFT metadata
       const metadata = {
@@ -68,16 +56,16 @@ export const BlockchainNFTCreator = () => {
       let mintResult;
       
       if (useBlockchain) {
-        // Real blockchain minting
+        // Real blockchain minting - use placeholder wallet address for now
         mintResult = await BlockchainNFTService.mintNFT(
-          studentWallet.wallet_address,
+          "0x0000000000000000000000000000000000000000",
           metadata,
           session.user.id
         );
       } else {
         // Simulated minting
         mintResult = await BlockchainNFTService.simulateMint(
-          studentWallet.wallet_address,
+          "0x0000000000000000000000000000000000000000",
           metadata
         );
       }
@@ -86,13 +74,14 @@ export const BlockchainNFTCreator = () => {
         throw new Error(mintResult.error || "Failed to mint NFT");
       }
 
-      // Save NFT to database - initially owned by teacher
+      // Get teacher's wallet
       const { data: teacherWallet } = await supabase
         .from('wallets')
         .select('id')
         .eq('user_id', session.user.id)
         .single();
 
+      // Save NFT to database - owned by teacher initially
       const { error: nftError } = await supabase.from('nfts').insert({
         token_id: mintResult.tokenId,
         contract_address: '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1',
@@ -111,15 +100,12 @@ export const BlockchainNFTCreator = () => {
 
       toast({
         title: "NFT Created Successfully!",
-        description: useBlockchain 
-          ? "BlockWard added to your library and ready to send"
-          : "BlockWard created in your library",
+        description: "BlockWard added to your library and ready to send",
       });
 
       // Reset form
       setFormData({ title: "", description: "", points: 100, nftType: "academic" });
       setImageUrl(null);
-      setSelectedStudent("");
       
     } catch (error: any) {
       console.error('Error creating blockchain NFT:', error);
@@ -211,11 +197,6 @@ export const BlockchainNFTCreator = () => {
             onImageSelect={setImageUrl}
           />
 
-          <StudentSelect
-            selectedStudentId={selectedStudent}
-            onStudentSelect={setSelectedStudent}
-          />
-
           <div className="bg-indigo-900/20 p-4 rounded border border-indigo-500/30">
             <div className="text-sm text-indigo-300 space-y-1">
               <div className="flex items-center gap-2">
@@ -226,12 +207,13 @@ export const BlockchainNFTCreator = () => {
               <div>✓ Gas fees handled automatically</div>
               <div>✓ Private keys encrypted and secured</div>
               <div>✓ {useBlockchain ? 'Real blockchain transaction' : 'Simulated for demo'}</div>
+              <div>✓ Created NFTs go to your library for distribution</div>
             </div>
           </div>
 
           <Button 
             type="submit" 
-            disabled={loading || !formData.title || !imageUrl || !selectedStudent}
+            disabled={loading || !formData.title || !imageUrl}
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
             {loading ? (
