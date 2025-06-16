@@ -17,8 +17,44 @@ export const useStudents = () => {
         
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session) {
-          // Get teacher profile
+        if (!session) {
+          console.log('No session found');
+          setStudents([]);
+          setLoading(false);
+          return;
+        }
+
+        // Check user role first
+        const { data: userRoles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id);
+
+        const isAdmin = userRoles?.some(r => r.role === 'admin');
+        const isTeacher = userRoles?.some(r => r.role === 'teacher');
+
+        let studentData: Student[] = [];
+
+        if (isAdmin) {
+          // Admin: Get admin profile to find school_id, then get all students for that school
+          const { data: adminProfile } = await supabase
+            .from('admin_profiles')
+            .select('school_id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (adminProfile?.school_id) {
+            const { data, error } = await supabase
+              .from('students')
+              .select('*')
+              .eq('school_id', adminProfile.school_id)
+              .order('name');
+              
+            if (error) throw error;
+            studentData = data || [];
+          }
+        } else if (isTeacher) {
+          // Teacher: Get students from their classrooms
           const { data: teacherProfile } = await supabase
             .from('teacher_profiles')
             .select('id')
@@ -44,40 +80,23 @@ export const useStudents = () => {
               if (classroomStudents && classroomStudents.length > 0) {
                 const studentIds = classroomStudents.map(cs => cs.student_id);
                 
-                const { data: studentData, error } = await supabase
+                const { data, error } = await supabase
                   .from('students')
                   .select('*')
                   .in('id', studentIds)
                   .order('name');
                   
-                if (error) {
-                  console.error('Error from Supabase:', error);
-                  throw error;
-                }
-                
-                if (studentData && studentData.length > 0) {
-                  console.log(`Found ${studentData.length} students in teacher's classrooms`);
-                  setStudents(studentData);
-                } else {
-                  // No students found, return empty array
-                  setStudents([]);
-                }
-              } else {
-                // No classroom students found, return empty array
-                setStudents([]);
+                if (error) throw error;
+                studentData = data || [];
               }
-            } else {
-              // No classrooms found, return empty array
-              setStudents([]);
             }
-          } else {
-            // No teacher profile found, return empty array
-            setStudents([]);
           }
-        } else {
-          // No session found, return empty array
-          setStudents([]);
         }
+        // For students, don't load other students
+
+        console.log(`Found ${studentData.length} students`);
+        setStudents(studentData);
+        
       } catch (error) {
         console.error("Error loading students:", error);
         setStudents([]);

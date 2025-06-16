@@ -49,64 +49,87 @@ const Dashboard = () => {
         return;
       }
 
-      // Try to get user role first
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
+      // Try to get user role first with better error handling
+      let determinedRole = null;
+      let determinedName = session.user.email;
 
-      let determinedRole = roleData?.role || null;
+      try {
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id);
 
-      // If no role found, try to determine from profiles
-      if (!determinedRole) {
-        const { data: teacherData } = await supabase
-          .from('teacher_profiles')
-          .select('full_name')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        if (teacherData) {
-          determinedRole = 'teacher';
-          setUserName(teacherData.full_name || session.user.email);
-        } else {
-          const { data: studentData } = await supabase
-            .from('students')
-            .select('name')
+        if (roleError) {
+          console.error('Role fetch error:', roleError);
+        }
+
+        determinedRole = roleData?.[0]?.role || null;
+
+        // Get appropriate profile data based on role
+        if (determinedRole === 'admin') {
+          const { data: adminProfile } = await supabase
+            .from('admin_profiles')
+            .select('full_name')
             .eq('user_id', session.user.id)
             .maybeSingle();
-            
-          if (studentData) {
-            determinedRole = 'student';
-            setUserName(studentData.name || session.user.email);
-          } else {
-            // Default fallback
-            determinedRole = 'student';
-            setUserName(session.user.email);
-          }
-        }
-      } else {
-        // We have a role, now get the appropriate profile data
-        if (determinedRole === 'teacher' || determinedRole === 'admin') {
+          
+          determinedName = adminProfile?.full_name || session.user.email;
+        } else if (determinedRole === 'teacher') {
           const { data: teacherData } = await supabase
             .from('teacher_profiles')
             .select('full_name')
             .eq('user_id', session.user.id)
             .maybeSingle();
           
-          setUserName(teacherData?.full_name || session.user.email);
-        } else {
+          determinedName = teacherData?.full_name || session.user.email;
+        } else if (determinedRole === 'student') {
           const { data: studentData } = await supabase
             .from('students')
             .select('name')
             .eq('user_id', session.user.id)
             .maybeSingle();
             
-          setUserName(studentData?.name || session.user.email);
+          determinedName = studentData?.name || session.user.email;
         }
+
+        // If no role found, try to determine from profiles
+        if (!determinedRole) {
+          // Check if user has teacher profile
+          const { data: teacherData } = await supabase
+            .from('teacher_profiles')
+            .select('full_name')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          if (teacherData) {
+            determinedRole = 'teacher';
+            determinedName = teacherData.full_name || session.user.email;
+          } else {
+            // Check if user has student profile
+            const { data: studentData } = await supabase
+              .from('students')
+              .select('name')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+              
+            if (studentData) {
+              determinedRole = 'student';
+              determinedName = studentData.name || session.user.email;
+            } else {
+              // Default fallback
+              determinedRole = 'student';
+              determinedName = session.user.email;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error determining user role:', error);
+        determinedRole = 'student';
+        determinedName = session.user.email;
       }
 
       setUserRole(determinedRole);
+      setUserName(determinedName);
     } catch (error) {
       console.error('Error in checkAuth:', error);
       // Continue anyway with fallback values
@@ -120,11 +143,68 @@ const Dashboard = () => {
   const fetchAnnouncements = async () => {
     try {
       setLoadingAnnouncements(true);
-      const { data, error } = await supabase
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setAnnouncements([]);
+        return;
+      }
+
+      // Get user role to determine announcement scope
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id);
+
+      const isAdmin = userRoles?.some(r => r.role === 'admin');
+      const isTeacher = userRoles?.some(r => r.role === 'teacher');
+      const isStudent = userRoles?.some(r => r.role === 'student');
+
+      let query = supabase
         .from('notifications')
         .select('*')
         .eq('type', 'announcement')
         .order('created_at', { ascending: false });
+
+      if (isAdmin) {
+        // Admin sees all announcements for their school
+        const { data: adminProfile } = await supabase
+          .from('admin_profiles')
+          .select('school_id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (adminProfile?.school_id) {
+          // Filter announcements by school context (this would need school_id on notifications)
+          // For now, get all announcements
+        }
+      } else if (isTeacher) {
+        // Teachers see all announcements (they can create them)
+      } else if (isStudent) {
+        // Students see announcements for their classrooms or general announcements
+        const { data: studentProfile } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (studentProfile) {
+          const { data: enrollments } = await supabase
+            .from('classroom_students')
+            .select('classroom_id')
+            .eq('student_id', studentProfile.id);
+
+          const classroomIds = enrollments?.map(e => e.classroom_id) || [];
+          
+          if (classroomIds.length > 0) {
+            query = query.or(`classroom_id.is.null,classroom_id.in.(${classroomIds.join(',')})`);
+          } else {
+            query = query.is('classroom_id', null);
+          }
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setAnnouncements(data || []);
@@ -135,6 +215,7 @@ const Dashboard = () => {
         title: "Error",
         description: "Failed to load announcements"
       });
+      setAnnouncements([]);
     } finally {
       setLoadingAnnouncements(false);
     }

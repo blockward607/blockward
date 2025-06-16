@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,23 +28,29 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      
-      // Demo mode is enabled if we're in the view route or no authenticated session
-      const isDemoMode = window.location.pathname.includes('view-student') || !session;
-      setIsDemo(isDemoMode);
-
-      if (session && studentData?.id) {
-        // Fetch enrolled classrooms for the student
-        const { data: enrollments } = await supabase
-          .from('classroom_students')
-          .select('classroom_id')
-          .eq('student_id', studentData.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
         
-        if (enrollments && enrollments.length > 0) {
-          setEnrolledClassrooms(enrollments.map(e => e.classroom_id));
+        // Demo mode is enabled if we're in the view route or no authenticated session
+        const isDemoMode = window.location.pathname.includes('view-student') || !session;
+        setIsDemo(isDemoMode);
+
+        if (session && studentData?.id) {
+          // Fetch enrolled classrooms for the student
+          const { data: enrollments } = await supabase
+            .from('classroom_students')
+            .select('classroom_id')
+            .eq('student_id', studentData.id);
+          
+          if (enrollments && enrollments.length > 0) {
+            setEnrolledClassrooms(enrollments.map(e => e.classroom_id));
+          }
         }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        setIsAuthenticated(false);
+        setIsDemo(true);
       }
     };
     
@@ -53,6 +60,8 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (!isDemo && studentData?.id) {
       fetchAnnouncements();
+    } else {
+      setLoadingAnnouncements(false);
     }
   }, [isDemo, studentData, enrolledClassrooms]);
 
@@ -60,7 +69,7 @@ const StudentDashboard = () => {
     try {
       if (!studentData) return;
       
-      const query = supabase
+      let query = supabase
         .from('notifications')
         .select('*')
         .eq('type', 'announcement')
@@ -68,7 +77,10 @@ const StudentDashboard = () => {
       
       // If enrolled in classes, fetch announcements for those classes or global announcements
       if (enrolledClassrooms.length > 0) {
-        query.or(`classroom_id.is.null,classroom_id.in.(${enrolledClassrooms.join(',')})`);
+        query = query.or(`classroom_id.is.null,classroom_id.in.(${enrolledClassrooms.join(',')})`);
+      } else {
+        // Only global announcements if not enrolled in any classes
+        query = query.is('classroom_id', null);
       }
       
       const { data, error } = await query;
@@ -77,6 +89,7 @@ const StudentDashboard = () => {
       setAnnouncements(data || []);
     } catch (error) {
       console.error("Error fetching announcements:", error);
+      setAnnouncements([]);
     } finally {
       setLoadingAnnouncements(false);
     }
