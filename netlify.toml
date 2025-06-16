@@ -3,19 +3,38 @@
   command = "npm run build"
   publish = "dist"
 
+# Handle client-side routing - redirect all unmatched routes to index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Add cache-control headers for JavaScript files
+# Prevent caching for JavaScript and CSS files to avoid stale module imports
 [[headers]]
   for = "*.js"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
     
-# Add cache-control headers for CSS files
 [[headers]]
   for = "*.css"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.jsx"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.tsx"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Add security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
