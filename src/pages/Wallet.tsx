@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -25,6 +24,7 @@ import { useBlockchainWallet } from "@/hooks/useBlockchainWallet";
 import { BlockchainWalletInfo } from "@/components/wallet/BlockchainWalletInfo";
 import { BlockchainNFTCreator } from "@/components/nft/BlockchainNFTCreator";
 import { BlockchainNFTGrid } from "@/components/wallet/BlockchainNFTGrid";
+import { TeacherNFTLibrary } from "@/components/nft/TeacherNFTLibrary";
 
 interface NFTMetadata {
   name: string;
@@ -233,22 +233,47 @@ const WalletPage = () => {
         {/* Main Content Area */}
         <div className="lg:col-span-3 space-y-6">
           <Tabs defaultValue={canMintNFTs ? "create" : "collection"} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               {canMintNFTs && (
                 <TabsTrigger value="create" className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   Create NFTs
                 </TabsTrigger>
               )}
+              {canMintNFTs && (
+                <TabsTrigger value="library" className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  My Library
+                </TabsTrigger>
+              )}
               <TabsTrigger value="collection" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
-                My Collection
+                {canMintNFTs ? "Sent NFTs" : "My Collection"}
               </TabsTrigger>
             </TabsList>
             
             {canMintNFTs && (
               <TabsContent value="create" className="space-y-6">
                 <BlockchainNFTCreator />
+              </TabsContent>
+            )}
+
+            {canMintNFTs && (
+              <TabsContent value="library" className="space-y-6">
+                <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+                  <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Trophy className="h-5 w-5 text-purple-400" />
+                      NFT Library
+                    </CardTitle>
+                    <CardDescription>
+                      Manage your created blockchain NFTs - send to students or delete
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <TeacherNFTLibrary />
+                  </CardContent>
+                </Card>
               </TabsContent>
             )}
             

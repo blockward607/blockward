@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,17 +86,11 @@ export const BlockchainNFTCreator = () => {
         throw new Error(mintResult.error || "Failed to mint NFT");
       }
 
-      // Save NFT to database
+      // Save NFT to database - initially owned by teacher
       const { data: teacherWallet } = await supabase
         .from('wallets')
         .select('id')
         .eq('user_id', session.user.id)
-        .single();
-
-      const { data: studentWalletRecord } = await supabase
-        .from('wallets')
-        .select('id')
-        .eq('user_id', selectedStudent)
         .single();
 
       const { error: nftError } = await supabase.from('nfts').insert({
@@ -105,7 +98,7 @@ export const BlockchainNFTCreator = () => {
         contract_address: '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1',
         metadata,
         creator_wallet_id: teacherWallet?.id,
-        owner_wallet_id: studentWalletRecord?.id,
+        owner_wallet_id: teacherWallet?.id, // Initially owned by teacher
         image_url: imageUrl,
         network: "polygon-mumbai",
         blockchain_token_id: parseInt(mintResult.tokenId.replace('sim-', '') || '0'),
@@ -116,20 +109,11 @@ export const BlockchainNFTCreator = () => {
 
       if (nftError) throw nftError;
 
-      // Award points to student
-      const { error: pointsError } = await supabase
-        .rpc('increment_student_points', {
-          student_id: selectedStudent,
-          points_to_add: formData.points
-        });
-
-      if (pointsError) throw pointsError;
-
       toast({
         title: "NFT Created Successfully!",
         description: useBlockchain 
-          ? "BlockWard minted on Polygon Mumbai blockchain"
-          : "BlockWard created and will be minted on blockchain",
+          ? "BlockWard added to your library and ready to send"
+          : "BlockWard created in your library",
       });
 
       // Reset form
