@@ -150,13 +150,20 @@ export const MainLayout = () => {
         return;
       }
 
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single();
+      // Get user role, but don't fail if we can't fetch it
+      try {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
 
-      setUserRole(roleData?.role || 'student');
+        setUserRole(roleData?.role || 'student');
+      } catch (error) {
+        console.error('Role fetch error:', error);
+        // Default to student if we can't fetch role
+        setUserRole('student');
+      }
     } catch (error) {
       console.error('Auth check error:', error);
       navigate('/auth');
@@ -173,7 +180,8 @@ export const MainLayout = () => {
 
   // Determine which navigation groups to show
   const getNavGroups = () => {
-    if (isAdmin && !adminLoading) {
+    // Only show admin nav if user is confirmed admin and not loading
+    if (isAdmin && !adminLoading && userRole === 'admin') {
       return adminNavGroups;
     } else if (userRole === 'teacher') {
       return teacherNavGroups;
@@ -219,7 +227,7 @@ export const MainLayout = () => {
           <div className="flex items-center justify-between px-6 py-5">
             <Link to="/" className="text-2xl font-bold blockward-logo">
               Blockward
-              {isAdmin && !adminLoading && (
+              {isAdmin && !adminLoading && userRole === 'admin' && (
                 <div className="flex items-center gap-2 mt-1">
                   <Shield className="w-4 h-4 text-purple-400" />
                   <span className="text-xs text-purple-400">Admin</span>

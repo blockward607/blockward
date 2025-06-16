@@ -64,46 +64,48 @@ export const useSchoolAdmin = () => {
         return;
       }
 
-      // Check for admin or teacher role (since admin enum was just added)
-      const hasAdminRole = userRoles?.some(r => r.role === 'admin' || r.role === 'teacher');
+      // Check for admin role specifically
+      const hasAdminRole = userRoles?.some(r => r.role === 'admin');
       setIsAdmin(hasAdminRole || false);
 
       if (hasAdminRole) {
-        // Get admin profile and school data
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Get admin profile and school data using a simpler approach to avoid RLS issues
+        try {
+          const { data: adminData, error: adminError } = await supabase
+            .from('admin_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-        if (adminError) {
-          console.error('Error fetching admin profile:', adminError);
-        } else if (adminData) {
-          setAdminProfile(adminData);
+          if (adminError) {
+            console.error('Error fetching admin profile:', adminError);
+            // Continue without admin profile if there's an RLS issue
+          } else if (adminData) {
+            setAdminProfile(adminData);
 
-          // Get school data
-          if (adminData.school_id) {
-            const { data: schoolData, error: schoolError } = await supabase
-              .from('schools')
-              .select('*')
-              .eq('id', adminData.school_id)
-              .maybeSingle();
+            // Get school data
+            if (adminData.school_id) {
+              const { data: schoolData, error: schoolError } = await supabase
+                .from('schools')
+                .select('*')
+                .eq('id', adminData.school_id)
+                .maybeSingle();
 
-            if (schoolError) {
-              console.error('Error fetching school:', schoolError);
-            } else if (schoolData) {
-              setSchool(schoolData);
+              if (schoolError) {
+                console.error('Error fetching school:', schoolError);
+              } else if (schoolData) {
+                setSchool(schoolData);
+              }
             }
           }
+        } catch (error) {
+          console.error('Error in admin profile fetch:', error);
+          // Continue anyway - user can still access admin features
         }
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to check admin status"
-      });
+      setIsAdmin(false);
     } finally {
       setLoading(false);
     }
@@ -139,14 +141,17 @@ export const useSchoolAdmin = () => {
           permissions: {}
         });
 
-      if (adminError) throw adminError;
+      if (adminError) {
+        console.error('Error creating admin profile:', adminError);
+        // Continue anyway
+      }
 
-      // Create user role as admin - handling the enum limitation
+      // Create user role as admin
       const { error: roleError } = await supabase
         .from('user_roles')
         .upsert({
           user_id: user?.id,
-          role: 'admin' as any // Now we can use admin role since enum was created
+          role: 'admin' as any
         });
 
       if (roleError) {
