@@ -1,6 +1,8 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { StudentInfoCard } from "@/components/student-dashboard/StudentInfoCard";
@@ -24,6 +26,7 @@ const StudentDashboard = () => {
   const [isDemo, setIsDemo] = useState(false);
   const [announcements, setAnnouncements] = useState<Notification[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
+  const [announcementsError, setAnnouncementsError] = useState<string | null>(null);
   const [enrolledClassrooms, setEnrolledClassrooms] = useState<string[]>([]);
 
   useEffect(() => {
@@ -36,6 +39,8 @@ const StudentDashboard = () => {
         const isDemoMode = window.location.pathname.includes('view-student') || !session;
         setIsDemo(isDemoMode);
 
+        console.log('Student dashboard auth check:', { hasSession: !!session, isDemoMode, studentData: studentData?.id });
+
         if (session && studentData?.id) {
           // Fetch enrolled classrooms for the student
           const { data: enrollments, error: enrollmentError } = await supabase
@@ -45,14 +50,18 @@ const StudentDashboard = () => {
           
           if (enrollmentError) {
             console.error('Error fetching student enrollments:', enrollmentError);
+            setAnnouncementsError('Failed to fetch enrollments');
           } else if (enrollments && enrollments.length > 0) {
-            setEnrolledClassrooms(enrollments.map(e => e.classroom_id));
+            const classroomIds = enrollments.map(e => e.classroom_id);
+            setEnrolledClassrooms(classroomIds);
+            console.log('Student enrolled in classrooms:', classroomIds);
           }
         }
       } catch (error) {
         console.error('Error checking auth:', error);
         setIsAuthenticated(false);
         setIsDemo(true);
+        setAnnouncementsError(`Auth error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     };
     
@@ -60,20 +69,25 @@ const StudentDashboard = () => {
   }, [studentData]);
 
   useEffect(() => {
-    if (!isDemo && studentData?.id) {
+    if (!isDemo && studentData?.id && !announcementsError) {
       fetchAnnouncements();
     } else {
       setLoadingAnnouncements(false);
     }
-  }, [isDemo, studentData, enrolledClassrooms]);
+  }, [isDemo, studentData, enrolledClassrooms, announcementsError]);
 
   const fetchAnnouncements = async () => {
     try {
+      setLoadingAnnouncements(true);
+      setAnnouncementsError(null);
+      
       if (!studentData) {
         console.log('No student data, skipping announcements');
         setAnnouncements([]);
         return;
       }
+
+      console.log('Fetching announcements for student:', { studentId: studentData.id, enrolledClassrooms });
       
       let query = supabase
         .from('notifications')
@@ -93,13 +107,16 @@ const StudentDashboard = () => {
 
       if (error) {
         console.error('Error fetching student announcements:', error);
-        throw error;
+        setAnnouncementsError(`Failed to fetch announcements: ${error.message}`);
+        setAnnouncements([]);
+        return;
       }
       
       console.log(`Loaded ${data?.length || 0} announcements for student`);
       setAnnouncements(data || []);
     } catch (error) {
-      console.error("Error fetching announcements:", error);
+      console.error("Unexpected error fetching announcements:", error);
+      setAnnouncementsError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setAnnouncements([]);
     } finally {
       setLoadingAnnouncements(false);
@@ -134,12 +151,21 @@ const StudentDashboard = () => {
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">Announcements</h2>
         
-        <AnnouncementList 
-          announcements={announcements} 
-          loading={loadingAnnouncements} 
-          isTeacher={false}
-          onAnnouncementDeleted={() => fetchAnnouncements()}
-        />
+        {announcementsError ? (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Error loading announcements: {announcementsError}
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <AnnouncementList 
+            announcements={announcements} 
+            loading={loadingAnnouncements} 
+            isTeacher={false}
+            onAnnouncementDeleted={() => fetchAnnouncements()}
+          />
+        )}
       </div>
     </div>
   );

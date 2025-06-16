@@ -1,12 +1,12 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TeacherAnnouncementForm } from "@/components/announcements/TeacherAnnouncementForm";
 import { AnnouncementList } from "@/components/announcements/AnnouncementList";
 import { useTutorial } from "@/hooks/useTutorial";
@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [announcements, setAnnouncements] = useState<Notification[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
@@ -36,10 +37,10 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (userRole) {
+    if (userRole && !error) {
       fetchAnnouncements();
     }
-  }, [userRole]);
+  }, [userRole, error]);
 
   const checkAuth = async () => {
     try {
@@ -55,6 +56,8 @@ const Dashboard = () => {
         return;
       }
 
+      console.log('Dashboard auth check for user:', { userId: session.user.id, email: session.user.email });
+
       // Try to get user role first with better error handling
       let determinedRole = null;
       let determinedName = session.user.email;
@@ -67,9 +70,12 @@ const Dashboard = () => {
 
         if (roleError) {
           console.error('Role fetch error:', roleError);
-          // Don't return here, continue with fallback logic
+          setError('Failed to fetch user role');
+          setLoading(false);
+          return;
         } else {
           determinedRole = roleData?.[0]?.role || null;
+          console.log('Dashboard determined role:', determinedRole);
         }
 
         // Get appropriate profile data based on role
@@ -82,8 +88,12 @@ const Dashboard = () => {
           
           if (adminError) {
             console.error('Error fetching admin profile:', adminError);
+            setError('Failed to fetch admin profile');
+            setLoading(false);
+            return;
           } else {
             determinedName = adminProfile?.full_name || session.user.email;
+            console.log('Dashboard admin name:', determinedName);
           }
         } else if (determinedRole === 'teacher') {
           const { data: teacherData, error: teacherError } = await supabase
@@ -94,8 +104,12 @@ const Dashboard = () => {
           
           if (teacherError) {
             console.error('Error fetching teacher profile:', teacherError);
+            setError('Failed to fetch teacher profile');
+            setLoading(false);
+            return;
           } else {
             determinedName = teacherData?.full_name || session.user.email;
+            console.log('Dashboard teacher name:', determinedName);
           }
         } else if (determinedRole === 'student') {
           const { data: studentData, error: studentError } = await supabase
@@ -106,72 +120,40 @@ const Dashboard = () => {
             
           if (studentError) {
             console.error('Error fetching student profile:', studentError);
+            setError('Failed to fetch student profile');
+            setLoading(false);
+            return;
           } else {
             determinedName = studentData?.name || session.user.email;
+            console.log('Dashboard student name:', determinedName);
           }
         }
 
         // If no role found, try to determine from profiles
         if (!determinedRole) {
           console.log('No role found, checking profiles...');
-          
-          // Check if user has teacher profile
-          const { data: teacherData, error: teacherError } = await supabase
-            .from('teacher_profiles')
-            .select('full_name')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          
-          if (!teacherError && teacherData) {
-            determinedRole = 'teacher';
-            determinedName = teacherData.full_name || session.user.email;
-          } else {
-            // Check if user has student profile
-            const { data: studentData, error: studentError } = await supabase
-              .from('students')
-              .select('name')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-              
-            if (!studentError && studentData) {
-              determinedRole = 'student';
-              determinedName = studentData.name || session.user.email;
-            } else {
-              // Check if user has admin profile
-              const { data: adminData, error: adminError } = await supabase
-                .from('admin_profiles')
-                .select('full_name')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-                
-              if (!adminError && adminData) {
-                determinedRole = 'admin';
-                determinedName = adminData.full_name || session.user.email;
-              } else {
-                // Default fallback
-                console.log('No profile found, defaulting to student');
-                determinedRole = 'student';
-                determinedName = session.user.email;
-              }
-            }
-          }
+          setError('User role not found. Please contact administrator.');
+          setLoading(false);
+          return;
         }
+
+        console.log('Dashboard final determined role:', determinedRole, 'Name:', determinedName);
+        setUserRole(determinedRole);
+        setUserName(determinedName);
       } catch (error) {
         console.error('Error determining user role:', error);
-        determinedRole = 'student';
-        determinedName = session.user.email;
+        setError(`Error determining user role: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setLoading(false);
+        return;
       }
-
-      console.log('Determined role:', determinedRole, 'Name:', determinedName);
-      setUserRole(determinedRole);
-      setUserName(determinedName);
     } catch (error) {
       console.error('Error in checkAuth:', error);
-      // Continue anyway with fallback values
-      setUserRole('student');
-      setUserName('User');
-    } finally {
+      setError(`Authentication error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setLoading(false);
+    } finally {
+      if (!error) {
+        setLoading(false);
+      }
     }
   };
 
@@ -185,6 +167,8 @@ const Dashboard = () => {
         setAnnouncements([]);
         return;
       }
+
+      console.log('Fetching announcements for user role:', userRole);
 
       // Get user role to determine announcement scope
       const { data: userRoles, error: roleError } = await supabase
@@ -202,6 +186,8 @@ const Dashboard = () => {
       const isTeacher = userRoles?.some(r => r.role === 'teacher');
       const isStudent = userRoles?.some(r => r.role === 'student');
 
+      console.log('Announcement access levels:', { isAdmin, isTeacher, isStudent });
+
       let query = supabase
         .from('notifications')
         .select('*')
@@ -209,28 +195,13 @@ const Dashboard = () => {
         .order('created_at', { ascending: false });
 
       if (isAdmin) {
-        // Admin sees all announcements for their school
-        const { data: adminProfile, error: adminError } = await supabase
-          .from('admin_profiles')
-          .select('school_id')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (adminError) {
-          console.error('Error fetching admin profile for announcements:', adminError);
-          setAnnouncements([]);
-          return;
-        }
-
-        if (adminProfile?.school_id) {
-          // Filter announcements by school context (this would need school_id on notifications)
-          // For now, get all announcements as admin
-          console.log('Admin loading all announcements for school:', adminProfile.school_id);
-        }
+        console.log('Admin loading all announcements');
+        // Admin sees all announcements for now
       } else if (isTeacher) {
-        // Teachers see all announcements (they can create them)
         console.log('Teacher loading all announcements');
+        // Teachers see all announcements (they can create them)
       } else if (isStudent) {
+        console.log('Student loading filtered announcements');
         // Students see announcements for their classrooms or general announcements
         const { data: studentProfile, error: studentError } = await supabase
           .from('students')
@@ -257,6 +228,7 @@ const Dashboard = () => {
           }
 
           const classroomIds = enrollments?.map(e => e.classroom_id) || [];
+          console.log('Student classroom IDs:', classroomIds);
           
           if (classroomIds.length > 0) {
             query = query.or(`classroom_id.is.null,classroom_id.in.(${classroomIds.join(',')})`);
@@ -297,6 +269,28 @@ const Dashboard = () => {
     });
   };
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="h-full w-full flex flex-col justify-center items-center p-6">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+        <Button 
+          onClick={() => window.location.reload()} 
+          className="mt-4"
+          variant="outline"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // Show loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full w-full">
