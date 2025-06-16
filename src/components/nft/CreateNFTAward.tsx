@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, ImagePlus, Loader2, LayoutTemplate, Shield, AlertTriangle, Pi, Atom, Code, Dumbbell, Palette } from "lucide-react";
+import { Trophy, ImagePlus, Loader2, LayoutTemplate, Shield, AlertTriangle, Pi, Atom, Code, Dumbbell, Palette, Zap, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NFTImageUpload } from "./NFTImageUpload";
@@ -30,6 +29,7 @@ export const CreateNFTAward = () => {
     points: 100,
     nftType: "academic"
   });
+  const [useBlockchainSystem, setUseBlockchainSystem] = useState(true);
 
   useEffect(() => {
     checkAndCreateNFTsBucket();
@@ -326,6 +326,13 @@ export const CreateNFTAward = () => {
     setLoading(true);
 
     try {
+      if (useBlockchainSystem) {
+        // Redirect to blockchain NFT creator
+        window.location.href = '/wallet?tab=create';
+        return;
+      }
+
+      // Keep existing legacy code for backwards compatibility
       await handleBlockchainMint();
     } catch (error: any) {
       console.error('Error creating BlockWard:', error);
@@ -349,130 +356,173 @@ export const CreateNFTAward = () => {
           <h2 className="text-2xl font-semibold gradient-text">Create BlockWard Award</h2>
         </div>
 
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="flex rounded-lg overflow-hidden">
-            <button
+        {/* Add blockchain system toggle */}
+        <div className="bg-indigo-900/20 p-4 rounded-lg border border-indigo-500/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-indigo-300">Blockchain System</span>
+            <Button
               type="button"
-              className={`flex-1 py-3 px-4 text-center font-medium transition-all ${
-                useTemplate
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-              onClick={() => setUseTemplate(true)}
+              variant={useBlockchainSystem ? "default" : "outline"}
+              size="sm"
+              onClick={() => setUseBlockchainSystem(!useBlockchainSystem)}
             >
-              <LayoutTemplate className="w-4 h-4 mr-2 inline-block" />
-              Use Template
-            </button>
-            <button
-              type="button"
-              className={`flex-1 py-3 px-4 text-center font-medium transition-all ${
-                !useTemplate
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-              onClick={() => setUseTemplate(false)}
-            >
-              <ImagePlus className="w-4 h-4 mr-2 inline-block" />
-              Custom Award
-            </button>
+              {useBlockchainSystem ? "Enabled" : "Legacy Mode"}
+            </Button>
           </div>
+          <p className="text-xs text-indigo-400">
+            {useBlockchainSystem 
+              ? "Use the new blockchain system with virtual wallets and real smart contracts"
+              : "Use the legacy system (for backwards compatibility)"
+            }
+          </p>
         </div>
 
-        {useTemplate ? (
-          <TemplateSelector
-            templates={templates}
-            selectedTemplate={selectedTemplate}
-            onSelect={setSelectedTemplate}
-          />
+        {useBlockchainSystem ? (
+          <div className="text-center py-8 bg-purple-900/20 rounded-lg border border-purple-500/30">
+            <Zap className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-purple-300 mb-2">
+              Enhanced Blockchain System Available
+            </h3>
+            <p className="text-gray-400 mb-4">
+              Experience the new virtual wallet system with real blockchain integration
+            </p>
+            <Button 
+              type="button"
+              onClick={() => window.location.href = '/wallet?tab=create'}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <ArrowRight className="w-4 h-4 mr-2" />
+              Go to Blockchain Creator
+            </Button>
+          </div>
         ) : (
           <>
-            <NFTAwardForm 
-              formData={formData}
-              onChange={setFormData}
-            />
-
-            <NFTImageUpload
-              imageUrl={imageUrl}
-              onImageSelect={setImageUrl}
-            />
-          </>
-        )}
-
-        <div>
-          <StudentSelect
-            selectedStudentId={selectedStudent}
-            onStudentSelect={setSelectedStudent}
-          />
-          {selectedStudent && studentWalletAddress && (
-            <div className="text-xs text-gray-400 mt-1">
-              Student wallet: {studentWalletAddress.substring(0, 8)}...
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="flex rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  className={`flex-1 py-3 px-4 text-center font-medium transition-all ${
+                    useTemplate
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                  onClick={() => setUseTemplate(true)}
+                >
+                  <LayoutTemplate className="w-4 h-4 mr-2 inline-block" />
+                  Use Template
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 py-3 px-4 text-center font-medium transition-all ${
+                    !useTemplate
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                  onClick={() => setUseTemplate(false)}
+                >
+                  <ImagePlus className="w-4 h-4 mr-2 inline-block" />
+                  Custom Award
+                </button>
+              </div>
             </div>
-          )}
-        </div>
-        
-        <div className="border border-dashed border-purple-500/30 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-3 text-purple-300">Blockchain Integration</h3>
-          
-          <div className="flex items-center space-x-2 mb-4">
-            <Switch 
-              id="use-metamask" 
-              checked={useMetaMask} 
-              onCheckedChange={setUseMetaMask} 
-            />
-            <label 
-              htmlFor="use-metamask" 
-              className="text-sm cursor-pointer"
-            >
-              Use MetaMask for actual blockchain transactions
-            </label>
-          </div>
-          
-          {useMetaMask ? (
-            <>
-              <BlockchainWalletPanel 
-                onConnect={handleWalletConnect} 
-                accountType="teacher"
+
+            {useTemplate ? (
+              <TemplateSelector
+                templates={templates}
+                selectedTemplate={selectedTemplate}
+                onSelect={setSelectedTemplate}
               />
+            ) : (
+              <>
+                <NFTAwardForm 
+                  formData={formData}
+                  onChange={setFormData}
+                />
+
+                <NFTImageUpload
+                  imageUrl={imageUrl}
+                  onImageSelect={setImageUrl}
+                />
+              </>
+            )}
+
+            <div>
+              <StudentSelect
+                selectedStudentId={selectedStudent}
+                onStudentSelect={setSelectedStudent}
+              />
+              {selectedStudent && studentWalletAddress && (
+                <div className="text-xs text-gray-400 mt-1">
+                  Student wallet: {studentWalletAddress.substring(0, 8)}...
+                </div>
+              )}
+            </div>
+            
+            <div className="border border-dashed border-purple-500/30 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold mb-3 text-purple-300">Blockchain Integration</h3>
               
-              {!connectedWalletAddress && (
-                <div className="bg-amber-900/20 p-3 rounded-lg border border-amber-500/30 flex items-center mt-4">
-                  <AlertTriangle className="h-5 w-5 text-amber-400 mr-3" />
-                  <div className="text-sm text-amber-300">
-                    Connect your MetaMask wallet above to mint BlockWards directly on the blockchain. 
-                    Make sure your wallet has MATIC tokens for gas fees.
+              <div className="flex items-center space-x-2 mb-4">
+                <Switch 
+                  id="use-metamask" 
+                  checked={useMetaMask} 
+                  onCheckedChange={setUseMetaMask} 
+                />
+                <label 
+                  htmlFor="use-metamask" 
+                  className="text-sm cursor-pointer"
+                >
+                  Use MetaMask for actual blockchain transactions
+                </label>
+              </div>
+              
+              {useMetaMask ? (
+                <>
+                  <BlockchainWalletPanel 
+                    onConnect={handleWalletConnect} 
+                    accountType="teacher"
+                  />
+                  
+                  {!connectedWalletAddress && (
+                    <div className="bg-amber-900/20 p-3 rounded-lg border border-amber-500/30 flex items-center mt-4">
+                      <AlertTriangle className="h-5 w-5 text-amber-400 mr-3" />
+                      <div className="text-sm text-amber-300">
+                        Connect your MetaMask wallet above to mint BlockWards directly on the blockchain. 
+                        Make sure your wallet has MATIC tokens for gas fees.
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/30 flex items-center mt-2">
+                  <Shield className="h-5 w-5 text-indigo-400 mr-3" />
+                  <div className="text-sm text-indigo-300">
+                    Simulated blockchain mint will process NFTs within our system without requiring MetaMask or gas fees.
                   </div>
                 </div>
               )}
-            </>
-          ) : (
-            <div className="bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/30 flex items-center mt-2">
-              <Shield className="h-5 w-5 text-indigo-400 mr-3" />
-              <div className="text-sm text-indigo-300">
-                Simulated blockchain mint will process NFTs within our system without requiring MetaMask or gas fees.
-              </div>
             </div>
-          )}
-        </div>
 
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            disabled={loading || !formData.title || !formData.description || !imageUrl || !selectedStudent || (useMetaMask && !connectedWalletAddress)}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {isBlockchainMinting ? "Minting..." : "Creating..."}
-              </>
-            ) : (
-              <>
-                <ImagePlus className="w-4 h-4 mr-2" />
-                {useMetaMask ? "Mint Blockchain NFT" : "Create BlockWard Award"}
-              </>
-            )}
-          </Button>
-        </div>
+            <div className="flex justify-end">
+              <Button 
+                type="submit" 
+                disabled={loading || !formData.title || !formData.description || !imageUrl || !selectedStudent || (useMetaMask && !connectedWalletAddress)}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {isBlockchainMinting ? "Minting..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus className="w-4 h-4 mr-2" />
+                    {useMetaMask ? "Mint Blockchain NFT" : "Create BlockWard Award"}
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        )}
       </form>
     </Card>
   );

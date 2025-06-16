@@ -9,7 +9,8 @@ import {
   AlertTriangle,
   ShieldCheck,
   ArrowRight,
-  Tag 
+  Tag,
+  Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,10 +18,13 @@ import { useNavigate } from "react-router-dom";
 import { Json } from "@/integrations/supabase/types";
 import { BalanceCard } from "@/components/wallet/BalanceCard";
 import { TransferForm } from "@/components/wallet/TransferForm";
-import { NFTGrid } from "@/components/wallet/NFTGrid";
 import { NFTDisclaimer } from "@/components/wallet/NFTDisclaimer";
-import { BlockwardTemplateCreator } from "@/components/wallet/BlockwardTemplateCreator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useBlockchainWallet } from "@/hooks/useBlockchainWallet";
+import { BlockchainWalletInfo } from "@/components/wallet/BlockchainWalletInfo";
+import { BlockchainNFTCreator } from "@/components/nft/BlockchainNFTCreator";
+import { BlockchainNFTGrid } from "@/components/wallet/BlockchainNFTGrid";
 
 interface NFTMetadata {
   name: string;
@@ -32,41 +36,32 @@ interface NFTMetadata {
   }>;
 }
 
-interface NFT {
+interface BlockchainNFT {
   id: string;
   metadata: NFTMetadata;
   image_url: string | null;
+  blockchain_token_id: number | null;
+  transaction_hash: string | null;
+  blockchain_status: string;
+  minted_at: string | null;
   created_at: string;
-}
-
-interface SupabaseNFT {
-  id: string;
-  metadata: Json;
-  image_url: string | null;
-  created_at: string;
-  creator_wallet_id: string;
-  owner_wallet_id: string;
-  token_id: string;
-  contract_address: string;
-  network: string;
-  updated_at: string;
-}
-
-interface Wallet {
-  id: string;
-  address: string;
-  type: 'user' | 'admin';
 }
 
 const WalletPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [nfts, setNfts] = useState<NFT[]>([]);
+  const [blockchainNfts, setBlockchainNfts] = useState<BlockchainNFT[]>([]);
   const [balance, setBalance] = useState<number>(0);
-  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null);
+  
+  const { 
+    walletAddress, 
+    isLoading: walletLoading, 
+    userRole, 
+    canMintNFTs, 
+    canTransferNFTs 
+  } = useBlockchainWallet();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -82,53 +77,53 @@ const WalletPage = () => {
       }
       
       setIsAuthenticated(true);
-      
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
+      await loadWalletData(session.user.id);
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, [navigate, toast]);
+
+  const loadWalletData = async (userId: string) => {
+    try {
+      // Load student points
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('points')
+        .eq('user_id', userId)
         .single();
         
-      if (roleData) {
-        setUserRole(roleData.role as 'teacher' | 'student');
+      if (studentData) {
+        setBalance(studentData.points || 0);
       }
-      
-      try {
-        const { data: walletData, error: walletError } = await supabase
-          .from('wallets')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
+
+      // Load blockchain NFTs
+      const { data: walletData } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (walletData) {
+        const { data: nftData, error: nftError } = await supabase
+          .from('nfts')
+          .select(`
+            id,
+            metadata,
+            image_url,
+            blockchain_token_id,
+            transaction_hash,
+            blockchain_status,
+            minted_at,
+            created_at
+          `)
+          .eq('owner_wallet_id', walletData.id)
+          .order('created_at', { ascending: false });
           
-        if (walletError) {
-          console.error('Error fetching wallet:', walletError);
-          throw walletError;
-        }
-        
-        setWallet(walletData);
-        
-        const { data: studentData, error: studentError } = await supabase
-          .from('students')
-          .select('points')
-          .eq('user_id', session.user.id)
-          .single();
-          
-        if (studentData) {
-          setBalance(studentData.points || 0);
-        }
-        
-        if (walletData) {
-          const { data: nftData, error: nftError } = await supabase
-            .from('nfts')
-            .select('*')
-            .eq('owner_wallet_id', walletData.id);
-            
-          if (nftError) {
-            console.error('Error fetching BlockWards:', nftError);
-            throw nftError;
-          }
-          
-          const transformedNfts: NFT[] = (nftData || []).map((nft: SupabaseNFT) => {
+        if (nftError) {
+          console.error('Error fetching blockchain NFTs:', nftError);
+        } else {
+          const transformedNfts: BlockchainNFT[] = (nftData || []).map((nft: any) => {
             const parsedMetadata: NFTMetadata = typeof nft.metadata === 'string' 
               ? JSON.parse(nft.metadata) 
               : (nft.metadata as unknown as NFTMetadata);
@@ -142,27 +137,21 @@ const WalletPage = () => {
                 attributes: parsedMetadata.attributes || []
               },
               image_url: nft.image_url,
+              blockchain_token_id: nft.blockchain_token_id,
+              transaction_hash: nft.transaction_hash,
+              blockchain_status: nft.blockchain_status || 'pending',
+              minted_at: nft.minted_at,
               created_at: nft.created_at
             };
           });
           
-          setNfts(transformedNfts);
+          setBlockchainNfts(transformedNfts);
         }
-        
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error initializing wallet:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load wallet data"
-        });
-        setIsLoading(false);
       }
-    };
-    
-    checkAuth();
-  }, [navigate, toast]);
+    } catch (error) {
+      console.error('Error loading wallet data:', error);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -185,14 +174,14 @@ const WalletPage = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
-              <WalletIcon className="w-8 h-8 text-purple-300" />
+              <Zap className="w-8 h-8 text-purple-300" />
             </div>
             <div>
               <h1 className="text-3xl font-bold shimmer-text">
-                BlockWard Wallet
+                Blockchain Wallet
               </h1>
               <p className="text-gray-400">
-                {userRole === 'teacher' ? 'Teacher Admin Wallet' : 'Student Rewards Wallet'}
+                Virtual wallet with real blockchain integration
               </p>
             </div>
           </div>
@@ -202,7 +191,7 @@ const WalletPage = () => {
               <CardContent className="p-3 flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-purple-400" />
                 <span className="text-sm">
-                  {wallet?.address?.substring(0, 6)}...{wallet?.address?.substring(wallet.address.length - 4)}
+                  Polygon Mumbai
                 </span>
               </CardContent>
             </Card>
@@ -211,16 +200,22 @@ const WalletPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Left Sidebar */}
-        <div className="md:col-span-3 space-y-6">
+        <div className="lg:col-span-1 space-y-6">
           <BalanceCard 
             balance={balance} 
-            walletAddress={wallet?.address} 
-            isLoading={isLoading} 
+            walletAddress={walletAddress} 
+            isLoading={isLoading || walletLoading} 
           />
           
-          {userRole === 'teacher' && (
+          <BlockchainWalletInfo
+            walletAddress={walletAddress}
+            userRole={userRole}
+            isLoading={walletLoading}
+          />
+          
+          {canTransferNFTs && (
             <Card className="overflow-hidden border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
               <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -229,48 +224,58 @@ const WalletPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
-                <TransferForm disabled={isLoading} />
+                <TransferForm disabled={isLoading || walletLoading} />
               </CardContent>
             </Card>
           )}
         </div>
         
         {/* Main Content Area */}
-        <div className="md:col-span-9 space-y-6">
-          {userRole === 'teacher' ? (
-            <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-              <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Plus className="h-5 w-5 text-purple-400" />
-                  Create BlockWard Templates
-                </CardTitle>
-                <CardDescription>
-                  Design custom BlockWards to award to your students
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <BlockwardTemplateCreator />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-              <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Trophy className="h-5 w-5 text-purple-400" />
-                  Your BlockWards
-                </CardTitle>
-                <CardDescription>
-                  Collect these digital achievements to showcase your educational progress
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <NFTGrid nfts={nfts} isLoading={isLoading} />
-                <div className="mt-4">
-                  <NFTDisclaimer />
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <div className="lg:col-span-3 space-y-6">
+          <Tabs defaultValue={canMintNFTs ? "create" : "collection"} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              {canMintNFTs && (
+                <TabsTrigger value="create" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create NFTs
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="collection" className="flex items-center gap-2">
+                <Trophy className="h-4 w-4" />
+                My Collection
+              </TabsTrigger>
+            </TabsList>
+            
+            {canMintNFTs && (
+              <TabsContent value="create" className="space-y-6">
+                <BlockchainNFTCreator />
+              </TabsContent>
+            )}
+            
+            <TabsContent value="collection" className="space-y-6">
+              <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+                <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Trophy className="h-5 w-5 text-purple-400" />
+                    Blockchain NFT Collection
+                  </CardTitle>
+                  <CardDescription>
+                    Your blockchain-verified digital achievements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <BlockchainNFTGrid 
+                    nfts={blockchainNfts} 
+                    isLoading={isLoading} 
+                    userRole={userRole}
+                  />
+                  <div className="mt-6">
+                    <NFTDisclaimer />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

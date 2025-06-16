@@ -45,6 +45,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_wallet_config: {
+        Row: {
+          contract_address: string | null
+          created_at: string
+          encrypted_private_key: string
+          encryption_salt: string
+          id: string
+          is_active: boolean
+          network_name: string
+          wallet_address: string
+        }
+        Insert: {
+          contract_address?: string | null
+          created_at?: string
+          encrypted_private_key: string
+          encryption_salt: string
+          id?: string
+          is_active?: boolean
+          network_name?: string
+          wallet_address: string
+        }
+        Update: {
+          contract_address?: string | null
+          created_at?: string
+          encrypted_private_key?: string
+          encryption_salt?: string
+          id?: string
+          is_active?: boolean
+          network_name?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       assignments: {
         Row: {
           classroom_id: string | null
@@ -210,6 +243,56 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blockchain_transactions: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          from_address: string
+          gas_price: number | null
+          gas_used: number | null
+          id: string
+          nft_id: string | null
+          status: string
+          to_address: string
+          transaction_hash: string
+          transaction_type: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          from_address: string
+          gas_price?: number | null
+          gas_used?: number | null
+          id?: string
+          nft_id?: string | null
+          status?: string
+          to_address: string
+          transaction_hash: string
+          transaction_type: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          from_address?: string
+          gas_price?: number | null
+          gas_used?: number | null
+          id?: string
+          nft_id?: string | null
+          status?: string
+          to_address?: string
+          transaction_hash?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blockchain_transactions_nft_id_fkey"
+            columns: ["nft_id"]
+            isOneToOne: false
+            referencedRelation: "nfts"
             referencedColumns: ["id"]
           },
         ]
@@ -420,6 +503,36 @@ export type Database = {
         }
         Relationships: []
       }
+      encrypted_wallets: {
+        Row: {
+          created_at: string
+          encrypted_private_key: string
+          encryption_salt: string
+          id: string
+          updated_at: string
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_private_key: string
+          encryption_salt: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_private_key?: string
+          encryption_salt?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           classroom_id: string | null
@@ -549,39 +662,51 @@ export type Database = {
       }
       nfts: {
         Row: {
+          blockchain_status: string | null
+          blockchain_token_id: number | null
           contract_address: string
           created_at: string | null
           creator_wallet_id: string
           id: string
           image_url: string | null
           metadata: Json
+          minted_at: string | null
           network: string
           owner_wallet_id: string | null
           token_id: string
+          transaction_hash: string | null
           updated_at: string | null
         }
         Insert: {
+          blockchain_status?: string | null
+          blockchain_token_id?: number | null
           contract_address: string
           created_at?: string | null
           creator_wallet_id: string
           id?: string
           image_url?: string | null
           metadata: Json
+          minted_at?: string | null
           network?: string
           owner_wallet_id?: string | null
           token_id: string
+          transaction_hash?: string | null
           updated_at?: string | null
         }
         Update: {
+          blockchain_status?: string | null
+          blockchain_token_id?: number | null
           contract_address?: string
           created_at?: string | null
           creator_wallet_id?: string
           id?: string
           image_url?: string | null
           metadata?: Json
+          minted_at?: string | null
           network?: string
           owner_wallet_id?: string | null
           token_id?: string
+          transaction_hash?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1114,25 +1239,39 @@ export type Database = {
         Row: {
           address: string
           created_at: string | null
+          encrypted_wallet_id: string | null
           id: string
+          is_blockchain_wallet: boolean | null
           type: Database["public"]["Enums"]["wallet_type"]
           user_id: string
         }
         Insert: {
           address: string
           created_at?: string | null
+          encrypted_wallet_id?: string | null
           id?: string
+          is_blockchain_wallet?: boolean | null
           type: Database["public"]["Enums"]["wallet_type"]
           user_id: string
         }
         Update: {
           address?: string
           created_at?: string | null
+          encrypted_wallet_id?: string | null
           id?: string
+          is_blockchain_wallet?: boolean | null
           type?: Database["public"]["Enums"]["wallet_type"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wallets_encrypted_wallet_id_fkey"
+            columns: ["encrypted_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "encrypted_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
