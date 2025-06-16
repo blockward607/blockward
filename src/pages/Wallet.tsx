@@ -1,292 +1,82 @@
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { 
-  Wallet as WalletIcon, 
-  Trophy, 
-  Plus, 
-  AlertTriangle,
-  ShieldCheck,
-  Zap
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { Json } from "@/integrations/supabase/types";
-import { NFTDisclaimer } from "@/components/wallet/NFTDisclaimer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { WalletPanel } from "@/components/wallet/WalletPanel";
+import { BlockchainWalletPanel } from "@/components/wallet/BlockchainWalletPanel";
+import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBlockchainWallet } from "@/hooks/useBlockchainWallet";
-import { BlockchainNFTCreator } from "@/components/nft/BlockchainNFTCreator";
-import { BlockchainNFTGrid } from "@/components/wallet/BlockchainNFTGrid";
-import { TeacherNFTLibrary } from "@/components/nft/TeacherNFTLibrary";
-
-interface NFTMetadata {
-  name: string;
-  description: string;
-  image?: string;
-  attributes?: Array<{
-    trait_type: string;
-    value: string;
-  }>;
-}
-
-interface BlockchainNFT {
-  id: string;
-  metadata: NFTMetadata;
-  image_url: string | null;
-  blockchain_token_id: number | null;
-  transaction_hash: string | null;
-  blockchain_status: string;
-  minted_at: string | null;
-  created_at: string;
-}
+import { Wallet, Coins } from "lucide-react";
+import { motion } from "framer-motion";
 
 const WalletPage = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [blockchainNfts, setBlockchainNfts] = useState<BlockchainNFT[]>([]);
-  const [balance, setBalance] = useState<number>(0);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  const { 
-    walletAddress, 
-    isLoading: walletLoading, 
-    userRole, 
-    canMintNFTs, 
-    canTransferNFTs 
-  } = useBlockchainWallet();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Not authenticated",
-          description: "Please log in to access your wallet"
-        });
-        navigate('/auth');
-        return;
-      }
-      
-      setIsAuthenticated(true);
-      await loadWalletData(session.user.id);
-      setIsLoading(false);
-    };
-    
-    checkAuth();
-  }, [navigate, toast]);
-
-  const loadWalletData = async (userId: string) => {
-    try {
-      // Load student points
-      const { data: studentData } = await supabase
-        .from('students')
-        .select('points')
-        .eq('user_id', userId)
-        .single();
-        
-      if (studentData) {
-        setBalance(studentData.points || 0);
-      }
-
-      // Load blockchain NFTs for students only
-      if (!canMintNFTs) {
-        const { data: walletData } = await supabase
-          .from('wallets')
-          .select('id')
-          .eq('user_id', userId)
-          .single();
-
-        if (walletData) {
-          const { data: nftData, error: nftError } = await supabase
-            .from('nfts')
-            .select(`
-              id,
-              metadata,
-              image_url,
-              blockchain_token_id,
-              transaction_hash,
-              blockchain_status,
-              minted_at,
-              created_at
-            `)
-            .eq('owner_wallet_id', walletData.id)
-            .order('created_at', { ascending: false });
-            
-          if (nftError) {
-            console.error('Error fetching blockchain NFTs:', nftError);
-          } else {
-            const transformedNfts: BlockchainNFT[] = (nftData || []).map((nft: any) => {
-              const parsedMetadata: NFTMetadata = typeof nft.metadata === 'string' 
-                ? JSON.parse(nft.metadata) 
-                : (nft.metadata as unknown as NFTMetadata);
-                
-              return {
-                id: nft.id,
-                metadata: {
-                  name: parsedMetadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
-                  description: parsedMetadata.description || "Educational achievement award",
-                  image: parsedMetadata.image,
-                  attributes: parsedMetadata.attributes || []
-                },
-                image_url: nft.image_url,
-                blockchain_token_id: nft.blockchain_token_id,
-                transaction_hash: nft.transaction_hash,
-                blockchain_status: nft.blockchain_status || 'pending',
-                minted_at: nft.minted_at,
-                created_at: nft.created_at
-              };
-            });
-            
-            setBlockchainNfts(transformedNfts);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading wallet data:', error);
-    }
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="p-8 text-center animate-pulse">
-          <WalletIcon className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-          <p className="text-lg">Authenticating...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/50 to-indigo-900/50 p-8 shadow-lg">
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rotate-12 bg-purple-500/10 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-32 w-32 -rotate-12 bg-indigo-500/10 blur-3xl"></div>
-        
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
-              <Zap className="w-8 h-8 text-purple-300" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold shimmer-text">
-                Blockchain Wallet
-              </h1>
-              <p className="text-gray-400">
-                Virtual wallet with real blockchain integration
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {/* Small Balance Card in top-right - only for students */}
-            {!canMintNFTs && (
-              <div className="w-40">
-                <Card className="bg-purple-900/20 border-purple-500/20">
-                  <CardContent className="p-3">
-                    <div className="text-center">
-                      <p className="text-xs text-gray-400 mb-1">Balance</p>
-                      <p className="text-lg font-bold text-purple-400">{balance} Credits</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-            
-            <Card className="bg-purple-900/20 border-purple-500/20">
-              <CardContent className="p-3 flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-purple-400" />
-                <span className="text-sm">
-                  Polygon Mumbai
-                </span>
-              </CardContent>
-            </Card>
-          </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-8"
+    >
+      <motion.div 
+        className="flex items-center gap-4"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <div className="p-4 rounded-full bg-purple-600/30 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-pulse">
+          <Wallet className="w-8 h-8 text-purple-300" />
         </div>
-      </div>
+        <h1 className="text-4xl font-bold shimmer-text">
+          NFT Wallet
+        </h1>
+      </motion.div>
 
-      {/* Main Content */}
-      <div className="w-full space-y-6">
-        <Tabs defaultValue={canMintNFTs ? "create" : "collection"} className="w-full">
-          <TabsList className={`grid w-full ${canMintNFTs ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {canMintNFTs && (
-              <TabsTrigger value="create" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Create NFTs
-              </TabsTrigger>
-            )}
-            {canMintNFTs && (
-              <TabsTrigger value="library" className="flex items-center gap-2">
-                <Trophy className="h-4 w-4" />
-                My Library
-              </TabsTrigger>
-            )}
-            {!canMintNFTs && (
-              <TabsTrigger value="collection" className="flex items-center gap-2">
-                <Trophy className="h-4 w-4" />
-                My Collection
-              </TabsTrigger>
-            )}
+      <Tabs defaultValue="nfts" className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
+          <TabsList className="p-1 bg-black/40 backdrop-blur-xl border border-purple-500/20 rounded-xl">
+            <TabsTrigger value="nfts" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
+              <Wallet className="w-4 h-4" />
+              BlockWard NFTs
+            </TabsTrigger>
+            <TabsTrigger value="blockchain" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
+              <Coins className="w-4 h-4" />
+              Blockchain Wallet
+            </TabsTrigger>
           </TabsList>
-          
-          {canMintNFTs && (
-            <TabsContent value="create" className="space-y-6">
-              <BlockchainNFTCreator />
-            </TabsContent>
-          )}
+        </motion.div>
 
-          {canMintNFTs && (
-            <TabsContent value="library" className="space-y-6">
-              <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-                <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Trophy className="h-5 w-5 text-purple-400" />
-                    My NFT Library
-                  </CardTitle>
-                  <CardDescription>
-                    Manage your created blockchain NFTs - send to students or delete
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <TeacherNFTLibrary />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-          
-          {!canMintNFTs && (
-            <TabsContent value="collection" className="space-y-6">
-              <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-                <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Trophy className="h-5 w-5 text-purple-400" />
-                    Blockchain NFT Collection
-                  </CardTitle>
-                  <CardDescription>
-                    Your blockchain-verified digital achievements
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <BlockchainNFTGrid 
-                    nfts={blockchainNfts} 
-                    isLoading={isLoading} 
-                    userRole={userRole}
-                  />
-                  <div className="mt-6">
-                    <NFTDisclaimer />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-        </Tabs>
+        <TabsContent value="nfts">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <Card className="p-6 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
+              <WalletPanel />
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="blockchain">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <Card className="p-6 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
+              <BlockchainWalletPanel />
+            </Card>
+          </motion.div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Decorative elements */}
+      <div className="hidden md:block">
+        <div className="hexagon absolute top-20 right-20 w-28 h-28 bg-gradient-to-r from-purple-500/10 to-pink-500/10 -z-10"></div>
+        <div className="hexagon absolute bottom-20 left-40 w-36 h-36 bg-gradient-to-r from-blue-500/10 to-purple-500/10 -z-10"></div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

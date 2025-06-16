@@ -24,8 +24,6 @@ import SignUp from "./pages/SignUp";
 import ResetPassword from "./pages/ResetPassword";
 import ResetPasswordOTP from "./pages/ResetPasswordOTP";
 import Assignments from "./pages/Assignments";
-import Achievements from "./pages/Achievements";
-import Rewards from "./pages/Rewards";
 import Resources from "./pages/Resources";
 import Grades from "./pages/Grades";
 import Progress from "./pages/Progress";
@@ -65,8 +63,6 @@ const App = () => (
             <Route path="wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
             <Route path="attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
             <Route path="assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
-            <Route path="achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-            <Route path="rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
             <Route path="resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
             <Route path="grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
             <Route path="progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
@@ -80,10 +76,9 @@ const App = () => (
             <Route path="class/:id/seating" element={<ProtectedRoute><ClassroomSeating /></ProtectedRoute>} />
             <Route path="classroom/:id/invite" element={<ProtectedRoute><ClassroomInvite /></ProtectedRoute>} />
             
-            {/* NEW: Admin Routes */}
+            {/* Admin Routes */}
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
-              {/* Placeholder routes for future admin pages */}
               <Route path="teachers" element={<div className="p-6 text-white">Admin Teachers Management - Coming Soon</div>} />
               <Route path="students" element={<div className="p-6 text-white">Admin Students Management - Coming Soon</div>} />
               <Route path="settings" element={<div className="p-6 text-white">Admin School Settings - Coming Soon</div>} />

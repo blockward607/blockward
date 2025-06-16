@@ -6,7 +6,6 @@ import {
   Home,
   Users,
   BookOpen,
-  Award,
   Settings,
   Menu,
   X,
@@ -46,10 +45,8 @@ const teacherNavGroups = [
     ]
   },
   {
-    name: "Rewards",
+    name: "Blockchain",
     items: [
-      { name: "Achievements", href: "/achievements", icon: Trophy },
-      { name: "Rewards", href: "/rewards", icon: Award },
       { name: "NFT Wallet", href: "/wallet", icon: Wallet },
     ]
   },
@@ -71,16 +68,14 @@ const studentNavGroups = [
     ]
   },
   {
-    name: "Rewards",
+    name: "Blockchain",
     items: [
-      { name: "Achievements", href: "/achievements", icon: Trophy },
-      { name: "My NFTs", href: "/rewards", icon: Award },
-      { name: "Wallet", href: "/wallet", icon: Wallet },
+      { name: "NFT Wallet", href: "/wallet", icon: Wallet },
     ]
   },
 ];
 
-// NEW: Admin nav groups
+// Admin nav groups
 const adminNavGroups = [
   {
     name: "Overview",
@@ -102,7 +97,7 @@ const adminNavGroups = [
     items: [
       { name: "Settings", href: "/admin/settings", icon: Settings },
       { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
-      { name: "Rewards", href: "/admin/rewards", icon: Award },
+      { name: "Rewards", href: "/admin/rewards", icon: Wallet },
     ]
   },
 ];
@@ -144,7 +139,7 @@ export const MainLayout = () => {
 
     setUserRole(roleData?.role || null);
 
-    // NEW: Redirect admin users to admin dashboard
+    // Redirect admin users to admin dashboard
     if (roleData?.role === 'admin' && location.pathname === '/dashboard') {
       navigate('/admin');
     }
@@ -158,7 +153,7 @@ export const MainLayout = () => {
     navigate('/');
   };
 
-  // NEW: Select nav groups based on role and route
+  // Select nav groups based on role and route
   let navGroups;
   if (isAdminRoute && userRole === 'admin') {
     navGroups = adminNavGroups;
