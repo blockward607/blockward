@@ -73,13 +73,21 @@ export const SignInForm = ({
           console.error("Error checking user role:", roleError);
           // If we can't check the role, proceed anyway
           navigate('/dashboard', { replace: true });
-        } else if (userRole && userRole.role !== role) {
-          setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role.`);
-          setShowError(true);
-          // Sign out the user since role doesn't match
-          await supabase.auth.signOut();
+        } else if (userRole) {
+          // NEW: Handle admin role redirection
+          if (userRole.role === 'admin') {
+            navigate('/admin', { replace: true });
+          } else if (userRole.role !== role) {
+            setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role.`);
+            setShowError(true);
+            // Sign out the user since role doesn't match
+            await supabase.auth.signOut();
+          } else {
+            // Navigate to appropriate dashboard based on role
+            navigate('/dashboard', { replace: true });
+          }
         } else {
-          // Navigate directly to dashboard
+          // Navigate directly to dashboard if no role data found
           navigate('/dashboard', { replace: true });
         }
       }

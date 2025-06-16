@@ -1,96 +1,102 @@
-import { Suspense, lazy } from "react";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { ThemeProvider } from "@/components/ui/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { SidebarLayout } from "@/components/layout/SidebarLayout";
+
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { AssistantBot } from "@/components/assistant/AssistantBot";
+import { MainLayout } from "@/components/layout/MainLayout";
+import AdminLayout from "@/components/admin/AdminLayout";
+import Index from "./pages/Index";
+import Home from "./pages/Home";
+import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
+import Classes from "./pages/Classes";
+import Students from "./pages/Students";
+import Settings from "./pages/Settings";
+import Wallet from "./pages/Wallet";
+import Attendance from "./pages/Attendance";
+import ClassDetails from "./pages/ClassDetails";
+import ClassroomAttendance from "./pages/ClassroomAttendance";
+import ClassroomSeating from "./pages/ClassroomSeating";
+import ClassroomInvite from "./pages/ClassroomInvite";
+import SignUp from "./pages/SignUp";
+import ResetPassword from "./pages/ResetPassword";
+import ResetPasswordOTP from "./pages/ResetPasswordOTP";
+import Assignments from "./pages/Assignments";
+import Achievements from "./pages/Achievements";
+import Rewards from "./pages/Rewards";
+import Resources from "./pages/Resources";
+import Grades from "./pages/Grades";
+import Progress from "./pages/Progress";
+import Notifications from "./pages/Notifications";
+import StudentDashboard from "./pages/StudentDashboard";
+import ViewTeacherDashboard from "./pages/ViewTeacherDashboard";
+import IntroPage from "./pages/IntroPage";
 import TutorialPage from "./pages/TutorialPage";
+import WalletVerify from "./pages/WalletVerify";
+import AdminDashboard from "./pages/AdminDashboard";
 
-// Import problematic components directly instead of lazy-loading
-import Index from "@/pages/Index";
-import ViewStudentDashboard from "@/pages/StudentDashboard";
-import ViewTeacherDashboard from "@/pages/ViewTeacherDashboard";
-import ClassroomInvite from "@/pages/ClassroomInvite";
-import Auth from "@/pages/Auth";
+const queryClient = new QueryClient();
 
-// Lazy-loaded components
-const Home = lazy(() => import("@/pages/Home"));
-const SignUp = lazy(() => import("@/pages/SignUp"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const Classes = lazy(() => import("@/pages/Classes"));
-const Students = lazy(() => import("@/pages/Students")); 
-const Attendance = lazy(() => import("@/pages/Attendance"));
-const Rewards = lazy(() => import("@/pages/Rewards"));
-const Wallet = lazy(() => import("@/pages/Wallet"));
-const Settings = lazy(() => import("@/pages/Settings"));
-const ProgressPage = lazy(() => import("@/pages/Progress"));
-const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
-const ResetPasswordOTP = lazy(() => import("@/pages/ResetPasswordOTP"));
-const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
-const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
-const Grades = lazy(() => import("@/pages/Grades"));
-const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
-
-function App() {
-  return (
-    <BrowserRouter>
-      <ThemeProvider defaultTheme="dark" storageKey="blockward-theme">
-        <Suspense fallback={<LoadingSpinner />}>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<MainLayout />}>
-              <Route index element={<Index />} />
-              <Route path="home" element={<Home />} />
-              <Route path="auth" element={<Auth />} />
-              <Route path="signup" element={<SignUp />} />
-              <Route path="reset-password" element={<ResetPassword />} />
-              <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
-              <Route path="invite/:inviteToken" element={<ClassroomInvite />} />
-              {/* View demo routes */}
-              <Route path="view-student-dashboard" element={<ViewStudentDashboard />} />
-              <Route path="view-teacher-dashboard" element={<ViewTeacherDashboard />} />
-              {/* Updated join routes to properly capture and handle codes */}
-              <Route path="join/:code" element={<Navigate to="/auth" replace state={{ joinCode: ':code' }} />} />
-              <Route path="join" element={<Navigate to="/auth" replace />} />
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Index />} />
+            <Route path="home" element={<Home />} />
+            <Route path="auth" element={<Auth />} />
+            <Route path="signup" element={<SignUp />} />
+            <Route path="reset-password" element={<ResetPassword />} />
+            <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
+            <Route path="intro" element={<IntroPage />} />
+            <Route path="tutorial" element={<TutorialPage />} />
+            <Route path="auth/wallet-verify" element={<WalletVerify />} />
+            
+            {/* Protected Student/Teacher Routes */}
+            <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
+            <Route path="students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+            <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+            <Route path="attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+            <Route path="assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
+            <Route path="achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+            <Route path="rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+            <Route path="resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+            <Route path="grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
+            <Route path="progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+            <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="student-dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+            <Route path="view-teacher-dashboard" element={<ProtectedRoute><ViewTeacherDashboard /></ProtectedRoute>} />
+            
+            {/* Class-specific routes */}
+            <Route path="class/:id" element={<ProtectedRoute><ClassDetails /></ProtectedRoute>} />
+            <Route path="class/:id/attendance" element={<ProtectedRoute><ClassroomAttendance /></ProtectedRoute>} />
+            <Route path="class/:id/seating" element={<ProtectedRoute><ClassroomSeating /></ProtectedRoute>} />
+            <Route path="classroom/:id/invite" element={<ProtectedRoute><ClassroomInvite /></ProtectedRoute>} />
+            
+            {/* NEW: Admin Routes */}
+            <Route path="admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              {/* Placeholder routes for future admin pages */}
+              <Route path="teachers" element={<div className="p-6 text-white">Admin Teachers Management - Coming Soon</div>} />
+              <Route path="students" element={<div className="p-6 text-white">Admin Students Management - Coming Soon</div>} />
+              <Route path="settings" element={<div className="p-6 text-white">Admin School Settings - Coming Soon</div>} />
+              <Route path="announcements" element={<div className="p-6 text-white">Admin Announcements - Coming Soon</div>} />
+              <Route path="analytics" element={<div className="p-6 text-white">Admin Analytics - Coming Soon</div>} />
+              <Route path="rewards" element={<div className="p-6 text-white">Admin Rewards Management - Coming Soon</div>} />
+              <Route path="classes" element={<div className="p-6 text-white">Admin Classes Management - Coming Soon</div>} />
             </Route>
-
-            {/* Protected routes with sidebar */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <SidebarLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="classes" element={<Classes />} />
-              <Route path="students" element={<Students />} />
-              <Route path="attendance" element={<Attendance />} />
-              <Route path="classroom/seating" element={<ClassroomSeating />} />
-              <Route path="classroom/:classroomId/seating" element={<ClassroomSeating />} />
-              <Route path="classroom/:classroomId/invite" element={<ClassroomInvite />} />
-              <Route path="classroom/:classroomId/attendance" element={<Attendance />} />
-              <Route path="achievements" element={<Navigate to="/wallet" replace />} />
-              <Route path="rewards" element={<Rewards />} />
-              <Route path="wallet" element={<Wallet />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="progress" element={<ProgressPage />} />
-              <Route path="class/:classroomId" element={<ClassDetails />} />
-              <Route path="class/:classroomId/grades" element={<Grades />} />
-              <Route path="auth/wallet-verify" element={<WalletVerify />} />
-              <Route path="/tutorial/:role" element={<TutorialPage />} />
-            </Route>
-          </Routes>
-        </Suspense>
-        <AssistantBot />
-        <Toaster position="top-right" />
-      </ThemeProvider>
-    </BrowserRouter>
-  );
-}
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

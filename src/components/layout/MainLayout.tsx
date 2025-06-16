@@ -19,7 +19,8 @@ import {
   BarChart,
   MessageSquare,
   Layers,
-  Megaphone
+  Megaphone,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -79,6 +80,33 @@ const studentNavGroups = [
   },
 ];
 
+// NEW: Admin nav groups
+const adminNavGroups = [
+  {
+    name: "Overview",
+    items: [
+      { name: "Dashboard", href: "/admin", icon: BarChart },
+      { name: "Analytics", href: "/admin/analytics", icon: ChartBar },
+    ]
+  },
+  {
+    name: "Management",
+    items: [
+      { name: "Teachers", href: "/admin/teachers", icon: Shield },
+      { name: "Students", href: "/admin/students", icon: Users },
+      { name: "Classes", href: "/admin/classes", icon: BookOpen },
+    ]
+  },
+  {
+    name: "School",
+    items: [
+      { name: "Settings", href: "/admin/settings", icon: Settings },
+      { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
+      { name: "Rewards", href: "/admin/rewards", icon: Award },
+    ]
+  },
+];
+
 export const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -86,8 +114,9 @@ export const MainLayout = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  // Check if on main page or routes like /auth that shouldn't have the dashboard layout
+  // Check if on main page, auth routes, or admin routes that shouldn't have the dashboard layout
   const isMainPage = location.pathname === "/" || location.pathname === "/auth";
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   useEffect(() => {
     if (!isMainPage) {
@@ -114,6 +143,11 @@ export const MainLayout = () => {
       .single();
 
     setUserRole(roleData?.role || null);
+
+    // NEW: Redirect admin users to admin dashboard
+    if (roleData?.role === 'admin' && location.pathname === '/dashboard') {
+      navigate('/admin');
+    }
   };
 
   const toggleSidebar = () => {
@@ -124,7 +158,15 @@ export const MainLayout = () => {
     navigate('/');
   };
 
-  const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
+  // NEW: Select nav groups based on role and route
+  let navGroups;
+  if (isAdminRoute && userRole === 'admin') {
+    navGroups = adminNavGroups;
+  } else if (userRole === 'teacher') {
+    navGroups = teacherNavGroups;
+  } else {
+    navGroups = studentNavGroups;
+  }
 
   return (
     <div className="min-h-screen bg-black">
@@ -155,6 +197,9 @@ export const MainLayout = () => {
             <div className="flex items-center justify-between px-6 py-5">
               <Link to="/" className="text-2xl font-bold blockward-logo">
                 Blockward
+                {isAdminRoute && (
+                  <span className="text-sm text-purple-400 block">Admin</span>
+                )}
               </Link>
             </div>
 
