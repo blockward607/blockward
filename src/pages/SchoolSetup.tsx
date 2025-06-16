@@ -126,7 +126,7 @@ const SchoolSetup = () => {
         if (schoolError) throw schoolError;
         schoolId = schoolData.id;
 
-        // Create admin profile for this user
+        // Create admin profile for this user with ICT admin level
         const { error: promoteError } = await supabase.rpc('promote_user_to_admin', {
           target_user_id: user.id,
           school_id_param: schoolId,
@@ -136,9 +136,17 @@ const SchoolSetup = () => {
 
         if (promoteError) throw promoteError;
 
+        // Set access level to ICT admin by default
+        const { error: accessError } = await supabase
+          .from('admin_profiles')
+          .update({ access_level: 'ict_admin' })
+          .eq('user_id', user.id);
+
+        if (accessError) throw accessError;
+
         toast({
           title: "School Created!",
-          description: "Your school has been set up and you now have admin privileges."
+          description: "Your school has been set up and you now have ICT admin privileges."
         });
       }
 

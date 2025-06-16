@@ -47,6 +47,7 @@ export type Database = {
       }
       admin_profiles: {
         Row: {
+          access_level: Database["public"]["Enums"]["admin_access_level"] | null
           created_at: string | null
           full_name: string | null
           id: string
@@ -57,6 +58,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_level?:
+            | Database["public"]["Enums"]["admin_access_level"]
+            | null
           created_at?: string | null
           full_name?: string | null
           id?: string
@@ -67,6 +71,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_level?:
+            | Database["public"]["Enums"]["admin_access_level"]
+            | null
           created_at?: string | null
           full_name?: string | null
           id?: string
@@ -506,6 +513,8 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          school_id: string | null
+          section: string | null
           teacher_id: string | null
           updated_at: string | null
         }
@@ -514,6 +523,8 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          school_id?: string | null
+          section?: string | null
           teacher_id?: string | null
           updated_at?: string | null
         }
@@ -522,10 +533,19 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          school_id?: string | null
+          section?: string | null
           teacher_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "classrooms_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "classrooms_teacher_id_fkey"
             columns: ["teacher_id"]
@@ -700,6 +720,54 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homerooms: {
+        Row: {
+          created_at: string | null
+          form_tutor_id: string | null
+          id: string
+          name: string
+          room_number: string | null
+          school_id: string
+          updated_at: string | null
+          year_group: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          form_tutor_id?: string | null
+          id?: string
+          name: string
+          room_number?: string | null
+          school_id: string
+          updated_at?: string | null
+          year_group?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          form_tutor_id?: string | null
+          id?: string
+          name?: string
+          room_number?: string | null
+          school_id?: string
+          updated_at?: string | null
+          year_group?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homerooms_form_tutor_id_fkey"
+            columns: ["form_tutor_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homerooms_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
             referencedColumns: ["id"]
           },
         ]
@@ -1199,6 +1267,51 @@ export type Database = {
           },
         ]
       }
+      student_homeroom_assignments: {
+        Row: {
+          academic_year: string
+          assigned_at: string | null
+          assigned_by: string
+          homeroom_id: string
+          id: string
+          is_active: boolean | null
+          student_id: string
+        }
+        Insert: {
+          academic_year: string
+          assigned_at?: string | null
+          assigned_by: string
+          homeroom_id: string
+          id?: string
+          is_active?: boolean | null
+          student_id: string
+        }
+        Update: {
+          academic_year?: string
+          assigned_at?: string | null
+          assigned_by?: string
+          homeroom_id?: string
+          id?: string
+          is_active?: boolean | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_homeroom_assignments_homeroom_id_fkey"
+            columns: ["homeroom_id"]
+            isOneToOne: false
+            referencedRelation: "homerooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_homeroom_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           created_at: string | null
@@ -1281,6 +1394,51 @@ export type Database = {
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_class_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string
+          assignment_type: string
+          classroom_id: string
+          id: string
+          is_active: boolean | null
+          teacher_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by: string
+          assignment_type?: string
+          classroom_id: string
+          id?: string
+          is_active?: boolean | null
+          teacher_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string
+          assignment_type?: string
+          classroom_id?: string
+          id?: string
+          is_active?: boolean | null
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_class_assignments_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_class_assignments_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1513,12 +1671,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_teacher_to_classroom: {
+        Args: {
+          p_teacher_id: string
+          p_classroom_id: string
+          p_assignment_type?: string
+        }
+        Returns: boolean
+      }
       can_promote_to_admin: {
         Args: { target_user_id: string }
         Returns: boolean
       }
       create_classroom_code: {
         Args: { p_classroom_id: string; p_created_by: string }
+        Returns: string
+      }
+      create_homeroom: {
+        Args: {
+          p_name: string
+          p_year_group: string
+          p_form_tutor_id?: string
+          p_room_number?: string
+        }
         Returns: string
       }
       enroll_student: {
@@ -1605,6 +1780,12 @@ export type Database = {
       }
     }
     Enums: {
+      admin_access_level:
+        | "super_admin"
+        | "ict_admin"
+        | "head_teacher"
+        | "department_head"
+        | "form_tutor"
       app_role: "admin" | "teacher" | "student"
       user_role: "teacher" | "student"
       user_role_enum: "student" | "teacher" | "admin"
@@ -1724,6 +1905,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_access_level: [
+        "super_admin",
+        "ict_admin",
+        "head_teacher",
+        "department_head",
+        "form_tutor",
+      ],
       app_role: ["admin", "teacher", "student"],
       user_role: ["teacher", "student"],
       user_role_enum: ["student", "teacher", "admin"],

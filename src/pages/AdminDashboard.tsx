@@ -13,10 +13,17 @@ import {
   Mail, 
   Award,
   Calendar,
-  FileText
+  FileText,
+  Shield,
+  Home,
+  UserCog
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TeacherManagement } from "@/components/admin/TeacherManagement";
+import { HomeroomManagement } from "@/components/admin/HomeroomManagement";
+import { AccessLevelManagement } from "@/components/admin/AccessLevelManagement";
 
 interface AdminStats {
   totalTeachers: number;
@@ -145,27 +152,6 @@ const AdminDashboard = () => {
 
   const quickActions = [
     {
-      title: "Manage Teachers",
-      description: "Add, edit, and remove teachers",
-      icon: GraduationCap,
-      action: () => navigate('/admin/teachers'),
-      color: "bg-blue-500"
-    },
-    {
-      title: "Manage Students", 
-      description: "Add, edit, and remove students",
-      icon: Users,
-      action: () => navigate('/admin/students'),
-      color: "bg-green-500"
-    },
-    {
-      title: "School Settings",
-      description: "Configure school information",
-      icon: Settings,
-      action: () => navigate('/admin/settings'),
-      color: "bg-purple-500"
-    },
-    {
       title: "Send Announcements",
       description: "Broadcast messages to users",
       icon: Mail,
@@ -185,6 +171,13 @@ const AdminDashboard = () => {
       icon: Award,
       action: () => navigate('/admin/rewards'),
       color: "bg-yellow-500"
+    },
+    {
+      title: "School Settings",
+      description: "Configure school information",
+      icon: Settings,
+      action: () => navigate('/school-setup'),
+      color: "bg-purple-500"
     }
   ];
 
@@ -205,7 +198,7 @@ const AdminDashboard = () => {
           </p>
           {school && (
             <p className="text-lg text-gray-400">
-              Managing {school.name}
+              Managing {school.name} | Access Level: {adminProfile?.access_level?.replace('_', ' ')}
             </p>
           )}
         </div>
@@ -253,49 +246,73 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-              return (
-                <motion.div
-                  key={action.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="bg-gray-800 border-gray-700 hover:border-purple-500 transition-colors cursor-pointer group">
-                    <CardHeader>
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg ${action.color}`}>
-                          <Icon className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-white group-hover:text-purple-300 transition-colors">
-                            {action.title}
-                          </CardTitle>
-                          <CardDescription className="text-gray-400">
-                            {action.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <Button 
-                        onClick={action.action}
-                        className="w-full bg-purple-600 hover:bg-purple-700"
-                      >
-                        Access
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
+        {/* Management Tabs */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+            <TabsTrigger value="overview" className="text-white">Overview</TabsTrigger>
+            <TabsTrigger value="teachers" className="text-white">Teachers</TabsTrigger>
+            <TabsTrigger value="homerooms" className="text-white">Homerooms</TabsTrigger>
+            <TabsTrigger value="access" className="text-white">Access Levels</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Quick Actions */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {quickActions.map((action, index) => {
+                  const Icon = action.icon;
+                  return (
+                    <motion.div
+                      key={action.title}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <Card className="bg-gray-800 border-gray-700 hover:border-purple-500 transition-colors cursor-pointer group">
+                        <CardHeader>
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-3 rounded-lg ${action.color}`}>
+                              <Icon className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-white group-hover:text-purple-300 transition-colors">
+                                {action.title}
+                              </CardTitle>
+                              <CardDescription className="text-gray-400">
+                                {action.description}
+                              </CardDescription>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <Button 
+                            onClick={action.action}
+                            className="w-full bg-purple-600 hover:bg-purple-700"
+                          >
+                            Access
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="teachers">
+            <TeacherManagement />
+          </TabsContent>
+
+          <TabsContent value="homerooms">
+            <HomeroomManagement />
+          </TabsContent>
+
+          <TabsContent value="access">
+            <AccessLevelManagement />
+          </TabsContent>
+        </Tabs>
       </motion.div>
     </div>
   );
