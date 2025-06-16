@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { SendNFTDialog } from "./SendNFTDialog";
 
 interface TeacherNFT {
   id: string;
@@ -219,7 +220,13 @@ export const TeacherNFTLibrary = () => {
                 {nft.metadata.description}
               </p>
               
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex flex-col gap-2 pt-2">
+                <SendNFTDialog
+                  nftId={nft.id}
+                  nftName={nft.metadata.name}
+                  onTransferComplete={loadTeacherNFTs}
+                />
+                
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm" className="w-full">

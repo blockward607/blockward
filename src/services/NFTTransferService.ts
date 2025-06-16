@@ -72,6 +72,21 @@ export const transferNFT = async (
       : nft.metadata;
       
     pointsValue = metadata.points || 0;
+  } else {
+    // If NFT not found in availableNfts, get it from database
+    const { data: nftData } = await supabase
+      .from('nfts')
+      .select('metadata')
+      .eq('id', selectedNft)
+      .single();
+      
+    if (nftData && nftData.metadata) {
+      const metadata = typeof nftData.metadata === 'string' 
+        ? JSON.parse(nftData.metadata) 
+        : nftData.metadata;
+        
+      pointsValue = metadata.points || 0;
+    }
   }
 
   // Award points to student if the NFT has a points value
