@@ -1,3 +1,4 @@
+
 import { Routes, Route } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Toaster } from "@/components/ui/toaster";
@@ -5,8 +6,8 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import DashboardPage from "./pages/Dashboard";
 import AuthPage from "./pages/Auth";
 import WalletPage from "./pages/Wallet";
-import AdminPage from "./pages/Admin";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import GuestRoute from "./components/auth/GuestRoute";
 
 function App() {
@@ -28,7 +29,7 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="wallet" element={<WalletPage />} />
-          <Route path="admin" element={<AdminPage />} />
+          <Route path="admin" element={<AdminDashboard />} />
         </Route>
       </Routes>
       <Toaster />
