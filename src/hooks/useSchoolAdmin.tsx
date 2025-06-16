@@ -64,14 +64,14 @@ export const useSchoolAdmin = () => {
         return;
       }
 
-      // Check for admin role - using string comparison since enum might not be updated yet
+      // Check for admin or teacher role (since admin enum was just added)
       const hasAdminRole = userRoles?.some(r => r.role === 'admin' || r.role === 'teacher');
       setIsAdmin(hasAdminRole || false);
 
       if (hasAdminRole) {
-        // Get admin profile and school data - using direct table access with type casting
+        // Get admin profile and school data
         const { data: adminData, error: adminError } = await supabase
-          .from('admin_profiles' as any)
+          .from('admin_profiles')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
@@ -79,12 +79,12 @@ export const useSchoolAdmin = () => {
         if (adminError) {
           console.error('Error fetching admin profile:', adminError);
         } else if (adminData) {
-          setAdminProfile(adminData as AdminProfile);
+          setAdminProfile(adminData);
 
           // Get school data
           if (adminData.school_id) {
             const { data: schoolData, error: schoolError } = await supabase
-              .from('schools' as any)
+              .from('schools')
               .select('*')
               .eq('id', adminData.school_id)
               .maybeSingle();
@@ -92,7 +92,7 @@ export const useSchoolAdmin = () => {
             if (schoolError) {
               console.error('Error fetching school:', schoolError);
             } else if (schoolData) {
-              setSchool(schoolData as School);
+              setSchool(schoolData);
             }
           }
         }
@@ -111,9 +111,9 @@ export const useSchoolAdmin = () => {
 
   const createSchool = async (schoolData: Partial<School>) => {
     try {
-      // Create school using direct SQL
+      // Create school
       const { data: newSchool, error: schoolError } = await supabase
-        .from('schools' as any)
+        .from('schools')
         .insert({
           name: schoolData.name,
           contact_email: schoolData.contact_email,
@@ -131,7 +131,7 @@ export const useSchoolAdmin = () => {
       
       // Create admin profile for current user
       const { error: adminError } = await supabase
-        .from('admin_profiles' as any)
+        .from('admin_profiles')
         .insert({
           user_id: user?.id,
           school_id: newSchool.id,
@@ -146,7 +146,7 @@ export const useSchoolAdmin = () => {
         .from('user_roles')
         .upsert({
           user_id: user?.id,
-          role: 'teacher' as any // Using teacher role temporarily until admin enum is added
+          role: 'admin' as any // Now we can use admin role since enum was created
         });
 
       if (roleError) {
@@ -154,7 +154,7 @@ export const useSchoolAdmin = () => {
         // Continue anyway as this might be handled by triggers
       }
 
-      setSchool(newSchool as School);
+      setSchool(newSchool);
       setIsAdmin(true);
 
       toast({
@@ -179,7 +179,7 @@ export const useSchoolAdmin = () => {
 
     try {
       const { data: updatedSchool, error } = await supabase
-        .from('schools' as any)
+        .from('schools')
         .update(updates)
         .eq('id', school.id)
         .select()
@@ -187,7 +187,7 @@ export const useSchoolAdmin = () => {
 
       if (error) throw error;
 
-      setSchool(updatedSchool as School);
+      setSchool(updatedSchool);
 
       toast({
         title: "Success",

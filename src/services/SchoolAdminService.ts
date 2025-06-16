@@ -69,7 +69,7 @@ export const SchoolAdminService = {
     };
 
     const { data, error } = await supabase
-      .from('schools' as any)
+      .from('schools')
       .insert(sanitizedData)
       .select()
       .single();
@@ -89,7 +89,7 @@ export const SchoolAdminService = {
 
     // First get admin profile
     const { data: adminProfile, error: adminError } = await supabase
-      .from('admin_profiles' as any)
+      .from('admin_profiles')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle();
@@ -103,7 +103,7 @@ export const SchoolAdminService = {
 
     // Then get school data
     const { data: school, error: schoolError } = await supabase
-      .from('schools' as any)
+      .from('schools')
       .select('*')
       .eq('id', adminProfile.school_id)
       .maybeSingle();
@@ -128,7 +128,7 @@ export const SchoolAdminService = {
     };
 
     const { data, error } = await supabase
-      .from('schools' as any)
+      .from('schools')
       .update(sanitizedUpdates)
       .eq('id', schoolId)
       .select()
@@ -152,7 +152,7 @@ export const SchoolAdminService = {
     };
 
     const { data, error } = await supabase
-      .from('year_groups' as any)
+      .from('year_groups')
       .insert(sanitizedData)
       .select()
       .single();
@@ -171,7 +171,7 @@ export const SchoolAdminService = {
     }
 
     const { data, error } = await supabase
-      .from('year_groups' as any)
+      .from('year_groups')
       .select('*')
       .eq('school_id', schoolId)
       .order('sort_order', { ascending: true });
@@ -195,7 +195,7 @@ export const SchoolAdminService = {
     };
 
     const { data, error } = await supabase
-      .from('subjects' as any)
+      .from('subjects')
       .insert(sanitizedData)
       .select()
       .single();
@@ -214,7 +214,7 @@ export const SchoolAdminService = {
     }
 
     const { data, error } = await supabase
-      .from('subjects' as any)
+      .from('subjects')
       .select('*')
       .eq('school_id', schoolId)
       .order('name', { ascending: true });
@@ -238,7 +238,7 @@ export const SchoolAdminService = {
     };
 
     const { data, error } = await supabase
-      .from('admin_profiles' as any)
+      .from('admin_profiles')
       .insert(sanitizedData)
       .select()
       .single();
@@ -267,15 +267,15 @@ export const SchoolAdminService = {
       return false;
     }
 
-    // Check for admin or teacher role (since admin enum might not exist yet)
-    const hasAdminRole = userRoles?.some(r => r.role === 'teacher');
+    // Check for admin or teacher role
+    const hasAdminRole = userRoles?.some(r => r.role === 'admin' || r.role === 'teacher');
 
     if (!hasAdminRole) return false;
 
     // If specific school ID is provided, check admin profile
     if (schoolId) {
       const { data: adminProfile } = await supabase
-        .from('admin_profiles' as any)
+        .from('admin_profiles')
         .select('school_id')
         .eq('user_id', userId)
         .eq('school_id', schoolId)
@@ -300,7 +300,7 @@ export const SchoolAdminService = {
     }
 
     const { data, error } = await supabase
-      .from('audit_logs' as any)
+      .from('audit_logs')
       .insert({
         school_id: schoolId,
         action: sanitizeInput(action),
@@ -325,7 +325,7 @@ export const SchoolAdminService = {
     }
 
     const { data, error } = await supabase
-      .from('audit_logs' as any)
+      .from('audit_logs')
       .select('*')
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
