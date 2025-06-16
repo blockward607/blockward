@@ -101,11 +101,11 @@ function App() {
               <Route path="class/:classroomId" element={<ClassDetails />} />
               <Route path="class/:classroomId/grades" element={<Grades />} />
               <Route path="auth/wallet-verify" element={<WalletVerify />} />
-              <Route path="/tutorial/:role" element={<TutorialPage />} />
+              <Route path="tutorial/:role" element={<TutorialPage />} />
             </Route>
             
-            {/* Catch all route for better error handling */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Catch all route - redirect unknown routes to home instead of dashboard */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
         <AssistantBot />
