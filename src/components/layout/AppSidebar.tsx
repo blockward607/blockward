@@ -1,139 +1,158 @@
-
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { 
+  Home, 
+  Users, 
+  BookOpen, 
+  Calendar, 
+  Award, 
+  Settings, 
+  LogOut,
+  School,
+  Shield
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import { useSchoolAdmin } from "@/hooks/useSchoolAdmin";
+import { useLogout } from "@/hooks/useLogout";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
-import {
-  BookOpen,
-  Megaphone,
-  LogOut,
-  Wallet,
-  Calendar,
-  Settings,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 export function AppSidebar() {
-  const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const { isAdmin } = useSchoolAdmin();
+  const { logout } = useLogout();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  const studentItems = [
+    { title: "Dashboard", url: "/dashboard", icon: Home },
+    { title: "Classes", url: "/classes", icon: BookOpen },
+    { title: "Achievements", url: "/achievements", icon: Award },
+    { title: "Wallet", url: "/wallet", icon: Award },
+  ];
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+  const teacherItems = [
+    { title: "Dashboard", url: "/dashboard", icon: Home },
+    { title: "Classes", url: "/classes", icon: BookOpen },
+    { title: "Students", url: "/students", icon: Users },
+    { title: "Attendance", url: "/attendance", icon: Calendar },
+    { title: "Grades", url: "/grades", icon: Award },
+    { title: "Rewards", url: "/rewards", icon: Award },
+  ];
 
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .single();
+  const adminItems = [
+    { title: "Admin Dashboard", url: "/school-admin", icon: School },
+    { title: "User Management", url: "/school-admin?tab=users", icon: Users },
+    { title: "Timetable", url: "/school-admin?tab=timetable", icon: Calendar },
+    { title: "Classes", url: "/school-admin?tab=classes", icon: BookOpen },
+    { title: "Reports", url: "/school-admin?tab=reports", icon: Award },
+    { title: "School Settings", url: "/school-admin?tab=settings", icon: Settings },
+  ];
 
-    setUserRole(roleData?.role || null);
-  };
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/auth');
-  };
-
-  const handleNavigate = (path: string) => {
-    if (path === '/classes') {
-      window.history.pushState({}, '', path);
-      navigate(path, { replace: true });
-    } else {
-      navigate(path);
+  // Determine user role
+  useState(() => {
+    if (user) {
+      if (user.user_metadata?.role) {
+        setUserRole(user.user_metadata.role);
+      } else {
+        // Fallback to checking auth claims
+        const claims = user.app_metadata?.claims;
+        if (claims?.includes('teacher')) {
+          setUserRole('teacher');
+        } else if (claims?.includes('student')) {
+          setUserRole('student');
+        }
+      }
     }
+  });
+
+  const getMenuItems = () => {
+    if (isAdmin) {
+      return adminItems;
+    }
+    // Keep existing teacher/student logic
+    return user?.user_metadata?.role === 'student' ? studentItems : teacherItems;
   };
 
-  // Flat list of nav items for students and teachers, no group headers
-  const teacherNav = [
-    { name: "Announcements", href: "/dashboard", icon: Megaphone },
-    { name: "Classes", href: "/classes", icon: BookOpen },
-    { name: "Attendance", href: "/attendance", icon: Calendar },
-    { name: "NFT Wallet", href: "/wallet", icon: Wallet },
-    { name: "Settings", href: "/settings", icon: Settings },
-  ];
-  const studentNav = [
-    { name: "Announcements", href: "/dashboard", icon: Megaphone },
-    { name: "Classes", href: "/classes", icon: BookOpen },
-    { name: "NFT Wallet", href: "/wallet", icon: Wallet },
-    { name: "Settings", href: "/settings", icon: Settings },
-  ];
-  const navItems = userRole === 'teacher' ? teacherNav : studentNav;
-  
+  const menuItems = getMenuItems();
+
   return (
-    <Sidebar className="bg-gradient-to-b from-[#25293A] to-[#1A1F2C] border-r border-purple-500/30">
-      <SidebarHeader className="flex items-center px-6 py-6">
-        <div 
-          className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 cursor-pointer select-none" 
-          onClick={() => handleNavigate('/dashboard')}
-        >
-          BlockWard
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent className="flex-1 overflow-y-auto">
+    <Sidebar className="border-r border-gray-800 bg-gray-900/50">
+      <SidebarContent>
+        <SidebarGroup>
+          <div className="p-4">
+            <h2 className="text-lg font-semibold text-white">Blockward</h2>
+            {isAdmin && (
+              <div className="flex items-center gap-2 mt-2">
+                <Shield className="w-4 h-4 text-purple-400" />
+                <span className="text-sm text-purple-400">School Admin</span>
+              </div>
+            )}
+          </div>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.href;
-                const Icon = item.icon;
-                
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={isActive}
-                      className={cn(
-                        "p-3 rounded-xl hover:bg-purple-700/30 transition-all duration-300",
-                        isActive && "bg-purple-600/50 shadow-lg border border-purple-400/40"
-                      )}
-                    >
-                      <div 
-                        onClick={() => handleNavigate(item.href)} 
-                        className={cn(
-                          "cursor-pointer flex items-center w-full",
-                          isActive ? "text-white font-semibold" : "text-gray-200"
-                        )}
-                      >
-                        <Icon className={cn("w-5 h-5", isActive && "text-purple-300")} />
-                        <span className="ml-3">{item.name}</span>
-                      </div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    onClick={() => navigate(item.url)}
+                    isActive={location.pathname === item.url.split('?')[0]}
+                    className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {!isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/settings")}
+                    isActive={location.pathname === "/settings"}
+                    className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={logout}
+                  className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      <SidebarFooter className="px-4 py-4">
-        <Button 
-          variant="ghost" 
-          className="w-full flex items-center justify-start p-3 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-all duration-300"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="ml-3">Logout</span>
-        </Button>
-      </SidebarFooter>
     </Sidebar>
   );
 }
