@@ -14,8 +14,7 @@ const NFT_CONTRACT_ABI = [
 ];
 
 export class BlockchainNFTService {
-  // Fixed checksummed contract address
-  private static CONTRACT_ADDRESS = '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1';
+  private static CONTRACT_ADDRESS = '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1'; // Mumbai testnet
   private static RPC_URL = 'https://rpc-mumbai.maticvigil.com';
   
   private static async getProvider(): Promise<ethers.providers.JsonRpcProvider> {
@@ -33,9 +32,7 @@ export class BlockchainNFTService {
 
   private static async getContract(): Promise<ethers.Contract> {
     const adminWallet = await this.getAdminWallet();
-    // Use checksummed address
-    const checksummedAddress = ethers.utils.getAddress(this.CONTRACT_ADDRESS);
-    return new ethers.Contract(checksummedAddress, NFT_CONTRACT_ABI, adminWallet);
+    return new ethers.Contract(this.CONTRACT_ADDRESS, NFT_CONTRACT_ABI, adminWallet);
   }
 
   static async mintNFT(
@@ -46,9 +43,6 @@ export class BlockchainNFTService {
     try {
       console.log(`Minting NFT to ${toAddress} for teacher ${teacherUserId}`);
       
-      // Validate and checksum the to address
-      const checksummedToAddress = ethers.utils.getAddress(toAddress);
-      
       // Create metadata JSON and generate token URI
       const tokenURI = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`;
       
@@ -56,10 +50,10 @@ export class BlockchainNFTService {
       const contract = await this.getContract();
       
       // Estimate gas
-      const gasEstimate = await contract.estimateGas.mintNFT(checksummedToAddress, tokenURI);
+      const gasEstimate = await contract.estimateGas.mintNFT(toAddress, tokenURI);
       
       // Mint NFT
-      const tx = await contract.mintNFT(checksummedToAddress, tokenURI, {
+      const tx = await contract.mintNFT(toAddress, tokenURI, {
         gasLimit: gasEstimate.mul(120).div(100), // Add 20% buffer
       });
       
@@ -77,7 +71,7 @@ export class BlockchainNFTService {
       await supabase.from('blockchain_transactions').insert({
         transaction_hash: receipt.transactionHash,
         from_address: receipt.from,
-        to_address: checksummedToAddress,
+        to_address: toAddress,
         transaction_type: 'mint',
         gas_used: receipt.gasUsed.toNumber(),
         gas_price: receipt.effectiveGasPrice.toNumber(),
@@ -107,17 +101,13 @@ export class BlockchainNFTService {
     try {
       console.log(`Transferring NFT ${tokenId} from ${fromAddress} to ${toAddress}`);
       
-      // Validate and checksum addresses
-      const checksummedFromAddress = ethers.utils.getAddress(fromAddress);
-      const checksummedToAddress = ethers.utils.getAddress(toAddress);
-      
       const contract = await this.getContract();
       
       // Estimate gas
-      const gasEstimate = await contract.estimateGas.safeTransferFrom(checksummedFromAddress, checksummedToAddress, tokenId);
+      const gasEstimate = await contract.estimateGas.safeTransferFrom(fromAddress, toAddress, tokenId);
       
       // Transfer NFT
-      const tx = await contract.safeTransferFrom(checksummedFromAddress, checksummedToAddress, tokenId, {
+      const tx = await contract.safeTransferFrom(fromAddress, toAddress, tokenId, {
         gasLimit: gasEstimate.mul(120).div(100), // Add 20% buffer
       });
       
@@ -130,8 +120,8 @@ export class BlockchainNFTService {
       // Record transaction in database
       await supabase.from('blockchain_transactions').insert({
         transaction_hash: receipt.transactionHash,
-        from_address: checksummedFromAddress,
-        to_address: checksummedToAddress,
+        from_address: fromAddress,
+        to_address: toAddress,
         transaction_type: 'transfer',
         gas_used: receipt.gasUsed.toNumber(),
         gas_price: receipt.effectiveGasPrice.toNumber(),

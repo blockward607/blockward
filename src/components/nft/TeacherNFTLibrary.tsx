@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Trash2, AlertTriangle } from "lucide-react";
+import { Trophy, Trash2, Send, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -16,7 +17,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { SendNFTDialog } from "./SendNFTDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { StudentSelect } from "./StudentSelect";
 
 interface TeacherNFT {
   id: string;
@@ -40,20 +48,12 @@ export const TeacherNFTLibrary = () => {
   const { toast } = useToast();
   const [nfts, setNfts] = useState<TeacherNFT[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedNft, setSelectedNft] = useState<string | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [transferring, setTransferring] = useState(false);
 
   useEffect(() => {
     loadTeacherNFTs();
-
-    // Listen for the custom event when a new NFT is created
-    const handleNFTCreated = () => {
-      loadTeacherNFTs();
-    };
-
-    window.addEventListener('nftCreated', handleNFTCreated);
-
-    return () => {
-      window.removeEventListener('nftCreated', handleNFTCreated);
-    };
   }, []);
 
   const loadTeacherNFTs = async () => {
@@ -69,7 +69,6 @@ export const TeacherNFTLibrary = () => {
         .single();
 
       if (teacherWallet) {
-        // Show all NFTs created by the teacher, regardless of current ownership
         const { data: nftData, error } = await supabase
           .from('nfts')
           .select(`
@@ -82,6 +81,7 @@ export const TeacherNFTLibrary = () => {
             created_at
           `)
           .eq('creator_wallet_id', teacherWallet.id)
+          .eq('owner_wallet_id', teacherWallet.id) // Only show NFTs still owned by teacher
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -123,36 +123,20 @@ export const TeacherNFTLibrary = () => {
 
   const handleDeleteNFT = async (nftId: string) => {
     try {
-      console.log('Deleting NFT:', nftId);
-      
-      // First delete any related transactions
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('nft_id', nftId);
-
-      if (transactionError) {
-        console.warn('Error deleting transactions:', transactionError);
-        // Continue with NFT deletion even if transaction deletion fails
-      }
-
-      // Then delete the NFT
-      const { error: nftError } = await supabase
+      const { error } = await supabase
         .from('nfts')
         .delete()
         .eq('id', nftId);
 
-      if (nftError) throw nftError;
-
-      // Immediately update the local state to remove the deleted NFT
-      setNfts(prevNfts => prevNfts.filter(nft => nft.id !== nftId));
+      if (error) throw error;
 
       toast({
         title: "NFT Deleted",
         description: "The BlockWard has been permanently deleted"
       });
 
-      console.log('NFT deleted successfully');
+      // Reload the list
+      loadTeacherNFTs();
     } catch (error: any) {
       console.error('Error deleting NFT:', error);
       toast({
@@ -160,9 +144,83 @@ export const TeacherNFTLibrary = () => {
         title: "Delete Failed",
         description: error.message || "Failed to delete the BlockWard"
       });
-      
-      // Reload the list to ensure consistency
+    }
+  };
+
+  const handleTransferNFT = async () => {
+    if (!selectedNft || !selectedStudent) return;
+
+    setTransferring(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      // Get student's wallet
+      const { data: studentWallet, error: walletError } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', selectedStudent)
+        .single();
+
+      if (walletError || !studentWallet) {
+        throw new Error("Student wallet not found");
+      }
+
+      // Update NFT owner
+      const { error: updateError } = await supabase
+        .from('nfts')
+        .update({ owner_wallet_id: studentWallet.id })
+        .eq('id', selectedNft);
+
+      if (updateError) throw updateError;
+
+      // Create transaction record
+      const { data: teacherWallet } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (teacherWallet) {
+        await supabase.from('transactions').insert({
+          nft_id: selectedNft,
+          from_wallet_id: teacherWallet.id,
+          to_wallet_id: studentWallet.id,
+          transaction_hash: `transfer_${Date.now()}`,
+          status: 'completed'
+        });
+      }
+
+      // Award points to student if NFT has points
+      const nft = nfts.find(n => n.id === selectedNft);
+      const pointsAttribute = nft?.metadata.attributes?.find(a => a.trait_type === "Points");
+      if (pointsAttribute) {
+        const points = parseInt(pointsAttribute.value);
+        if (!isNaN(points)) {
+          await supabase.rpc('increment_student_points', {
+            student_id: selectedStudent,
+            points_to_add: points
+          });
+        }
+      }
+
+      toast({
+        title: "NFT Transferred",
+        description: "The BlockWard has been sent to the student successfully!"
+      });
+
+      setSelectedNft(null);
+      setSelectedStudent("");
       loadTeacherNFTs();
+    } catch (error: any) {
+      console.error('Error transferring NFT:', error);
+      toast({
+        variant: "destructive",
+        title: "Transfer Failed",
+        description: error.message || "Failed to transfer the BlockWard"
+      });
+    } finally {
+      setTransferring(false);
     }
   };
 
@@ -173,11 +231,6 @@ export const TeacherNFTLibrary = () => {
       case 'failed': return 'bg-red-500/20 text-red-400 border-red-500/30';
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
-  };
-
-  const handleDragStart = (e: React.DragEvent, nftId: string) => {
-    e.dataTransfer.setData("nft-id", nftId);
-    e.dataTransfer.effectAllowed = "copy";
   };
 
   if (loading) {
@@ -215,12 +268,7 @@ export const TeacherNFTLibrary = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {nfts.map((nft) => (
-        <Card 
-          key={nft.id} 
-          className="border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-indigo-900/20 cursor-grab active:cursor-grabbing"
-          draggable
-          onDragStart={(e) => handleDragStart(e, nft.id)}
-        >
+        <Card key={nft.id} className="border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-indigo-900/20">
           <CardContent className="p-4">
             <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center">
               {nft.image_url ? (
@@ -248,18 +296,45 @@ export const TeacherNFTLibrary = () => {
                 {nft.metadata.description}
               </p>
               
-              <div className="flex flex-col gap-2 pt-2">
-                <SendNFTDialog
-                  nftId={nft.id}
-                  nftName={nft.metadata.name}
-                  onTransferComplete={loadTeacherNFTs}
-                />
-                
+              <div className="flex items-center gap-2 pt-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setSelectedNft(nft.id)}
+                    >
+                      <Send className="h-3 w-3 mr-1" />
+                      Send
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Send BlockWard to Student</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="font-medium text-purple-200">{nft.metadata.name}</div>
+                      <StudentSelect
+                        selectedStudentId={selectedStudent}
+                        onStudentSelect={setSelectedStudent}
+                        placeholder="Select student to receive this award"
+                      />
+                      <Button 
+                        onClick={handleTransferNFT}
+                        disabled={!selectedStudent || transferring}
+                        className="w-full"
+                      >
+                        {transferring ? "Sending..." : "Send BlockWard"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="w-full">
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Delete
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>

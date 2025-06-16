@@ -24,7 +24,6 @@ export const useClassroomStudents = (classroomId: string) => {
 
     try {
       console.log('Fetching students for classroom:', classroomId);
-      setLoading(true);
       
       const { data: classroomStudents, error: classroomError } = await supabase
         .from('classroom_students')
@@ -45,7 +44,6 @@ export const useClassroomStudents = (classroomId: string) => {
 
       console.log('Fetched classroom students:', classroomStudents);
 
-      // Get today's attendance records
       const today = new Date().toISOString().split('T')[0];
       const { data: attendanceRecords, error: attendanceError } = await supabase
         .from('attendance')
@@ -55,35 +53,32 @@ export const useClassroomStudents = (classroomId: string) => {
 
       if (attendanceError) {
         console.error('Error fetching attendance records:', attendanceError);
-        // Don't throw here, attendance is optional
+        throw attendanceError;
       }
 
       console.log('Fetched attendance records:', attendanceRecords);
 
       if (classroomStudents) {
-        const formattedStudents: Student[] = classroomStudents
-          .filter(cs => cs.students) // Filter out any null students
-          .map((cs) => {          
-            const studentId = cs.students?.id;
-            
-            // Find attendance record for this student
-            const attendanceRecord = attendanceRecords?.find(
-              (record) => record.student_id === cs.student_id
-            );
-            
-            const status = attendanceRecord?.status as AttendanceStatus | undefined;
-            
-            return {
-              id: studentId,
-              name: cs.students?.name || 'Unknown Student',
-              status: status || 'present'
-            };
-          });
+        const formattedStudents: Student[] = classroomStudents.map((cs) => {          
+          // Ensure student.id is properly typed
+          const studentId = cs.students?.id;
+          
+          // Safe status casting
+          const attendanceRecord = attendanceRecords?.find(
+            (record) => record.student_id === cs.student_id
+          );
+          
+          const status = attendanceRecord?.status as AttendanceStatus | undefined;
+          
+          return {
+            id: studentId,
+            name: cs.students?.name || 'Unknown Student',
+            status: status || 'present'
+          };
+        });
         
         console.log('Formatted students:', formattedStudents);
         setStudents(formattedStudents);
-      } else {
-        setStudents([]);
       }
     } catch (error) {
       console.error('Error fetching students:', error);

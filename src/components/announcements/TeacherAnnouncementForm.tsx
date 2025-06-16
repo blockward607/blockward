@@ -4,7 +4,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -14,14 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StudentSelector } from "./StudentSelector";
-import { SecurityService } from '@/services/SecurityService';
 import type { Classroom } from "@/types/classroom";
 
 interface TeacherAnnouncementFormProps {
   onSuccess: () => void;
   onCancel: () => void;
-  defaultClassroomId?: string;
+  defaultClassroomId?: string; // Added to support pre-selecting a classroom
 }
 
 export const TeacherAnnouncementForm = ({ 
@@ -31,9 +28,7 @@ export const TeacherAnnouncementForm = ({
 }: TeacherAnnouncementFormProps) => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [targetType, setTargetType] = useState<string>('all');
   const [classroomId, setClassroomId] = useState<string | null>(defaultClassroomId || null);
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -43,9 +38,9 @@ export const TeacherAnnouncementForm = ({
   }, []);
 
   useEffect(() => {
-    if (defaultClassroomId && SecurityService.isValidUUID(defaultClassroomId)) {
+    // When defaultClassroomId changes, update classroomId
+    if (defaultClassroomId) {
       setClassroomId(defaultClassroomId);
-      setTargetType('classroom');
     }
   }, [defaultClassroomId]);
 
@@ -63,127 +58,48 @@ export const TeacherAnnouncementForm = ({
       setClassrooms(data || []);
     } catch (error) {
       console.error("Error fetching classrooms:", error);
-      SecurityService.logSecurityEvent('classroom_fetch_error', { error: error.message });
     }
-  };
-
-  const validateInputs = () => {
-    const sanitizedTitle = SecurityService.sanitizeInput(title);
-    const sanitizedMessage = SecurityService.sanitizeInput(message);
-
-    if (!SecurityService.isValidText(sanitizedTitle, 200)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid title",
-        description: "Title must be under 200 characters and contain valid text"
-      });
-      return false;
-    }
-
-    if (!SecurityService.isValidText(sanitizedMessage, 5000)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid message",
-        description: "Message must be under 5000 characters and contain valid text"
-      });
-      return false;
-    }
-
-    if (targetType === 'classroom' && classroomId && !SecurityService.isValidUUID(classroomId)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid classroom",
-        description: "Selected classroom is invalid"
-      });
-      return false;
-    }
-
-    if (targetType === 'students') {
-      const validStudents = selectedStudents.filter(id => SecurityService.isValidUUID(id));
-      if (validStudents.length !== selectedStudents.length) {
-        toast({
-          variant: "destructive",
-          title: "Invalid student selection",
-          description: "Some selected students are invalid"
-        });
-        return false;
-      }
-      
-      if (validStudents.length === 0) {
-        toast({
-          variant: "destructive",
-          title: "No students selected",
-          description: "Please select at least one student for individual targeting"
-        });
-        return false;
-      }
-    }
-
-    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateInputs()) return;
+    if (!title.trim() || !message.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Missing fields",
+        description: "Please fill in all required fields"
+      });
+      return;
+    }
 
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const sanitizedTitle = SecurityService.sanitizeInput(title);
-      const sanitizedMessage = SecurityService.sanitizeInput(message);
-
-      const payload: any = {
-        title: sanitizedTitle,
-        message: sanitizedMessage,
+      const { error } = await supabase.from('notifications').insert({
+        title,
+        message,
+        classroom_id: classroomId, // For all students if null
         created_by: session.user.id,
         type: 'announcement'
-      };
-
-      // Set targeting based on selection
-      if (targetType === 'classroom' && classroomId) {
-        if (!SecurityService.isValidUUID(classroomId)) {
-          throw new Error("Invalid classroom ID");
-        }
-        payload.classroom_id = classroomId;
-      } else if (targetType === 'students') {
-        const validStudents = selectedStudents.filter(id => SecurityService.isValidUUID(id));
-        if (validStudents.length === 0) {
-          throw new Error("No valid students selected");
-        }
-        payload.recipients = validStudents;
-      }
-      // For 'all' type, we leave both classroom_id and recipients as null
-
-      const { error } = await supabase.from('notifications').insert(payload);
+      });
 
       if (error) throw error;
       
-      const targetDescription = 
-        targetType === 'all' ? 'for all students' :
-        targetType === 'classroom' ? 'for selected classroom' :
-        `for ${selectedStudents.length} selected students`;
-
       toast({
         title: "Success",
-        description: `Announcement ${targetDescription} published successfully`
+        description: `Announcement ${classroomId ? 'for class' : 'for all students'} published successfully`
       });
       
       onSuccess();
     } catch (error: any) {
       console.error("Error creating announcement:", error);
-      SecurityService.logSecurityEvent('announcement_creation_error', { 
-        error: error.message,
-        targetType,
-        hasClassroomId: !!classroomId,
-        studentCount: selectedStudents.length
-      });
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create announcement. Please check your input and try again."
+        description: error.message || "Failed to create announcement"
       });
     } finally {
       setLoading(false);
@@ -191,7 +107,7 @@ export const TeacherAnnouncementForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <h3 className="text-xl font-semibold mb-4">Create New Announcement</h3>
       </div>
@@ -203,54 +119,27 @@ export const TeacherAnnouncementForm = ({
           placeholder="Enter announcement title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          maxLength={200}
           required
         />
       </div>
 
-      <div className="space-y-3">
-        <Label>Target Audience</Label>
-        <RadioGroup value={targetType} onValueChange={setTargetType}>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="all" id="all" />
-            <Label htmlFor="all">All Students</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="classroom" id="classroom" />
-            <Label htmlFor="classroom">Specific Classroom</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="students" id="students" />
-            <Label htmlFor="students">Individual Students</Label>
-          </div>
-        </RadioGroup>
+      <div className="space-y-2">
+        <Label htmlFor="classroom">Class (optional)</Label>
+        <Select value={classroomId || ''} onValueChange={setClassroomId}>
+          <SelectTrigger>
+            <SelectValue placeholder="All students" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All students</SelectItem>
+            {classrooms.map((classroom) => (
+              <SelectItem key={classroom.id} value={classroom.id}>
+                {classroom.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-gray-400">Leave empty to send to all students</p>
       </div>
-
-      {targetType === 'classroom' && (
-        <div className="space-y-2">
-          <Label htmlFor="classroom-select">Select Classroom</Label>
-          <Select value={classroomId || ''} onValueChange={setClassroomId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a classroom" />
-            </SelectTrigger>
-            <SelectContent>
-              {classrooms.map((classroom) => (
-                <SelectItem key={classroom.id} value={classroom.id}>
-                  {SecurityService.sanitizeInput(classroom.name)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {targetType === 'students' && (
-        <StudentSelector
-          selectedStudents={selectedStudents}
-          onStudentsChange={setSelectedStudents}
-          classroomId={undefined}
-        />
-      )}
 
       <div className="space-y-2">
         <Label htmlFor="message">Message</Label>
@@ -260,7 +149,6 @@ export const TeacherAnnouncementForm = ({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={5}
-          maxLength={5000}
           required
         />
       </div>

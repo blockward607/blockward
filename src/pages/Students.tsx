@@ -1,19 +1,15 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ChartBar, Users, AlertCircle } from "lucide-react";
+import { Sparkles, ChartBar, Users } from "lucide-react";
 import { useStudentManagement } from "@/hooks/use-student-management";
-import { useStudents } from "@/hooks/use-students";
 import { StudentList } from "@/components/students/StudentList";
 import { StudentsHeader } from "@/components/students/StudentsHeader";
 import { DeleteStudentDialog } from "@/components/students/DeleteStudentDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 
 const Students = () => {
-  const { students: studentsFromHook, loading: studentsLoading, error: studentsError } = useStudents();
   const {
     students,
     loading,
@@ -24,10 +20,6 @@ const Students = () => {
     confirmDeleteStudent
   } = useStudentManagement();
   const [activeTab, setActiveTab] = useState("list");
-
-  // Use students from useStudents hook if available, otherwise fall back to useStudentManagement
-  const displayStudents = studentsFromHook.length > 0 ? studentsFromHook : students;
-  const isLoading = studentsLoading || loading;
 
   // Animation variants
   const containerVariants = {
@@ -40,43 +32,7 @@ const Students = () => {
     }
   };
 
-  console.log('📊 Students page render:', {
-    studentsFromHook: studentsFromHook.length,
-    studentsFromManagement: students.length,
-    displayStudents: displayStudents.length,
-    isLoading,
-    studentsError
-  });
-
-  // Show error state
-  if (studentsError) {
-    console.log('🚨 Students: Showing error state:', studentsError);
-    return (
-      <div className="space-y-8 relative z-10">
-        <StudentsHeader onAddStudent={addNewStudent} />
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Error loading students: {studentsError}
-          </AlertDescription>
-        </Alert>
-        <Button 
-          onClick={() => {
-            console.log('🔄 Students: User clicked retry');
-            window.location.reload();
-          }}
-          className="mt-4"
-          variant="outline"
-        >
-          Retry Loading Students
-        </Button>
-      </div>
-    );
-  }
-
-  // Show loading state
-  if (isLoading) {
-    console.log('⏳ Students: Showing loading state');
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-[80vh]">
         <motion.div 
@@ -92,7 +48,6 @@ const Students = () => {
     );
   }
 
-  console.log('✅ Students: Rendering main students content');
   return (
     <motion.div 
       initial="hidden"
@@ -115,19 +70,10 @@ const Students = () => {
         </TabsList>
         
         <TabsContent value="list" className="mt-0">
-          {displayStudents.length === 0 ? (
-            <Alert>
-              <Users className="h-4 w-4" />
-              <AlertDescription>
-                No students found. Add students using the button above.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <StudentList 
-              students={displayStudents} 
-              onDeleteStudent={initiateDeleteStudent} 
-            />
-          )}
+          <StudentList 
+            students={students} 
+            onDeleteStudent={initiateDeleteStudent} 
+          />
         </TabsContent>
         
         <TabsContent value="behavior" className="mt-0">

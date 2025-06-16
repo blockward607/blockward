@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,14 +25,8 @@ export const BlockchainNFTCreator = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("🚀 NFT Creation Started");
-    console.log("Form Data:", formData);
-    console.log("Image URL:", imageUrl);
-    console.log("Use Blockchain:", useBlockchain);
     
-    // Enhanced validation with detailed logging
     if (!imageUrl) {
-      console.error("❌ Validation failed: Missing image");
       toast({
         variant: "destructive",
         title: "Missing Information",
@@ -40,68 +35,13 @@ export const BlockchainNFTCreator = () => {
       return;
     }
 
-    if (!formData.title.trim()) {
-      console.error("❌ Validation failed: Missing title");
-      toast({
-        variant: "destructive",
-        title: "Missing Information",
-        description: "Please enter a title"
-      });
-      return;
-    }
-
-    if (!formData.description.trim()) {
-      console.error("❌ Validation failed: Missing description");
-      toast({
-        variant: "destructive",
-        title: "Missing Information",
-        description: "Please enter a description"
-      });
-      return;
-    }
-
-    console.log("✅ Validation passed, starting NFT creation...");
     setLoading(true);
 
     try {
-      // Get session with detailed logging
-      console.log("🔐 Getting user session...");
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("❌ Session error:", sessionError);
-        throw new Error(`Session error: ${sessionError.message}`);
-      }
-      
-      if (!session) {
-        console.error("❌ No active session found");
-        throw new Error("Not authenticated");
-      }
-      
-      console.log("✅ Session found for user:", session.user.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      // Get teacher's wallet with detailed logging
-      console.log("👛 Looking up teacher wallet...");
-      const { data: teacherWallet, error: walletError } = await supabase
-        .from('wallets')
-        .select('id, address')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (walletError) {
-        console.error("❌ Wallet lookup error:", walletError);
-        throw new Error(`Wallet lookup failed: ${walletError.message}`);
-      }
-
-      if (!teacherWallet) {
-        console.error("❌ No wallet found for user:", session.user.id);
-        throw new Error("Teacher wallet not found");
-      }
-
-      console.log("✅ Teacher wallet found:", teacherWallet);
-
-      // Prepare NFT metadata with logging
-      console.log("📝 Preparing NFT metadata...");
+      // Prepare NFT metadata
       const metadata = {
         name: formData.title,
         description: formData.description,
@@ -112,92 +52,69 @@ export const BlockchainNFTCreator = () => {
           { trait_type: "Created By", value: "BlockWard Teacher" }
         ]
       };
-      console.log("📦 Metadata prepared:", metadata);
 
       let mintResult;
       
       if (useBlockchain) {
-        console.log("⛓️ Starting real blockchain minting...");
+        // Real blockchain minting - use placeholder wallet address for now
         mintResult = await BlockchainNFTService.mintNFT(
-          teacherWallet.address,
+          "0x0000000000000000000000000000000000000000",
           metadata,
           session.user.id
         );
       } else {
-        console.log("🎭 Starting simulated minting...");
+        // Simulated minting
         mintResult = await BlockchainNFTService.simulateMint(
-          teacherWallet.address,
+          "0x0000000000000000000000000000000000000000",
           metadata
         );
       }
 
-      console.log("🎯 Mint result:", mintResult);
-
       if (!mintResult.success) {
-        console.error("❌ Minting failed:", mintResult.error);
         throw new Error(mintResult.error || "Failed to mint NFT");
       }
 
-      console.log("✅ NFT minted successfully, saving to database...");
+      // Get teacher's wallet
+      const { data: teacherWallet } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
 
-      // Prepare database record with detailed logging - FIXED NETWORK VALUE
-      const nftRecord = {
+      // Save NFT to database - owned by teacher initially
+      const { error: nftError } = await supabase.from('nfts').insert({
         token_id: mintResult.tokenId,
         contract_address: '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1',
         metadata,
-        creator_wallet_id: teacherWallet.id,
-        owner_wallet_id: teacherWallet.id,
+        creator_wallet_id: teacherWallet?.id,
+        owner_wallet_id: teacherWallet?.id, // Initially owned by teacher
         image_url: imageUrl,
-        network: useBlockchain ? "mainnet" : "testnet", // Fixed: Use allowed network values
+        network: "polygon-mumbai",
         blockchain_token_id: parseInt(mintResult.tokenId.replace('sim-', '') || '0'),
         transaction_hash: mintResult.transactionHash,
         blockchain_status: useBlockchain ? 'minted' : 'pending',
         minted_at: new Date().toISOString()
-      };
+      });
 
-      console.log("💾 Saving NFT record to database:", nftRecord);
-
-      const { data: insertedNft, error: nftError } = await supabase
-        .from('nfts')
-        .insert(nftRecord)
-        .select()
-        .single();
-
-      if (nftError) {
-        console.error("❌ Database insertion error:", nftError);
-        console.error("❌ Failed record:", nftRecord);
-        throw new Error(`Database error: ${nftError.message}`);
-      }
-
-      console.log("✅ NFT saved successfully to database:", insertedNft);
+      if (nftError) throw nftError;
 
       toast({
         title: "NFT Created Successfully!",
-        description: `${useBlockchain ? 'Blockchain' : 'Virtual'} NFT added to your library`,
+        description: "BlockWard added to your library and ready to send",
       });
 
       // Reset form
-      console.log("🔄 Resetting form...");
       setFormData({ title: "", description: "", points: 100, nftType: "academic" });
       setImageUrl(null);
-
-      // Trigger library refresh
-      console.log("🔄 Triggering library refresh...");
-      window.dispatchEvent(new CustomEvent('nftCreated'));
-      
-      console.log("🎉 NFT creation process completed successfully!");
       
     } catch (error: any) {
-      console.error("💥 Error creating NFT:", error);
-      console.error("💥 Error stack:", error.stack);
-      
+      console.error('Error creating blockchain NFT:', error);
       toast({
         variant: "destructive",
         title: "Creation Failed",
-        description: error.message || "Failed to create NFT. Check console for details.",
+        description: error.message || "Failed to create blockchain NFT",
       });
     } finally {
-      console.log("🏁 Setting loading to false");
       setLoading(false);
     }
   };
@@ -296,13 +213,13 @@ export const BlockchainNFTCreator = () => {
 
           <Button 
             type="submit" 
-            disabled={loading || !formData.title.trim() || !formData.description.trim() || !imageUrl}
+            disabled={loading || !formData.title || !imageUrl}
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {useBlockchain ? "Minting on Blockchain..." : "Creating Virtual NFT..."}
+                {useBlockchain ? "Minting on Blockchain..." : "Creating NFT..."}
               </>
             ) : (
               <>

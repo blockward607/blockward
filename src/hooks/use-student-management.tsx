@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudents } from "@/hooks/use-students";
-import { SecurityService } from "@/services/SecurityService";
 
 export interface Student {
   id: string;
@@ -21,23 +20,11 @@ export const useStudentManagement = () => {
   const { toast } = useToast();
 
   const addNewStudent = async (name: string, school: string): Promise<void> => {
-    const sanitizedName = SecurityService.sanitizeInput(name);
-    const sanitizedSchool = SecurityService.sanitizeInput(school);
-
-    if (!SecurityService.isValidText(sanitizedName, 100)) {
+    if (!name.trim()) {
       toast({
         variant: "destructive",
-        title: "Invalid name",
-        description: "Please enter a valid student name (max 100 characters)"
-      });
-      return;
-    }
-
-    if (school && !SecurityService.isValidText(sanitizedSchool, 200)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid school",
-        description: "School name must be under 200 characters"
+        title: "Error",
+        description: "Please enter a student name"
       });
       return;
     }
@@ -47,8 +34,8 @@ export const useStudentManagement = () => {
         .from('students')
         .insert([
           { 
-            name: sanitizedName,
-            school: sanitizedSchool || undefined,
+            name: name.trim(),
+            school: school.trim() || undefined,
             points: 0
           }
         ])
@@ -61,12 +48,9 @@ export const useStudentManagement = () => {
         description: "Student added successfully"
       });
       
+      // Return void instead of data
     } catch (error) {
       console.error('Error adding student:', error);
-      SecurityService.logSecurityEvent('student_creation_error', { 
-        error: error.message,
-        name: sanitizedName
-      });
       toast({
         variant: "destructive",
         title: "Error",
@@ -76,29 +60,12 @@ export const useStudentManagement = () => {
   };
 
   const initiateDeleteStudent = (id: string) => {
-    if (!SecurityService.isValidUUID(id)) {
-      SecurityService.logSecurityEvent('invalid_student_delete_id', { id });
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Invalid student ID"
-      });
-      return;
-    }
-
     setStudentToDelete(id);
     setIsDeleteDialogOpen(true);
   };
 
   const confirmDeleteStudent = async () => {
-    if (!studentToDelete || !SecurityService.isValidUUID(studentToDelete)) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Invalid student ID"
-      });
-      return;
-    }
+    if (!studentToDelete) return;
     
     try {
       // First delete any classroom_students associations
@@ -109,7 +76,7 @@ export const useStudentManagement = () => {
 
       if (relError) {
         console.error('Error deleting classroom associations:', relError);
-        // Continue anyway as this might not be a critical error
+        // Continue anyway
       }
 
       // Then delete the student
@@ -126,10 +93,6 @@ export const useStudentManagement = () => {
       });
     } catch (error) {
       console.error('Error deleting student:', error);
-      SecurityService.logSecurityEvent('student_deletion_error', { 
-        error: error.message,
-        studentId: studentToDelete
-      });
       toast({
         variant: "destructive",
         title: "Error",
