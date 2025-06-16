@@ -1,56 +1,26 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, Trash2, Send, AlertTriangle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Trophy, Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { StudentSelect } from "./StudentSelect";
 
-interface TeacherNFT {
+interface NFT {
   id: string;
-  metadata: {
-    name: string;
-    description: string;
-    image?: string;
-    attributes?: Array<{
-      trait_type: string;
-      value: string;
-    }>;
-  };
+  metadata: any;
   image_url: string | null;
-  blockchain_token_id: number | null;
-  transaction_hash: string | null;
-  blockchain_status: string;
   created_at: string;
 }
 
 export const TeacherNFTLibrary = () => {
   const { toast } = useToast();
-  const [nfts, setNfts] = useState<TeacherNFT[]>([]);
+  const [nfts, setNfts] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedNft, setSelectedNft] = useState<string | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState("");
-  const [transferring, setTransferring] = useState(false);
+  const [transferLoading, setTransferLoading] = useState<string | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
+  const [selectedNft, setSelectedNft] = useState<string>("");
 
   useEffect(() => {
     loadTeacherNFTs();
@@ -69,45 +39,17 @@ export const TeacherNFTLibrary = () => {
         .single();
 
       if (teacherWallet) {
+        // Load NFTs created by this teacher and still in their possession
         const { data: nftData, error } = await supabase
           .from('nfts')
-          .select(`
-            id,
-            metadata,
-            image_url,
-            blockchain_token_id,
-            transaction_hash,
-            blockchain_status,
-            created_at
-          `)
+          .select('*')
           .eq('creator_wallet_id', teacherWallet.id)
           .eq('owner_wallet_id', teacherWallet.id) // Only show NFTs still owned by teacher
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        const transformedNfts: TeacherNFT[] = (nftData || []).map((nft: any) => {
-          const parsedMetadata = typeof nft.metadata === 'string' 
-            ? JSON.parse(nft.metadata) 
-            : nft.metadata;
-            
-          return {
-            id: nft.id,
-            metadata: {
-              name: parsedMetadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
-              description: parsedMetadata.description || "Educational achievement award",
-              image: parsedMetadata.image,
-              attributes: parsedMetadata.attributes || []
-            },
-            image_url: nft.image_url,
-            blockchain_token_id: nft.blockchain_token_id,
-            transaction_hash: nft.transaction_hash,
-            blockchain_status: nft.blockchain_status || 'pending',
-            created_at: nft.created_at
-          };
-        });
-
-        setNfts(transformedNfts);
+        setNfts(nftData || []);
       }
     } catch (error) {
       console.error('Error loading teacher NFTs:', error);
@@ -121,249 +63,217 @@ export const TeacherNFTLibrary = () => {
     }
   };
 
-  const handleDeleteNFT = async (nftId: string) => {
-    try {
-      const { error } = await supabase
-        .from('nfts')
-        .delete()
-        .eq('id', nftId);
-
-      if (error) throw error;
-
-      toast({
-        title: "NFT Deleted",
-        description: "The BlockWard has been permanently deleted"
-      });
-
-      // Reload the list
-      loadTeacherNFTs();
-    } catch (error: any) {
-      console.error('Error deleting NFT:', error);
+  const handleTransferNFT = async () => {
+    if (!selectedNft || !selectedStudent) {
       toast({
         variant: "destructive",
-        title: "Delete Failed",
-        description: error.message || "Failed to delete the BlockWard"
+        title: "Missing Selection",
+        description: "Please select both an NFT and a student"
       });
+      return;
     }
-  };
 
-  const handleTransferNFT = async () => {
-    if (!selectedNft || !selectedStudent) return;
+    setTransferLoading(selectedNft);
 
-    setTransferring(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      // Get student's wallet
-      const { data: studentWallet, error: walletError } = await supabase
+      // Get or create student wallet
+      let studentWallet;
+      const { data: existingWallet } = await supabase
         .from('wallets')
-        .select('id')
+        .select('*')
         .eq('user_id', selectedStudent)
         .single();
-
-      if (walletError || !studentWallet) {
-        throw new Error("Student wallet not found");
+        
+      if (existingWallet) {
+        studentWallet = existingWallet;
+      } else {
+        // Create a wallet for the student
+        const { data: newWallet, error: createWalletError } = await supabase
+          .from('wallets')
+          .insert({
+            user_id: selectedStudent,
+            address: "wallet_" + Math.random().toString(16).slice(2, 10),
+            type: "user"
+          })
+          .select()
+          .single();
+          
+        if (createWalletError) throw createWalletError;
+        studentWallet = newWallet;
       }
 
-      // Update NFT owner
-      const { error: updateError } = await supabase
-        .from('nfts')
-        .update({ owner_wallet_id: studentWallet.id })
-        .eq('id', selectedNft);
-
-      if (updateError) throw updateError;
-
-      // Create transaction record
+      // Get teacher wallet
       const { data: teacherWallet } = await supabase
         .from('wallets')
-        .select('id')
+        .select('*')
         .eq('user_id', session.user.id)
         .single();
 
-      if (teacherWallet) {
-        await supabase.from('transactions').insert({
+      if (!teacherWallet) throw new Error("Teacher wallet not found");
+
+      // Transfer NFT ownership
+      const { error: transferError } = await supabase
+        .from('nfts')
+        .update({ owner_wallet_id: studentWallet.id })
+        .eq('id', selectedNft)
+        .eq('owner_wallet_id', teacherWallet.id); // Ensure teacher owns it
+
+      if (transferError) throw transferError;
+
+      // Create transaction record
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
           nft_id: selectedNft,
           from_wallet_id: teacherWallet.id,
           to_wallet_id: studentWallet.id,
-          transaction_hash: `transfer_${Date.now()}`,
-          status: 'completed'
+          transaction_hash: "virtual-transfer-" + Date.now(),
+          status: 'completed',
         });
-      }
 
-      // Award points to student if NFT has points
+      if (transactionError) throw transactionError;
+
+      // Award points to student
       const nft = nfts.find(n => n.id === selectedNft);
-      const pointsAttribute = nft?.metadata.attributes?.find(a => a.trait_type === "Points");
-      if (pointsAttribute) {
-        const points = parseInt(pointsAttribute.value);
-        if (!isNaN(points)) {
-          await supabase.rpc('increment_student_points', {
-            student_id: selectedStudent,
-            points_to_add: points
-          });
-        }
+      const points = nft?.metadata?.points || 100;
+
+      const { error: incrementError } = await supabase
+        .rpc('increment_student_points', {
+          student_id: selectedStudent,
+          points_to_add: points
+        });
+
+      if (incrementError) {
+        console.warn('Failed to increment student points:', incrementError);
       }
 
       toast({
-        title: "NFT Transferred",
-        description: "The BlockWard has been sent to the student successfully!"
+        title: "NFT Transferred!",
+        description: "The BlockWard has been successfully sent to the student!"
       });
 
-      setSelectedNft(null);
+      // Reset selections and reload library
+      setSelectedNft("");
       setSelectedStudent("");
       loadTeacherNFTs();
+
     } catch (error: any) {
       console.error('Error transferring NFT:', error);
       toast({
         variant: "destructive",
         title: "Transfer Failed",
-        description: error.message || "Failed to transfer the BlockWard"
+        description: error.message || "Failed to transfer NFT"
       });
     } finally {
-      setTransferring(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'minted': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'pending': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'failed': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      setTransferLoading(null);
     }
   };
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i} className="border-purple-500/20 animate-pulse">
-            <CardContent className="p-4">
-              <div className="aspect-square bg-gray-700 rounded-lg mb-3"></div>
-              <div className="h-4 bg-gray-700 rounded mb-2"></div>
-              <div className="h-3 bg-gray-700 rounded w-2/3"></div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
       </div>
     );
   }
 
-  if (nfts.length === 0) {
-    return (
-      <Card className="border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-indigo-900/20">
-        <CardContent className="p-8 text-center">
-          <Trophy className="h-12 w-12 text-purple-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-purple-300 mb-2">
-            No NFTs in Library
-          </h3>
-          <p className="text-gray-400">
-            Create blockchain NFT awards to build your library!
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {nfts.map((nft) => (
-        <Card key={nft.id} className="border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-indigo-900/20">
-          <CardContent className="p-4">
-            <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center">
-              {nft.image_url ? (
-                <img 
-                  src={nft.image_url} 
-                  alt={nft.metadata.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Trophy className="h-16 w-16 text-purple-400" />
-              )}
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <h3 className="font-semibold text-purple-200 line-clamp-2 flex-1">
-                  {nft.metadata.name}
-                </h3>
-                <Badge className={`ml-2 text-xs ${getStatusColor(nft.blockchain_status)}`}>
-                  {nft.blockchain_status}
-                </Badge>
-              </div>
-              
-              <p className="text-sm text-gray-400 line-clamp-2">
-                {nft.metadata.description}
-              </p>
-              
-              <div className="flex items-center gap-2 pt-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setSelectedNft(nft.id)}
-                    >
-                      <Send className="h-3 w-3 mr-1" />
-                      Send
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Send BlockWard to Student</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="font-medium text-purple-200">{nft.metadata.name}</div>
-                      <StudentSelect
-                        selectedStudentId={selectedStudent}
-                        onStudentSelect={setSelectedStudent}
-                        placeholder="Select student to receive this award"
-                      />
-                      <Button 
-                        onClick={handleTransferNFT}
-                        disabled={!selectedStudent || transferring}
-                        className="w-full"
-                      >
-                        {transferring ? "Sending..." : "Send BlockWard"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <div className="p-3 rounded-full bg-purple-600/20">
+          <Trophy className="w-6 h-6 text-purple-400" />
+        </div>
+        <h2 className="text-2xl font-semibold gradient-text">My Library</h2>
+      </div>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-400" />
-                        Delete BlockWard
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to permanently delete "{nft.metadata.name}"? 
-                        This action cannot be undone and the NFT will be lost forever.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => handleDeleteNFT(nft.id)}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Delete Permanently
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          </CardContent>
+      {nfts.length === 0 ? (
+        <Card className="p-6 text-center bg-gradient-to-br from-purple-900/10 to-indigo-900/10 border-purple-500/20">
+          <Trophy className="mx-auto h-12 w-12 text-purple-400 mb-3 opacity-60" />
+          <h3 className="text-xl font-medium mb-2">No NFTs in Library</h3>
+          <p className="text-sm text-gray-400">
+            Create your first Virtual NFT to build your library!
+          </p>
         </Card>
-      ))}
+      ) : (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {nfts.map((nft) => {
+              const metadata = typeof nft.metadata === 'string' 
+                ? JSON.parse(nft.metadata) 
+                : nft.metadata;
+              
+              return (
+                <Card 
+                  key={nft.id}
+                  className={`overflow-hidden cursor-pointer transition-all hover:shadow-lg border-purple-500/20 ${
+                    selectedNft === nft.id ? 'ring-2 ring-purple-500' : ''
+                  }`}
+                  onClick={() => setSelectedNft(selectedNft === nft.id ? "" : nft.id)}
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    {nft.image_url ? (
+                      <img 
+                        src={nft.image_url}
+                        alt={metadata.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full bg-gradient-to-br from-purple-600/20 via-indigo-600/20 to-purple-600/20">
+                        <Trophy className="h-16 w-16 text-purple-500/60" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 space-y-2">
+                    <h3 className="text-lg font-semibold">{metadata.name}</h3>
+                    <p className="text-sm text-gray-400 line-clamp-2">{metadata.description}</p>
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-xs text-purple-400">
+                        {metadata.points} Points
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(nft.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {selectedNft && (
+            <Card className="p-6 bg-purple-900/10 border-purple-500/20">
+              <h3 className="text-lg font-semibold mb-4">Send NFT to Student</h3>
+              <div className="space-y-4">
+                <StudentSelect
+                  selectedStudentId={selectedStudent}
+                  onStudentSelect={setSelectedStudent}
+                  placeholder="Choose a student to receive this NFT"
+                />
+                <Button
+                  onClick={handleTransferNFT}
+                  disabled={!selectedStudent || transferLoading === selectedNft}
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                >
+                  {transferLoading === selectedNft ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Send BlockWard
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 };
