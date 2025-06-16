@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -141,7 +140,7 @@ export const BlockchainNFTCreator = () => {
 
       console.log("✅ NFT minted successfully, saving to database...");
 
-      // Prepare database record with detailed logging
+      // Prepare database record with detailed logging - FIXED NETWORK VALUE
       const nftRecord = {
         token_id: mintResult.tokenId,
         contract_address: '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1',
@@ -149,7 +148,7 @@ export const BlockchainNFTCreator = () => {
         creator_wallet_id: teacherWallet.id,
         owner_wallet_id: teacherWallet.id,
         image_url: imageUrl,
-        network: "polygon-mumbai",
+        network: useBlockchain ? "mainnet" : "testnet", // Fixed: Use allowed network values
         blockchain_token_id: parseInt(mintResult.tokenId.replace('sim-', '') || '0'),
         transaction_hash: mintResult.transactionHash,
         blockchain_status: useBlockchain ? 'minted' : 'pending',
