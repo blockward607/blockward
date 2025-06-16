@@ -163,19 +163,21 @@ export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
       {expanded && (
         <div className="grid gap-6">
           {classrooms.map((classroom) => {
+            if (!classroom.id) return null;
+            
             // Ensure we have all required fields with defaults
             const fullClassroom: Classroom = {
-              id: classroom.id || '',
+              id: classroom.id,
               name: classroom.name || '',
               description: classroom.description || '',
               teacher_id: classroom.teacher_id || '',
-              school_id: classroom.school_id || '',
-              section: classroom.section || '',
+              school_id: classroom.school_id || null,
+              section: classroom.section || null,
               created_at: classroom.created_at || '',
               updated_at: classroom.updated_at || ''
             };
             
-            return classroom.id && <ClassroomGrid key={classroom.id} classroom={fullClassroom} />
+            return <ClassroomGrid key={classroom.id} classroom={fullClassroom} />
           })}
           {classrooms.length === 0 && (
             <p className="text-center text-gray-400">No classrooms found. Create your first classroom to get started!</p>
