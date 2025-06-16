@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Trash2, Send, AlertTriangle } from "lucide-react";
+import { Trophy, Trash2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -17,14 +17,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { StudentSelect } from "./StudentSelect";
 
 interface TeacherNFT {
   id: string;
@@ -48,9 +40,6 @@ export const TeacherNFTLibrary = () => {
   const { toast } = useToast();
   const [nfts, setNfts] = useState<TeacherNFT[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedNft, setSelectedNft] = useState<string | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState("");
-  const [transferring, setTransferring] = useState(false);
 
   useEffect(() => {
     loadTeacherNFTs();
@@ -147,83 +136,6 @@ export const TeacherNFTLibrary = () => {
     }
   };
 
-  const handleTransferNFT = async () => {
-    if (!selectedNft || !selectedStudent) return;
-
-    setTransferring(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      // Get student's wallet
-      const { data: studentWallet, error: walletError } = await supabase
-        .from('wallets')
-        .select('id')
-        .eq('user_id', selectedStudent)
-        .single();
-
-      if (walletError || !studentWallet) {
-        throw new Error("Student wallet not found");
-      }
-
-      // Update NFT owner
-      const { error: updateError } = await supabase
-        .from('nfts')
-        .update({ owner_wallet_id: studentWallet.id })
-        .eq('id', selectedNft);
-
-      if (updateError) throw updateError;
-
-      // Create transaction record
-      const { data: teacherWallet } = await supabase
-        .from('wallets')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (teacherWallet) {
-        await supabase.from('transactions').insert({
-          nft_id: selectedNft,
-          from_wallet_id: teacherWallet.id,
-          to_wallet_id: studentWallet.id,
-          transaction_hash: `transfer_${Date.now()}`,
-          status: 'completed'
-        });
-      }
-
-      // Award points to student if NFT has points
-      const nft = nfts.find(n => n.id === selectedNft);
-      const pointsAttribute = nft?.metadata.attributes?.find(a => a.trait_type === "Points");
-      if (pointsAttribute) {
-        const points = parseInt(pointsAttribute.value);
-        if (!isNaN(points)) {
-          await supabase.rpc('increment_student_points', {
-            student_id: selectedStudent,
-            points_to_add: points
-          });
-        }
-      }
-
-      toast({
-        title: "NFT Transferred",
-        description: "The BlockWard has been sent to the student successfully!"
-      });
-
-      setSelectedNft(null);
-      setSelectedStudent("");
-      loadTeacherNFTs();
-    } catch (error: any) {
-      console.error('Error transferring NFT:', error);
-      toast({
-        variant: "destructive",
-        title: "Transfer Failed",
-        description: error.message || "Failed to transfer the BlockWard"
-      });
-    } finally {
-      setTransferring(false);
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'minted': return 'bg-green-500/20 text-green-400 border-green-500/30';
@@ -297,44 +209,11 @@ export const TeacherNFTLibrary = () => {
               </p>
               
               <div className="flex items-center gap-2 pt-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setSelectedNft(nft.id)}
-                    >
-                      <Send className="h-3 w-3 mr-1" />
-                      Send
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Send BlockWard to Student</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="font-medium text-purple-200">{nft.metadata.name}</div>
-                      <StudentSelect
-                        selectedStudentId={selectedStudent}
-                        onStudentSelect={setSelectedStudent}
-                        placeholder="Select student to receive this award"
-                      />
-                      <Button 
-                        onClick={handleTransferNFT}
-                        disabled={!selectedStudent || transferring}
-                        className="w-full"
-                      >
-                        {transferring ? "Sending..." : "Send BlockWard"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-3 w-3" />
+                    <Button variant="destructive" size="sm" className="w-full">
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
