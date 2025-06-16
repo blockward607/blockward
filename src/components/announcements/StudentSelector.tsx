@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Users, UserCheck } from "lucide-react";
+import { SecurityService } from '@/services/SecurityService';
 
 interface Student {
   id: string;
@@ -36,6 +37,12 @@ export const StudentSelector = ({
     try {
       setLoading(true);
       
+      // Validate classroomId if provided
+      if (classroomId && !SecurityService.isValidUUID(classroomId)) {
+        SecurityService.logSecurityEvent('invalid_classroom_id', { classroomId });
+        throw new Error('Invalid classroom ID format');
+      }
+      
       // If a classroom is selected, only show students from that classroom
       if (classroomId) {
         const { data, error } = await supabase
@@ -61,12 +68,19 @@ export const StudentSelector = ({
       }
     } catch (error) {
       console.error('Error fetching students:', error);
+      SecurityService.logSecurityEvent('student_fetch_error', { error: error.message, classroomId });
     } finally {
       setLoading(false);
     }
   };
 
   const handleStudentToggle = (userId: string) => {
+    // Validate userId format
+    if (!SecurityService.isValidUUID(userId)) {
+      SecurityService.logSecurityEvent('invalid_user_id_toggle', { userId });
+      return;
+    }
+
     const newSelection = selectedStudents.includes(userId)
       ? selectedStudents.filter(id => id !== userId)
       : [...selectedStudents, userId];
@@ -74,7 +88,9 @@ export const StudentSelector = ({
   };
 
   const handleSelectAll = () => {
-    const allUserIds = students.map(s => s.user_id);
+    const allUserIds = students
+      .map(s => s.user_id)
+      .filter(id => SecurityService.isValidUUID(id));
     onStudentsChange(allUserIds);
   };
 
@@ -138,7 +154,7 @@ export const StudentSelector = ({
                     className="flex items-center gap-2 cursor-pointer flex-1"
                   >
                     <UserCheck className="h-4 w-4 text-purple-400" />
-                    <span className="text-sm">{student.name}</span>
+                    <span className="text-sm">{SecurityService.sanitizeInput(student.name)}</span>
                   </label>
                 </div>
               ))}

@@ -17,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { SecurityService } from '@/services/SecurityService';
 
 export interface Notification {
   id: string;
@@ -45,6 +46,16 @@ export const AnnouncementList = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDeleteAnnouncement = async (id: string) => {
+    if (!SecurityService.isValidUUID(id)) {
+      SecurityService.logSecurityEvent('invalid_announcement_delete_id', { id });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Invalid announcement ID"
+      });
+      return;
+    }
+
     try {
       setDeletingId(id);
       const { error } = await supabase
@@ -62,10 +73,14 @@ export const AnnouncementList = ({
       onAnnouncementDeleted();
     } catch (error: any) {
       console.error("Error deleting announcement:", error);
+      SecurityService.logSecurityEvent('announcement_deletion_error', { 
+        error: error.message,
+        announcementId: id
+      });
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to delete announcement"
+        description: "Failed to delete announcement"
       });
     } finally {
       setDeletingId(null);
@@ -91,6 +106,22 @@ export const AnnouncementList = ({
         text: "All students",
         color: "bg-purple-500/20 text-purple-400 border-purple-500/30"
       };
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return 'Invalid date';
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleTimeString();
+    } catch {
+      return 'Invalid time';
     }
   };
 
@@ -120,11 +151,13 @@ export const AnnouncementList = ({
           <Card key={announcement.id} className="p-6 bg-black/50 border-purple-500/30 relative">
             <div className="flex justify-between items-start">
               <div className="flex-1 mr-8">
-                <h3 className="text-xl font-bold mb-2">{announcement.title}</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  {SecurityService.sanitizeInput(announcement.title)}
+                </h3>
                 <div className="text-sm text-gray-400 mb-4 flex flex-wrap gap-2 items-center">
-                  <span>Posted {new Date(announcement.created_at).toLocaleDateString()}</span>
+                  <span>Posted {formatDate(announcement.created_at)}</span>
                   <span>•</span>
-                  <span>{new Date(announcement.created_at).toLocaleTimeString()}</span>
+                  <span>{formatTime(announcement.created_at)}</span>
                   <span>•</span>
                   <Badge className={`text-xs ${targetInfo.color}`}>
                     <TargetIcon className="w-3 h-3 mr-1" />
@@ -168,7 +201,9 @@ export const AnnouncementList = ({
               )}
             </div>
             
-            <p className="text-gray-300 whitespace-pre-wrap">{announcement.message}</p>
+            <p className="text-gray-300 whitespace-pre-wrap">
+              {SecurityService.sanitizeInput(announcement.message)}
+            </p>
           </Card>
         );
       })}

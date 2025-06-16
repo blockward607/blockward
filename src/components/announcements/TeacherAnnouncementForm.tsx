@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StudentSelector } from "./StudentSelector";
+import { SecurityService } from '@/services/SecurityService';
 import type { Classroom } from "@/types/classroom";
 
 interface TeacherAnnouncementFormProps {
@@ -42,7 +43,7 @@ export const TeacherAnnouncementForm = ({
   }, []);
 
   useEffect(() => {
-    if (defaultClassroomId) {
+    if (defaultClassroomId && SecurityService.isValidUUID(defaultClassroomId)) {
       setClassroomId(defaultClassroomId);
       setTargetType('classroom');
     }
@@ -62,47 +63,97 @@ export const TeacherAnnouncementForm = ({
       setClassrooms(data || []);
     } catch (error) {
       console.error("Error fetching classrooms:", error);
+      SecurityService.logSecurityEvent('classroom_fetch_error', { error: error.message });
     }
+  };
+
+  const validateInputs = () => {
+    const sanitizedTitle = SecurityService.sanitizeInput(title);
+    const sanitizedMessage = SecurityService.sanitizeInput(message);
+
+    if (!SecurityService.isValidText(sanitizedTitle, 200)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid title",
+        description: "Title must be under 200 characters and contain valid text"
+      });
+      return false;
+    }
+
+    if (!SecurityService.isValidText(sanitizedMessage, 5000)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid message",
+        description: "Message must be under 5000 characters and contain valid text"
+      });
+      return false;
+    }
+
+    if (targetType === 'classroom' && classroomId && !SecurityService.isValidUUID(classroomId)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid classroom",
+        description: "Selected classroom is invalid"
+      });
+      return false;
+    }
+
+    if (targetType === 'students') {
+      const validStudents = selectedStudents.filter(id => SecurityService.isValidUUID(id));
+      if (validStudents.length !== selectedStudents.length) {
+        toast({
+          variant: "destructive",
+          title: "Invalid student selection",
+          description: "Some selected students are invalid"
+        });
+        return false;
+      }
+      
+      if (validStudents.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "No students selected",
+          description: "Please select at least one student for individual targeting"
+        });
+        return false;
+      }
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !message.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Missing fields",
-        description: "Please fill in all required fields"
-      });
-      return;
-    }
-
-    if (targetType === 'students' && selectedStudents.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "No students selected",
-        description: "Please select at least one student for individual targeting"
-      });
-      return;
-    }
+    if (!validateInputs()) return;
 
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
+      const sanitizedTitle = SecurityService.sanitizeInput(title);
+      const sanitizedMessage = SecurityService.sanitizeInput(message);
+
       const payload: any = {
-        title,
-        message,
+        title: sanitizedTitle,
+        message: sanitizedMessage,
         created_by: session.user.id,
         type: 'announcement'
       };
 
       // Set targeting based on selection
       if (targetType === 'classroom' && classroomId) {
+        if (!SecurityService.isValidUUID(classroomId)) {
+          throw new Error("Invalid classroom ID");
+        }
         payload.classroom_id = classroomId;
       } else if (targetType === 'students') {
-        payload.recipients = selectedStudents;
+        const validStudents = selectedStudents.filter(id => SecurityService.isValidUUID(id));
+        if (validStudents.length === 0) {
+          throw new Error("No valid students selected");
+        }
+        payload.recipients = validStudents;
       }
       // For 'all' type, we leave both classroom_id and recipients as null
 
@@ -123,10 +174,16 @@ export const TeacherAnnouncementForm = ({
       onSuccess();
     } catch (error: any) {
       console.error("Error creating announcement:", error);
+      SecurityService.logSecurityEvent('announcement_creation_error', { 
+        error: error.message,
+        targetType,
+        hasClassroomId: !!classroomId,
+        studentCount: selectedStudents.length
+      });
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to create announcement"
+        description: "Failed to create announcement. Please check your input and try again."
       });
     } finally {
       setLoading(false);
@@ -146,6 +203,7 @@ export const TeacherAnnouncementForm = ({
           placeholder="Enter announcement title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          maxLength={200}
           required
         />
       </div>
@@ -178,7 +236,7 @@ export const TeacherAnnouncementForm = ({
             <SelectContent>
               {classrooms.map((classroom) => (
                 <SelectItem key={classroom.id} value={classroom.id}>
-                  {classroom.name}
+                  {SecurityService.sanitizeInput(classroom.name)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -202,6 +260,7 @@ export const TeacherAnnouncementForm = ({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={5}
+          maxLength={5000}
           required
         />
       </div>
