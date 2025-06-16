@@ -28,8 +28,7 @@ export const useStudents = () => {
 
         console.log('✅ User session found:', { 
           userId: session.user.id, 
-          email: session.user.email,
-          metadata: session.user.user_metadata 
+          email: session.user.email
         });
 
         // Check user role first
@@ -41,6 +40,13 @@ export const useStudents = () => {
         if (roleError) {
           console.error('❌ Error fetching user roles:', roleError);
           setError(`Failed to fetch user roles: ${roleError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        if (!userRoles || userRoles.length === 0) {
+          console.log('⚠️ No roles found for user');
+          setStudents([]);
           setLoading(false);
           return;
         }
@@ -84,14 +90,26 @@ export const useStudents = () => {
             if (error) {
               console.error('❌ Error fetching students for admin:', error);
               setError(`Failed to fetch students: ${error.message}`);
-              setLoading(false);
-              return;
+            } else {
+              studentData = data || [];
+              console.log(`✅ Admin loaded ${studentData.length} students:`, studentData);
             }
-            studentData = data || [];
-            console.log(`✅ Admin loaded ${studentData.length} students:`, studentData);
           } else {
-            console.log('⚠️ Admin has no school_id, showing empty list');
-            studentData = [];
+            // Fallback: try to get all students if no school_id
+            console.log('⚠️ Admin has no school_id, attempting fallback');
+            const { data, error } = await supabase
+              .from('students')
+              .select('*')
+              .order('name')
+              .limit(50); // Limit for safety
+              
+            if (error) {
+              console.error('❌ Error in fallback student fetch:', error);
+              setError(`Failed to fetch students: ${error.message}`);
+            } else {
+              studentData = data || [];
+              console.log(`✅ Admin fallback loaded ${studentData.length} students`);
+            }
           }
         } else if (isTeacher) {
           console.log('👨‍🏫 Loading data for teacher user');
@@ -121,13 +139,7 @@ export const useStudents = () => {
             if (classroomError) {
               console.error('❌ Error fetching teacher classrooms:', classroomError);
               setError(`Failed to fetch teacher classrooms: ${classroomError.message}`);
-              setLoading(false);
-              return;
-            }
-
-            console.log('🏫 Teacher classrooms:', classrooms);
-              
-            if (classrooms && classrooms.length > 0) {
+            } else if (classrooms && classrooms.length > 0) {
               // Get students from all teacher's classrooms
               const classroomIds = classrooms.map(c => c.id);
               
@@ -139,13 +151,7 @@ export const useStudents = () => {
               if (csError) {
                 console.error('❌ Error fetching classroom students:', csError);
                 setError(`Failed to fetch classroom students: ${csError.message}`);
-                setLoading(false);
-                return;
-              }
-
-              console.log('👥 Classroom students mappings:', classroomStudents);
-                
-              if (classroomStudents && classroomStudents.length > 0) {
+              } else if (classroomStudents && classroomStudents.length > 0) {
                 const studentIds = classroomStudents.map(cs => cs.student_id);
                 
                 const { data, error } = await supabase
@@ -157,11 +163,10 @@ export const useStudents = () => {
                 if (error) {
                   console.error('❌ Error fetching students for teacher:', error);
                   setError(`Failed to fetch students: ${error.message}`);
-                  setLoading(false);
-                  return;
+                } else {
+                  studentData = data || [];
+                  console.log(`✅ Teacher loaded ${studentData.length} students`);
                 }
-                studentData = data || [];
-                console.log(`✅ Teacher loaded ${studentData.length} students:`, studentData);
               } else {
                 console.log('⚠️ Teacher has no students in classrooms');
                 studentData = [];

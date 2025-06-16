@@ -61,8 +61,7 @@ const Dashboard = () => {
 
       console.log('✅ Dashboard: Session found for user:', { 
         userId: session.user.id, 
-        email: session.user.email,
-        metadata: session.user.user_metadata 
+        email: session.user.email
       });
 
       // Try to get user role first with better error handling
@@ -82,6 +81,13 @@ const Dashboard = () => {
           return;
         }
 
+        if (!roleData || roleData.length === 0) {
+          console.log('⚠️ Dashboard: No roles found for user');
+          setError('No user role found. Please contact administrator.');
+          setLoading(false);
+          return;
+        }
+
         determinedRole = roleData?.[0]?.role || null;
         console.log('📋 Dashboard: User role determined:', determinedRole);
 
@@ -96,13 +102,12 @@ const Dashboard = () => {
           
           if (adminError) {
             console.error('❌ Dashboard: Error fetching admin profile:', adminError);
-            setError(`Failed to fetch admin profile: ${adminError.message}`);
-            setLoading(false);
-            return;
+            // Don't fail completely, just use email
+            console.log('⚠️ Dashboard: Using email as fallback name for admin');
+          } else {
+            determinedName = adminProfile?.full_name || session.user.email;
+            console.log('✅ Dashboard: Admin profile loaded:', { name: determinedName, schoolId: adminProfile?.school_id });
           }
-
-          determinedName = adminProfile?.full_name || session.user.email;
-          console.log('✅ Dashboard: Admin profile loaded:', { name: determinedName, schoolId: adminProfile?.school_id });
         } else if (determinedRole === 'teacher') {
           console.log('👨‍🏫 Dashboard: Fetching teacher profile...');
           const { data: teacherData, error: teacherError } = await supabase
@@ -113,13 +118,12 @@ const Dashboard = () => {
           
           if (teacherError) {
             console.error('❌ Dashboard: Error fetching teacher profile:', teacherError);
-            setError(`Failed to fetch teacher profile: ${teacherError.message}`);
-            setLoading(false);
-            return;
+            // Don't fail completely, just use email
+            console.log('⚠️ Dashboard: Using email as fallback name for teacher');
+          } else {
+            determinedName = teacherData?.full_name || session.user.email;
+            console.log('✅ Dashboard: Teacher profile loaded:', { name: determinedName, schoolId: teacherData?.school_id });
           }
-
-          determinedName = teacherData?.full_name || session.user.email;
-          console.log('✅ Dashboard: Teacher profile loaded:', { name: determinedName, schoolId: teacherData?.school_id });
         } else if (determinedRole === 'student') {
           console.log('👨‍🎓 Dashboard: Fetching student profile...');
           const { data: studentData, error: studentError } = await supabase
@@ -130,18 +134,17 @@ const Dashboard = () => {
             
           if (studentError) {
             console.error('❌ Dashboard: Error fetching student profile:', studentError);
-            setError(`Failed to fetch student profile: ${studentError.message}`);
-            setLoading(false);
-            return;
+            // Don't fail completely, just use email
+            console.log('⚠️ Dashboard: Using email as fallback name for student');
+          } else {
+            determinedName = studentData?.name || session.user.email;
+            console.log('✅ Dashboard: Student profile loaded:', { name: determinedName, schoolId: studentData?.school_id });
           }
-
-          determinedName = studentData?.name || session.user.email;
-          console.log('✅ Dashboard: Student profile loaded:', { name: determinedName, schoolId: studentData?.school_id });
         }
 
-        // If no role found, try to determine from profiles
+        // If no role found, show error
         if (!determinedRole) {
-          console.log('❌ Dashboard: No role found, checking profiles...');
+          console.log('❌ Dashboard: No valid role found');
           setError('User role not found. Please contact administrator.');
           setLoading(false);
           return;
@@ -196,6 +199,13 @@ const Dashboard = () => {
         return;
       }
 
+      if (!userRoles || userRoles.length === 0) {
+        console.log('⚠️ Dashboard: No roles found for announcements');
+        setAnnouncements([]);
+        setLoadingAnnouncements(false);
+        return;
+      }
+
       const isAdmin = userRoles?.some(r => r.role === 'admin');
       const isTeacher = userRoles?.some(r => r.role === 'teacher');
       const isStudent = userRoles?.some(r => r.role === 'student');
@@ -222,12 +232,9 @@ const Dashboard = () => {
 
         if (studentError) {
           console.error('❌ Dashboard: Error fetching student profile for announcements:', studentError);
-          setAnnouncements([]);
-          setLoadingAnnouncements(false);
-          return;
-        }
-
-        if (studentProfile) {
+          // Don't fail completely, show general announcements
+          query = query.is('classroom_id', null);
+        } else if (studentProfile) {
           const { data: enrollments, error: enrollmentError } = await supabase
             .from('classroom_students')
             .select('classroom_id')
@@ -235,19 +242,21 @@ const Dashboard = () => {
 
           if (enrollmentError) {
             console.error('❌ Dashboard: Error fetching student enrollments:', enrollmentError);
-            setAnnouncements([]);
-            setLoadingAnnouncements(false);
-            return;
-          }
-
-          const classroomIds = enrollments?.map(e => e.classroom_id) || [];
-          console.log('🏫 Dashboard: Student classroom IDs:', classroomIds);
-          
-          if (classroomIds.length > 0) {
-            query = query.or(`classroom_id.is.null,classroom_id.in.(${classroomIds.join(',')})`);
-          } else {
+            // Don't fail completely, show general announcements
             query = query.is('classroom_id', null);
+          } else {
+            const classroomIds = enrollments?.map(e => e.classroom_id) || [];
+            console.log('🏫 Dashboard: Student classroom IDs:', classroomIds);
+            
+            if (classroomIds.length > 0) {
+              query = query.or(`classroom_id.is.null,classroom_id.in.(${classroomIds.join(',')})`);
+            } else {
+              query = query.is('classroom_id', null);
+            }
           }
+        } else {
+          // Student profile not found, show general announcements only
+          query = query.is('classroom_id', null);
         }
       }
 
@@ -255,11 +264,11 @@ const Dashboard = () => {
 
       if (error) {
         console.error('❌ Dashboard: Error fetching announcements:', error);
-        throw error;
+        setAnnouncements([]);
+      } else {
+        console.log(`✅ Dashboard: Loaded ${data?.length || 0} announcements for role: ${userRole}`);
+        setAnnouncements(data || []);
       }
-      
-      console.log(`✅ Dashboard: Loaded ${data?.length || 0} announcements for role: ${userRole}`);
-      setAnnouncements(data || []);
     } catch (error) {
       console.error("💥 Dashboard: Unexpected error fetching announcements:", error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
