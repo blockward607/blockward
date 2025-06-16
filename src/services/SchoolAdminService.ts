@@ -87,21 +87,33 @@ export const SchoolAdminService = {
       throw new Error('Invalid user ID format');
     }
 
-    const { data, error } = await supabase
+    // First get admin profile
+    const { data: adminProfile, error: adminError } = await supabase
       .from('admin_profiles' as any)
-      .select(`
-        *,
-        schools:school_id (*)
-      `)
+      .select('*')
       .eq('user_id', userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching school by admin:', error);
-      throw error;
+    if (adminError && adminError.code !== 'PGRST116') {
+      console.error('Error fetching admin profile:', adminError);
+      throw adminError;
     }
 
-    return data?.schools || null;
+    if (!adminProfile) return null;
+
+    // Then get school data
+    const { data: school, error: schoolError } = await supabase
+      .from('schools' as any)
+      .select('*')
+      .eq('id', adminProfile.school_id)
+      .single();
+
+    if (schoolError) {
+      console.error('Error fetching school:', schoolError);
+      throw schoolError;
+    }
+
+    return school;
   },
 
   async updateSchool(schoolId: string, updates: Partial<School>) {
@@ -244,19 +256,37 @@ export const SchoolAdminService = {
       return false;
     }
 
-    const { data, error } = await supabase.rpc('is_school_admin', {
-      p_school_id: schoolId || null
-    });
+    // Check user roles table directly
+    const { data: userRoles, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
 
     if (error) {
       console.error('Error checking admin status:', error);
       return false;
     }
 
-    return data;
+    const hasAdminRole = userRoles?.some(r => r.role === 'admin');
+
+    if (!hasAdminRole) return false;
+
+    // If specific school ID is provided, check admin profile
+    if (schoolId) {
+      const { data: adminProfile } = await supabase
+        .from('admin_profiles' as any)
+        .select('school_id')
+        .eq('user_id', userId)
+        .eq('school_id', schoolId)
+        .single();
+
+      return !!adminProfile;
+    }
+
+    return true;
   },
 
-  // Audit Logging
+  // Audit Logging - simplified version without RPC
   async logAdminAction(
     schoolId: string,
     action: string,
@@ -268,13 +298,17 @@ export const SchoolAdminService = {
       throw new Error('Invalid school ID format');
     }
 
-    const { data, error } = await supabase.rpc('log_admin_action', {
-      p_school_id: schoolId,
-      p_action: sanitizeInput(action),
-      p_entity_type: entityType ? sanitizeInput(entityType) : null,
-      p_entity_id: entityId || null,
-      p_details: details || {}
-    });
+    const { data, error } = await supabase
+      .from('audit_logs' as any)
+      .insert({
+        school_id: schoolId,
+        action: sanitizeInput(action),
+        entity_type: entityType ? sanitizeInput(entityType) : null,
+        entity_id: entityId || null,
+        details: details || {}
+      })
+      .select()
+      .single();
 
     if (error) {
       console.error('Error logging admin action:', error);

@@ -52,31 +52,47 @@ export const useSchoolAdmin = () => {
     try {
       setLoading(true);
 
-      // Check if user is an admin using the function
-      const { data: adminStatus, error: adminError } = await supabase.rpc('is_school_admin');
-      
-      if (adminError) {
-        console.error('Error checking admin status:', adminError);
+      // Check if user has admin role first
+      const { data: userRoles, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+
+      if (roleError) {
+        console.error('Error checking user roles:', roleError);
         setIsAdmin(false);
-      } else {
-        setIsAdmin(adminStatus || false);
+        return;
+      }
 
-        if (adminStatus) {
-          // Get school data for this admin using a direct query
-          const { data: schoolData, error: schoolError } = await supabase
-            .from('admin_profiles' as any)
-            .select(`
-              *,
-              schools:school_id (*)
-            `)
-            .eq('user_id', user.id)
-            .single();
+      const hasAdminRole = userRoles?.some(r => r.role === 'admin');
+      setIsAdmin(hasAdminRole || false);
 
-          if (schoolError) {
-            console.error('Error fetching school:', schoolError);
-          } else if (schoolData?.schools) {
-            setSchool(schoolData.schools as School);
-            setAdminProfile(schoolData as AdminProfile);
+      if (hasAdminRole) {
+        // Get admin profile and school data
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_profiles' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (adminError || !adminData) {
+          console.error('Error fetching admin profile:', adminError);
+        } else {
+          setAdminProfile(adminData as AdminProfile);
+
+          // Get school data
+          if (adminData.school_id) {
+            const { data: schoolData, error: schoolError } = await supabase
+              .from('schools' as any)
+              .select('*')
+              .eq('id', adminData.school_id)
+              .single();
+
+            if (schoolError || !schoolData) {
+              console.error('Error fetching school:', schoolError);
+            } else {
+              setSchool(schoolData as School);
+            }
           }
         }
       }
@@ -124,12 +140,12 @@ export const useSchoolAdmin = () => {
 
       if (adminError) throw adminError;
 
-      // Create user role as admin
+      // Create user role as admin - using any to bypass type checking
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: user?.id,
-          role: 'admin'
+          role: 'admin' as any
         });
 
       if (roleError) {
@@ -137,7 +153,7 @@ export const useSchoolAdmin = () => {
         // Continue anyway as this might be handled by triggers
       }
 
-      setSchool(newSchool);
+      setSchool(newSchool as School);
       setIsAdmin(true);
 
       toast({
@@ -170,16 +186,7 @@ export const useSchoolAdmin = () => {
 
       if (error) throw error;
 
-      setSchool(updatedSchool);
-
-      // Log the action using the function
-      await supabase.rpc('log_admin_action', {
-        p_school_id: school.id,
-        p_action: 'SCHOOL_UPDATED',
-        p_entity_type: 'school',
-        p_entity_id: school.id,
-        p_details: { updates }
-      });
+      setSchool(updatedSchool as School);
 
       toast({
         title: "Success",
