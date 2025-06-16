@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
@@ -87,33 +88,38 @@ export const MainLayout = () => {
   const { toast } = useToast();
 
   // Check if on main page or routes like /auth that shouldn't have the dashboard layout
-  const isMainPage = location.pathname === "/" || location.pathname === "/auth";
+  const isMainPage = location.pathname === "/" || location.pathname === "/auth" || location.pathname === "/signup" || location.pathname === "/reset-password" || location.pathname === "/reset-password-otp";
 
   useEffect(() => {
     if (!isMainPage) {
       checkAuth();
     }
-  }, [isMainPage]);
+  }, [isMainPage, location.pathname]);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({
-        variant: "destructive",
-        title: "Not authenticated",
-        description: "Please log in to access this page"
-      });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Not authenticated",
+          description: "Please log in to access this page"
+        });
+        navigate('/auth');
+        return;
+      }
+
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      setUserRole(roleData?.role || 'student');
+    } catch (error) {
+      console.error('Auth check error:', error);
       navigate('/auth');
-      return;
     }
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .single();
-
-    setUserRole(roleData?.role || null);
   };
 
   const toggleSidebar = () => {
@@ -126,8 +132,14 @@ export const MainLayout = () => {
 
   const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
 
+  // For main pages, render without layout
+  if (isMainPage) {
+    return <Outlet />;
+  }
+
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black flex">
+      {/* Background */}
       <div className="fixed inset-0 z-0">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(147,51,234,0.2),transparent_60%)]"></div>
         <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,rgba(147,51,234,0.15),transparent_70%)]"></div>
@@ -137,94 +149,93 @@ export const MainLayout = () => {
         </div>
       </div>
 
-      {!isMainPage && (
-        <motion.aside
-          initial={false}
-          animate={{ 
-            width: isSidebarOpen ? "18rem" : "0rem",
-            opacity: isSidebarOpen ? 1 : 0
-          }}
-          transition={{ duration: 0.2 }}
-          className={cn(
-            "fixed top-0 left-0 z-40 h-screen",
-            "bg-black/90 backdrop-blur-xl border-r border-purple-500/20",
-            "overflow-hidden"
-          )}
-        >
-          <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between px-6 py-5">
-              <Link to="/" className="text-2xl font-bold blockward-logo">
-                Blockward
-              </Link>
-            </div>
-
-            <nav className="flex-1 space-y-6 px-4 py-6 overflow-y-auto">
-              {navGroups.map((group) => (
-                <div key={group.name} className="space-y-3">
-                  <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    {group.name}
-                  </h3>
-                  <div className="space-y-1">
-                    {group.items.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = location.pathname === item.href;
-                      
-                      return (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          className={cn(
-                            "flex items-center px-4 py-3 rounded-lg",
-                            "text-gray-300 hover:bg-purple-900/30",
-                            "transition-colors duration-200",
-                            "group",
-                            isActive && "bg-purple-900/40 text-purple-300 glow-text"
-                          )}
-                        >
-                          <Icon className={cn("mr-3 h-5 w-5", isActive && "text-purple-400")} />
-                          <span className="truncate">{item.name}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </nav>
+      {/* Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{ 
+          width: isSidebarOpen ? "18rem" : "0rem",
+          opacity: isSidebarOpen ? 1 : 0
+        }}
+        transition={{ duration: 0.2 }}
+        className={cn(
+          "fixed top-0 left-0 z-40 h-screen",
+          "bg-black/90 backdrop-blur-xl border-r border-purple-500/20",
+          "overflow-hidden"
+        )}
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between px-6 py-5">
+            <Link to="/" className="text-2xl font-bold blockward-logo">
+              Blockward
+            </Link>
           </div>
-        </motion.aside>
-      )}
 
-      {!isMainPage && (
-        <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-2 p-4 bg-black/90 backdrop-blur-xl border-b border-purple-500/20">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="bg-purple-900/30 hover:bg-purple-800/40"
-          >
-            {isSidebarOpen ? (
-              <X className="h-6 w-6 text-purple-300" />
-            ) : (
-              <Menu className="h-6 w-6 text-purple-300" />
-            )}
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToHome}
-            className="bg-purple-900/30 hover:bg-purple-800/40"
-          >
-            <Home className="h-6 w-6 text-purple-300" />
-          </Button>
+          <nav className="flex-1 space-y-6 px-4 py-6 overflow-y-auto">
+            {navGroups.map((group) => (
+              <div key={group.name} className="space-y-3">
+                <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {group.name}
+                </h3>
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.href;
+                    
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className={cn(
+                          "flex items-center px-4 py-3 rounded-lg",
+                          "text-gray-300 hover:bg-purple-900/30",
+                          "transition-colors duration-200",
+                          "group",
+                          isActive && "bg-purple-900/40 text-purple-300 glow-text"
+                        )}
+                      >
+                        <Icon className={cn("mr-3 h-5 w-5", isActive && "text-purple-400")} />
+                        <span className="truncate">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
         </div>
-      )}
+      </motion.aside>
 
+      {/* Top Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-2 p-4 bg-black/90 backdrop-blur-xl border-b border-purple-500/20">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="bg-purple-900/30 hover:bg-purple-800/40"
+        >
+          {isSidebarOpen ? (
+            <X className="h-6 w-6 text-purple-300" />
+          ) : (
+            <Menu className="h-6 w-6 text-purple-300" />
+          )}
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToHome}
+          className="bg-purple-900/30 hover:bg-purple-800/40"
+        >
+          <Home className="h-6 w-6 text-purple-300" />
+        </Button>
+      </div>
+
+      {/* Main Content */}
       <main
         className={cn(
-          "transition-all duration-300",
-          !isMainPage && "p-8 mt-16",
-          !isMainPage && (isSidebarOpen ? "lg:ml-72" : "ml-0")
+          "flex-1 transition-all duration-300",
+          "p-8 mt-16",
+          isSidebarOpen ? "ml-72" : "ml-0"
         )}
       >
         <Outlet />

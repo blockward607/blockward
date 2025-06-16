@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { MainLayout } from "@/components/layout/MainLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SignUp from "./pages/SignUp";
@@ -43,34 +44,36 @@ function App() {
           <Toaster />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/reset-password-otp" element={<ResetPasswordOTP />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/student-dashboard" element={<StudentDashboard />} />
-              <Route path="/achievements" element={<Achievements />} />
-              <Route path="/progress" element={<Progress />} />
-              <Route path="/wallet" element={<Wallet />} />
-              <Route path="/wallet-verify" element={<WalletVerify />} />
-              <Route path="/rewards" element={<Rewards />} />
-              <Route path="/classes" element={<Classes />} />
-              <Route path="/classes/:id" element={<ClassDetails />} />
-              <Route path="/students" element={<Students />} />
-              <Route path="/attendance" element={<Attendance />} />
-              <Route path="/attendance/:classroomId" element={<ClassroomAttendance />} />
-              <Route path="/grades" element={<Grades />} />
-              <Route path="/assignments" element={<Assignments />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/invite/:inviteCode" element={<ClassroomInvite />} />
-              <Route path="/seating/:classroomId" element={<ClassroomSeating />} />
-              <Route path="/intro" element={<IntroPage />} />
-              <Route path="/tutorial" element={<TutorialPage />} />
-              <Route path="/view-teacher-dashboard" element={<ViewTeacherDashboard />} />
-              <Route path="/school-admin" element={<SchoolAdmin />} />
+              <Route path="/" element={<MainLayout />}>
+                <Route index element={<Index />} />
+                <Route path="auth" element={<Auth />} />
+                <Route path="signup" element={<SignUp />} />
+                <Route path="reset-password" element={<ResetPassword />} />
+                <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="student-dashboard" element={<StudentDashboard />} />
+                <Route path="achievements" element={<Achievements />} />
+                <Route path="progress" element={<Progress />} />
+                <Route path="wallet" element={<Wallet />} />
+                <Route path="wallet-verify" element={<WalletVerify />} />
+                <Route path="rewards" element={<Rewards />} />
+                <Route path="classes" element={<Classes />} />
+                <Route path="classes/:id" element={<ClassDetails />} />
+                <Route path="students" element={<Students />} />
+                <Route path="attendance" element={<Attendance />} />
+                <Route path="attendance/:classroomId" element={<ClassroomAttendance />} />
+                <Route path="grades" element={<Grades />} />
+                <Route path="assignments" element={<Assignments />} />
+                <Route path="resources" element={<Resources />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="invite/:inviteCode" element={<ClassroomInvite />} />
+                <Route path="seating/:classroomId" element={<ClassroomSeating />} />
+                <Route path="intro" element={<IntroPage />} />
+                <Route path="tutorial" element={<TutorialPage />} />
+                <Route path="view-teacher-dashboard" element={<ViewTeacherDashboard />} />
+                <Route path="school-admin" element={<SchoolAdmin />} />
+              </Route>
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
