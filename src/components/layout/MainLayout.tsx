@@ -20,11 +20,14 @@ import {
   BarChart,
   MessageSquare,
   Layers,
-  Megaphone
+  Megaphone,
+  School,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSchoolAdmin } from "@/hooks/useSchoolAdmin";
 
 // Combine related routes into groups
 const teacherNavGroups = [
@@ -54,6 +57,7 @@ const teacherNavGroups = [
     ]
   },
 ];
+
 const studentNavGroups = [
   {
     name: "Main",
@@ -80,12 +84,49 @@ const studentNavGroups = [
   },
 ];
 
+const adminNavGroups = [
+  {
+    name: "Admin",
+    items: [
+      { name: "School Admin", href: "/school-admin", icon: School },
+      { name: "User Management", href: "/school-admin?tab=users", icon: Users },
+      { name: "School Settings", href: "/school-admin?tab=settings", icon: Settings },
+    ]
+  },
+  {
+    name: "Main",
+    items: [
+      { name: "Announcements", href: "/dashboard", icon: Megaphone },
+      { name: "Students", href: "/students", icon: Users },
+      { name: "Classes", href: "/classes", icon: BookOpen },
+    ]
+  },
+  {
+    name: "Teaching",
+    items: [
+      { name: "Assignments", href: "/assignments", icon: FileText },
+      { name: "Attendance", href: "/attendance", icon: Calendar },
+      { name: "Behavior", href: "/behavior", icon: ChartBar },
+      { name: "Resources", href: "/resources", icon: Layers },
+    ]
+  },
+  {
+    name: "Rewards",
+    items: [
+      { name: "Achievements", href: "/achievements", icon: Trophy },
+      { name: "Rewards", href: "/rewards", icon: Award },
+      { name: "NFT Wallet", href: "/wallet", icon: Wallet },
+    ]
+  },
+];
+
 export const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { isAdmin, loading: adminLoading } = useSchoolAdmin();
 
   // Check if on main page or routes like /auth that shouldn't have the dashboard layout
   const isMainPage = location.pathname === "/" || location.pathname === "/auth" || location.pathname === "/signup" || location.pathname === "/reset-password" || location.pathname === "/reset-password-otp";
@@ -130,7 +171,18 @@ export const MainLayout = () => {
     navigate('/');
   };
 
-  const navGroups = userRole === 'teacher' ? teacherNavGroups : studentNavGroups;
+  // Determine which navigation groups to show
+  const getNavGroups = () => {
+    if (isAdmin && !adminLoading) {
+      return adminNavGroups;
+    } else if (userRole === 'teacher') {
+      return teacherNavGroups;
+    } else {
+      return studentNavGroups;
+    }
+  };
+
+  const navGroups = getNavGroups();
 
   // For main pages, render without layout
   if (isMainPage) {
@@ -167,6 +219,12 @@ export const MainLayout = () => {
           <div className="flex items-center justify-between px-6 py-5">
             <Link to="/" className="text-2xl font-bold blockward-logo">
               Blockward
+              {isAdmin && !adminLoading && (
+                <div className="flex items-center gap-2 mt-1">
+                  <Shield className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs text-purple-400">Admin</span>
+                </div>
+              )}
             </Link>
           </div>
 
@@ -179,7 +237,7 @@ export const MainLayout = () => {
                 <div className="space-y-1">
                   {group.items.map((item) => {
                     const Icon = item.icon;
-                    const isActive = location.pathname === item.href;
+                    const isActive = location.pathname === item.href.split('?')[0];
                     
                     return (
                       <Link
