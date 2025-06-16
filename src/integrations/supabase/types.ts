@@ -1513,6 +1513,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_promote_to_admin: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       create_classroom_code: {
         Args: { p_classroom_id: string; p_created_by: string }
         Returns: string
@@ -1576,6 +1580,15 @@ export type Database = {
       mark_messages_as_read: {
         Args: { message_ids: string[]; user_id_param: string }
         Returns: undefined
+      }
+      promote_user_to_admin: {
+        Args: {
+          target_user_id: string
+          school_id_param?: string
+          admin_name?: string
+          admin_position?: string
+        }
+        Returns: boolean
       }
       send_message: {
         Args: {
