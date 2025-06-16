@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -22,7 +21,6 @@ import { NFTDisclaimer } from "@/components/wallet/NFTDisclaimer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBlockchainWallet } from "@/hooks/useBlockchainWallet";
-import { BlockchainWalletInfo } from "@/components/wallet/BlockchainWalletInfo";
 import { BlockchainNFTCreator } from "@/components/nft/BlockchainNFTCreator";
 import { BlockchainNFTGrid } from "@/components/wallet/BlockchainNFTGrid";
 import { TeacherNFTLibrary } from "@/components/nft/TeacherNFTLibrary";
@@ -216,12 +214,6 @@ const WalletPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Left Sidebar */}
         <div className="lg:col-span-1 space-y-6">
-          <BlockchainWalletInfo
-            walletAddress={walletAddress}
-            userRole={userRole}
-            isLoading={walletLoading}
-          />
-          
           {canTransferNFTs && (
             <Card className="overflow-hidden border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
               <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
