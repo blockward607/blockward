@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -96,55 +97,57 @@ const WalletPage = () => {
         setBalance(studentData.points || 0);
       }
 
-      // Load blockchain NFTs
-      const { data: walletData } = await supabase
-        .from('wallets')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
+      // Load blockchain NFTs for students only
+      if (!canMintNFTs) {
+        const { data: walletData } = await supabase
+          .from('wallets')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
 
-      if (walletData) {
-        const { data: nftData, error: nftError } = await supabase
-          .from('nfts')
-          .select(`
-            id,
-            metadata,
-            image_url,
-            blockchain_token_id,
-            transaction_hash,
-            blockchain_status,
-            minted_at,
-            created_at
-          `)
-          .eq('owner_wallet_id', walletData.id)
-          .order('created_at', { ascending: false });
-          
-        if (nftError) {
-          console.error('Error fetching blockchain NFTs:', nftError);
-        } else {
-          const transformedNfts: BlockchainNFT[] = (nftData || []).map((nft: any) => {
-            const parsedMetadata: NFTMetadata = typeof nft.metadata === 'string' 
-              ? JSON.parse(nft.metadata) 
-              : (nft.metadata as unknown as NFTMetadata);
-              
-            return {
-              id: nft.id,
-              metadata: {
-                name: parsedMetadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
-                description: parsedMetadata.description || "Educational achievement award",
-                image: parsedMetadata.image,
-                attributes: parsedMetadata.attributes || []
-              },
-              image_url: nft.image_url,
-              blockchain_token_id: nft.blockchain_token_id,
-              transaction_hash: nft.transaction_hash,
-              blockchain_status: nft.blockchain_status || 'pending',
-              minted_at: nft.minted_at,
-              created_at: nft.created_at
-            };
-          });
-          
-          setBlockchainNfts(transformedNfts);
+        if (walletData) {
+          const { data: nftData, error: nftError } = await supabase
+            .from('nfts')
+            .select(`
+              id,
+              metadata,
+              image_url,
+              blockchain_token_id,
+              transaction_hash,
+              blockchain_status,
+              minted_at,
+              created_at
+            `)
+            .eq('owner_wallet_id', walletData.id)
+            .order('created_at', { ascending: false });
+            
+          if (nftError) {
+            console.error('Error fetching blockchain NFTs:', nftError);
+          } else {
+            const transformedNfts: BlockchainNFT[] = (nftData || []).map((nft: any) => {
+              const parsedMetadata: NFTMetadata = typeof nft.metadata === 'string' 
+                ? JSON.parse(nft.metadata) 
+                : (nft.metadata as unknown as NFTMetadata);
+                
+              return {
+                id: nft.id,
+                metadata: {
+                  name: parsedMetadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
+                  description: parsedMetadata.description || "Educational achievement award",
+                  image: parsedMetadata.image,
+                  attributes: parsedMetadata.attributes || []
+                },
+                image_url: nft.image_url,
+                blockchain_token_id: nft.blockchain_token_id,
+                transaction_hash: nft.transaction_hash,
+                blockchain_status: nft.blockchain_status || 'pending',
+                minted_at: nft.minted_at,
+                created_at: nft.created_at
+              };
+            });
+            
+            setBlockchainNfts(transformedNfts);
+          }
         }
       }
     } catch (error) {
@@ -186,17 +189,19 @@ const WalletPage = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Small Balance Card in top-right */}
-            <div className="w-40">
-              <Card className="bg-purple-900/20 border-purple-500/20">
-                <CardContent className="p-3">
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400 mb-1">Balance</p>
-                    <p className="text-lg font-bold text-purple-400">{balance} Credits</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Small Balance Card in top-right - only for students */}
+            {!canMintNFTs && (
+              <div className="w-40">
+                <Card className="bg-purple-900/20 border-purple-500/20">
+                  <CardContent className="p-3">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400 mb-1">Balance</p>
+                      <p className="text-lg font-bold text-purple-400">{balance} Credits</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
             
             <Card className="bg-purple-900/20 border-purple-500/20">
               <CardContent className="p-3 flex items-center gap-2">
@@ -212,27 +217,27 @@ const WalletPage = () => {
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Left Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          {canTransferNFTs && (
+        {/* Left Sidebar - only show for teachers with transfer capability */}
+        {canTransferNFTs && (
+          <div className="lg:col-span-1 space-y-6">
             <Card className="overflow-hidden border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
               <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Send className="h-5 w-5 text-purple-400" />
-                  Teacher Actions
+                  Send NFTs
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
                 <TransferForm disabled={isLoading || walletLoading} />
               </CardContent>
             </Card>
-          )}
-        </div>
+          </div>
+        )}
         
         {/* Main Content Area */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className={`${canTransferNFTs ? 'lg:col-span-3' : 'lg:col-span-4'} space-y-6`}>
           <Tabs defaultValue={canMintNFTs ? "create" : "collection"} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${canMintNFTs ? 'grid-cols-3' : 'grid-cols-1'}`}>
               {canMintNFTs && (
                 <TabsTrigger value="create" className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
@@ -247,7 +252,7 @@ const WalletPage = () => {
               )}
               <TabsTrigger value="collection" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
-                {canMintNFTs ? "Sent NFTs" : "My Collection"}
+                {canMintNFTs ? "Send NFTs" : "My Collection"}
               </TabsTrigger>
             </TabsList>
             
@@ -263,7 +268,7 @@ const WalletPage = () => {
                   <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Trophy className="h-5 w-5 text-purple-400" />
-                      NFT Library
+                      My NFT Library
                     </CardTitle>
                     <CardDescription>
                       Manage your created blockchain NFTs - send to students or delete
@@ -277,27 +282,44 @@ const WalletPage = () => {
             )}
             
             <TabsContent value="collection" className="space-y-6">
-              <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-                <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Trophy className="h-5 w-5 text-purple-400" />
-                    Blockchain NFT Collection
-                  </CardTitle>
-                  <CardDescription>
-                    Your blockchain-verified digital achievements
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <BlockchainNFTGrid 
-                    nfts={blockchainNfts} 
-                    isLoading={isLoading} 
-                    userRole={userRole}
-                  />
-                  <div className="mt-6">
-                    <NFTDisclaimer />
-                  </div>
-                </CardContent>
-              </Card>
+              {canMintNFTs ? (
+                <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+                  <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Send className="h-5 w-5 text-purple-400" />
+                      Send NFTs to Students
+                    </CardTitle>
+                    <CardDescription>
+                      Transfer your created NFTs from your library to students
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <TransferForm disabled={isLoading || walletLoading} />
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+                  <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Trophy className="h-5 w-5 text-purple-400" />
+                      Blockchain NFT Collection
+                    </CardTitle>
+                    <CardDescription>
+                      Your blockchain-verified digital achievements
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <BlockchainNFTGrid 
+                      nfts={blockchainNfts} 
+                      isLoading={isLoading} 
+                      userRole={userRole}
+                    />
+                    <div className="mt-6">
+                      <NFTDisclaimer />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>
