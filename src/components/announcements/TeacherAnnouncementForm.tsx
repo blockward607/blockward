@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -13,12 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StudentSelector } from "./StudentSelector";
 import type { Classroom } from "@/types/classroom";
 
 interface TeacherAnnouncementFormProps {
   onSuccess: () => void;
   onCancel: () => void;
-  defaultClassroomId?: string; // Added to support pre-selecting a classroom
+  defaultClassroomId?: string;
 }
 
 export const TeacherAnnouncementForm = ({ 
@@ -28,7 +30,9 @@ export const TeacherAnnouncementForm = ({
 }: TeacherAnnouncementFormProps) => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
+  const [targetType, setTargetType] = useState<string>('all');
   const [classroomId, setClassroomId] = useState<string | null>(defaultClassroomId || null);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -38,9 +42,9 @@ export const TeacherAnnouncementForm = ({
   }, []);
 
   useEffect(() => {
-    // When defaultClassroomId changes, update classroomId
     if (defaultClassroomId) {
       setClassroomId(defaultClassroomId);
+      setTargetType('classroom');
     }
   }, [defaultClassroomId]);
 
@@ -73,24 +77,47 @@ export const TeacherAnnouncementForm = ({
       return;
     }
 
+    if (targetType === 'students' && selectedStudents.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "No students selected",
+        description: "Please select at least one student for individual targeting"
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from('notifications').insert({
+      const payload: any = {
         title,
         message,
-        classroom_id: classroomId, // For all students if null
         created_by: session.user.id,
         type: 'announcement'
-      });
+      };
+
+      // Set targeting based on selection
+      if (targetType === 'classroom' && classroomId) {
+        payload.classroom_id = classroomId;
+      } else if (targetType === 'students') {
+        payload.recipients = selectedStudents;
+      }
+      // For 'all' type, we leave both classroom_id and recipients as null
+
+      const { error } = await supabase.from('notifications').insert(payload);
 
       if (error) throw error;
       
+      const targetDescription = 
+        targetType === 'all' ? 'for all students' :
+        targetType === 'classroom' ? 'for selected classroom' :
+        `for ${selectedStudents.length} selected students`;
+
       toast({
         title: "Success",
-        description: `Announcement ${classroomId ? 'for class' : 'for all students'} published successfully`
+        description: `Announcement ${targetDescription} published successfully`
       });
       
       onSuccess();
@@ -107,7 +134,7 @@ export const TeacherAnnouncementForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h3 className="text-xl font-semibold mb-4">Create New Announcement</h3>
       </div>
@@ -123,23 +150,49 @@ export const TeacherAnnouncementForm = ({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="classroom">Class (optional)</Label>
-        <Select value={classroomId || ''} onValueChange={setClassroomId}>
-          <SelectTrigger>
-            <SelectValue placeholder="All students" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All students</SelectItem>
-            {classrooms.map((classroom) => (
-              <SelectItem key={classroom.id} value={classroom.id}>
-                {classroom.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-gray-400">Leave empty to send to all students</p>
+      <div className="space-y-3">
+        <Label>Target Audience</Label>
+        <RadioGroup value={targetType} onValueChange={setTargetType}>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="all" id="all" />
+            <Label htmlFor="all">All Students</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="classroom" id="classroom" />
+            <Label htmlFor="classroom">Specific Classroom</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="students" id="students" />
+            <Label htmlFor="students">Individual Students</Label>
+          </div>
+        </RadioGroup>
       </div>
+
+      {targetType === 'classroom' && (
+        <div className="space-y-2">
+          <Label htmlFor="classroom-select">Select Classroom</Label>
+          <Select value={classroomId || ''} onValueChange={setClassroomId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose a classroom" />
+            </SelectTrigger>
+            <SelectContent>
+              {classrooms.map((classroom) => (
+                <SelectItem key={classroom.id} value={classroom.id}>
+                  {classroom.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {targetType === 'students' && (
+        <StudentSelector
+          selectedStudents={selectedStudents}
+          onStudentsChange={setSelectedStudents}
+          classroomId={targetType === 'classroom' ? classroomId || undefined : undefined}
+        />
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="message">Message</Label>

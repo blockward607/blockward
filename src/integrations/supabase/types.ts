@@ -733,6 +733,7 @@ export type Database = {
           created_by: string | null
           id: string
           message: string
+          recipients: Json | null
           title: string
           type: string | null
         }
@@ -742,6 +743,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           message: string
+          recipients?: Json | null
           title: string
           type?: string | null
         }
@@ -751,6 +753,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           message?: string
+          recipients?: Json | null
           title?: string
           type?: string | null
         }
