@@ -1,531 +1,68 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, ImagePlus, Loader2, LayoutTemplate, Shield, AlertTriangle, Pi, Atom, Code, Dumbbell, Palette, Zap, ArrowRight } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { NFTImageUpload } from "./NFTImageUpload";
-import { StudentSelect } from "./StudentSelect";
-import { NFTAwardForm } from "./NFTAwardForm";
-import { TemplateSelector } from "./TemplateSelector";
-import { blockchainService } from '@/blockchain/services/BlockchainService';
-import { BlockchainWalletPanel } from "@/components/wallet/BlockchainWalletPanel";
-import { Switch } from "@/components/ui/switch";
+import { Trophy, Zap, TestTube } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
+import { VirtualNFTCreator } from "./VirtualNFTCreator";
 
 export const CreateNFTAward = () => {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [useTemplate, setUseTemplate] = useState(true);
-  const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [isBlockchainMinting, setIsBlockchainMinting] = useState(false);
-  const [studentWalletAddress, setStudentWalletAddress] = useState<string | null>(null);
-  const [useMetaMask, setUseMetaMask] = useState(false);
-  const [connectedWalletAddress, setConnectedWalletAddress] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    points: 100,
-    nftType: "academic"
-  });
-  const [useBlockchainSystem, setUseBlockchainSystem] = useState(true);
-
-  useEffect(() => {
-    checkAndCreateNFTsBucket();
-  }, []);
-
-  useEffect(() => {
-    if (selectedTemplate && useTemplate) {
-      const template = templates.find(t => t.id === selectedTemplate);
-      if (template) {
-        setFormData({
-          title: template.title,
-          description: template.description,
-          points: template.points,
-          nftType: template.type
-        });
-        setImageUrl(template.imageUrl);
-      }
-    }
-  }, [selectedTemplate, useTemplate]);
-
-  useEffect(() => {
-    if (selectedStudent) {
-      fetchStudentWalletAddress();
-    } else {
-      setStudentWalletAddress(null);
-    }
-  }, [selectedStudent]);
-
-  const fetchStudentWalletAddress = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('wallets')
-        .select('address')
-        .eq('user_id', selectedStudent)
-        .single();
-
-      if (error) {
-        console.error('Error fetching student wallet:', error);
-        return;
-      }
-
-      setStudentWalletAddress(data.address);
-    } catch (error) {
-      console.error('Error in fetchStudentWalletAddress:', error);
-    }
-  };
-
-  const templates = [
-    {
-      id: "math-excellence",
-      title: "Mathematics Excellence Award",
-      description: "Awarded for outstanding achievement in mathematics and problem-solving skills",
-      points: 200,
-      type: "academic",
-      imageUrl: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2070",
-      icon: <Pi className="w-4 h-4 text-white" />
-    },
-    {
-      id: "science-achievement",
-      title: "Science Achievement Award",
-      description: "Recognizing exceptional work in scientific studies and experimentation",
-      points: 200,
-      type: "academic",
-      imageUrl: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2070",
-      icon: <Atom className="w-4 h-4 text-white" />
-    },
-    {
-      id: "computer-science",
-      title: "Computer Science Excellence",
-      description: "Celebrating achievements in programming, algorithms and computational thinking",
-      points: 220,
-      type: "academic",
-      imageUrl: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=2070",
-      icon: <Code className="w-4 h-4 text-white" />
-    },
-    {
-      id: "physical-education",
-      title: "Physical Education Achievement",
-      description: "Recognizing excellence in sports, teamwork and physical fitness",
-      points: 180,
-      type: "physical",
-      imageUrl: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2070",
-      icon: <Dumbbell className="w-4 h-4 text-white" />
-    },
-    {
-      id: "creative-arts",
-      title: "Creative Arts Excellence",
-      description: "Recognizing exceptional creativity and artistic expression",
-      points: 180,
-      type: "special",
-      imageUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071",
-      icon: <Palette className="w-4 h-4 text-white" />
-    }
-  ];
-
-  const checkAndCreateNFTsBucket = async () => {
-    try {
-      const { data, error } = await supabase.storage.getBucket('nft-images');
-      
-      if (error && error.message.includes('The resource was not found')) {
-        console.log('BlockWard images bucket does not exist, creating it...');
-        const { error: createError } = await supabase.storage.createBucket('nft-images', {
-          public: true
-        });
-        if (createError) throw createError;
-        console.log('BlockWard images bucket created successfully');
-      }
-    } catch (error) {
-      console.error('Error checking/creating BlockWard images bucket:', error);
-    }
-  };
-
-  const handleWalletConnect = (address: string) => {
-    setConnectedWalletAddress(address);
-    toast({
-      title: "Wallet Connected",
-      description: `Connected to blockchain with address: ${address.substring(0, 8)}...`
-    });
-  };
-
-  const handleBlockchainMint = async () => {
-    if (!studentWalletAddress) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Student wallet address not found"
-      });
-      return;
-    }
-
-    setIsBlockchainMinting(true);
-    
-    try {
-      const initialized = await blockchainService.initialize('teacher', useMetaMask);
-      if (!initialized) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to initialize blockchain connection."
-        });
-        return;
-      }
-
-      const metadata = {
-        name: formData.title,
-        description: formData.description,
-        points: formData.points,
-        type: formData.nftType,
-        image: imageUrl,
-        created_at: new Date().toISOString(),
-        attributes: [
-          {
-            trait_type: "Type",
-            value: formData.nftType
-          },
-          {
-            trait_type: "Points",
-            value: formData.points.toString()
-          }
-        ]
-      };
-
-      const result = await blockchainService.mintBlockWard(studentWalletAddress, metadata);
-      
-      console.log("BlockWard minted on blockchain:", result);
-      
-      await handleSaveToDatabase(result);
-      
-      toast({
-        title: "Success",
-        description: useMetaMask 
-          ? "BlockWard successfully minted on the blockchain!" 
-          : "BlockWard successfully created and simulated on the blockchain!",
-      });
-      
-      setFormData({ title: "", description: "", points: 100, nftType: "academic" });
-      setImageUrl(null);
-      setSelectedStudent("");
-      setSelectedTemplate("");
-      
-    } catch (error: any) {
-      console.error("Error minting BlockWard on blockchain:", error);
-      toast({
-        variant: "destructive",
-        title: "Blockchain Processing Failed",
-        description: error.message || "Failed to process BlockWard"
-      });
-    } finally {
-      setIsBlockchainMinting(false);
-    }
-  };
-
-  const handleSaveToDatabase = async (blockchainResult: any) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("You must be logged in to create BlockWards");
-      }
-      
-      const { data: teacherWallet, error: walletError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (walletError) {
-        throw walletError;
-      }
-      
-      const { data: studentWallet, error: studentWalletError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', selectedStudent)
-        .single();
-        
-      if (studentWalletError) {
-        throw studentWalletError;
-      }
-      
-      const metadata = {
-        name: formData.title,
-        description: formData.description,
-        points: formData.points,
-        type: formData.nftType,
-        image: imageUrl,
-        created_at: new Date().toISOString(),
-        attributes: [
-          {
-            trait_type: "Type",
-            value: formData.nftType
-          },
-          {
-            trait_type: "Points",
-            value: formData.points.toString()
-          }
-        ]
-      };
-      
-      const { data: nft, error: nftError } = await supabase
-        .from('nfts')
-        .insert({
-          token_id: blockchainResult.tokenId || `award-${Date.now()}`,
-          contract_address: BLOCKWARD_NFT_CONTRACT_ADDRESS,
-          metadata,
-          creator_wallet_id: teacherWallet.id,
-          image_url: imageUrl,
-          owner_wallet_id: studentWallet.id,
-          network: "testnet",
-        })
-        .select()
-        .single();
-
-      if (nftError) throw nftError;
-      
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          nft_id: nft.id,
-          from_wallet_id: teacherWallet.id,
-          to_wallet_id: studentWallet.id,
-          transaction_hash: blockchainResult.tokenId || "simulated-" + Date.now(),
-          status: 'completed',
-        });
-
-      if (transactionError) throw transactionError;
-      
-      const { error: incrementError } = await supabase
-        .rpc('increment_student_points', {
-          student_id: selectedStudent,
-          points_to_add: formData.points
-        });
-
-      if (incrementError) throw incrementError;
-      
-      return true;
-    } catch (error) {
-      console.error("Error saving NFT to database:", error);
-      throw error;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!imageUrl) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please upload or select an image"
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      if (useBlockchainSystem) {
-        // Redirect to blockchain NFT creator
-        window.location.href = '/wallet?tab=create';
-        return;
-      }
-
-      // Keep existing legacy code for backwards compatibility
-      await handleBlockchainMint();
-    } catch (error: any) {
-      console.error('Error creating BlockWard:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to create BlockWard Award",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <Card className="p-6 glass-card">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 rounded-full bg-purple-600/20">
-            <Trophy className="w-6 h-6 text-purple-400" />
-          </div>
-          <h2 className="text-2xl font-semibold gradient-text">Create BlockWard Award</h2>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
+      <div className="flex items-center gap-4 mb-6">
+        <div className="p-3 rounded-full bg-purple-600/20">
+          <Trophy className="w-6 h-6 text-purple-400" />
         </div>
+        <h2 className="text-2xl font-semibold gradient-text">Create BlockWard Award</h2>
+      </div>
 
-        {/* Add blockchain system toggle */}
-        <div className="bg-indigo-900/20 p-4 rounded-lg border border-indigo-500/30">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-indigo-300">Blockchain System</span>
-            <Button
-              type="button"
-              variant={useBlockchainSystem ? "default" : "outline"}
-              size="sm"
-              onClick={() => setUseBlockchainSystem(!useBlockchainSystem)}
-            >
-              {useBlockchainSystem ? "Enabled" : "Legacy Mode"}
-            </Button>
-          </div>
-          <p className="text-xs text-indigo-400">
-            {useBlockchainSystem 
-              ? "Use the new blockchain system with virtual wallets and real smart contracts"
-              : "Use the legacy system (for backwards compatibility)"
-            }
-          </p>
-        </div>
+      <Tabs defaultValue="virtual" className="space-y-6">
+        <TabsList className="p-1 bg-black/40 backdrop-blur-xl border border-purple-500/20 rounded-xl">
+          <TabsTrigger value="virtual" className="flex items-center gap-2 data-[state=active]:bg-green-600/30 data-[state=active]:text-white">
+            <TestTube className="w-4 h-4" />
+            Create Virtual NFT
+          </TabsTrigger>
+          <TabsTrigger value="blockchain" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
+            <Zap className="w-4 h-4" />
+            Mint Real NFT
+          </TabsTrigger>
+        </TabsList>
 
-        {useBlockchainSystem ? (
-          <div className="text-center py-8 bg-purple-900/20 rounded-lg border border-purple-500/30">
-            <Zap className="h-12 w-12 text-purple-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-purple-300 mb-2">
-              Enhanced Blockchain System Available
-            </h3>
-            <p className="text-gray-400 mb-4">
-              Experience the new virtual wallet system with real blockchain integration
-            </p>
-            <Button 
-              type="button"
-              onClick={() => window.location.href = '/wallet?tab=create'}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              <ArrowRight className="w-4 h-4 mr-2" />
-              Go to Blockchain Creator
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="flex rounded-lg overflow-hidden">
-                <button
-                  type="button"
-                  className={`flex-1 py-3 px-4 text-center font-medium transition-all ${
-                    useTemplate
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                  onClick={() => setUseTemplate(true)}
-                >
-                  <LayoutTemplate className="w-4 h-4 mr-2 inline-block" />
-                  Use Template
-                </button>
-                <button
-                  type="button"
-                  className={`flex-1 py-3 px-4 text-center font-medium transition-all ${
-                    !useTemplate
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                  onClick={() => setUseTemplate(false)}
-                >
-                  <ImagePlus className="w-4 h-4 mr-2 inline-block" />
-                  Custom Award
-                </button>
+        <TabsContent value="virtual">
+          <VirtualNFTCreator />
+        </TabsContent>
+
+        <TabsContent value="blockchain">
+          <Card className="p-6 glass-card">
+            <div className="text-center py-8 bg-purple-900/20 rounded-lg border border-purple-500/30">
+              <Zap className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-purple-300 mb-2">
+                Blockchain NFT Creation
+              </h3>
+              <p className="text-gray-400 mb-4">
+                Create real blockchain NFTs that are permanently stored on the blockchain
+              </p>
+              <div className="bg-amber-900/20 p-3 rounded-lg border border-amber-500/30 mb-4">
+                <p className="text-sm text-amber-300">
+                  ⚠️ This feature requires MetaMask wallet connection and MATIC tokens for gas fees
+                </p>
               </div>
-            </div>
-
-            {useTemplate ? (
-              <TemplateSelector
-                templates={templates}
-                selectedTemplate={selectedTemplate}
-                onSelect={setSelectedTemplate}
-              />
-            ) : (
-              <>
-                <NFTAwardForm 
-                  formData={formData}
-                  onChange={setFormData}
-                />
-
-                <NFTImageUpload
-                  imageUrl={imageUrl}
-                  onImageSelect={setImageUrl}
-                />
-              </>
-            )}
-
-            <div>
-              <StudentSelect
-                selectedStudentId={selectedStudent}
-                onStudentSelect={setSelectedStudent}
-              />
-              {selectedStudent && studentWalletAddress && (
-                <div className="text-xs text-gray-400 mt-1">
-                  Student wallet: {studentWalletAddress.substring(0, 8)}...
-                </div>
-              )}
-            </div>
-            
-            <div className="border border-dashed border-purple-500/30 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold mb-3 text-purple-300">Blockchain Integration</h3>
-              
-              <div className="flex items-center space-x-2 mb-4">
-                <Switch 
-                  id="use-metamask" 
-                  checked={useMetaMask} 
-                  onCheckedChange={setUseMetaMask} 
-                />
-                <label 
-                  htmlFor="use-metamask" 
-                  className="text-sm cursor-pointer"
-                >
-                  Use MetaMask for actual blockchain transactions
-                </label>
-              </div>
-              
-              {useMetaMask ? (
-                <>
-                  <BlockchainWalletPanel 
-                    onConnect={handleWalletConnect} 
-                    accountType="teacher"
-                  />
-                  
-                  {!connectedWalletAddress && (
-                    <div className="bg-amber-900/20 p-3 rounded-lg border border-amber-500/30 flex items-center mt-4">
-                      <AlertTriangle className="h-5 w-5 text-amber-400 mr-3" />
-                      <div className="text-sm text-amber-300">
-                        Connect your MetaMask wallet above to mint BlockWards directly on the blockchain. 
-                        Make sure your wallet has MATIC tokens for gas fees.
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="bg-indigo-900/20 p-3 rounded-lg border border-indigo-500/30 flex items-center mt-2">
-                  <Shield className="h-5 w-5 text-indigo-400 mr-3" />
-                  <div className="text-sm text-indigo-300">
-                    Simulated blockchain mint will process NFTs within our system without requiring MetaMask or gas fees.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end">
               <Button 
-                type="submit" 
-                disabled={loading || !formData.title || !formData.description || !imageUrl || !selectedStudent || (useMetaMask && !connectedWalletAddress)}
-                className="bg-purple-600 hover:bg-purple-700"
+                disabled
+                className="bg-purple-600 hover:bg-purple-700 opacity-50"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isBlockchainMinting ? "Minting..." : "Creating..."}
-                  </>
-                ) : (
-                  <>
-                    <ImagePlus className="w-4 h-4 mr-2" />
-                    {useMetaMask ? "Mint Blockchain NFT" : "Create BlockWard Award"}
-                  </>
-                )}
+                Coming Soon - Blockchain Integration
               </Button>
             </div>
-          </>
-        )}
-      </form>
-    </Card>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </motion.div>
   );
 };
-
-const BLOCKWARD_NFT_CONTRACT_ADDRESS = '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1';

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { NFTCard } from "./NFTCard";
 import { motion } from "framer-motion";
 import { Award } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NFT {
   id: string;
@@ -16,12 +18,73 @@ interface NFT {
 }
 
 interface StudentNFTSectionProps {
-  nfts: NFT[];
+  nfts?: NFT[];
   isDemo: boolean;
   onSignUp: () => void;
 }
 
-export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionProps) => {
+export const StudentNFTSection = ({ nfts: propNfts, isDemo, onSignUp }: StudentNFTSectionProps) => {
+  const [studentNFTs, setStudentNFTs] = useState<NFT[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isDemo) {
+      loadStudentNFTs();
+    } else {
+      setLoading(false);
+    }
+  }, [isDemo]);
+
+  const loadStudentNFTs = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setLoading(false);
+        return;
+      }
+
+      // Get user's wallet
+      const { data: walletData } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (walletData) {
+        // Load NFTs owned by this wallet
+        const { data: nftData, error } = await supabase
+          .from('nfts')
+          .select('*')
+          .eq('owner_wallet_id', walletData.id)
+          .order('created_at', { ascending: false })
+          .limit(3); // Show only first 3 for preview
+
+        if (error) throw error;
+
+        const transformedNfts: NFT[] = (nftData || []).map((nft: any) => {
+          const parsedMetadata = typeof nft.metadata === 'string' 
+            ? JSON.parse(nft.metadata) 
+            : nft.metadata;
+            
+          return {
+            id: nft.id,
+            image_url: nft.image_url,
+            metadata: {
+              name: parsedMetadata.name || `BlockWard #${nft.id.substring(0, 4)}`,
+              description: parsedMetadata.description || "Educational achievement award"
+            }
+          };
+        });
+
+        setStudentNFTs(transformedNfts);
+      }
+    } catch (error) {
+      console.error('Error loading student NFTs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // For demo purposes, show some high-quality demo NFTs
   const demoNfts = isDemo ? [
     {
@@ -50,7 +113,7 @@ export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionP
     }
   ] : [];
   
-  const displayNfts = nfts.length > 0 ? nfts : demoNfts;
+  const displayNfts = propNfts || (isDemo ? demoNfts : studentNFTs);
   
   return (
     <Card className="p-6 glass-card">
@@ -64,7 +127,17 @@ export const StudentNFTSection = ({ nfts, isDemo, onSignUp }: StudentNFTSectionP
         </Link>
       </div>
       
-      {displayNfts.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-2 animate-pulse">
+              <div className="h-40 bg-gray-700 rounded-md"></div>
+              <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      ) : displayNfts.length === 0 ? (
         <div className="text-center py-4">
           <p className="text-gray-400 mb-4">
             {isDemo 
