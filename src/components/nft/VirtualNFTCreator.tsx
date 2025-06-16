@@ -8,10 +8,12 @@ import { Trophy, ImagePlus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NFTImageUpload } from "./NFTImageUpload";
+import { StudentSelect } from "./StudentSelect";
 
 export const VirtualNFTCreator = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -23,11 +25,11 @@ export const VirtualNFTCreator = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description) {
+    if (!formData.title || !formData.description || !selectedStudent) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill in all required fields"
+        description: "Please fill in all required fields and select a student"
       });
       return;
     }
@@ -49,6 +51,35 @@ export const VirtualNFTCreator = () => {
 
       if (walletError) {
         throw walletError;
+      }
+      
+      // Get or create student wallet
+      let studentWallet;
+      const { data: existingWallet } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', selectedStudent)
+        .maybeSingle();
+        
+      if (existingWallet) {
+        studentWallet = existingWallet;
+      } else {
+        // Create a wallet for the student
+        const { data: newWallet, error: createWalletError } = await supabase
+          .from('wallets')
+          .insert({
+            user_id: selectedStudent,
+            address: "wallet_" + Math.random().toString(16).slice(2, 10),
+            type: "user"
+          })
+          .select()
+          .single();
+          
+        if (createWalletError) {
+          throw createWalletError;
+        }
+        
+        studentWallet = newWallet;
       }
       
       // Create NFT metadata
@@ -76,7 +107,7 @@ export const VirtualNFTCreator = () => {
         ]
       };
       
-      // Create virtual NFT (stored in teacher's library for later distribution)
+      // Create virtual NFT
       const { data: nft, error: nftError } = await supabase
         .from('nfts')
         .insert({
@@ -85,7 +116,7 @@ export const VirtualNFTCreator = () => {
           metadata,
           creator_wallet_id: teacherWallet.id,
           image_url: imageUrl,
-          owner_wallet_id: teacherWallet.id, // Initially owned by teacher
+          owner_wallet_id: studentWallet.id,
           network: "virtual",
           blockchain_status: "virtual"
         })
@@ -94,14 +125,39 @@ export const VirtualNFTCreator = () => {
 
       if (nftError) throw nftError;
       
+      // Create transaction record
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          nft_id: nft.id,
+          from_wallet_id: teacherWallet.id,
+          to_wallet_id: studentWallet.id,
+          transaction_hash: "virtual-" + Date.now(),
+          status: 'completed',
+        });
+
+      if (transactionError) throw transactionError;
+      
+      // Award points to student
+      const { error: incrementError } = await supabase
+        .rpc('increment_student_points', {
+          student_id: selectedStudent,
+          points_to_add: formData.points
+        });
+
+      if (incrementError) {
+        console.warn('Failed to increment student points:', incrementError);
+      }
+      
       toast({
         title: "Virtual NFT Created!",
-        description: `${formData.title} has been added to your library!`
+        description: `${formData.title} has been awarded to the student!`
       });
       
       // Reset form
       setFormData({ title: "", description: "", points: 100, reason: "" });
       setImageUrl(null);
+      setSelectedStudent("");
       
     } catch (error: any) {
       console.error('Error creating virtual NFT:', error);
@@ -183,13 +239,22 @@ export const VirtualNFTCreator = () => {
                 onImageSelect={setImageUrl}
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Select Student*</label>
+              <StudentSelect
+                selectedStudentId={selectedStudent}
+                onStudentSelect={setSelectedStudent}
+                placeholder="Choose a student to receive this award"
+              />
+            </div>
           </div>
         </div>
 
         <div className="flex justify-end">
           <Button 
             type="submit" 
-            disabled={loading || !formData.title || !formData.description}
+            disabled={loading || !formData.title || !formData.description || !selectedStudent}
             className="bg-green-600 hover:bg-green-700"
           >
             {loading ? (

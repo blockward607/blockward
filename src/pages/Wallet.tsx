@@ -1,11 +1,12 @@
 
-import { VirtualWalletPanel } from "@/components/wallet/VirtualWalletPanel";
+import { WalletPanel } from "@/components/wallet/WalletPanel";
+import { BlockchainWalletPanel } from "@/components/wallet/BlockchainWalletPanel";
 import { CreateNFTAward } from "@/components/nft/CreateNFTAward";
 import { TeacherNFTLibrary } from "@/components/nft/TeacherNFTLibrary";
 import { NFTGrid } from "@/components/wallet/NFTGrid";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wallet, Trophy, Plus, Shield } from "lucide-react";
+import { Wallet, Coins, Trophy, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,7 +132,7 @@ const WalletPage = () => {
           <Wallet className="w-8 h-8 text-purple-300" />
         </div>
         <h1 className="text-4xl font-bold shimmer-text">
-          Virtual Wallet
+          NFT Wallet
         </h1>
       </motion.div>
 
@@ -145,15 +146,19 @@ const WalletPage = () => {
             <TabsList className="p-1 bg-black/40 backdrop-blur-xl border border-purple-500/20 rounded-xl">
               <TabsTrigger value="library" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
                 <Trophy className="w-4 h-4" />
-                My Library
+                My NFT Library
               </TabsTrigger>
               <TabsTrigger value="create" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
                 <Plus className="w-4 h-4" />
                 Create NFT Award
               </TabsTrigger>
               <TabsTrigger value="wallet" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
-                <Shield className="w-4 h-4" />
+                <Wallet className="w-4 h-4" />
                 Wallet Details
+              </TabsTrigger>
+              <TabsTrigger value="blockchain" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
+                <Coins className="w-4 h-4" />
+                Blockchain Wallet
               </TabsTrigger>
             </TabsList>
           </motion.div>
@@ -186,7 +191,21 @@ const WalletPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
             >
-              <VirtualWalletPanel />
+              <Card className="p-6 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
+                <WalletPanel />
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="blockchain">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              <Card className="p-6 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
+                <BlockchainWalletPanel />
+              </Card>
             </motion.div>
           </TabsContent>
         </Tabs>
@@ -203,8 +222,12 @@ const WalletPage = () => {
                 My BlockWards
               </TabsTrigger>
               <TabsTrigger value="wallet" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
-                <Shield className="w-4 h-4" />
+                <Wallet className="w-4 h-4" />
                 Wallet Details
+              </TabsTrigger>
+              <TabsTrigger value="blockchain" className="flex items-center gap-2 data-[state=active]:bg-purple-600/30 data-[state=active]:text-white">
+                <Coins className="w-4 h-4" />
+                Blockchain Wallet
               </TabsTrigger>
             </TabsList>
           </motion.div>
@@ -227,7 +250,21 @@ const WalletPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
             >
-              <VirtualWalletPanel />
+              <Card className="p-6 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
+                <WalletPanel />
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="blockchain">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              <Card className="p-6 glass-card border border-purple-500/30 shadow-[0_5px_25px_rgba(147,51,234,0.3)]">
+                <BlockchainWalletPanel />
+              </Card>
             </motion.div>
           </TabsContent>
         </Tabs>

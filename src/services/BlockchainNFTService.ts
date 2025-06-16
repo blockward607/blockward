@@ -1,7 +1,7 @@
 
 import { ethers } from 'ethers';
 import { supabase } from '@/integrations/supabase/client';
-import { VirtualWalletService } from './VirtualWalletService';
+import { BlockchainWalletService } from './BlockchainWalletService';
 
 // ERC-721 Contract ABI (minimal for minting and transfers)
 const NFT_CONTRACT_ABI = [
@@ -22,25 +22,12 @@ export class BlockchainNFTService {
   }
 
   private static async getAdminWallet(): Promise<ethers.Wallet> {
-    // Get admin wallet from database or use default for demo
-    const { data: adminConfig } = await supabase
-      .from('admin_wallet_config')
-      .select('*')
-      .eq('is_active', true)
-      .single();
-
-    let privateKey: string;
-    
-    if (adminConfig) {
-      // Decrypt admin private key (implement proper decryption)
-      privateKey = adminConfig.encrypted_private_key; // Simplified for demo
-    } else {
-      // Use demo private key
-      privateKey = '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-    }
+    // In production, this would be securely stored
+    const adminPrivateKey = process.env.ADMIN_WALLET_PRIVATE_KEY || 
+      '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'; // Demo key
     
     const provider = await this.getProvider();
-    return new ethers.Wallet(privateKey, provider);
+    return new ethers.Wallet(adminPrivateKey, provider);
   }
 
   private static async getContract(): Promise<ethers.Contract> {
@@ -96,7 +83,7 @@ export class BlockchainNFTService {
         tokenId,
         transactionHash: receipt.transactionHash
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error minting NFT:', error);
       return {
         success: false,
@@ -145,7 +132,7 @@ export class BlockchainNFTService {
         success: true,
         transactionHash: receipt.transactionHash
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error transferring NFT:', error);
       return {
         success: false,
