@@ -35,13 +35,11 @@ export const StudentSelector = ({
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from('students')
-        .select('id, name, user_id');
-
+      
       // If a classroom is selected, only show students from that classroom
       if (classroomId) {
-        query = query
+        const { data, error } = await supabase
+          .from('students')
           .select(`
             id, 
             name, 
@@ -49,12 +47,18 @@ export const StudentSelector = ({
             classroom_students!inner(classroom_id)
           `)
           .eq('classroom_students.classroom_id', classroomId);
-      }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      setStudents(data || []);
+        if (error) throw error;
+        setStudents(data || []);
+      } else {
+        // Show all students if no classroom is selected
+        const { data, error } = await supabase
+          .from('students')
+          .select('id, name, user_id');
+
+        if (error) throw error;
+        setStudents(data || []);
+      }
     } catch (error) {
       console.error('Error fetching students:', error);
     } finally {

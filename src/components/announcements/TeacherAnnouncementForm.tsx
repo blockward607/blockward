@@ -190,7 +190,7 @@ export const TeacherAnnouncementForm = ({
         <StudentSelector
           selectedStudents={selectedStudents}
           onStudentsChange={setSelectedStudents}
-          classroomId={targetType === 'classroom' ? classroomId || undefined : undefined}
+          classroomId={undefined}
         />
       )}
 
