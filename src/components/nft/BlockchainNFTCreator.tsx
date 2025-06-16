@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,24 @@ export const BlockchainNFTCreator = () => {
         variant: "destructive",
         title: "Missing Information",
         description: "Please upload an image"
+      });
+      return;
+    }
+
+    if (!formData.title.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please enter a title"
+      });
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please enter a description"
       });
       return;
     }
@@ -92,14 +111,17 @@ export const BlockchainNFTCreator = () => {
         creator_wallet_id: teacherWallet.id,
         owner_wallet_id: teacherWallet.id, // This ensures it goes to teacher's library
         image_url: imageUrl,
-        network: "polygon-mumbai",
+        network: "polygon-mumbai", // Use correct network value
         blockchain_token_id: parseInt(mintResult.tokenId.replace('sim-', '') || '0'),
         transaction_hash: mintResult.transactionHash,
         blockchain_status: useBlockchain ? 'minted' : 'pending',
         minted_at: new Date().toISOString()
       });
 
-      if (nftError) throw nftError;
+      if (nftError) {
+        console.error('Database error:', nftError);
+        throw new Error(`Database error: ${nftError.message}`);
+      }
 
       toast({
         title: "NFT Created Successfully!",
@@ -219,7 +241,7 @@ export const BlockchainNFTCreator = () => {
 
           <Button 
             type="submit" 
-            disabled={loading || !formData.title || !imageUrl}
+            disabled={loading || !formData.title.trim() || !formData.description.trim() || !imageUrl}
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
             {loading ? (
