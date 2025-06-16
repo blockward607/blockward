@@ -10,6 +10,7 @@ import { DeleteStudentDialog } from "@/components/students/DeleteStudentDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BehaviorTracker } from "@/components/behavior/BehaviorTracker";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 const Students = () => {
   const { students: studentsFromHook, loading: studentsLoading, error: studentsError } = useStudents();
@@ -39,8 +40,17 @@ const Students = () => {
     }
   };
 
+  console.log('📊 Students page render:', {
+    studentsFromHook: studentsFromHook.length,
+    studentsFromManagement: students.length,
+    displayStudents: displayStudents.length,
+    isLoading,
+    studentsError
+  });
+
   // Show error state
   if (studentsError) {
+    console.log('🚨 Students: Showing error state:', studentsError);
     return (
       <div className="space-y-8 relative z-10">
         <StudentsHeader onAddStudent={addNewStudent} />
@@ -50,12 +60,23 @@ const Students = () => {
             Error loading students: {studentsError}
           </AlertDescription>
         </Alert>
+        <Button 
+          onClick={() => {
+            console.log('🔄 Students: User clicked retry');
+            window.location.reload();
+          }}
+          className="mt-4"
+          variant="outline"
+        >
+          Retry Loading Students
+        </Button>
       </div>
     );
   }
 
   // Show loading state
   if (isLoading) {
+    console.log('⏳ Students: Showing loading state');
     return (
       <div className="flex items-center justify-center h-[80vh]">
         <motion.div 
@@ -71,6 +92,7 @@ const Students = () => {
     );
   }
 
+  console.log('✅ Students: Rendering main students content');
   return (
     <motion.div 
       initial="hidden"

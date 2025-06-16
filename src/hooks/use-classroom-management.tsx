@@ -14,19 +14,20 @@ export const useClassroomManagement = () => {
   const { toast } = useToast();
 
   const refreshClassrooms = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
     try {
+      console.log('🔍 Classroom Management: Starting refreshClassrooms...');
+      setLoading(true);
+      setError(null);
+
       if (!user) {
-        console.log('No user found');
+        console.log('❌ Classroom Management: No user found');
         setClassrooms([]);
         setUserRole(null);
         setLoading(false);
         return;
       }
 
-      console.log('Loading classrooms for user:', { userId: user.id, email: user.email });
+      console.log('✅ Classroom Management: User found:', { userId: user.id, email: user.email });
 
       // Determine user role(s)
       const { data: userRoles, error: roleError } = await supabase
@@ -35,22 +36,22 @@ export const useClassroomManagement = () => {
         .eq("user_id", user.id);
 
       if (roleError) {
-        console.error('Error fetching user roles:', roleError);
-        setError('Failed to fetch user roles');
+        console.error('❌ Classroom Management: Error fetching user roles:', roleError);
+        setError(`Failed to fetch user roles: ${roleError.message}`);
         setClassrooms([]);
         setUserRole(null);
         setLoading(false);
         return;
       }
 
-      console.log('User roles for classrooms:', userRoles);
+      console.log('📋 Classroom Management: User roles found:', userRoles);
 
       let determinedRole: "teacher" | "student" | "admin" | null = null;
       let foundClassrooms: any[] = [];
 
       if (userRoles?.some((r) => r.role === "admin")) {
         determinedRole = "admin";
-        console.log('Loading classrooms for admin');
+        console.log('👑 Classroom Management: Loading classrooms for admin');
         
         // Admin: Get all classrooms for their school
         const { data: adminProfile, error: adminError } = await supabase
@@ -60,15 +61,15 @@ export const useClassroomManagement = () => {
           .maybeSingle();
 
         if (adminError) {
-          console.error('Error fetching admin profile:', adminError);
-          setError('Failed to fetch admin profile');
+          console.error('❌ Classroom Management: Error fetching admin profile:', adminError);
+          setError(`Failed to fetch admin profile: ${adminError.message}`);
           setClassrooms([]);
           setUserRole(determinedRole);
           setLoading(false);
           return;
         }
 
-        console.log('Admin profile for classrooms:', adminProfile);
+        console.log('📋 Classroom Management: Admin profile:', adminProfile);
 
         if (adminProfile?.school_id) {
           // Get all classrooms for the school (need to link through teacher_profiles)
@@ -78,71 +79,73 @@ export const useClassroomManagement = () => {
             .eq("school_id", adminProfile.school_id);
 
           if (teacherError) {
-            console.error('Error fetching school teachers:', teacherError);
-            setError('Failed to fetch school teachers');
+            console.error('❌ Classroom Management: Error fetching school teachers:', teacherError);
+            setError(`Failed to fetch school teachers: ${teacherError.message}`);
             foundClassrooms = [];
           } else if (schoolTeachers && schoolTeachers.length > 0) {
             const teacherIds = schoolTeachers.map(t => t.id);
+            console.log('👨‍🏫 Classroom Management: School teacher IDs:', teacherIds);
+            
             const { data: schoolClassrooms, error } = await supabase
               .from("classrooms")
               .select("*")
               .in("teacher_id", teacherIds);
               
             if (error) {
-              console.error('Error fetching school classrooms:', error);
+              console.error('❌ Classroom Management: Error fetching school classrooms:', error);
               setError(`Failed to fetch classrooms: ${error.message}`);
               foundClassrooms = [];
             } else {
               foundClassrooms = schoolClassrooms || [];
-              console.log(`Admin loaded ${foundClassrooms.length} classrooms`);
+              console.log(`✅ Classroom Management: Admin loaded ${foundClassrooms.length} classrooms:`, foundClassrooms);
             }
           } else {
-            console.log('No teachers found for school');
+            console.log('⚠️ Classroom Management: No teachers found for school');
             foundClassrooms = [];
           }
         } else {
-          console.log('Admin has no school_id');
+          console.log('❌ Classroom Management: Admin has no school_id');
           setError('Admin profile missing school assignment');
           foundClassrooms = [];
         }
       } else if (userRoles?.some((r) => r.role === "teacher")) {
         determinedRole = "teacher";
-        console.log('Loading classrooms for teacher');
+        console.log('👨‍🏫 Classroom Management: Loading classrooms for teacher');
         
         // Teacher: fetch classrooms where teacher_id matches teacher_profiles.id
         const { data: teacherProfile, error: teacherError } = await supabase
           .from("teacher_profiles")
-          .select("id")
+          .select("id, school_id")
           .eq("user_id", user.id)
           .maybeSingle();
           
         if (teacherError) {
-          console.error('Error fetching teacher profile:', teacherError);
-          setError('Failed to fetch teacher profile');
+          console.error('❌ Classroom Management: Error fetching teacher profile:', teacherError);
+          setError(`Failed to fetch teacher profile: ${teacherError.message}`);
           foundClassrooms = [];
         } else if (teacherProfile) {
-          console.log('Teacher profile for classrooms:', teacherProfile);
+          console.log('📋 Classroom Management: Teacher profile:', teacherProfile);
           const { data: teacherClassrooms, error } = await supabase
             .from("classrooms")
             .select("*")
             .eq("teacher_id", teacherProfile.id);
             
           if (error) {
-            console.error('Error fetching teacher classrooms:', error);
+            console.error('❌ Classroom Management: Error fetching teacher classrooms:', error);
             setError(`Failed to fetch classrooms: ${error.message}`);
             foundClassrooms = [];
           } else {
             foundClassrooms = teacherClassrooms || [];
-            console.log(`Teacher loaded ${foundClassrooms.length} classrooms`);
+            console.log(`✅ Classroom Management: Teacher loaded ${foundClassrooms.length} classrooms:`, foundClassrooms);
           }
         } else {
-          console.log('No teacher profile found');
+          console.log('❌ Classroom Management: No teacher profile found');
           setError('Teacher profile not found');
           foundClassrooms = [];
         }
       } else if (userRoles?.some((r) => r.role === "student")) {
         determinedRole = "student";
-        console.log('Loading classrooms for student');
+        console.log('👨‍🎓 Classroom Management: Loading classrooms for student');
         
         // Student: get student id for user, fetch from classroom_students mapping
         const { data: studentProfile, error: studentError } = await supabase
@@ -152,11 +155,11 @@ export const useClassroomManagement = () => {
           .maybeSingle();
           
         if (studentError) {
-          console.error('Error fetching student profile:', studentError);
-          setError('Failed to fetch student profile');
+          console.error('❌ Classroom Management: Error fetching student profile:', studentError);
+          setError(`Failed to fetch student profile: ${studentError.message}`);
           foundClassrooms = [];
         } else if (studentProfile?.id) {
-          console.log('Student profile for classrooms:', studentProfile);
+          console.log('📋 Classroom Management: Student profile:', studentProfile);
           const { data: mappings, error: mappingError } = await supabase
             .from("classroom_students")
             .select(`
@@ -168,7 +171,7 @@ export const useClassroomManagement = () => {
             .eq("student_id", studentProfile.id);
             
           if (mappingError) {
-            console.error('Error fetching student classrooms:', mappingError);
+            console.error('❌ Classroom Management: Error fetching student classrooms:', mappingError);
             setError(`Failed to fetch classrooms: ${mappingError.message}`);
             foundClassrooms = [];
           } else {
@@ -176,34 +179,36 @@ export const useClassroomManagement = () => {
             foundClassrooms = (mappings || [])
               .map((m: any) => m.classrooms)
               .filter(Boolean);
-            console.log(`Student loaded ${foundClassrooms.length} classrooms`);
+            console.log(`✅ Classroom Management: Student loaded ${foundClassrooms.length} classrooms:`, foundClassrooms);
           }
         } else {
-          console.log('No student profile found');
+          console.log('❌ Classroom Management: No student profile found');
           setError('Student profile not found');
           foundClassrooms = [];
         }
       } else {
-        console.log('User has no recognized role');
+        console.log('❌ Classroom Management: User has no recognized role');
         setError('User role not recognized');
         determinedRole = null;
         foundClassrooms = [];
       }
 
-      console.log(`Final classroom result: ${foundClassrooms.length} classrooms for role: ${determinedRole}`);
+      console.log(`🎯 Classroom Management: Final result: ${foundClassrooms.length} classrooms for role: ${determinedRole}`);
       setUserRole(determinedRole);
       setClassrooms(foundClassrooms);
       
     } catch (error: any) {
-      console.error('Unexpected error loading classrooms:', error);
-      setError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('💥 Classroom Management: Unexpected error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Unexpected error: ${errorMessage}`);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to load classrooms",
+        description: `Failed to load classrooms: ${errorMessage}`,
       });
       setClassrooms([]);
     } finally {
+      console.log('🏁 Classroom Management: Setting loading to false');
       setLoading(false);
     }
   }, [user, toast]);

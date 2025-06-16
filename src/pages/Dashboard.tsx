@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -44,9 +45,11 @@ const Dashboard = () => {
 
   const checkAuth = async () => {
     try {
+      console.log('🔍 Dashboard: Starting auth check...');
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.log('No session found, redirecting to auth');
+        console.log('❌ Dashboard: No session found, redirecting to auth');
         toast({
           variant: "destructive",
           title: "Not authenticated",
@@ -56,7 +59,11 @@ const Dashboard = () => {
         return;
       }
 
-      console.log('Dashboard auth check for user:', { userId: session.user.id, email: session.user.email });
+      console.log('✅ Dashboard: Session found for user:', { 
+        userId: session.user.id, 
+        email: session.user.email,
+        metadata: session.user.user_metadata 
+      });
 
       // Try to get user role first with better error handling
       let determinedRole = null;
@@ -69,89 +76,95 @@ const Dashboard = () => {
           .eq('user_id', session.user.id);
 
         if (roleError) {
-          console.error('Role fetch error:', roleError);
-          setError('Failed to fetch user role');
+          console.error('❌ Dashboard: Role fetch error:', roleError);
+          setError(`Failed to fetch user role: ${roleError.message}`);
           setLoading(false);
           return;
-        } else {
-          determinedRole = roleData?.[0]?.role || null;
-          console.log('Dashboard determined role:', determinedRole);
         }
+
+        determinedRole = roleData?.[0]?.role || null;
+        console.log('📋 Dashboard: User role determined:', determinedRole);
 
         // Get appropriate profile data based on role
         if (determinedRole === 'admin') {
+          console.log('👑 Dashboard: Fetching admin profile...');
           const { data: adminProfile, error: adminError } = await supabase
             .from('admin_profiles')
-            .select('full_name')
+            .select('full_name, school_id')
             .eq('user_id', session.user.id)
             .maybeSingle();
           
           if (adminError) {
-            console.error('Error fetching admin profile:', adminError);
-            setError('Failed to fetch admin profile');
+            console.error('❌ Dashboard: Error fetching admin profile:', adminError);
+            setError(`Failed to fetch admin profile: ${adminError.message}`);
             setLoading(false);
             return;
-          } else {
-            determinedName = adminProfile?.full_name || session.user.email;
-            console.log('Dashboard admin name:', determinedName);
           }
+
+          determinedName = adminProfile?.full_name || session.user.email;
+          console.log('✅ Dashboard: Admin profile loaded:', { name: determinedName, schoolId: adminProfile?.school_id });
         } else if (determinedRole === 'teacher') {
+          console.log('👨‍🏫 Dashboard: Fetching teacher profile...');
           const { data: teacherData, error: teacherError } = await supabase
             .from('teacher_profiles')
-            .select('full_name')
+            .select('full_name, school_id')
             .eq('user_id', session.user.id)
             .maybeSingle();
           
           if (teacherError) {
-            console.error('Error fetching teacher profile:', teacherError);
-            setError('Failed to fetch teacher profile');
+            console.error('❌ Dashboard: Error fetching teacher profile:', teacherError);
+            setError(`Failed to fetch teacher profile: ${teacherError.message}`);
             setLoading(false);
             return;
-          } else {
-            determinedName = teacherData?.full_name || session.user.email;
-            console.log('Dashboard teacher name:', determinedName);
           }
+
+          determinedName = teacherData?.full_name || session.user.email;
+          console.log('✅ Dashboard: Teacher profile loaded:', { name: determinedName, schoolId: teacherData?.school_id });
         } else if (determinedRole === 'student') {
+          console.log('👨‍🎓 Dashboard: Fetching student profile...');
           const { data: studentData, error: studentError } = await supabase
             .from('students')
-            .select('name')
+            .select('name, school_id')
             .eq('user_id', session.user.id)
             .maybeSingle();
             
           if (studentError) {
-            console.error('Error fetching student profile:', studentError);
-            setError('Failed to fetch student profile');
+            console.error('❌ Dashboard: Error fetching student profile:', studentError);
+            setError(`Failed to fetch student profile: ${studentError.message}`);
             setLoading(false);
             return;
-          } else {
-            determinedName = studentData?.name || session.user.email;
-            console.log('Dashboard student name:', determinedName);
           }
+
+          determinedName = studentData?.name || session.user.email;
+          console.log('✅ Dashboard: Student profile loaded:', { name: determinedName, schoolId: studentData?.school_id });
         }
 
         // If no role found, try to determine from profiles
         if (!determinedRole) {
-          console.log('No role found, checking profiles...');
+          console.log('❌ Dashboard: No role found, checking profiles...');
           setError('User role not found. Please contact administrator.');
           setLoading(false);
           return;
         }
 
-        console.log('Dashboard final determined role:', determinedRole, 'Name:', determinedName);
+        console.log('🎯 Dashboard: Final determined role and name:', { role: determinedRole, name: determinedName });
         setUserRole(determinedRole);
         setUserName(determinedName);
-      } catch (error) {
-        console.error('Error determining user role:', error);
-        setError(`Error determining user role: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } catch (profileError) {
+        console.error('💥 Dashboard: Error in profile fetching:', profileError);
+        const errorMessage = profileError instanceof Error ? profileError.message : 'Unknown error';
+        setError(`Error determining user role: ${errorMessage}`);
         setLoading(false);
         return;
       }
     } catch (error) {
-      console.error('Error in checkAuth:', error);
-      setError(`Authentication error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('💥 Dashboard: Error in checkAuth:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Authentication error: ${errorMessage}`);
       setLoading(false);
     } finally {
       if (!error) {
+        console.log('🏁 Dashboard: Auth check complete, setting loading to false');
         setLoading(false);
       }
     }
@@ -159,16 +172,16 @@ const Dashboard = () => {
 
   const fetchAnnouncements = async () => {
     try {
+      console.log('🔍 Dashboard: Starting fetchAnnouncements for role:', userRole);
       setLoadingAnnouncements(true);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.log('No session for announcements');
+        console.log('❌ Dashboard: No session for announcements');
         setAnnouncements([]);
+        setLoadingAnnouncements(false);
         return;
       }
-
-      console.log('Fetching announcements for user role:', userRole);
 
       // Get user role to determine announcement scope
       const { data: userRoles, error: roleError } = await supabase
@@ -177,8 +190,9 @@ const Dashboard = () => {
         .eq('user_id', session.user.id);
 
       if (roleError) {
-        console.error('Error fetching user roles for announcements:', roleError);
+        console.error('❌ Dashboard: Error fetching user roles for announcements:', roleError);
         setAnnouncements([]);
+        setLoadingAnnouncements(false);
         return;
       }
 
@@ -186,7 +200,7 @@ const Dashboard = () => {
       const isTeacher = userRoles?.some(r => r.role === 'teacher');
       const isStudent = userRoles?.some(r => r.role === 'student');
 
-      console.log('Announcement access levels:', { isAdmin, isTeacher, isStudent });
+      console.log('📋 Dashboard: Announcement access levels:', { isAdmin, isTeacher, isStudent });
 
       let query = supabase
         .from('notifications')
@@ -194,14 +208,11 @@ const Dashboard = () => {
         .eq('type', 'announcement')
         .order('created_at', { ascending: false });
 
-      if (isAdmin) {
-        console.log('Admin loading all announcements');
-        // Admin sees all announcements for now
-      } else if (isTeacher) {
-        console.log('Teacher loading all announcements');
-        // Teachers see all announcements (they can create them)
+      if (isAdmin || isTeacher) {
+        console.log('👑👨‍🏫 Dashboard: Admin/Teacher loading all announcements');
+        // Admin and teachers see all announcements for now
       } else if (isStudent) {
-        console.log('Student loading filtered announcements');
+        console.log('👨‍🎓 Dashboard: Student loading filtered announcements');
         // Students see announcements for their classrooms or general announcements
         const { data: studentProfile, error: studentError } = await supabase
           .from('students')
@@ -210,8 +221,9 @@ const Dashboard = () => {
           .maybeSingle();
 
         if (studentError) {
-          console.error('Error fetching student profile for announcements:', studentError);
+          console.error('❌ Dashboard: Error fetching student profile for announcements:', studentError);
           setAnnouncements([]);
+          setLoadingAnnouncements(false);
           return;
         }
 
@@ -222,13 +234,14 @@ const Dashboard = () => {
             .eq('student_id', studentProfile.id);
 
           if (enrollmentError) {
-            console.error('Error fetching student enrollments:', enrollmentError);
+            console.error('❌ Dashboard: Error fetching student enrollments:', enrollmentError);
             setAnnouncements([]);
+            setLoadingAnnouncements(false);
             return;
           }
 
           const classroomIds = enrollments?.map(e => e.classroom_id) || [];
-          console.log('Student classroom IDs:', classroomIds);
+          console.log('🏫 Dashboard: Student classroom IDs:', classroomIds);
           
           if (classroomIds.length > 0) {
             query = query.or(`classroom_id.is.null,classroom_id.in.(${classroomIds.join(',')})`);
@@ -241,21 +254,23 @@ const Dashboard = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching announcements:', error);
+        console.error('❌ Dashboard: Error fetching announcements:', error);
         throw error;
       }
       
-      console.log(`Loaded ${data?.length || 0} announcements for role: ${userRole}`);
+      console.log(`✅ Dashboard: Loaded ${data?.length || 0} announcements for role: ${userRole}`);
       setAnnouncements(data || []);
     } catch (error) {
-      console.error("Error fetching announcements:", error);
+      console.error("💥 Dashboard: Unexpected error fetching announcements:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load announcements"
+        description: `Failed to load announcements: ${errorMessage}`
       });
       setAnnouncements([]);
     } finally {
+      console.log('🏁 Dashboard: Setting announcements loading to false');
       setLoadingAnnouncements(false);
     }
   };
@@ -271,6 +286,7 @@ const Dashboard = () => {
 
   // Show error state
   if (error) {
+    console.log('🚨 Dashboard: Showing error state:', error);
     return (
       <div className="h-full w-full flex flex-col justify-center items-center p-6">
         <Alert variant="destructive" className="max-w-md">
@@ -280,7 +296,10 @@ const Dashboard = () => {
           </AlertDescription>
         </Alert>
         <Button 
-          onClick={() => window.location.reload()} 
+          onClick={() => {
+            console.log('🔄 Dashboard: User clicked retry');
+            window.location.reload();
+          }} 
           className="mt-4"
           variant="outline"
         >
@@ -292,6 +311,7 @@ const Dashboard = () => {
 
   // Show loading state
   if (loading) {
+    console.log('⏳ Dashboard: Showing loading state');
     return (
       <div className="flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center space-y-4">
@@ -302,6 +322,7 @@ const Dashboard = () => {
     );
   }
 
+  console.log('✅ Dashboard: Rendering main dashboard content');
   return (
     <div className="h-full w-full flex flex-col">
       {TutorialComponent}
