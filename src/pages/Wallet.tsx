@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -187,6 +188,18 @@ const WalletPage = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Small Balance Card in top-right */}
+            <div className="w-40">
+              <Card className="bg-purple-900/20 border-purple-500/20">
+                <CardContent className="p-3">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400 mb-1">Balance</p>
+                    <p className="text-lg font-bold text-purple-400">{balance} Credits</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
             <Card className="bg-purple-900/20 border-purple-500/20">
               <CardContent className="p-3 flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-purple-400" />
@@ -203,12 +216,6 @@ const WalletPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Left Sidebar */}
         <div className="lg:col-span-1 space-y-6">
-          <BalanceCard 
-            balance={balance} 
-            walletAddress={walletAddress} 
-            isLoading={isLoading || walletLoading} 
-          />
-          
           <BlockchainWalletInfo
             walletAddress={walletAddress}
             userRole={userRole}
