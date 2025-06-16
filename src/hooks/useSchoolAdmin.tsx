@@ -43,16 +43,22 @@ export const useSchoolAdmin = () => {
       checkAdminStatus();
     } else {
       setLoading(false);
+      setIsAdmin(false);
+      setSchool(null);
+      setAdminProfile(null);
     }
   }, [user]);
 
   const checkAdminStatus = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
 
-      // Check if user has admin role first
+      // First check if user has admin role in user_roles table
       const { data: userRoles, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
@@ -61,50 +67,58 @@ export const useSchoolAdmin = () => {
       if (roleError) {
         console.error('Error checking user roles:', roleError);
         setIsAdmin(false);
+        setLoading(false);
         return;
       }
 
-      // Check for admin role specifically
+      // Check if user has admin role specifically
       const hasAdminRole = userRoles?.some(r => r.role === 'admin');
-      setIsAdmin(hasAdminRole || false);
+      
+      if (!hasAdminRole) {
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
 
-      if (hasAdminRole) {
-        // Get admin profile and school data using a simpler approach to avoid RLS issues
-        try {
-          const { data: adminData, error: adminError } = await supabase
-            .from('admin_profiles')
+      // If user has admin role, try to get admin profile
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (adminError) {
+        console.error('Error fetching admin profile:', adminError);
+        // User has admin role but no profile yet - still considered admin
+        setIsAdmin(true);
+        setLoading(false);
+        return;
+      }
+
+      if (adminData) {
+        setAdminProfile(adminData);
+        setIsAdmin(true);
+
+        // Get school data if admin profile exists
+        if (adminData.school_id) {
+          const { data: schoolData, error: schoolError } = await supabase
+            .from('schools')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('id', adminData.school_id)
             .maybeSingle();
 
-          if (adminError) {
-            console.error('Error fetching admin profile:', adminError);
-            // Continue without admin profile if there's an RLS issue
-          } else if (adminData) {
-            setAdminProfile(adminData);
-
-            // Get school data
-            if (adminData.school_id) {
-              const { data: schoolData, error: schoolError } = await supabase
-                .from('schools')
-                .select('*')
-                .eq('id', adminData.school_id)
-                .maybeSingle();
-
-              if (schoolError) {
-                console.error('Error fetching school:', schoolError);
-              } else if (schoolData) {
-                setSchool(schoolData);
-              }
-            }
+          if (schoolError) {
+            console.error('Error fetching school:', schoolError);
+          } else if (schoolData) {
+            setSchool(schoolData);
           }
-        } catch (error) {
-          console.error('Error in admin profile fetch:', error);
-          // Continue anyway - user can still access admin features
         }
+      } else {
+        // User has admin role but no admin profile
+        setIsAdmin(true);
       }
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      console.error('Error in checkAdminStatus:', error);
       setIsAdmin(false);
     } finally {
       setLoading(false);

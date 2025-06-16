@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,11 +31,6 @@ const Dashboard = () => {
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
 
-  // Add a debug log when role and showAnnouncementForm change
-  useEffect(() => {
-    console.log("userRole:", userRole, "showAnnouncementForm:", showAnnouncementForm);
-  }, [userRole, showAnnouncementForm]);
-
   useEffect(() => {
     checkAuth();
     fetchAnnouncements();
@@ -53,32 +49,69 @@ const Dashboard = () => {
         return;
       }
 
-      const { data: teacherData } = await supabase
-        .from('teacher_profiles')
-        .select('full_name')
+      // Try to get user role first
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
         .eq('user_id', session.user.id)
-        .single();
-      
-      if (teacherData) {
-        setUserRole('teacher');
-        setUserName(teacherData.full_name || session.user.email);
-      } else {
-        const { data: studentData } = await supabase
-          .from('students')
-          .select('name')
+        .maybeSingle();
+
+      let determinedRole = roleData?.role || null;
+
+      // If no role found, try to determine from profiles
+      if (!determinedRole) {
+        const { data: teacherData } = await supabase
+          .from('teacher_profiles')
+          .select('full_name')
           .eq('user_id', session.user.id)
-          .single();
-          
-        if (studentData) {
-          setUserRole('student');
-          setUserName(studentData.name || session.user.email);
+          .maybeSingle();
+        
+        if (teacherData) {
+          determinedRole = 'teacher';
+          setUserName(teacherData.full_name || session.user.email);
         } else {
-          setUserRole('student');
-          setUserName(session.user.email);
+          const { data: studentData } = await supabase
+            .from('students')
+            .select('name')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+            
+          if (studentData) {
+            determinedRole = 'student';
+            setUserName(studentData.name || session.user.email);
+          } else {
+            // Default fallback
+            determinedRole = 'student';
+            setUserName(session.user.email);
+          }
+        }
+      } else {
+        // We have a role, now get the appropriate profile data
+        if (determinedRole === 'teacher' || determinedRole === 'admin') {
+          const { data: teacherData } = await supabase
+            .from('teacher_profiles')
+            .select('full_name')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          setUserName(teacherData?.full_name || session.user.email);
+        } else {
+          const { data: studentData } = await supabase
+            .from('students')
+            .select('name')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+            
+          setUserName(studentData?.name || session.user.email);
         }
       }
+
+      setUserRole(determinedRole);
     } catch (error) {
       console.error('Error in checkAuth:', error);
+      // Continue anyway with fallback values
+      setUserRole('student');
+      setUserName('User');
     } finally {
       setLoading(false);
     }
@@ -138,12 +171,9 @@ const Dashboard = () => {
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold gradient-text">Announcements</h2>
             
-            {userRole === 'teacher' && !showAnnouncementForm && (
+            {(userRole === 'teacher' || userRole === 'admin') && !showAnnouncementForm && (
               <Button 
-                onClick={() => {
-                  console.log('Create Announcement button clicked');
-                  setShowAnnouncementForm(true)
-                }}
+                onClick={() => setShowAnnouncementForm(true)}
                 className="bg-purple-600 hover:bg-purple-700"
                 data-testid="create-announcement-btn"
               >
@@ -153,14 +183,11 @@ const Dashboard = () => {
             )}
           </div>
 
-          {userRole === 'teacher' && showAnnouncementForm && (
+          {(userRole === 'teacher' || userRole === 'admin') && showAnnouncementForm && (
             <Card className="p-6 mb-6 border-purple-500/30 bg-black/50">
               <TeacherAnnouncementForm 
                 onSuccess={handleAnnouncementCreated}
-                onCancel={() => {
-                  console.log('Announcement form canceled');
-                  setShowAnnouncementForm(false)
-                }}
+                onCancel={() => setShowAnnouncementForm(false)}
               />
             </Card>
           )}
@@ -168,7 +195,7 @@ const Dashboard = () => {
           <AnnouncementList 
             announcements={announcements} 
             loading={loadingAnnouncements} 
-            isTeacher={userRole === 'teacher'}
+            isTeacher={userRole === 'teacher' || userRole === 'admin'}
             onAnnouncementDeleted={fetchAnnouncements}
           />
         </div>

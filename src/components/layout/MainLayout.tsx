@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSchoolAdmin } from "@/hooks/useSchoolAdmin";
 
-// Combine related routes into groups
+// Navigation groups for different user types
 const teacherNavGroups = [
   {
     name: "Main",
@@ -128,8 +128,12 @@ export const MainLayout = () => {
   const { toast } = useToast();
   const { isAdmin, loading: adminLoading } = useSchoolAdmin();
 
-  // Check if on main page or routes like /auth that shouldn't have the dashboard layout
-  const isMainPage = location.pathname === "/" || location.pathname === "/auth" || location.pathname === "/signup" || location.pathname === "/reset-password" || location.pathname === "/reset-password-otp";
+  // Check if on main page or routes that shouldn't have dashboard layout
+  const isMainPage = location.pathname === "/" || 
+                     location.pathname === "/auth" || 
+                     location.pathname === "/signup" || 
+                     location.pathname === "/reset-password" || 
+                     location.pathname === "/reset-password-otp";
 
   useEffect(() => {
     if (!isMainPage) {
@@ -150,18 +154,34 @@ export const MainLayout = () => {
         return;
       }
 
-      // Get user role, but don't fail if we can't fetch it
+      // Get user role - be more permissive with fallbacks
       try {
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
 
-        setUserRole(roleData?.role || 'student');
+        if (roleData?.role) {
+          setUserRole(roleData.role);
+        } else {
+          // Fallback: check if user has teacher profile
+          const { data: teacherData } = await supabase
+            .from('teacher_profiles')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (teacherData) {
+            setUserRole('teacher');
+          } else {
+            // Default to student if no specific role found
+            setUserRole('student');
+          }
+        }
       } catch (error) {
         console.error('Role fetch error:', error);
-        // Default to student if we can't fetch role
+        // Default to student if we can't determine role
         setUserRole('student');
       }
     } catch (error) {
@@ -181,7 +201,7 @@ export const MainLayout = () => {
   // Determine which navigation groups to show
   const getNavGroups = () => {
     // Only show admin nav if user is confirmed admin and not loading
-    if (isAdmin && !adminLoading && userRole === 'admin') {
+    if (isAdmin && !adminLoading) {
       return adminNavGroups;
     } else if (userRole === 'teacher') {
       return teacherNavGroups;
@@ -227,7 +247,7 @@ export const MainLayout = () => {
           <div className="flex items-center justify-between px-6 py-5">
             <Link to="/" className="text-2xl font-bold blockward-logo">
               Blockward
-              {isAdmin && !adminLoading && userRole === 'admin' && (
+              {isAdmin && !adminLoading && (
                 <div className="flex items-center gap-2 mt-1">
                   <Shield className="w-4 h-4 text-purple-400" />
                   <span className="text-xs text-purple-400">Admin</span>
