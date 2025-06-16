@@ -237,7 +237,7 @@ const WalletPage = () => {
         {/* Main Content Area */}
         <div className={`${canTransferNFTs ? 'lg:col-span-3' : 'lg:col-span-4'} space-y-6`}>
           <Tabs defaultValue={canMintNFTs ? "create" : "collection"} className="w-full">
-            <TabsList className={`grid w-full ${canMintNFTs ? 'grid-cols-3' : 'grid-cols-1'}`}>
+            <TabsList className={`grid w-full ${canMintNFTs ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {canMintNFTs && (
                 <TabsTrigger value="create" className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
@@ -250,10 +250,12 @@ const WalletPage = () => {
                   My Library
                 </TabsTrigger>
               )}
-              <TabsTrigger value="collection" className="flex items-center gap-2">
-                <Trophy className="h-4 w-4" />
-                {canMintNFTs ? "Send NFTs" : "My Collection"}
-              </TabsTrigger>
+              {!canMintNFTs && (
+                <TabsTrigger value="collection" className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  My Collection
+                </TabsTrigger>
+              )}
             </TabsList>
             
             {canMintNFTs && (
@@ -281,23 +283,8 @@ const WalletPage = () => {
               </TabsContent>
             )}
             
-            <TabsContent value="collection" className="space-y-6">
-              {canMintNFTs ? (
-                <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-                  <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Send className="h-5 w-5 text-purple-400" />
-                      Send NFTs to Students
-                    </CardTitle>
-                    <CardDescription>
-                      Transfer your created NFTs from your library to students
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <TransferForm disabled={isLoading || walletLoading} />
-                  </CardContent>
-                </Card>
-              ) : (
+            {!canMintNFTs && (
+              <TabsContent value="collection" className="space-y-6">
                 <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
                   <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
