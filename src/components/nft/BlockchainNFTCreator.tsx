@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +40,17 @@ export const BlockchainNFTCreator = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
+      // Get teacher's wallet first
+      const { data: teacherWallet } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!teacherWallet) {
+        throw new Error("Teacher wallet not found");
+      }
+
       // Prepare NFT metadata
       const metadata = {
         name: formData.title,
@@ -56,7 +66,7 @@ export const BlockchainNFTCreator = () => {
       let mintResult;
       
       if (useBlockchain) {
-        // Real blockchain minting - use placeholder wallet address for now
+        // Real blockchain minting - use teacher's wallet address
         mintResult = await BlockchainNFTService.mintNFT(
           "0x0000000000000000000000000000000000000000",
           metadata,
@@ -74,20 +84,13 @@ export const BlockchainNFTCreator = () => {
         throw new Error(mintResult.error || "Failed to mint NFT");
       }
 
-      // Get teacher's wallet
-      const { data: teacherWallet } = await supabase
-        .from('wallets')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .single();
-
-      // Save NFT to database - owned by teacher initially
+      // Save NFT to database - IMPORTANT: Set both creator AND owner to teacher's wallet
       const { error: nftError } = await supabase.from('nfts').insert({
         token_id: mintResult.tokenId,
         contract_address: '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1',
         metadata,
-        creator_wallet_id: teacherWallet?.id,
-        owner_wallet_id: teacherWallet?.id, // Initially owned by teacher
+        creator_wallet_id: teacherWallet.id,
+        owner_wallet_id: teacherWallet.id, // This ensures it goes to teacher's library
         image_url: imageUrl,
         network: "polygon-mumbai",
         blockchain_token_id: parseInt(mintResult.tokenId.replace('sim-', '') || '0'),
@@ -106,6 +109,9 @@ export const BlockchainNFTCreator = () => {
       // Reset form
       setFormData({ title: "", description: "", points: 100, nftType: "academic" });
       setImageUrl(null);
+
+      // Trigger a page refresh or reload the library data
+      window.dispatchEvent(new CustomEvent('nftCreated'));
       
     } catch (error: any) {
       console.error('Error creating blockchain NFT:', error);

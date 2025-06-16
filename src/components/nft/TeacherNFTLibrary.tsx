@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +42,17 @@ export const TeacherNFTLibrary = () => {
 
   useEffect(() => {
     loadTeacherNFTs();
+
+    // Listen for the custom event when a new NFT is created
+    const handleNFTCreated = () => {
+      loadTeacherNFTs();
+    };
+
+    window.addEventListener('nftCreated', handleNFTCreated);
+
+    return () => {
+      window.removeEventListener('nftCreated', handleNFTCreated);
+    };
   }, []);
 
   const loadTeacherNFTs = async () => {
