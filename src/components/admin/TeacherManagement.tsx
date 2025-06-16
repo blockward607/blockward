@@ -15,7 +15,14 @@ interface Teacher {
   id: string;
   full_name: string;
   user_id: string;
-  assignments: any[];
+  assignments: Array<{
+    id: string;
+    assignment_type: string;
+    classrooms: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 interface Classroom {
@@ -61,7 +68,15 @@ export const TeacherManagement = () => {
         .from('classrooms')
         .select('id, name, description');
 
-      setTeachers(teachersData || []);
+      // Transform the data to match our Teacher interface
+      const transformedTeachers = (teachersData || []).map(teacher => ({
+        id: teacher.id,
+        full_name: teacher.full_name,
+        user_id: teacher.user_id,
+        assignments: teacher.teacher_class_assignments || []
+      }));
+
+      setTeachers(transformedTeachers);
       setClassrooms(classroomsData || []);
     } catch (error) {
       console.error('Error loading data:', error);

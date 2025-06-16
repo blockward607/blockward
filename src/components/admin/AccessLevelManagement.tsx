@@ -9,15 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Shield, Crown, Users, GraduationCap, User } from "lucide-react";
 
+type AccessLevel = "super_admin" | "ict_admin" | "head_teacher" | "department_head" | "form_tutor";
+
 interface AdminUser {
   id: string;
   user_id: string;
   full_name: string;
   position: string;
-  access_level: string;
+  access_level: AccessLevel;
 }
 
-const accessLevelConfig = {
+const accessLevelConfig: Record<AccessLevel, { icon: any, color: string, label: string }> = {
   super_admin: { icon: Crown, color: "bg-red-500", label: "Super Admin" },
   ict_admin: { icon: Shield, color: "bg-purple-500", label: "ICT Admin" },
   head_teacher: { icon: GraduationCap, color: "bg-blue-500", label: "Head Teacher" },
@@ -29,7 +31,7 @@ export const AccessLevelManagement = () => {
   const { toast } = useToast();
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserLevel, setCurrentUserLevel] = useState<string>("");
+  const [currentUserLevel, setCurrentUserLevel] = useState<AccessLevel>("form_tutor");
 
   useEffect(() => {
     loadAdminUsers();
@@ -47,7 +49,7 @@ export const AccessLevelManagement = () => {
         .eq('user_id', session.user.id)
         .single();
 
-      setCurrentUserLevel(currentUser?.access_level || "");
+      setCurrentUserLevel((currentUser?.access_level as AccessLevel) || "form_tutor");
 
       // Get all admin users
       const { data: admins } = await supabase
@@ -68,7 +70,7 @@ export const AccessLevelManagement = () => {
     }
   };
 
-  const updateAccessLevel = async (adminId: string, newLevel: string) => {
+  const updateAccessLevel = async (adminId: string, newLevel: AccessLevel) => {
     try {
       const { error } = await supabase
         .from('admin_profiles')
@@ -93,8 +95,8 @@ export const AccessLevelManagement = () => {
     }
   };
 
-  const canModifyLevel = (userLevel: string) => {
-    const hierarchy = ['form_tutor', 'department_head', 'head_teacher', 'ict_admin', 'super_admin'];
+  const canModifyLevel = (userLevel: AccessLevel) => {
+    const hierarchy: AccessLevel[] = ['form_tutor', 'department_head', 'head_teacher', 'ict_admin', 'super_admin'];
     const currentIndex = hierarchy.indexOf(currentUserLevel);
     const targetIndex = hierarchy.indexOf(userLevel);
     
@@ -146,7 +148,7 @@ export const AccessLevelManagement = () => {
       {/* Admin Users List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {adminUsers.map((admin) => {
-          const levelConfig = accessLevelConfig[admin.access_level as keyof typeof accessLevelConfig];
+          const levelConfig = accessLevelConfig[admin.access_level];
           const Icon = levelConfig?.icon || User;
           
           return (
@@ -185,7 +187,7 @@ export const AccessLevelManagement = () => {
                       <label className="text-sm font-medium text-gray-300">Change Access Level:</label>
                       <Select 
                         value={admin.access_level} 
-                        onValueChange={(value) => updateAccessLevel(admin.id, value)}
+                        onValueChange={(value: AccessLevel) => updateAccessLevel(admin.id, value)}
                       >
                         <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                           <SelectValue />
