@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -157,6 +156,11 @@ export const TeacherNFTLibrary = () => {
     }
   };
 
+  const handleDragStart = (e: React.DragEvent, nftId: string) => {
+    e.dataTransfer.setData("nft-id", nftId);
+    e.dataTransfer.effectAllowed = "copy";
+  };
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -192,7 +196,12 @@ export const TeacherNFTLibrary = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {nfts.map((nft) => (
-        <Card key={nft.id} className="border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-indigo-900/20">
+        <Card 
+          key={nft.id} 
+          className="border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-indigo-900/20 cursor-grab active:cursor-grabbing"
+          draggable
+          onDragStart={(e) => handleDragStart(e, nft.id)}
+        >
           <CardContent className="p-4">
             <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center">
               {nft.image_url ? (
