@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -33,6 +34,24 @@ const ClassroomSeating = lazy(() => import("@/pages/ClassroomSeating"));
 const ClassDetails = lazy(() => import("@/pages/ClassDetails"));
 const Grades = lazy(() => import("@/pages/Grades"));
 const WalletVerify = lazy(() => import("@/pages/WalletVerify"));
+
+// Error Boundary Component
+const ErrorFallback = ({ error }: { error: Error }) => (
+  <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-[#1A1F2C] to-black">
+    <div className="flex flex-col items-center space-y-4 text-center">
+      <h2 className="text-xl font-semibold text-red-400">Something went wrong</h2>
+      <p className="text-gray-300 max-w-md">
+        The page encountered an error. Please try refreshing or navigating to a different page.
+      </p>
+      <button 
+        onClick={() => window.location.href = '/dashboard'}
+        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+      >
+        Go to Dashboard
+      </button>
+    </div>
+  </div>
+);
 
 function App() {
   return (
@@ -84,6 +103,9 @@ function App() {
               <Route path="auth/wallet-verify" element={<WalletVerify />} />
               <Route path="/tutorial/:role" element={<TutorialPage />} />
             </Route>
+            
+            {/* Catch all route for better error handling */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Suspense>
         <AssistantBot />

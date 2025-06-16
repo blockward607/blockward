@@ -123,20 +123,36 @@ export const TeacherNFTLibrary = () => {
 
   const handleDeleteNFT = async (nftId: string) => {
     try {
-      const { error } = await supabase
+      console.log('Deleting NFT:', nftId);
+      
+      // First delete any related transactions
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('nft_id', nftId);
+
+      if (transactionError) {
+        console.warn('Error deleting transactions:', transactionError);
+        // Continue with NFT deletion even if transaction deletion fails
+      }
+
+      // Then delete the NFT
+      const { error: nftError } = await supabase
         .from('nfts')
         .delete()
         .eq('id', nftId);
 
-      if (error) throw error;
+      if (nftError) throw nftError;
+
+      // Immediately update the local state to remove the deleted NFT
+      setNfts(prevNfts => prevNfts.filter(nft => nft.id !== nftId));
 
       toast({
         title: "NFT Deleted",
         description: "The BlockWard has been permanently deleted"
       });
 
-      // Reload the list
-      loadTeacherNFTs();
+      console.log('NFT deleted successfully');
     } catch (error: any) {
       console.error('Error deleting NFT:', error);
       toast({
@@ -144,6 +160,9 @@ export const TeacherNFTLibrary = () => {
         title: "Delete Failed",
         description: error.message || "Failed to delete the BlockWard"
       });
+      
+      // Reload the list to ensure consistency
+      loadTeacherNFTs();
     }
   };
 
