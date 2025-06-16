@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
@@ -19,7 +20,8 @@ import {
   MessageSquare,
   Layers,
   Megaphone,
-  Shield
+  Shield,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -45,12 +47,14 @@ const teacherNavGroups = [
     ]
   },
   {
-    name: "Blockchain",
+    name: "Account",
     items: [
       { name: "NFT Wallet", href: "/wallet", icon: Wallet },
+      { name: "Settings", href: "/settings", icon: Settings },
     ]
   },
 ];
+
 const studentNavGroups = [
   {
     name: "Main",
@@ -68,9 +72,10 @@ const studentNavGroups = [
     ]
   },
   {
-    name: "Blockchain",
+    name: "Account",
     items: [
       { name: "NFT Wallet", href: "/wallet", icon: Wallet },
+      { name: "Settings", href: "/settings", icon: Settings },
     ]
   },
 ];
@@ -97,7 +102,7 @@ const adminNavGroups = [
     items: [
       { name: "Settings", href: "/admin/settings", icon: Settings },
       { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
-      { name: "Rewards", href: "/admin/rewards", icon: Wallet },
+      { name: "NFT Management", href: "/admin/rewards", icon: Wallet },
     ]
   },
 ];
@@ -151,6 +156,23 @@ export const MainLayout = () => {
 
   const goToHome = () => {
     navigate('/');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/auth');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error logging out",
+        description: "There was a problem logging out of your account",
+      });
+    }
   };
 
   // Select nav groups based on role and route
@@ -230,6 +252,17 @@ export const MainLayout = () => {
                 </div>
               ))}
             </nav>
+
+            <div className="px-4 pb-4">
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                className="w-full flex items-center justify-start px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors duration-200"
+              >
+                <LogOut className="mr-3 h-5 w-5" />
+                <span>Logout</span>
+              </Button>
+            </div>
           </div>
         </motion.aside>
       )}

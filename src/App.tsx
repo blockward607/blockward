@@ -84,7 +84,7 @@ const App = () => (
               <Route path="settings" element={<div className="p-6 text-white">Admin School Settings - Coming Soon</div>} />
               <Route path="announcements" element={<div className="p-6 text-white">Admin Announcements - Coming Soon</div>} />
               <Route path="analytics" element={<div className="p-6 text-white">Admin Analytics - Coming Soon</div>} />
-              <Route path="rewards" element={<div className="p-6 text-white">Admin Rewards Management - Coming Soon</div>} />
+              <Route path="rewards" element={<div className="p-6 text-white">Admin NFT Management - Coming Soon</div>} />
               <Route path="classes" element={<div className="p-6 text-white">Admin Classes Management - Coming Soon</div>} />
             </Route>
           </Route>
