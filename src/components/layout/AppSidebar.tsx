@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -90,10 +89,11 @@ export const AppSidebar = () => {
     { title: "Classes", icon: BookOpen, href: "/classes" },
     { title: "Students", icon: Users, href: "/students" },
     { title: "Attendance", icon: UserCheck, href: "/attendance" },
+    { title: "Behavior", icon: BarChart3, href: "/behavior" },
     { title: "Assignments", icon: FileText, href: "/assignments" },
     { title: "Grades", icon: BarChart3, href: "/grades" },
     { title: "Resources", icon: BookOpen, href: "/resources" },
-    { title: "NFT Wallet", icon: Wallet, href: "/wallet" },
+    { title: "BlockWards & NFTs", icon: Award, href: "/wallet" },
     { title: "Notifications", icon: Bell, href: "/notifications" },
     { title: "Settings", icon: Settings, href: "/settings" }
   ];
@@ -104,7 +104,7 @@ export const AppSidebar = () => {
     { title: "Assignments", icon: FileText, href: "/assignments" },
     { title: "Grades", icon: BarChart3, href: "/grades" },
     { title: "Progress", icon: TrendingUp, href: "/progress" },
-    { title: "NFT Wallet", icon: Wallet, href: "/wallet" },
+    { title: "My BlockWards", icon: Award, href: "/wallet" },
     { title: "Notifications", icon: Bell, href: "/notifications" },
     { title: "Settings", icon: Settings, href: "/settings" }
   ];

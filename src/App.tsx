@@ -36,6 +36,7 @@ import WalletVerify from "./pages/WalletVerify";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminSetup from "./pages/AdminSetup";
 import SchoolSetup from "./pages/SchoolSetup";
+import Behavior from "./pages/Behavior";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="student-dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
             <Route path="view-teacher-dashboard" element={<ProtectedRoute><ViewTeacherDashboard /></ProtectedRoute>} />
+            <Route path="behavior" element={<ProtectedRoute><Behavior /></ProtectedRoute>} />
             
             {/* Class-specific routes */}
             <Route path="class/:id" element={<ProtectedRoute><ClassDetails /></ProtectedRoute>} />
