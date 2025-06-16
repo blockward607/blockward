@@ -4,20 +4,15 @@ import { Button } from "@/components/ui/button";
 import { 
   Wallet as WalletIcon, 
   Trophy, 
-  Send, 
   Plus, 
   AlertTriangle,
   ShieldCheck,
-  ArrowRight,
-  Tag,
   Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Json } from "@/integrations/supabase/types";
-import { BalanceCard } from "@/components/wallet/BalanceCard";
-import { TransferForm } from "@/components/wallet/TransferForm";
 import { NFTDisclaimer } from "@/components/wallet/NFTDisclaimer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -216,113 +211,80 @@ const WalletPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Left Sidebar - only show for teachers with transfer capability */}
-        {canTransferNFTs && (
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="overflow-hidden border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-              <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Send className="h-5 w-5 text-purple-400" />
-                  Send NFTs
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <TransferForm disabled={isLoading || walletLoading} />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-        
-        {/* Main Content Area */}
-        <div className={`${canTransferNFTs ? 'lg:col-span-3' : 'lg:col-span-4'} space-y-6`}>
-          <Tabs defaultValue={canMintNFTs ? "create" : "collection"} className="w-full">
-            <TabsList className={`grid w-full ${canMintNFTs ? 'grid-cols-3' : 'grid-cols-1'}`}>
-              {canMintNFTs && (
-                <TabsTrigger value="create" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create NFTs
-                </TabsTrigger>
-              )}
-              {canMintNFTs && (
-                <TabsTrigger value="library" className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4" />
-                  My Library
-                </TabsTrigger>
-              )}
+      <div className="w-full space-y-6">
+        <Tabs defaultValue={canMintNFTs ? "create" : "collection"} className="w-full">
+          <TabsList className={`grid w-full ${canMintNFTs ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {canMintNFTs && (
+              <TabsTrigger value="create" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create NFTs
+              </TabsTrigger>
+            )}
+            {canMintNFTs && (
+              <TabsTrigger value="library" className="flex items-center gap-2">
+                <Trophy className="h-4 w-4" />
+                My Library
+              </TabsTrigger>
+            )}
+            {!canMintNFTs && (
               <TabsTrigger value="collection" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
-                {canMintNFTs ? "Send NFTs" : "My Collection"}
+                My Collection
               </TabsTrigger>
-            </TabsList>
-            
-            {canMintNFTs && (
-              <TabsContent value="create" className="space-y-6">
-                <BlockchainNFTCreator />
-              </TabsContent>
             )}
-
-            {canMintNFTs && (
-              <TabsContent value="library" className="space-y-6">
-                <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-                  <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Trophy className="h-5 w-5 text-purple-400" />
-                      My NFT Library
-                    </CardTitle>
-                    <CardDescription>
-                      Manage your created blockchain NFTs - send to students or delete
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <TeacherNFTLibrary />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
-            
-            <TabsContent value="collection" className="space-y-6">
-              {canMintNFTs ? (
-                <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-                  <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Send className="h-5 w-5 text-purple-400" />
-                      Send NFTs to Students
-                    </CardTitle>
-                    <CardDescription>
-                      Transfer your created NFTs from your library to students
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <TransferForm disabled={isLoading || walletLoading} />
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
-                  <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Trophy className="h-5 w-5 text-purple-400" />
-                      Blockchain NFT Collection
-                    </CardTitle>
-                    <CardDescription>
-                      Your blockchain-verified digital achievements
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <BlockchainNFTGrid 
-                      nfts={blockchainNfts} 
-                      isLoading={isLoading} 
-                      userRole={userRole}
-                    />
-                    <div className="mt-6">
-                      <NFTDisclaimer />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+          </TabsList>
+          
+          {canMintNFTs && (
+            <TabsContent value="create" className="space-y-6">
+              <BlockchainNFTCreator />
             </TabsContent>
-          </Tabs>
-        </div>
+          )}
+
+          {canMintNFTs && (
+            <TabsContent value="library" className="space-y-6">
+              <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+                <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Trophy className="h-5 w-5 text-purple-400" />
+                    My NFT Library
+                  </CardTitle>
+                  <CardDescription>
+                    Manage your created blockchain NFTs - send to students or delete
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <TeacherNFTLibrary />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+          
+          {!canMintNFTs && (
+            <TabsContent value="collection" className="space-y-6">
+              <Card className="border-purple-500/20 transition-all hover:shadow-md hover:shadow-purple-500/10">
+                <CardHeader className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Trophy className="h-5 w-5 text-purple-400" />
+                    Blockchain NFT Collection
+                  </CardTitle>
+                  <CardDescription>
+                    Your blockchain-verified digital achievements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <BlockchainNFTGrid 
+                    nfts={blockchainNfts} 
+                    isLoading={isLoading} 
+                    userRole={userRole}
+                  />
+                  <div className="mt-6">
+                    <NFTDisclaimer />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </div>
   );
