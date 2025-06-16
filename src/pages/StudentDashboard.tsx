@@ -38,12 +38,14 @@ const StudentDashboard = () => {
 
         if (session && studentData?.id) {
           // Fetch enrolled classrooms for the student
-          const { data: enrollments } = await supabase
+          const { data: enrollments, error: enrollmentError } = await supabase
             .from('classroom_students')
             .select('classroom_id')
             .eq('student_id', studentData.id);
           
-          if (enrollments && enrollments.length > 0) {
+          if (enrollmentError) {
+            console.error('Error fetching student enrollments:', enrollmentError);
+          } else if (enrollments && enrollments.length > 0) {
             setEnrolledClassrooms(enrollments.map(e => e.classroom_id));
           }
         }
@@ -67,7 +69,11 @@ const StudentDashboard = () => {
 
   const fetchAnnouncements = async () => {
     try {
-      if (!studentData) return;
+      if (!studentData) {
+        console.log('No student data, skipping announcements');
+        setAnnouncements([]);
+        return;
+      }
       
       let query = supabase
         .from('notifications')
@@ -85,7 +91,12 @@ const StudentDashboard = () => {
       
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching student announcements:', error);
+        throw error;
+      }
+      
+      console.log(`Loaded ${data?.length || 0} announcements for student`);
       setAnnouncements(data || []);
     } catch (error) {
       console.error("Error fetching announcements:", error);
@@ -102,7 +113,7 @@ const StudentDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="p-4">Loading...</div>
+        <div className="p-4">Loading student dashboard...</div>
       </div>
     );
   }

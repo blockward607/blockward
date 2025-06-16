@@ -17,6 +17,7 @@ export const useClassroomManagement = () => {
 
     try {
       if (!user) {
+        console.log('No user found');
         setClassrooms([]);
         setUserRole(null);
         setLoading(false);
@@ -24,10 +25,18 @@ export const useClassroomManagement = () => {
       }
 
       // Determine user role(s)
-      const { data: userRoles } = await supabase
+      const { data: userRoles, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id);
+
+      if (roleError) {
+        console.error('Error fetching user roles:', roleError);
+        setClassrooms([]);
+        setUserRole(null);
+        setLoading(false);
+        return;
+      }
 
       let determinedRole: "teacher" | "student" | "admin" | null = null;
       let foundClassrooms: any[] = [];
@@ -36,60 +45,94 @@ export const useClassroomManagement = () => {
         determinedRole = "admin";
         
         // Admin: Get all classrooms for their school
-        const { data: adminProfile } = await supabase
+        const { data: adminProfile, error: adminError } = await supabase
           .from("admin_profiles")
           .select("school_id")
           .eq("user_id", user.id)
           .maybeSingle();
 
+        if (adminError) {
+          console.error('Error fetching admin profile:', adminError);
+          setClassrooms([]);
+          setUserRole(determinedRole);
+          setLoading(false);
+          return;
+        }
+
         if (adminProfile?.school_id) {
           // Get all classrooms for the school (need to link through teacher_profiles)
-          const { data: schoolTeachers } = await supabase
+          const { data: schoolTeachers, error: teacherError } = await supabase
             .from("teacher_profiles")
             .select("id")
             .eq("school_id", adminProfile.school_id);
 
-          if (schoolTeachers && schoolTeachers.length > 0) {
+          if (teacherError) {
+            console.error('Error fetching school teachers:', teacherError);
+            foundClassrooms = [];
+          } else if (schoolTeachers && schoolTeachers.length > 0) {
             const teacherIds = schoolTeachers.map(t => t.id);
             const { data: schoolClassrooms, error } = await supabase
               .from("classrooms")
               .select("*")
               .in("teacher_id", teacherIds);
               
-            if (error) throw error;
-            foundClassrooms = schoolClassrooms || [];
+            if (error) {
+              console.error('Error fetching school classrooms:', error);
+              foundClassrooms = [];
+            } else {
+              foundClassrooms = schoolClassrooms || [];
+            }
+          } else {
+            console.log('No teachers found for school');
+            foundClassrooms = [];
           }
+        } else {
+          console.log('Admin has no school_id');
+          foundClassrooms = [];
         }
       } else if (userRoles?.some((r) => r.role === "teacher")) {
         determinedRole = "teacher";
         
         // Teacher: fetch classrooms where teacher_id matches teacher_profiles.id
-        const { data: teacherProfile } = await supabase
+        const { data: teacherProfile, error: teacherError } = await supabase
           .from("teacher_profiles")
           .select("id")
           .eq("user_id", user.id)
           .maybeSingle();
           
-        if (teacherProfile) {
+        if (teacherError) {
+          console.error('Error fetching teacher profile:', teacherError);
+          foundClassrooms = [];
+        } else if (teacherProfile) {
           const { data: teacherClassrooms, error } = await supabase
             .from("classrooms")
             .select("*")
             .eq("teacher_id", teacherProfile.id);
             
-          if (error) throw error;
-          foundClassrooms = teacherClassrooms || [];
+          if (error) {
+            console.error('Error fetching teacher classrooms:', error);
+            foundClassrooms = [];
+          } else {
+            foundClassrooms = teacherClassrooms || [];
+          }
+        } else {
+          console.log('No teacher profile found');
+          foundClassrooms = [];
         }
       } else if (userRoles?.some((r) => r.role === "student")) {
         determinedRole = "student";
         
         // Student: get student id for user, fetch from classroom_students mapping
-        const { data: studentProfile } = await supabase
+        const { data: studentProfile, error: studentError } = await supabase
           .from("students")
           .select("id")
           .eq("user_id", user.id)
           .maybeSingle();
           
-        if (studentProfile?.id) {
+        if (studentError) {
+          console.error('Error fetching student profile:', studentError);
+          foundClassrooms = [];
+        } else if (studentProfile?.id) {
           const { data: mappings, error: mappingError } = await supabase
             .from("classroom_students")
             .select(`
@@ -100,15 +143,26 @@ export const useClassroomManagement = () => {
             `)
             .eq("student_id", studentProfile.id);
             
-          if (mappingError) throw mappingError;
-          
-          // Extract classrooms
-          foundClassrooms = (mappings || [])
-            .map((m: any) => m.classrooms)
-            .filter(Boolean);
+          if (mappingError) {
+            console.error('Error fetching student classrooms:', mappingError);
+            foundClassrooms = [];
+          } else {
+            // Extract classrooms
+            foundClassrooms = (mappings || [])
+              .map((m: any) => m.classrooms)
+              .filter(Boolean);
+          }
+        } else {
+          console.log('No student profile found');
+          foundClassrooms = [];
         }
+      } else {
+        console.log('User has no recognized role');
+        determinedRole = null;
+        foundClassrooms = [];
       }
 
+      console.log(`Found ${foundClassrooms.length} classrooms for role: ${determinedRole}`);
       setUserRole(determinedRole);
       setClassrooms(foundClassrooms);
       
