@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ export const TeacherNFTLibrary = () => {
         .single();
 
       if (teacherWallet) {
+        // Show all NFTs created by the teacher, regardless of current ownership
         const { data: nftData, error } = await supabase
           .from('nfts')
           .select(`
@@ -80,7 +82,6 @@ export const TeacherNFTLibrary = () => {
             created_at
           `)
           .eq('creator_wallet_id', teacherWallet.id)
-          .eq('owner_wallet_id', teacherWallet.id) // Only show NFTs still owned by teacher
           .order('created_at', { ascending: false });
 
         if (error) throw error;
