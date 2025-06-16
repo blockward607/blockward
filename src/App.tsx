@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -16,11 +15,11 @@ import ViewStudentDashboard from "@/pages/StudentDashboard";
 import ViewTeacherDashboard from "@/pages/ViewTeacherDashboard";
 import ClassroomInvite from "@/pages/ClassroomInvite";
 import Auth from "@/pages/Auth";
-import Dashboard from "@/pages/Dashboard";
 
 // Lazy-loaded components
 const Home = lazy(() => import("@/pages/Home"));
 const SignUp = lazy(() => import("@/pages/SignUp"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Classes = lazy(() => import("@/pages/Classes"));
 const Students = lazy(() => import("@/pages/Students")); 
 const Attendance = lazy(() => import("@/pages/Attendance"));
