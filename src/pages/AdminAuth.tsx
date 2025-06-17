@@ -27,9 +27,30 @@ const AdminAuth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/admin-portal');
+      // Check if user is admin and redirect appropriately
+      checkUserRoleAndRedirect();
     }
   }, [user, navigate]);
+
+  const checkUserRoleAndRedirect = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (roleData?.role === 'admin') {
+        navigate('/admin-portal');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +75,10 @@ const AdminAuth = () => {
           .single();
 
         if (roleData?.role === 'admin') {
+          toast({
+            title: "Admin Login Successful",
+            description: "Welcome to the admin portal"
+          });
           navigate('/admin-portal');
         } else {
           setErrorMessage("Access denied. Admin privileges required.");
@@ -94,7 +119,7 @@ const AdminAuth = () => {
       } else if (data) {
         toast({
           title: "Admin Account Created",
-          description: "Please check your email to confirm your admin account.",
+          description: "Please check your email to confirm your admin account. You will be redirected to the admin portal upon confirmation.",
         });
       }
     } catch (error) {
@@ -125,18 +150,18 @@ const AdminAuth = () => {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
         </Button>
         
-        <Card className="glass-card p-8 border-red-500/30">
+        <Card className="glass-card p-8 border-red-500/30 bg-gray-900/80">
           <div className="flex justify-center mb-6">
             <Shield className="h-12 w-12 text-red-500" />
           </div>
           
-          <h2 className="text-2xl font-bold text-center mb-2 text-white">Administrator Access</h2>
-          <p className="text-center text-red-300 mb-6">Secure admin portal authentication</p>
+          <h2 className="text-2xl font-bold text-center mb-2 text-white">Administrator Portal</h2>
+          <p className="text-center text-red-300 mb-6">Secure admin access only</p>
           
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-red-900/50">
-              <TabsTrigger value="signin" className="data-[state=active]:bg-red-600">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" className="data-[state=active]:bg-red-600">Sign Up</TabsTrigger>
+              <TabsTrigger value="signin" className="data-[state=active]:bg-red-600 text-red-200">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="data-[state=active]:bg-red-600 text-red-200">Sign Up</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
@@ -150,7 +175,7 @@ const AdminAuth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-gray-800/50 border-red-500/30 text-white"
+                    className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -162,12 +187,12 @@ const AdminAuth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="bg-gray-800/50 border-red-500/30 text-white"
+                    className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-red-600 hover:bg-red-700" 
+                  className="w-full bg-red-600 hover:bg-red-700 text-white" 
                   disabled={loading}
                 >
                   {loading ? "Authenticating..." : "Access Admin Portal"}
@@ -178,7 +203,7 @@ const AdminAuth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="admin-name" className="text-white">Full Name</Label>
+                  <Label htmlFor="admin-name" className="text-white">Admin Name</Label>
                   <Input 
                     id="admin-name"
                     type="text"
@@ -186,7 +211,7 @@ const AdminAuth = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="bg-gray-800/50 border-red-500/30 text-white"
+                    className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -198,7 +223,7 @@ const AdminAuth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-gray-800/50 border-red-500/30 text-white"
+                    className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -210,12 +235,12 @@ const AdminAuth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="bg-gray-800/50 border-red-500/30 text-white"
+                    className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-red-600 hover:bg-red-700" 
+                  className="w-full bg-red-600 hover:bg-red-700 text-white" 
                   disabled={loading}
                 >
                   {loading ? "Creating Admin Account..." : "Create Admin Account"}

@@ -17,47 +17,18 @@ export function useAuth() {
     
     try {
       console.log('Setting up user account for:', session.user.id);
-      console.log('Auth provider:', session.user.app_metadata?.provider);
-      console.log('User metadata:', session.user.user_metadata);
       
       const userId = session.user.id;
       
-      // For auth providers, determine the role differently
-      // Check if we have role in user metadata, otherwise assume 'student'
-      let userRole;
-      let school = '';
-      let subject = '';
-      let fullName = '';
-      
-      if (session.user.app_metadata?.provider === 'google' || 
-          session.user.app_metadata?.provider === 'github' || 
-          session.user.app_metadata?.provider === 'facebook') {
-        // If coming from social login, check if a role was passed in the queryParams
-        // or metadata, otherwise use 'student' as default
-        userRole = session.user.user_metadata?.role || 
-                  session.user.app_metadata?.role || 
-                  'student';
-        
-        // Try to get additional profile data
-        school = session.user.user_metadata?.school || '';
-        subject = session.user.user_metadata?.subject || '';
-        fullName = session.user.user_metadata?.full_name || 
-                  session.user.user_metadata?.name || 
-                  session.user.email.split('@')[0];
-                  
-        console.log('Determined role for social auth user:', userRole);
-      } else {
-        // Regular email login
-        userRole = session.user.user_metadata?.role || 'student';
-        school = session.user.user_metadata?.school || '';
-        subject = session.user.user_metadata?.subject || '';
-        fullName = session.user.user_metadata?.full_name || 
-                  session.user.user_metadata?.name || 
-                  session.user.email.split('@')[0];
-        
-        console.log('Determined role for email auth user:', userRole);
-      }
-      
+      // Get role from metadata
+      let userRole = session.user.user_metadata?.role || 'student';
+      let school = session.user.user_metadata?.school || '';
+      let subject = session.user.user_metadata?.subject || '';
+      let fullName = session.user.user_metadata?.full_name || 
+                    session.user.user_metadata?.name || 
+                    session.user.email.split('@')[0];
+                    
+      console.log('Determined role:', userRole);
       setUserRole(userRole);
       
       // Check if role exists
@@ -69,7 +40,6 @@ export function useAuth() {
       
       if (!existingRole) {
         console.log('Creating new user role:', userRole);
-        // Create role
         await AuthService.createUserRole(userId, userRole);
       } else {
         console.log('User role already exists:', existingRole);
@@ -84,19 +54,14 @@ export function useAuth() {
       }
       
       if (!existingWallet) {
-        // Create wallet based on role - teacher wallets are 'admin' type, student wallets are 'user' type
         const walletType = userRole === 'teacher' ? 'admin' : 'user';
         const walletAddress = `${Math.random().toString(16).slice(2, 10)}_${Math.random().toString(16).slice(2, 10)}`;
         
         console.log('Creating new wallet:', { type: walletType, address: walletAddress });
-        
-        // Create wallet
         await AuthService.createUserWallet(userId, walletType, walletAddress);
-      } else {
-        console.log('User wallet already exists:', existingWallet);
       }
       
-      // Create profile based on role
+      // Create profile based on role (NO PRE-POPULATED DATA)
       if (userRole === 'teacher') {
         const { data: existingProfile, error: profileError } = await AuthService.checkTeacherProfile(userId);
         
@@ -104,36 +69,12 @@ export function useAuth() {
           console.error('Error checking teacher profile:', profileError);
         }
         
+        // Only create basic profile, no pre-populated classrooms or data
         if (!existingProfile) {
-          console.log('Creating teacher profile with school and subject');
+          console.log('Creating teacher profile - basic only');
           await AuthService.createTeacherProfile(userId, school, subject, fullName);
-          
-          // Generate a unique class code for teacher
-          const classCode = await AuthService.generateClassCode();
-          
-          // Create a default classroom for the teacher
-          const { data: teacherProfile } = await supabase
-            .from('teacher_profiles')
-            .select('id')
-            .eq('user_id', userId)
-            .single();
-            
-          if (teacherProfile) {
-            const className = subject ? `${subject} Class` : 'My First Class';
-            
-            await supabase
-              .from('classrooms')
-              .insert({
-                teacher_id: teacherProfile.id,
-                name: className,
-                description: 'Welcome to your first classroom!'
-              });
-          }
-        } else {
-          console.log('Teacher profile already exists');
         }
       } else if (userRole === 'admin') {
-        // For admins, create admin profile
         const { data: existingProfile, error: profileError } = await supabase
           .from('admin_profiles')
           .select('*')
@@ -146,7 +87,7 @@ export function useAuth() {
             .from('admin_profiles')
             .insert({
               user_id: userId,
-              school_id: null, // Will be set during school setup
+              school_id: null,
               full_name: fullName,
               position: 'Administrator',
               permissions: {
@@ -159,7 +100,6 @@ export function useAuth() {
             });
         }
       } else {
-        // For students
         const { data: existingStudent, error: studentError } = await AuthService.checkStudentProfile(userId);
         
         if (studentError) {
@@ -170,10 +110,8 @@ export function useAuth() {
           const email = session.user.email;
           const name = fullName || email.split('@')[0];
                       
-          console.log('Creating student profile with name and school:', name, school);
+          console.log('Creating student profile');
           await AuthService.createStudentProfile(userId, email, name, school);
-        } else {
-          console.log('Student profile already exists');
         }
       }
       
@@ -182,7 +120,7 @@ export function useAuth() {
         description: "You have successfully signed in.",
       });
       
-      // Navigate based on role
+      // Navigate based on role - FIXED ADMIN REDIRECT
       const currentPath = window.location.pathname;
       if (currentPath === '/auth' || currentPath === '/admin-auth' || currentPath === '/') {
         if (userRole === 'admin') {
@@ -224,10 +162,7 @@ export function useAuth() {
               }
             }
           });
-          
-        console.log('Found existing session');
       } else {
-        console.log('No existing session found');
         setUser(null);
         setUserRole(null);
       }
