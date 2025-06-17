@@ -37,7 +37,6 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AdminAccessButton } from "@/components/admin/AdminAccessButton";
 
 interface SidebarItem {
   title: string;
@@ -303,7 +302,14 @@ export const AppSidebar = () => {
 
         {userRole !== 'admin' && (
           <div className="space-y-2">
-            <AdminAccessButton />
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/admin-auth')}
+              className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-800/20"
+            >
+              <Shield className="h-4 w-4 mr-3" />
+              <span className="text-sm font-medium">Admin Access</span>
+            </Button>
           </div>
         )}
       </div>

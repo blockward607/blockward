@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,59 +11,6 @@ export function useAuth() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-
-  const promoteCurrentUserToAdmin = useCallback(async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Not authenticated",
-          description: "Please sign in first"
-        });
-        return false;
-      }
-
-      console.log('Promoting user to admin:', session.user.id);
-      
-      // Use the promote_user_to_admin function
-      const { data, error } = await supabase.rpc('promote_user_to_admin', {
-        target_user_id: session.user.id,
-        admin_name: session.user.email?.split('@')[0] || 'Administrator',
-        admin_position: 'System Administrator'
-      });
-
-      if (error) {
-        console.error('Error promoting user to admin:', error);
-        throw error;
-      }
-
-      console.log('User successfully promoted to admin');
-      
-      // Update the local state
-      setUserRole('admin');
-      
-      toast({
-        title: "Admin Access Granted!",
-        description: "You now have administrator privileges. Redirecting to admin portal..."
-      });
-
-      // Redirect to admin portal
-      setTimeout(() => {
-        navigate('/admin-portal');
-      }, 1500);
-
-      return true;
-    } catch (error: any) {
-      console.error('Failed to promote user to admin:', error);
-      toast({
-        variant: "destructive",
-        title: "Promotion Failed",
-        description: error.message || "Failed to grant admin access"
-      });
-      return false;
-    }
-  }, [navigate, toast]);
 
   const setupUserAccount = useCallback(async (session) => {
     if (!session) return;
@@ -236,7 +184,7 @@ export function useAuth() {
       
       // Navigate based on role
       const currentPath = window.location.pathname;
-      if (currentPath === '/auth' || currentPath === '/') {
+      if (currentPath === '/auth' || currentPath === '/admin-auth' || currentPath === '/') {
         if (userRole === 'admin') {
           navigate('/admin-portal');
         } else {
@@ -314,7 +262,6 @@ export function useAuth() {
     userRole, 
     isTeacher: userRole === 'teacher',
     isStudent: userRole === 'student',
-    isAdmin: userRole === 'admin',
-    promoteCurrentUserToAdmin
+    isAdmin: userRole === 'admin'
   };
 }

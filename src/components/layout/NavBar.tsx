@@ -1,150 +1,99 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Menu, X, Shield, Users, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DiamondLogo } from "@/components/logo/DiamondLogo";
+import { InteractiveLogo } from "@/components/logo/InteractiveLogo";
 
 export const NavBar = () => {
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  const handleSignIn = () => {
-    navigate('/auth');
-  };
-  
-  const handleSignUp = () => {
-    navigate('/auth?signup=true');
-  };
-  
-  const scrollToSection = (sectionId: string) => {
-    const section = document.getElementById(sectionId);
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
-      setMobileMenuOpen(false);
-    }
-  };
-  
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-purple-900/20">
-      <div className="container mx-auto py-4 px-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <DiamondLogo size={32} />
-          <h1 className="text-3xl blockward-logo">BlockWard</h1>
-        </div>
-        
-        {/* Desktop menu */}
-        <nav className="hidden md:flex items-center gap-6">
-          <button 
-            onClick={() => scrollToSection('home')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2"
-          >
-            <Home className="w-4 h-4" />
-            <span>Home</span>
-          </button>
-          <button 
-            onClick={() => scrollToSection('about')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2"
-          >
-            <User className="w-4 h-4" />
-            <span>About</span>
-          </button>
-          <button 
-            onClick={() => scrollToSection('preview')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2"
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Preview</span>
-          </button>
-          <button 
-            onClick={() => scrollToSection('contact')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2"
-          >
-            <Phone className="w-4 h-4" />
-            <span>Contact</span>
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleSignIn}
-              variant="ghost"
-              className="text-purple-400 hover:text-purple-300"
-            >
-              Sign In
-            </Button>
-            
-            <Button 
-              onClick={handleSignUp}
-              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
-            >
-              Sign Up
-            </Button>
+    <nav className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-purple-500/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link to="/" className="flex items-center space-x-2">
+            <InteractiveLogo />
+            <span className="text-xl font-bold gradient-text">BlockWard</span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-6">
+            <Link to="/#features" className="text-gray-300 hover:text-white transition-colors">
+              Features
+            </Link>
+            <Link to="/#how-it-works" className="text-gray-300 hover:text-white transition-colors">
+              How It Works
+            </Link>
+            <div className="flex items-center space-x-2">
+              <Link to="/auth">
+                <Button variant="ghost" className="text-gray-300 hover:text-white">
+                  <Users className="mr-2 h-4 w-4" />
+                  Teacher/Student
+                </Button>
+              </Link>
+              <Link to="/admin-auth">
+                <Button variant="outline" className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin
+                </Button>
+              </Link>
+            </div>
           </div>
-        </nav>
-        
-        {/* Mobile menu button */}
-        <div className="md:hidden flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-purple-400"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-gray-300 hover:text-white"
+            >
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="md:hidden bg-black/95 backdrop-blur-md border-t border-purple-500/20"
+          >
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              <Link
+                to="/#features"
+                className="block px-3 py-2 text-gray-300 hover:text-white transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Features
+              </Link>
+              <Link
+                to="/#how-it-works"
+                className="block px-3 py-2 text-gray-300 hover:text-white transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                How It Works
+              </Link>
+              <div className="space-y-2 pt-2">
+                <Link to="/auth" onClick={() => setIsOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+                    <Users className="mr-2 h-4 w-4" />
+                    Teacher/Student Login
+                  </Button>
+                </Link>
+                <Link to="/admin-auth" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" className="w-full justify-start border-red-500 text-red-400 hover:bg-red-500 hover:text-white">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Portal
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
-      
-      {/* Mobile menu dropdown */}
-      {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md border-b border-purple-900/20 py-4 px-6 flex flex-col gap-4 animate-in slide-in-from-top-5">
-          <button 
-            onClick={() => scrollToSection('home')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2 py-2"
-          >
-            <Home className="w-5 h-5" />
-            <span>Home</span>
-          </button>
-          <button 
-            onClick={() => scrollToSection('about')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2 py-2"
-          >
-            <User className="w-5 h-5" />
-            <span>About</span>
-          </button>
-          <button 
-            onClick={() => scrollToSection('preview')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2 py-2"
-          >
-            <BookOpen className="w-5 h-5" />
-            <span>Preview</span>
-          </button>
-          <button 
-            onClick={() => scrollToSection('contact')} 
-            className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-2 py-2"
-          >
-            <Phone className="w-5 h-5" />
-            <span>Contact</span>
-          </button>
-          
-          <div className="flex flex-col gap-3 pt-2 border-t border-purple-900/20">
-            <Button 
-              onClick={handleSignIn}
-              variant="ghost"
-              className="text-purple-400 hover:text-purple-300 justify-start"
-            >
-              Sign In
-            </Button>
-            
-            <Button 
-              onClick={handleSignUp}
-              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
-            >
-              Sign Up
-            </Button>
-          </div>
-        </div>
-      )}
-    </header>
+    </nav>
   );
 };

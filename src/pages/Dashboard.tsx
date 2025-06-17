@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { Loader2, Plus, Shield } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TeacherAnnouncementForm } from "@/components/announcements/TeacherAnnouncementForm";
@@ -25,14 +25,13 @@ const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { TutorialComponent, TutorialPrompt } = useTutorial();
-  const { promoteCurrentUserToAdmin, userRole: authUserRole } = useAuth();
+  const { userRole: authUserRole } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [announcements, setAnnouncements] = useState<Notification[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
-  const [promotingToAdmin, setPromotingToAdmin] = useState(false);
 
   // Add a debug log when role and showAnnouncementForm change
   useEffect(() => {
@@ -133,21 +132,6 @@ const Dashboard = () => {
     });
   };
 
-  const handlePromoteToAdmin = async () => {
-    setPromotingToAdmin(true);
-    try {
-      const success = await promoteCurrentUserToAdmin();
-      if (success) {
-        // The navigation will be handled by the auth hook
-        console.log('Admin promotion successful');
-      }
-    } catch (error) {
-      console.error('Failed to promote to admin:', error);
-    } finally {
-      setPromotingToAdmin(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full w-full">
@@ -167,37 +151,6 @@ const Dashboard = () => {
       
       <div className="flex-1 overflow-y-auto w-full p-6">
         <div className="space-y-6">
-          {/* Admin Promotion Section */}
-          {userRole === 'student' && (
-            <Card className="p-6 border-red-500/30 bg-red-900/10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-red-400 mb-2">Need Admin Access?</h3>
-                  <p className="text-gray-300">
-                    Promote yourself to administrator to access the admin portal with full system controls.
-                  </p>
-                </div>
-                <Button 
-                  onClick={handlePromoteToAdmin}
-                  disabled={promotingToAdmin}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {promotingToAdmin ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Promoting...
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="mr-2 h-4 w-4" />
-                      Become Admin
-                    </>
-                  )}
-                </Button>
-              </div>
-            </Card>
-          )}
-
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold gradient-text">Announcements</h2>
             
