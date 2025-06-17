@@ -17,7 +17,18 @@ import {
   ChevronRight,
   Home,
   LogOut,
-  Shield
+  Shield,
+  Database,
+  Lock,
+  Activity,
+  Server,
+  LifeBuoy,
+  Palette,
+  Puzzle,
+  AlertTriangle,
+  UserCog,
+  Eye,
+  Download
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -112,10 +123,27 @@ export const AppSidebar = () => {
 
   const adminItems: SidebarItem[] = [
     { title: "Admin Portal", icon: Shield, href: "/admin-portal" },
-    { title: "Dashboard", icon: Home, href: "/dashboard" },
-    { title: "Classes", icon: BookOpen, href: "/classes" },
-    { title: "Students", icon: Users, href: "/students" },
-    { title: "Settings", icon: Settings, href: "/settings" }
+    { 
+      title: "User Management", 
+      icon: Users, 
+      href: "/admin/users",
+      children: [
+        { title: "All Users", icon: Users, href: "/admin/users" },
+        { title: "Teachers", icon: UserCog, href: "/admin/teachers" },
+        { title: "Students", icon: Users, href: "/admin/students" },
+        { title: "Administrators", icon: Shield, href: "/admin/administrators" }
+      ]
+    },
+    { title: "Class Management", icon: BookOpen, href: "/admin/classes" },
+    { title: "Audit Logs", icon: Activity, href: "/admin/audit-logs" },
+    { title: "Security Settings", icon: Lock, href: "/admin/security" },
+    { title: "File & Data Controls", icon: Database, href: "/admin/file-controls" },
+    { title: "Access Controls", icon: UserCog, href: "/admin/access-controls" },
+    { title: "System Health", icon: Server, href: "/admin/system-health" },
+    { title: "Support Tickets", icon: LifeBuoy, href: "/admin/support" },
+    { title: "Custom Branding", icon: Palette, href: "/admin/branding" },
+    { title: "Updates & Plugins", icon: Puzzle, href: "/admin/updates" },
+    { title: "Settings", icon: Settings, href: "/admin/settings" }
   ];
 
   const toggleExpanded = (title: string) => {
@@ -139,14 +167,18 @@ export const AppSidebar = () => {
               variant="ghost"
               className={cn(
                 "w-full justify-between h-10 px-4 text-gray-300 hover:text-white hover:bg-gray-800/50",
-                isActive && "bg-purple-600/20 text-purple-300"
+                isActive && "bg-red-600/20 text-red-300",
+                userRole === 'admin' && "hover:bg-red-800/30"
               )}
             >
               <div className="flex items-center space-x-3">
                 <item.icon className="h-4 w-4" />
                 <span className="text-sm font-medium">{item.title}</span>
                 {item.badge && (
-                  <span className="ml-auto bg-purple-600 text-white text-xs px-2 py-1 rounded-full">
+                  <span className={cn(
+                    "ml-auto text-white text-xs px-2 py-1 rounded-full",
+                    userRole === 'admin' ? "bg-red-600" : "bg-purple-600"
+                  )}>
                     {item.badge}
                   </span>
                 )}
@@ -168,14 +200,19 @@ export const AppSidebar = () => {
         onClick={() => navigate(item.href)}
         className={cn(
           "w-full justify-start h-10 px-4 text-gray-300 hover:text-white hover:bg-gray-800/50",
-          isActive && "bg-purple-600/20 text-purple-300",
+          isActive && userRole === 'admin' && "bg-red-600/20 text-red-300",
+          isActive && userRole !== 'admin' && "bg-purple-600/20 text-purple-300",
+          userRole === 'admin' && "hover:bg-red-800/30",
           item.title === "Admin Portal" && "bg-red-600/20 text-red-300 hover:bg-red-600/30"
         )}
       >
         <item.icon className="h-4 w-4 mr-3" />
         <span className="text-sm font-medium">{item.title}</span>
         {item.badge && (
-          <span className="ml-auto bg-purple-600 text-white text-xs px-2 py-1 rounded-full">
+          <span className={cn(
+            "ml-auto text-white text-xs px-2 py-1 rounded-full",
+            userRole === 'admin' ? "bg-red-600" : "bg-purple-600"
+          )}>
             {item.badge}
           </span>
         )}
@@ -212,20 +249,29 @@ export const AppSidebar = () => {
     <motion.div
       initial={{ x: -250 }}
       animate={{ x: 0 }}
-      className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col h-full"
+      className={cn(
+        "w-64 border-r flex flex-col h-full",
+        userRole === 'admin' ? "bg-gray-900 border-red-800" : "bg-gray-900 border-gray-800"
+      )}
     >
       <div className="p-4 flex-1">
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-white mb-2">
-            {userRole === 'admin' ? 'Admin Portal' : 
+          <h2 className={cn(
+            "text-lg font-semibold mb-2",
+            userRole === 'admin' ? "text-red-300" : "text-white"
+          )}>
+            {userRole === 'admin' ? 'System Administration' : 
              userRole === 'student' ? 'Student Portal' : 'Teacher Portal'}
           </h2>
-          <div className="text-sm text-gray-400 capitalize">
-            {userRole} Dashboard
+          <div className={cn(
+            "text-sm capitalize",
+            userRole === 'admin' ? "text-red-400" : "text-gray-400"
+          )}>
+            {userRole === 'admin' ? 'Full System Control' : `${userRole} Dashboard`}
           </div>
           {userRole === 'admin' && (
-            <div className="mt-2 text-xs text-red-300">
-              Full System Access
+            <div className="mt-2 text-xs text-red-300 bg-red-900/20 px-2 py-1 rounded border border-red-700">
+              ⚠️ Administrator Access
             </div>
           )}
         </div>
@@ -234,18 +280,31 @@ export const AppSidebar = () => {
           {sidebarItems.map(renderSidebarItem)}
         </nav>
 
-        <Separator className="my-6 bg-gray-700" />
+        <Separator className={cn(
+          "my-6",
+          userRole === 'admin' ? "bg-red-700" : "bg-gray-700"
+        )} />
 
-        <div className="space-y-2">
-          <AdminAccessButton />
-        </div>
+        {userRole !== 'admin' && (
+          <div className="space-y-2">
+            <AdminAccessButton />
+          </div>
+        )}
       </div>
 
-      <div className="p-4 border-t border-gray-800">
+      <div className={cn(
+        "p-4 border-t",
+        userRole === 'admin' ? "border-red-800" : "border-gray-800"
+      )}>
         <Button
           variant="ghost"
           onClick={handleLogout}
-          className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800/50"
+          className={cn(
+            "w-full justify-start hover:text-white",
+            userRole === 'admin' 
+              ? "text-red-300 hover:bg-red-800/50" 
+              : "text-gray-300 hover:bg-gray-800/50"
+          )}
         >
           <LogOut className="h-4 w-4 mr-3" />
           <span className="text-sm font-medium">Sign Out</span>
