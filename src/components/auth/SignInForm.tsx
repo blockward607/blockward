@@ -71,10 +71,10 @@ export const SignInForm = ({
 
         if (roleError) {
           console.error("Error checking user role:", roleError);
-          // If we can't check the role, proceed anyway
+          // If we can't check the role, proceed to dashboard
           navigate('/dashboard', { replace: true });
         } else if (userRole) {
-          // Handle admin role redirection
+          // Handle role-based redirection
           if (userRole.role === 'admin') {
             if (role === 'admin') {
               navigate('/admin-portal', { replace: true });

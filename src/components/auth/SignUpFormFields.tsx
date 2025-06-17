@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface SignUpFormFieldsProps {
   role: 'teacher' | 'student' | 'admin';
@@ -29,6 +30,7 @@ export const SignUpFormFields = ({
   setLoading,
 }: SignUpFormFieldsProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [country, setCountry] = useState("");
@@ -65,7 +67,9 @@ export const SignUpFormFields = ({
             school: schoolName,
             country: country
           },
-          emailRedirectTo: window.location.origin + '/dashboard'
+          emailRedirectTo: role === 'admin' 
+            ? window.location.origin + '/admin-portal'
+            : window.location.origin + '/dashboard'
         }
       });
 
@@ -78,6 +82,14 @@ export const SignUpFormFields = ({
           title: "Account created",
           description: "Please check your email to confirm your account.",
         });
+        
+        // For admins, show a special message about admin portal access
+        if (role === 'admin') {
+          toast({
+            title: "Admin Account Created",
+            description: "After email confirmation, you'll have access to the Admin Portal with full system controls.",
+          });
+        }
       }
     } catch (error: any) {
       console.error("Unexpected error:", error);
@@ -113,6 +125,11 @@ export const SignUpFormFields = ({
         <p className="text-sm text-gray-400">
           Creating account as <span className={`font-medium ${getRoleColor()}`}>{getRoleDisplayName()}</span>
         </p>
+        {role === 'admin' && (
+          <p className="text-xs text-red-300 mt-1">
+            Admin accounts get full system access including user management, security controls, and system monitoring.
+          </p>
+        )}
       </div>
       
       <form onSubmit={handleSignup} className="space-y-4">
