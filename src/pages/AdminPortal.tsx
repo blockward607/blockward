@@ -10,37 +10,19 @@ import {
   School, 
   Settings, 
   BarChart3, 
-  Mail, 
-  Award,
-  Calendar,
-  FileText,
-  Shield,
-  Home,
-  UserCog,
-  Activity,
-  Lock,
-  Database,
-  Eye,
-  Palette,
-  Download,
-  AlertTriangle,
-  Server,
-  LifeBuoy,
-  Puzzle,
-  LogOut
+  LogOut,
+  UserPlus,
+  UserMinus,
+  BookOpen,
+  Calendar
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 
 interface AdminStats {
   totalTeachers: number;
   totalStudents: number;
   totalClasses: number;
-  totalNFTs: number;
-  activeUsers: number;
-  systemHealth: string;
 }
 
 const AdminPortal = () => {
@@ -51,10 +33,7 @@ const AdminPortal = () => {
   const [stats, setStats] = useState<AdminStats>({
     totalTeachers: 0,
     totalStudents: 0,
-    totalClasses: 0,
-    totalNFTs: 0,
-    activeUsers: 0,
-    systemHealth: 'Good'
+    totalClasses: 0
   });
 
   useEffect(() => {
@@ -66,7 +45,7 @@ const AdminPortal = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate('/auth');
+        navigate('/admin-auth');
         return;
       }
 
@@ -81,7 +60,7 @@ const AdminPortal = () => {
         toast({
           variant: "destructive",
           title: "Access Denied",
-          description: "You don't have admin privileges"
+          description: "Admin privileges required"
         });
         navigate('/dashboard');
         return;
@@ -111,7 +90,6 @@ const AdminPortal = () => {
 
   const loadStats = async () => {
     try {
-      // Get basic counts
       const { count: teacherCount } = await supabase
         .from('teacher_profiles')
         .select('*', { count: 'exact', head: true });
@@ -124,17 +102,10 @@ const AdminPortal = () => {
         .from('classrooms')
         .select('*', { count: 'exact', head: true });
 
-      const { count: nftCount } = await supabase
-        .from('nfts')
-        .select('*', { count: 'exact', head: true });
-
       setStats({
         totalTeachers: teacherCount || 0,
         totalStudents: studentCount || 0,
-        totalClasses: classCount || 0,
-        totalNFTs: nftCount || 0,
-        activeUsers: (teacherCount || 0) + (studentCount || 0),
-        systemHealth: 'Good'
+        totalClasses: classCount || 0
       });
 
     } catch (error) {
@@ -146,15 +117,15 @@ const AdminPortal = () => {
     try {
       await supabase.auth.signOut();
       toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of the admin portal"
+        title: "Logged out",
+        description: "You have been logged out successfully"
       });
-      navigate('/auth');
+      navigate('/');
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error logging out",
-        description: "There was a problem logging out"
+        title: "Error",
+        description: "Failed to logout"
       });
     }
   };
@@ -170,86 +141,48 @@ const AdminPortal = () => {
     );
   }
 
-  const managementSections = [
+  const quickActions = [
     {
-      title: "User Management",
-      description: "Manage students, teachers, and administrators",
+      title: "Manage Teachers",
+      description: "Add, remove and manage teacher accounts",
+      icon: GraduationCap,
+      action: () => toast({ title: "Teachers", description: "Teacher management coming soon" }),
+      color: "bg-blue-500"
+    },
+    {
+      title: "Manage Students", 
+      description: "View and manage student accounts",
       icon: Users,
-      features: ["View all users", "Reset passwords", "Suspend accounts", "Assign roles"],
-      color: "bg-blue-500",
-      action: () => navigate('/admin')
+      action: () => toast({ title: "Students", description: "Student management coming soon" }),
+      color: "bg-green-500"
     },
     {
-      title: "Class Management", 
-      description: "Access and manage all classes",
+      title: "Manage Classes",
+      description: "Create and manage classrooms",
       icon: School,
-      features: ["View all classes", "Reassign teachers", "Set capacity limits", "Archive classes"],
-      color: "bg-green-500",
-      action: () => navigate('/admin/classes')
+      action: () => toast({ title: "Classes", description: "Class management coming soon" }),
+      color: "bg-purple-500"
     },
     {
-      title: "Audit Logs",
-      description: "Track user activities and system events", 
-      icon: Activity,
-      features: ["User activity logs", "Filter by date/user", "Export logs", "Security monitoring"],
-      color: "bg-purple-500",
-      action: () => toast({ title: "Coming Soon", description: "Audit logs feature will be available soon" })
+      title: "View Reports",
+      description: "School analytics and reports",
+      icon: BarChart3,
+      action: () => toast({ title: "Reports", description: "Analytics coming soon" }),
+      color: "bg-orange-500"
     },
     {
-      title: "Security Settings",
-      description: "Network and security configuration",
-      icon: Lock,
-      features: ["IP whitelisting", "2FA enforcement", "Session management", "Email domain restrictions"],
-      color: "bg-red-500",
-      action: () => toast({ title: "Coming Soon", description: "Security settings feature will be available soon" })
+      title: "School Settings",
+      description: "Configure school settings",
+      icon: Settings,
+      action: () => navigate('/settings'),
+      color: "bg-gray-500"
     },
     {
-      title: "File & Data Controls",
-      description: "Monitor uploads and data management",
-      icon: Database,
-      features: ["File monitoring", "Virus scanning", "Data retention", "Backup management"],
-      color: "bg-yellow-500",
-      action: () => toast({ title: "Coming Soon", description: "File controls feature will be available soon" })
-    },
-    {
-      title: "Access Controls",
-      description: "Custom admin roles and permissions",
-      icon: Shield,
-      features: ["Custom roles", "Granular permissions", "Time-based access", "Activity restrictions"],
-      color: "bg-indigo-500",
-      action: () => navigate('/admin')
-    },
-    {
-      title: "System Health",
-      description: "Monitor server and system performance",
-      icon: Server,
-      features: ["Server uptime", "Traffic metrics", "Error logs", "Performance monitoring"],
-      color: "bg-cyan-500",
-      action: () => toast({ title: "Coming Soon", description: "System health dashboard will be available soon" })
-    },
-    {
-      title: "Support Tickets",
-      description: "Manage user support requests",
-      icon: LifeBuoy,
-      features: ["Ticket management", "Assign to staff", "Priority system", "Resolution tracking"],
-      color: "bg-orange-500",
-      action: () => toast({ title: "Coming Soon", description: "Support ticket system will be available soon" })
-    },
-    {
-      title: "Custom Branding",
-      description: "Platform appearance and configuration",
-      icon: Palette,
-      features: ["Theme customization", "Logo management", "Notifications", "Announcements"],
-      color: "bg-pink-500",
-      action: () => navigate('/admin/settings')
-    },
-    {
-      title: "Updates & Plugins",
-      description: "Feature management and system updates",
-      icon: Puzzle,
-      features: ["Feature toggles", "Plugin management", "Staging environment", "Update control"],
-      color: "bg-teal-500",
-      action: () => toast({ title: "Coming Soon", description: "Plugin management will be available soon" })
+      title: "Add Teacher",
+      description: "Invite new teachers",
+      icon: UserPlus,
+      action: () => toast({ title: "Add Teacher", description: "Teacher invitation coming soon" }),
+      color: "bg-indigo-500"
     }
   ];
 
@@ -259,16 +192,16 @@ const AdminPortal = () => {
       <div className="bg-gray-800 border-b border-gray-700 p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <Shield className="w-8 h-8 text-red-400" />
+            <School className="w-8 h-8 text-red-400" />
             <div>
               <h1 className="text-2xl font-bold text-white">Admin Portal</h1>
-              <p className="text-gray-400">System Administration Dashboard</p>
+              <p className="text-gray-400">School Management Dashboard</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Badge variant="outline" className="text-green-400 border-green-400">
-              System Health: {stats.systemHealth}
-            </Badge>
+            <span className="text-sm text-gray-300">
+              Welcome, {adminProfile?.full_name || 'Administrator'}
+            </span>
             <Button
               variant="ghost"
               onClick={handleLogout}
@@ -283,7 +216,7 @@ const AdminPortal = () => {
 
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-200">Teachers</CardTitle>
@@ -313,37 +246,17 @@ const AdminPortal = () => {
               <div className="text-2xl font-bold text-white">{stats.totalClasses}</div>
             </CardContent>
           </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-200">NFTs</CardTitle>
-              <Award className="h-4 w-4 text-yellow-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalNFTs}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-200">Active Users</CardTitle>
-              <Activity className="h-4 w-4 text-cyan-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.activeUsers}</div>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Management Sections */}
+        {/* Quick Actions */}
         <div>
-          <h2 className="text-2xl font-bold mb-6 text-white">Administrative Functions</h2>
+          <h2 className="text-2xl font-bold mb-6 text-white">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {managementSections.map((section, index) => {
-              const Icon = section.icon;
+            {quickActions.map((action, index) => {
+              const Icon = action.icon;
               return (
                 <motion.div
-                  key={section.title}
+                  key={action.title}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -351,30 +264,22 @@ const AdminPortal = () => {
                   <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full">
                     <CardHeader>
                       <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg ${section.color}`}>
+                        <div className={`p-3 rounded-lg ${action.color}`}>
                           <Icon className="h-6 w-6 text-white" />
                         </div>
                         <div>
                           <CardTitle className="text-white group-hover:text-red-300 transition-colors">
-                            {section.title}
+                            {action.title}
                           </CardTitle>
                           <CardDescription className="text-gray-400">
-                            {section.description}
+                            {action.description}
                           </CardDescription>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="flex-1">
-                      <ul className="space-y-2 mb-4">
-                        {section.features.map((feature, idx) => (
-                          <li key={idx} className="text-sm text-gray-300 flex items-center">
-                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
+                    <CardContent>
                       <Button 
-                        onClick={section.action}
+                        onClick={action.action}
                         className="w-full bg-red-600 hover:bg-red-700"
                       >
                         Access

@@ -44,6 +44,7 @@ export function useAuth() {
       } else {
         console.log('User role already exists:', existingRole);
         setUserRole(existingRole.role);
+        userRole = existingRole.role; // Update local variable
       }
       
       // Check if wallet exists
@@ -61,7 +62,7 @@ export function useAuth() {
         await AuthService.createUserWallet(userId, walletType, walletAddress);
       }
       
-      // Create profile based on role (NO PRE-POPULATED DATA)
+      // Create profile based on role
       if (userRole === 'teacher') {
         const { data: existingProfile, error: profileError } = await AuthService.checkTeacherProfile(userId);
         
@@ -69,9 +70,8 @@ export function useAuth() {
           console.error('Error checking teacher profile:', profileError);
         }
         
-        // Only create basic profile, no pre-populated classrooms or data
         if (!existingProfile) {
-          console.log('Creating teacher profile - basic only');
+          console.log('Creating basic teacher profile');
           await AuthService.createTeacherProfile(userId, school, subject, fullName);
         }
       } else if (userRole === 'admin') {
@@ -87,7 +87,7 @@ export function useAuth() {
             .from('admin_profiles')
             .insert({
               user_id: userId,
-              school_id: null,
+              school_id: '00000000-0000-0000-0000-000000000001',
               full_name: fullName,
               position: 'Administrator',
               permissions: {
@@ -120,7 +120,7 @@ export function useAuth() {
         description: "You have successfully signed in.",
       });
       
-      // Navigate based on role - FIXED ADMIN REDIRECT
+      // Navigate based on role
       const currentPath = window.location.pathname;
       if (currentPath === '/auth' || currentPath === '/admin-auth' || currentPath === '/') {
         if (userRole === 'admin') {
@@ -157,8 +157,10 @@ export function useAuth() {
               
               // Redirect admin users if they're on wrong page
               const currentPath = window.location.pathname;
-              if (data.role === 'admin' && currentPath === '/dashboard') {
+              if (data.role === 'admin' && (currentPath === '/dashboard' || currentPath === '/auth')) {
                 navigate('/admin-portal');
+              } else if (data.role !== 'admin' && currentPath === '/admin-portal') {
+                navigate('/dashboard');
               }
             }
           });
@@ -179,6 +181,7 @@ export function useAuth() {
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setUserRole(null);
+        navigate('/');
       } else if (event === 'USER_UPDATED') {
         console.log('User updated');
         setUser(session?.user || null);
