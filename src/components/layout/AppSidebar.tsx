@@ -166,9 +166,12 @@ export const AppSidebar = () => {
             <Button
               variant="ghost"
               className={cn(
-                "w-full justify-between h-10 px-4 text-gray-300 hover:text-white hover:bg-gray-800/50",
-                isActive && "bg-red-600/20 text-red-300",
-                userRole === 'admin' && "hover:bg-red-800/30"
+                "w-full justify-between h-10 px-4",
+                userRole === 'admin' 
+                  ? "text-red-300 hover:text-red-100 hover:bg-red-800/50" 
+                  : "text-gray-300 hover:text-white hover:bg-gray-800/50",
+                isActive && userRole === 'admin' && "bg-red-600/20 text-red-100",
+                isActive && userRole !== 'admin' && "bg-purple-600/20 text-purple-300"
               )}
             >
               <div className="flex items-center space-x-3">
@@ -199,11 +202,13 @@ export const AppSidebar = () => {
         variant="ghost"
         onClick={() => navigate(item.href)}
         className={cn(
-          "w-full justify-start h-10 px-4 text-gray-300 hover:text-white hover:bg-gray-800/50",
-          isActive && userRole === 'admin' && "bg-red-600/20 text-red-300",
+          "w-full justify-start h-10 px-4",
+          userRole === 'admin' 
+            ? "text-red-300 hover:text-red-100 hover:bg-red-800/50" 
+            : "text-gray-300 hover:text-white hover:bg-gray-800/50",
+          isActive && userRole === 'admin' && "bg-red-600/20 text-red-100",
           isActive && userRole !== 'admin' && "bg-purple-600/20 text-purple-300",
-          userRole === 'admin' && "hover:bg-red-800/30",
-          item.title === "Admin Portal" && "bg-red-600/20 text-red-300 hover:bg-red-600/30"
+          item.title === "Admin Portal" && "bg-red-600/30 text-red-100 hover:bg-red-600/40"
         )}
       >
         <item.icon className="h-4 w-4 mr-3" />
@@ -222,12 +227,21 @@ export const AppSidebar = () => {
 
   if (loading) {
     return (
-      <div className="w-64 bg-gray-900 border-r border-gray-800 p-4">
+      <div className={cn(
+        "w-64 border-r p-4",
+        userRole === 'admin' ? "bg-red-900 border-red-700" : "bg-gray-900 border-gray-800"
+      )}>
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-700 rounded mb-4"></div>
+          <div className={cn(
+            "h-8 rounded mb-4",
+            userRole === 'admin' ? "bg-red-700" : "bg-gray-700"
+          )}></div>
           <div className="space-y-2">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-10 bg-gray-700 rounded"></div>
+              <div key={i} className={cn(
+                "h-10 rounded",
+                userRole === 'admin' ? "bg-red-700" : "bg-gray-700"
+              )}></div>
             ))}
           </div>
         </div>
@@ -251,26 +265,28 @@ export const AppSidebar = () => {
       animate={{ x: 0 }}
       className={cn(
         "w-64 border-r flex flex-col h-full",
-        userRole === 'admin' ? "bg-gray-900 border-red-800" : "bg-gray-900 border-gray-800"
+        userRole === 'admin' 
+          ? "bg-red-900 border-red-700" 
+          : "bg-gray-900 border-gray-800"
       )}
     >
       <div className="p-4 flex-1">
         <div className="mb-6">
           <h2 className={cn(
             "text-lg font-semibold mb-2",
-            userRole === 'admin' ? "text-red-300" : "text-white"
+            userRole === 'admin' ? "text-red-100" : "text-white"
           )}>
             {userRole === 'admin' ? 'System Administration' : 
              userRole === 'student' ? 'Student Portal' : 'Teacher Portal'}
           </h2>
           <div className={cn(
             "text-sm capitalize",
-            userRole === 'admin' ? "text-red-400" : "text-gray-400"
+            userRole === 'admin' ? "text-red-300" : "text-gray-400"
           )}>
             {userRole === 'admin' ? 'Full System Control' : `${userRole} Dashboard`}
           </div>
           {userRole === 'admin' && (
-            <div className="mt-2 text-xs text-red-300 bg-red-900/20 px-2 py-1 rounded border border-red-700">
+            <div className="mt-2 text-xs text-red-200 bg-red-800/30 px-2 py-1 rounded border border-red-600">
               ⚠️ Administrator Access
             </div>
           )}
@@ -282,7 +298,7 @@ export const AppSidebar = () => {
 
         <Separator className={cn(
           "my-6",
-          userRole === 'admin' ? "bg-red-700" : "bg-gray-700"
+          userRole === 'admin' ? "bg-red-600" : "bg-gray-700"
         )} />
 
         {userRole !== 'admin' && (
@@ -294,7 +310,7 @@ export const AppSidebar = () => {
 
       <div className={cn(
         "p-4 border-t",
-        userRole === 'admin' ? "border-red-800" : "border-gray-800"
+        userRole === 'admin' ? "border-red-700" : "border-gray-800"
       )}>
         <Button
           variant="ghost"
@@ -302,7 +318,7 @@ export const AppSidebar = () => {
           className={cn(
             "w-full justify-start hover:text-white",
             userRole === 'admin' 
-              ? "text-red-300 hover:bg-red-800/50" 
+              ? "text-red-200 hover:bg-red-800/50" 
               : "text-gray-300 hover:bg-gray-800/50"
           )}
         >
