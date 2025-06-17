@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -39,7 +40,7 @@ export const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null);
+  const [userRole, setUserRole] = useState<'teacher' | 'student' | 'admin' | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -58,7 +59,7 @@ export const AppSidebar = () => {
         .eq('user_id', session.user.id)
         .single();
 
-      setUserRole(roleData?.role as 'teacher' | 'student');
+      setUserRole(roleData?.role as 'teacher' | 'student' | 'admin');
     } catch (error) {
       console.error('Error checking user role:', error);
     } finally {
@@ -106,6 +107,14 @@ export const AppSidebar = () => {
     { title: "Progress", icon: TrendingUp, href: "/progress" },
     { title: "My BlockWards", icon: Award, href: "/wallet" },
     { title: "Notifications", icon: Bell, href: "/notifications" },
+    { title: "Settings", icon: Settings, href: "/settings" }
+  ];
+
+  const adminItems: SidebarItem[] = [
+    { title: "Admin Portal", icon: Shield, href: "/admin-portal" },
+    { title: "Dashboard", icon: Home, href: "/dashboard" },
+    { title: "Classes", icon: BookOpen, href: "/classes" },
+    { title: "Students", icon: Users, href: "/students" },
     { title: "Settings", icon: Settings, href: "/settings" }
   ];
 
@@ -159,7 +168,8 @@ export const AppSidebar = () => {
         onClick={() => navigate(item.href)}
         className={cn(
           "w-full justify-start h-10 px-4 text-gray-300 hover:text-white hover:bg-gray-800/50",
-          isActive && "bg-purple-600/20 text-purple-300"
+          isActive && "bg-purple-600/20 text-purple-300",
+          item.title === "Admin Portal" && "bg-red-600/20 text-red-300 hover:bg-red-600/30"
         )}
       >
         <item.icon className="h-4 w-4 mr-3" />
@@ -188,7 +198,15 @@ export const AppSidebar = () => {
     );
   }
 
-  const sidebarItems = userRole === 'student' ? studentItems : teacherItems;
+  const getSidebarItems = () => {
+    switch (userRole) {
+      case 'admin': return adminItems;
+      case 'student': return studentItems;
+      default: return teacherItems;
+    }
+  };
+
+  const sidebarItems = getSidebarItems();
 
   return (
     <motion.div
@@ -199,11 +217,17 @@ export const AppSidebar = () => {
       <div className="p-4 flex-1">
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-white mb-2">
-            {userRole === 'student' ? 'Student Portal' : 'Teacher Portal'}
+            {userRole === 'admin' ? 'Admin Portal' : 
+             userRole === 'student' ? 'Student Portal' : 'Teacher Portal'}
           </h2>
           <div className="text-sm text-gray-400 capitalize">
             {userRole} Dashboard
           </div>
+          {userRole === 'admin' && (
+            <div className="mt-2 text-xs text-red-300">
+              Full System Access
+            </div>
+          )}
         </div>
 
         <nav className="space-y-1">
