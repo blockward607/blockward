@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 interface SignInFormProps {
-  role: 'teacher' | 'student';
+  role: 'teacher' | 'student' | 'admin';
   email: string;
   setEmail: (email: string) => void;
   password: string;
@@ -74,9 +74,15 @@ export const SignInForm = ({
           // If we can't check the role, proceed anyway
           navigate('/dashboard', { replace: true });
         } else if (userRole) {
-          // NEW: Handle admin role redirection
+          // Handle admin role redirection
           if (userRole.role === 'admin') {
-            navigate('/admin', { replace: true });
+            if (role === 'admin') {
+              navigate('/admin-portal', { replace: true });
+            } else {
+              setErrorMessage(`This account is registered as an admin. Please select the admin role.`);
+              setShowError(true);
+              await supabase.auth.signOut();
+            }
           } else if (userRole.role !== role) {
             setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role.`);
             setShowError(true);
@@ -104,7 +110,10 @@ export const SignInForm = ({
     <div className="space-y-4">
       <div className="text-center mb-4">
         <p className="text-sm text-gray-400">
-          Signing in as <span className="text-purple-400 font-medium">{role}</span>
+          Signing in as <span className={`font-medium ${
+            role === 'admin' ? 'text-red-400' : 
+            role === 'teacher' ? 'text-indigo-400' : 'text-purple-400'
+          }`}>{role}</span>
         </p>
       </div>
       
@@ -132,7 +141,7 @@ export const SignInForm = ({
           />
         </div>
         <Button type="submit" className="w-full">
-          Sign In as {role === 'teacher' ? 'Teacher' : 'Student'}
+          Sign In as {role === 'teacher' ? 'Teacher' : role === 'student' ? 'Student' : 'Admin'}
         </Button>
         <div className="text-center mt-4">
           <button 

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +36,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminSetup from "./pages/AdminSetup";
 import SchoolSetup from "./pages/SchoolSetup";
 import Behavior from "./pages/Behavior";
+import AdminPortal from "./pages/AdminPortal";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +93,7 @@ const App = () => (
               <Route path="rewards" element={<div className="p-6 text-white">Admin NFT Management - Coming Soon</div>} />
               <Route path="classes" element={<div className="p-6 text-white">Admin Classes Management - Coming Soon</div>} />
             </Route>
+            <Route path="admin-portal" element={<ProtectedRoute><AdminPortal /></ProtectedRoute>} />
           </Route>
         </Routes>
       </BrowserRouter>
