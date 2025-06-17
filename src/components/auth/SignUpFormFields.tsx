@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 interface SignUpFormFieldsProps {
-  role: 'teacher' | 'student';
+  role: 'teacher' | 'student' | 'admin';
   email: string;
   setEmail: (email: string) => void;
   password: string;
@@ -89,11 +89,29 @@ export const SignUpFormFields = ({
     }
   };
 
+  const getRoleDisplayName = () => {
+    switch (role) {
+      case 'teacher': return 'Teacher';
+      case 'student': return 'Student';
+      case 'admin': return 'Admin';
+      default: return role;
+    }
+  };
+
+  const getRoleColor = () => {
+    switch (role) {
+      case 'teacher': return 'text-indigo-400';
+      case 'student': return 'text-purple-400';
+      case 'admin': return 'text-red-400';
+      default: return 'text-purple-400';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="text-center mb-4">
         <p className="text-sm text-gray-400">
-          Creating account as <span className="text-purple-400 font-medium">{role}</span>
+          Creating account as <span className={`font-medium ${getRoleColor()}`}>{getRoleDisplayName()}</span>
         </p>
       </div>
       
@@ -170,7 +188,7 @@ export const SignUpFormFields = ({
               Creating Account...
             </>
           ) : (
-            `Create ${role === 'teacher' ? 'Teacher' : 'Student'} Account`
+            `Create ${getRoleDisplayName()} Account`
           )}
         </Button>
       </form>
