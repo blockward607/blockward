@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -33,10 +33,10 @@ interface AdminStats {
 
 const AdminPortal = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [adminProfile, setAdminProfile] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState<AdminStats>({
     totalTeachers: 0,
     totalStudents: 0,
@@ -45,9 +45,27 @@ const AdminPortal = () => {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
 
+  // Determine active tab from URL
+  const getActiveTabFromUrl = () => {
+    const path = location.pathname;
+    if (path.includes('/analytics')) return 'analytics';
+    if (path.includes('/teachers')) return 'teachers';
+    if (path.includes('/students')) return 'students';
+    if (path.includes('/classes')) return 'classes';
+    if (path.includes('/announcements')) return 'announcements';
+    return 'overview';
+  };
+
+  const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
+
   useEffect(() => {
     checkAdminAccess();
   }, []);
+
+  useEffect(() => {
+    // Update active tab when URL changes
+    setActiveTab(getActiveTabFromUrl());
+  }, [location.pathname]);
 
   const checkAdminAccess = async () => {
     try {
@@ -138,6 +156,33 @@ const AdminPortal = () => {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Update URL to match the tab
+    switch (value) {
+      case 'overview':
+        navigate('/admin-portal');
+        break;
+      case 'analytics':
+        navigate('/admin/analytics');
+        break;
+      case 'teachers':
+        navigate('/admin/teachers');
+        break;
+      case 'students':
+        navigate('/admin/students');
+        break;
+      case 'classes':
+        navigate('/admin/classes');
+        break;
+      case 'announcements':
+        navigate('/admin/announcements');
+        break;
+      default:
+        navigate('/admin-portal');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -203,7 +248,7 @@ const AdminPortal = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="grid w-full grid-cols-6 bg-gray-800">
             <TabsTrigger value="overview" className="text-white">Overview</TabsTrigger>
             <TabsTrigger value="teachers" className="text-white">Teachers</TabsTrigger>
@@ -252,7 +297,7 @@ const AdminPortal = () => {
               <div>
                 <h2 className="text-2xl font-bold mb-6 text-white">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => setActiveTab("teachers")}>
+                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => handleTabChange("teachers")}>
                     <CardHeader>
                       <div className="flex items-center space-x-3">
                         <div className="p-3 rounded-lg bg-blue-500">
@@ -270,7 +315,7 @@ const AdminPortal = () => {
                     </CardHeader>
                   </Card>
 
-                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => setActiveTab("students")}>
+                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => handleTabChange("students")}>
                     <CardHeader>
                       <div className="flex items-center space-x-3">
                         <div className="p-3 rounded-lg bg-green-500">
@@ -288,7 +333,7 @@ const AdminPortal = () => {
                     </CardHeader>
                   </Card>
 
-                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => setActiveTab("classes")}>
+                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => handleTabChange("classes")}>
                     <CardHeader>
                       <div className="flex items-center space-x-3">
                         <div className="p-3 rounded-lg bg-purple-500">
@@ -306,7 +351,7 @@ const AdminPortal = () => {
                     </CardHeader>
                   </Card>
 
-                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => setActiveTab("analytics")}>
+                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => handleTabChange("analytics")}>
                     <CardHeader>
                       <div className="flex items-center space-x-3">
                         <div className="p-3 rounded-lg bg-orange-500">
@@ -324,7 +369,7 @@ const AdminPortal = () => {
                     </CardHeader>
                   </Card>
 
-                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => setActiveTab("announcements")}>
+                  <Card className="bg-gray-800 border-gray-700 hover:border-red-500 transition-colors cursor-pointer group h-full" onClick={() => handleTabChange("announcements")}>
                     <CardHeader>
                       <div className="flex items-center space-x-3">
                         <div className="p-3 rounded-lg bg-cyan-500">
