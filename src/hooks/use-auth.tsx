@@ -1,11 +1,31 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AuthService } from '@/services/AuthService';
 
+interface AuthContextType {
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
+  user: any;
+  userRole: string | null;
+  isTeacher: boolean;
+  isStudent: boolean;
+  isAdmin: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -193,13 +213,19 @@ export function useAuth() {
     };
   }, [navigate, setupUserAccount]);
 
-  return { 
-    loading, 
-    setLoading, 
-    user, 
-    userRole, 
+  const value = {
+    loading,
+    setLoading,
+    user,
+    userRole,
     isTeacher: userRole === 'teacher',
     isStudent: userRole === 'student',
     isAdmin: userRole === 'admin'
   };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
