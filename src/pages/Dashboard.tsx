@@ -53,6 +53,19 @@ const Dashboard = () => {
         return;
       }
 
+      // Check user role first
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      // If user is admin, redirect to admin portal
+      if (roleData?.role === 'admin') {
+        navigate('/admin-portal');
+        return;
+      }
+
       const { data: teacherData } = await supabase
         .from('teacher_profiles')
         .select('full_name')

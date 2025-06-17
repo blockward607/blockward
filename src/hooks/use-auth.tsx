@@ -73,6 +73,7 @@ export function useAuth() {
         await AuthService.createUserRole(userId, userRole);
       } else {
         console.log('User role already exists:', existingRole);
+        setUserRole(existingRole.role);
       }
       
       // Check if wallet exists
@@ -131,6 +132,32 @@ export function useAuth() {
         } else {
           console.log('Teacher profile already exists');
         }
+      } else if (userRole === 'admin') {
+        // For admins, create admin profile
+        const { data: existingProfile, error: profileError } = await supabase
+          .from('admin_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        
+        if (!existingProfile) {
+          console.log('Creating admin profile');
+          await supabase
+            .from('admin_profiles')
+            .insert({
+              user_id: userId,
+              school_id: null, // Will be set during school setup
+              full_name: fullName,
+              position: 'Administrator',
+              permissions: {
+                manage_teachers: true,
+                manage_students: true,
+                manage_classes: true,
+                manage_settings: true,
+                system_admin: true
+              }
+            });
+        }
       } else {
         // For students
         const { data: existingStudent, error: studentError } = await AuthService.checkStudentProfile(userId);
@@ -155,11 +182,14 @@ export function useAuth() {
         description: "You have successfully signed in.",
       });
       
-      // Instead of forcing redirect, allow the navigation to happen naturally
-      // We'll still redirect on first login
+      // Navigate based on role
       const currentPath = window.location.pathname;
-      if (currentPath === '/auth') {
-        navigate('/dashboard');
+      if (currentPath === '/auth' || currentPath === '/') {
+        if (userRole === 'admin') {
+          navigate('/admin-portal');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       console.error("Unexpected error during account setup:", error);
@@ -186,16 +216,16 @@ export function useAuth() {
           .then(({ data }) => {
             if (data) {
               setUserRole(data.role);
+              
+              // Redirect admin users if they're on wrong page
+              const currentPath = window.location.pathname;
+              if (data.role === 'admin' && currentPath === '/dashboard') {
+                navigate('/admin-portal');
+              }
             }
           });
           
-        console.log('Found existing session, navigating to dashboard');
-        
-        // Don't automatically navigate to dashboard if we're already on another page
-        const currentPath = window.location.pathname;
-        if (currentPath === '/' || currentPath === '/auth') {
-          navigate('/dashboard');
-        }
+        console.log('Found existing session');
       } else {
         console.log('No existing session found');
         setUser(null);
@@ -231,6 +261,7 @@ export function useAuth() {
     user, 
     userRole, 
     isTeacher: userRole === 'teacher',
-    isStudent: userRole === 'student'
+    isStudent: userRole === 'student',
+    isAdmin: userRole === 'admin'
   };
 }
