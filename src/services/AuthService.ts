@@ -20,7 +20,7 @@ export const AuthService = {
   },
   
   // Create a user role
-  createUserRole: async (userId: string, role: 'teacher' | 'student') => {
+  createUserRole: async (userId: string, role: 'teacher' | 'student' | 'admin') => {
     console.log('Creating user role:', { userId, role });
     const { data, error } = await supabase
       .from('user_roles')
