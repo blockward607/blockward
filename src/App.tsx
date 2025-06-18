@@ -13,7 +13,6 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Classes from "./pages/Classes";
 import Students from "./pages/Students";
-import Settings from "./pages/Settings";
 import Wallet from "./pages/Wallet";
 import Attendance from "./pages/Attendance";
 import ClassDetails from "./pages/ClassDetails";
@@ -64,7 +63,6 @@ const App = () => (
             <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
             <Route path="students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
-            <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
             <Route path="attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
             <Route path="assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
