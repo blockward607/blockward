@@ -137,16 +137,16 @@ export const useAppearanceSettings = () => {
     }
   };
 
-  const handleToggleDarkMode = async (value: boolean) => {
-    console.log('handleToggleDarkMode called with:', value);
-    setDarkMode(value);
-    await updatePreference('dark_mode', value);
+  const handleToggleDarkMode = async (checked: boolean) => {
+    console.log('Dark mode toggled to:', checked);
+    setDarkMode(checked);
+    await updatePreference('dark_mode', checked);
   };
 
-  const handleToggleCompactView = async (value: boolean) => {
-    console.log('handleToggleCompactView called with:', value);
-    setCompactView(value);
-    await updatePreference('compact_view', value);
+  const handleToggleCompactView = async (checked: boolean) => {
+    console.log('Compact view toggled to:', checked);
+    setCompactView(checked);
+    await updatePreference('compact_view', checked);
   };
 
   return {
