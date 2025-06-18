@@ -27,24 +27,24 @@ const SettingsPage = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // General Settings State
+  // General Settings State (local only since they don't exist in DB)
   const [autoGrading, setAutoGrading] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [studentRegistration, setStudentRegistration] = useState(false);
   const [classSize, setClassSize] = useState([30]);
   const [sessionTimeout, setSessionTimeout] = useState([60]);
   
-  // Appearance Settings State
+  // Appearance Settings State (from user_preferences)
   const [theme, setTheme] = useState("dark");
   const [fontSize, setFontSize] = useState([14]);
   const [compactMode, setCompactMode] = useState(false);
   
-  // Security Settings State
+  // Security Settings State (local only)
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
   const [passwordExpiry, setPasswordExpiry] = useState([90]);
   const [loginAttempts, setLoginAttempts] = useState([5]);
   
-  // School Settings State (for admins only)
+  // School Settings State
   const [schoolName, setSchoolName] = useState("");
   const [schoolEmail, setSchoolEmail] = useState("");
   const [schoolAddress, setSchoolAddress] = useState("");
@@ -73,6 +73,8 @@ const SettingsPage = () => {
         return;
       }
 
+      console.log('Loading user data for:', session.user.id);
+
       // Check user role
       const { data: roleData } = await supabase
         .from('user_roles')
@@ -82,6 +84,7 @@ const SettingsPage = () => {
 
       const role = roleData?.role || 'student';
       setUserRole(role);
+      console.log('User role:', role);
 
       // Load user preferences
       const { data: preferences } = await supabase
@@ -91,16 +94,14 @@ const SettingsPage = () => {
         .single();
 
       if (preferences) {
+        console.log('Loaded preferences:', preferences);
         setTheme(preferences.dark_mode ? "dark" : "light");
         setCompactMode(preferences.compact_view || false);
-        // These don't exist in the schema, so we'll keep them as local state
-        setEmailNotifications(true);
-        setAutoGrading(true);
-        setStudentRegistration(false);
       }
 
       // Load admin data only if user is admin
       if (role === 'admin') {
+        console.log('Loading admin data...');
         const { data: adminData } = await supabase
           .from('admin_profiles')
           .select(`
@@ -111,10 +112,11 @@ const SettingsPage = () => {
           .single();
 
         if (adminData) {
+          console.log('Loaded admin data:', adminData);
           setAdminName(adminData.full_name || "");
           setAdminPosition(adminData.position || "");
           
-          // Handle permissions JSON with proper type checking
+          // Handle permissions JSON safely
           if (adminData.permissions && typeof adminData.permissions === 'object') {
             const permissions = adminData.permissions as any;
             setAdminPermissions({
@@ -152,6 +154,8 @@ const SettingsPage = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
+      console.log('Saving user preferences...');
+
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
@@ -164,6 +168,7 @@ const SettingsPage = () => {
 
       if (error) throw error;
 
+      console.log('Preferences saved successfully');
       toast({
         title: "Settings Saved",
         description: "Your preferences have been saved successfully.",
@@ -184,6 +189,8 @@ const SettingsPage = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
+
+      console.log('Saving school settings...');
 
       // Get admin's school ID
       const { data: adminData } = await supabase
@@ -214,6 +221,7 @@ const SettingsPage = () => {
 
       if (error) throw error;
 
+      console.log('School settings saved successfully');
       toast({
         title: "School Settings Saved",
         description: "School information has been updated successfully.",
@@ -235,6 +243,8 @@ const SettingsPage = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
+      console.log('Saving admin settings...');
+
       const { error } = await supabase
         .from('admin_profiles')
         .update({
@@ -246,6 +256,7 @@ const SettingsPage = () => {
 
       if (error) throw error;
 
+      console.log('Admin settings saved successfully');
       toast({
         title: "Admin Settings Saved",
         description: "Admin profile has been updated successfully.",
@@ -261,6 +272,7 @@ const SettingsPage = () => {
   };
 
   const handleResetSettings = () => {
+    console.log('Resetting settings to defaults...');
     setAutoGrading(true);
     setEmailNotifications(true);
     setStudentRegistration(false);
@@ -276,6 +288,14 @@ const SettingsPage = () => {
     toast({
       title: "Settings Reset",
       description: "All settings have been reset to default values.",
+    });
+  };
+
+  const saveSecuritySettings = () => {
+    console.log('Security settings saved (local only)');
+    toast({
+      title: "Security Settings Saved",
+      description: "Your security preferences have been updated.",
     });
   };
 
@@ -474,12 +494,7 @@ const SettingsPage = () => {
               </div>
 
               <Button 
-                onClick={() => {
-                  toast({
-                    title: "Security Settings Saved",
-                    description: "Your security preferences have been updated.",
-                  });
-                }}
+                onClick={saveSecuritySettings}
                 className="w-full bg-purple-600 hover:bg-purple-700"
               >
                 Save Security Settings
