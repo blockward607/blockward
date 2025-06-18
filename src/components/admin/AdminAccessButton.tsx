@@ -77,18 +77,6 @@ export const AdminAccessButton = () => {
   const handleNavigation = (path: string) => {
     try {
       console.log('Navigating to:', path);
-      
-      // Validate that the path exists before navigating
-      const validPaths = ['/admin', '/school-setup', '/admin-setup'];
-      if (!validPaths.includes(path)) {
-        toast({
-          variant: "destructive",
-          title: "Navigation Error",
-          description: "This feature is not available yet."
-        });
-        return;
-      }
-
       navigate(path);
       toast({
         title: "Navigating...",

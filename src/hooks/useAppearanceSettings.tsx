@@ -15,6 +15,7 @@ export const useAppearanceSettings = () => {
 
   const loadPreferences = async () => {
     try {
+      setLoading(true);
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -31,6 +32,7 @@ export const useAppearanceSettings = () => {
 
       console.log('Loading preferences for user:', session.user.id);
 
+      // Use maybeSingle instead of single to avoid crashes when no preferences exist
       const { data: preferences, error } = await supabase
         .from('user_preferences')
         .select('*')
@@ -49,6 +51,10 @@ export const useAppearanceSettings = () => {
         if (preferences) {
           setDarkMode(preferences.dark_mode ?? true);
           setCompactView(preferences.compact_view ?? false);
+        } else {
+          // No preferences found, create defaults
+          console.log('No preferences found, creating defaults');
+          await createDefaultPreferences(session.user.id);
         }
       }
     } catch (error) {
@@ -60,6 +66,27 @@ export const useAppearanceSettings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createDefaultPreferences = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_preferences')
+        .insert({
+          user_id: userId,
+          dark_mode: true,
+          compact_view: false,
+          tutorial_completed: false
+        });
+
+      if (error) {
+        console.error('Error creating default preferences:', error);
+      } else {
+        console.log('Default preferences created successfully');
+      }
+    } catch (error) {
+      console.error('Error creating default preferences:', error);
     }
   };
 

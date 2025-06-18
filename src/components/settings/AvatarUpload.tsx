@@ -71,19 +71,11 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        if (uploadError.message.includes('Bucket not found')) {
-          toast({
-            variant: "destructive",
-            title: "Storage not ready",
-            description: "Avatar storage is not set up yet. Please contact support."
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Upload failed",
-            description: uploadError.message || "Failed to upload avatar."
-          });
-        }
+        toast({
+          variant: "destructive",
+          title: "Upload failed",
+          description: uploadError.message || "Failed to upload avatar."
+        });
         return;
       }
 
