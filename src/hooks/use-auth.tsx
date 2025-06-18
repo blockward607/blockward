@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const userId = session.user.id;
       
-      // Get role from metadata
+      // Get role from metadata with fallback
       let userRole = session.user.user_metadata?.role || 'student';
       let school = session.user.user_metadata?.school || '';
       let subject = session.user.user_metadata?.subject || '';
@@ -53,85 +53,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if role exists in database
       const { data: existingRole, error: roleError } = await AuthService.checkUserRole(userId);
       
-      if (roleError) {
+      if (roleError && !roleError.message.includes('No rows found')) {
         console.error('Error checking user role:', roleError);
+        // Don't throw - continue with fallback
       }
       
       if (!existingRole) {
         console.log('Creating new user role:', userRole);
-        await AuthService.createUserRole(userId, userRole);
-        setUserRole(userRole);
+        try {
+          await AuthService.createUserRole(userId, userRole);
+          setUserRole(userRole);
+        } catch (error) {
+          console.error('Failed to create user role, using fallback:', error);
+          setUserRole('student'); // Always set a role
+        }
       } else {
         console.log('User role already exists:', existingRole);
         setUserRole(existingRole.role);
-        userRole = existingRole.role; // Update local variable
+        userRole = existingRole.role;
       }
       
       // Check if wallet exists
-      const { data: existingWallet, error: walletError } = await AuthService.checkUserWallet(userId);
-      
-      if (walletError) {
-        console.error('Error checking user wallet:', walletError);
-      }
+      const { data: existingWallet } = await AuthService.checkUserWallet(userId);
       
       if (!existingWallet) {
         const walletType = userRole === 'teacher' ? 'admin' : 'user';
         const walletAddress = `${Math.random().toString(16).slice(2, 10)}_${Math.random().toString(16).slice(2, 10)}`;
         
         console.log('Creating new wallet:', { type: walletType, address: walletAddress });
-        await AuthService.createUserWallet(userId, walletType, walletAddress);
+        try {
+          await AuthService.createUserWallet(userId, walletType, walletAddress);
+        } catch (error) {
+          console.error('Failed to create wallet:', error);
+          // Don't block on wallet creation
+        }
       }
       
       // Create profile based on role
       if (userRole === 'teacher') {
-        const { data: existingProfile, error: profileError } = await AuthService.checkTeacherProfile(userId);
-        
-        if (profileError) {
-          console.error('Error checking teacher profile:', profileError);
-        }
+        const { data: existingProfile } = await AuthService.checkTeacherProfile(userId);
         
         if (!existingProfile) {
           console.log('Creating basic teacher profile');
-          await AuthService.createTeacherProfile(userId, school, subject, fullName);
+          try {
+            await AuthService.createTeacherProfile(userId, school, subject, fullName);
+          } catch (error) {
+            console.error('Failed to create teacher profile:', error);
+          }
         }
       } else if (userRole === 'admin') {
-        const { data: existingProfile, error: profileError } = await supabase
+        const { data: existingProfile } = await supabase
           .from('admin_profiles')
           .select('*')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
         
         if (!existingProfile) {
           console.log('Creating admin profile');
-          await supabase
-            .from('admin_profiles')
-            .insert({
-              user_id: userId,
-              school_id: '00000000-0000-0000-0000-000000000001',
-              full_name: fullName,
-              position: 'Administrator',
-              permissions: {
-                manage_teachers: true,
-                manage_students: true,
-                manage_classes: true,
-                manage_settings: true,
-                system_admin: true
-              }
-            });
+          try {
+            await supabase
+              .from('admin_profiles')
+              .insert({
+                user_id: userId,
+                school_id: '00000000-0000-0000-0000-000000000001',
+                full_name: fullName,
+                position: 'Administrator',
+                permissions: {
+                  manage_teachers: true,
+                  manage_students: true,
+                  manage_classes: true,
+                  manage_settings: true,
+                  system_admin: true
+                }
+              });
+          } catch (error) {
+            console.error('Failed to create admin profile:', error);
+          }
         }
       } else {
-        const { data: existingStudent, error: studentError } = await AuthService.checkStudentProfile(userId);
-        
-        if (studentError) {
-          console.error('Error checking student profile:', studentError);
-        }
+        const { data: existingStudent } = await AuthService.checkStudentProfile(userId);
         
         if (!existingStudent) {
           const email = session.user.email;
           const name = fullName || email.split('@')[0];
                       
           console.log('Creating student profile');
-          await AuthService.createStudentProfile(userId, email, name, school);
+          try {
+            await AuthService.createStudentProfile(userId, email, name, school);
+          } catch (error) {
+            console.error('Failed to create student profile:', error);
+          }
         }
       }
       
@@ -150,33 +161,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error("Unexpected error during account setup:", error);
+      console.error("Error during account setup:", error);
+      // Always set a fallback role to prevent infinite loading
+      setUserRole('student');
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Something went wrong during account setup. Please try again.",
+        title: "Setup Error",
+        description: "Account setup had issues but you can continue as a student.",
       });
     }
   }, [navigate, toast]);
 
   useEffect(() => {
+    let mounted = true;
+    
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       if (session) {
         console.log('Found existing session for user:', session.user.id);
         setUser(session.user);
         
-        // Get the user role from database with better error handling
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle()
-          .then(({ data, error }) => {
+        // Get the user role from database with timeout
+        const fetchRoleWithTimeout = async () => {
+          try {
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Role fetch timeout')), 5000)
+            );
+            
+            const rolePromise = supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            
+            const { data, error } = await Promise.race([rolePromise, timeoutPromise]);
+            
             if (error) {
               console.error('Error fetching user role:', error);
-              // Try to set up the account if there's an error
-              setupUserAccount(session);
+              setUserRole('student'); // Fallback role
               return;
             }
             
@@ -193,10 +217,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             } else {
               console.log('No role found for user, setting up account');
-              // If no role found, try to set up the account
-              setupUserAccount(session);
+              await setupUserAccount(session);
             }
-          });
+          } catch (error) {
+            console.error('Failed to fetch role:', error);
+            setUserRole('student'); // Always set fallback
+          }
+        };
+        
+        fetchRoleWithTimeout();
       } else {
         console.log('No active session found');
         setUser(null);
@@ -206,6 +235,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Handle auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       console.log('Auth state change event:', event);
       
       if (event === 'SIGNED_IN') {
@@ -224,6 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate, setupUserAccount]);

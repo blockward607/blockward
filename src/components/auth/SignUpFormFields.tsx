@@ -61,6 +61,8 @@ export const SignUpFormFields = ({
     setLoading(true);
 
     try {
+      console.log('Starting signup process for:', email, 'with role:', role);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -74,10 +76,13 @@ export const SignUpFormFields = ({
       });
 
       if (error) {
+        console.error("Sign up error:", error);
         setErrorMessage(error.message);
         setShowError(true);
-        console.error("Sign up error:", error);
       } else if (data.user) {
+        console.log('Signup successful for user:', data.user.id);
+        
+        // Don't wait for account setup - show success immediately
         toast({
           title: "Account created successfully!",
           description: "Please check your email to verify your account.",
@@ -87,9 +92,14 @@ export const SignUpFormFields = ({
         setEmail("");
         setPassword("");
         setName("");
+        
+        // Navigate to auth page to show confirmation
+        setTimeout(() => {
+          navigate('/auth');
+        }, 2000);
       }
     } catch (error) {
-      console.error("Unexpected error:", error);
+      console.error("Unexpected signup error:", error);
       setErrorMessage("An unexpected error occurred. Please try again.");
       setShowError(true);
     } finally {

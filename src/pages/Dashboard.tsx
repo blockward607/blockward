@@ -45,13 +45,33 @@ const Dashboard = () => {
   useEffect(() => {
     console.log('Dashboard: User or role changed:', { user: !!user, authUserRole });
     
-    if (user && !authUserRole) {
-      console.log('Dashboard: User exists but no role, checking auth');
-      checkAuth();
-    } else if (!user) {
+    if (!user) {
       console.log('Dashboard: No user, redirecting to auth');
       navigate('/auth');
+      return;
     }
+
+    if (user && !authUserRole) {
+      console.log('Dashboard: User exists but no role, checking auth with timeout');
+      
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.log('Dashboard: Role fetch timeout, using fallback');
+        setUserRole('student');
+        setUserName(user.email || 'User');
+        setLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Role Detection Issue",
+          description: "Continuing with student access. Contact support if this persists.",
+        });
+      }, 8000); // 8 second timeout
+      
+      checkAuth().finally(() => {
+        clearTimeout(timeoutId);
+      });
+    }
+    
     fetchAnnouncements();
   }, [user, authUserRole]);
 
@@ -72,38 +92,45 @@ const Dashboard = () => {
 
       console.log('Dashboard: Session found, checking role for user:', session.user.id);
 
-      // Check user role first
-      const { data: roleData, error: roleError } = await supabase
+      // Check user role with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Role query timeout')), 5000)
+      );
+      
+      const rolePromise = supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
+      const { data: roleData, error: roleError } = await Promise.race([
+        rolePromise, 
+        timeoutPromise
+      ]).catch(() => ({ data: null, error: { message: 'Timeout' } }));
+
       if (roleError) {
         console.error('Dashboard: Error fetching role:', roleError);
+        // Set fallback role instead of blocking
+        setUserRole("student");
+        setUserName(session.user.email || "User");
+        setLoading(false);
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Failed to load user role. Defaulting to student access."
+          title: "Role Fetch Error",
+          description: "Continuing with student access.",
         });
-        // Set fallback role to prevent infinite loading
-        setUserRole("student");
-        setUserName(session.user.email);
-        setLoading(false);
         return;
       }
 
       if (!roleData) {
-        console.log('Dashboard: No role found for user');
-        toast({
-          variant: "destructive",
-          title: "No Role Found",
-          description: "You don't have a role assigned. Defaulting to student access."
-        });
-        // Set fallback role to prevent infinite loading
+        console.log('Dashboard: No role found for user, using fallback');
         setUserRole("student");
-        setUserName(session.user.email);
+        setUserName(session.user.email || "User");
         setLoading(false);
+        toast({
+          title: "Default Role Assigned",
+          description: "You've been assigned student access.",
+        });
         return;
       }
 
@@ -120,7 +147,7 @@ const Dashboard = () => {
         .from('teacher_profiles')
         .select('full_name')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
       
       if (teacherData) {
         console.log('Dashboard: Teacher profile found');
@@ -131,7 +158,7 @@ const Dashboard = () => {
           .from('students')
           .select('name')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
           
         if (studentData) {
           console.log('Dashboard: Student profile found');
@@ -140,19 +167,19 @@ const Dashboard = () => {
         } else {
           console.log('Dashboard: No profile found, defaulting to student');
           setUserRole('student');
-          setUserName(session.user.email);
+          setUserName(session.user.email || "User");
         }
       }
     } catch (error) {
       console.error('Dashboard: Error in checkAuth:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Something went wrong. Defaulting to student access."
-      });
       // Always set a role to prevent infinite loading
       setUserRole("student");
-      setUserName("User");
+      setUserName(user?.email || "User");
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Continuing with limited access.",
+      });
     } finally {
       setLoading(false);
     }
@@ -190,24 +217,9 @@ const Dashboard = () => {
     });
   };
 
-  // Show loading while determining user role - but with timeout protection
+  // Show loading only for a short time
   if (loading && user) {
     console.log('Dashboard: Showing loading state', { loading, user: !!user, userRole });
-    
-    // Add timeout protection - if loading takes too long, show error
-    setTimeout(() => {
-      if (loading) {
-        console.error('Dashboard: Loading timeout - forcing fallback');
-        setUserRole("student");
-        setUserName(user?.email || "User");
-        setLoading(false);
-        toast({
-          variant: "destructive",
-          title: "Loading Error",
-          description: "Dashboard took too long to load. Defaulting to student access."
-        });
-      }
-    }, 10000); // 10 second timeout
 
     return (
       <div className="flex items-center justify-center h-full w-full">
