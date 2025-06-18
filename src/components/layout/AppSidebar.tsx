@@ -4,7 +4,6 @@ import {
   CalendarDays, 
   Users, 
   BookOpen, 
-  Settings, 
   Award, 
   UserCheck,
   BarChart3,
@@ -94,8 +93,7 @@ export const AppSidebar = () => {
     { title: "Grades", icon: BarChart3, href: "/grades" },
     { title: "Resources", icon: BookOpen, href: "/resources" },
     { title: "BlockWards & NFTs", icon: Award, href: "/wallet" },
-    { title: "Notifications", icon: Bell, href: "/notifications" },
-    { title: "Settings", icon: Settings, href: "/settings" }
+    { title: "Notifications", icon: Bell, href: "/notifications" }
   ];
 
   const studentItems: SidebarItem[] = [
@@ -105,8 +103,7 @@ export const AppSidebar = () => {
     { title: "Grades", icon: BarChart3, href: "/grades" },
     { title: "Progress", icon: TrendingUp, href: "/progress" },
     { title: "My BlockWards", icon: Award, href: "/wallet" },
-    { title: "Notifications", icon: Bell, href: "/notifications" },
-    { title: "Settings", icon: Settings, href: "/settings" }
+    { title: "Notifications", icon: Bell, href: "/notifications" }
   ];
 
   const toggleExpanded = (title: string) => {
