@@ -50,30 +50,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     
       console.log('Determined role:', userRole);
       
-      // Check if role exists in database with timeout
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Role check timeout')), 5000)
-      );
-      
-      const rolePromise = AuthService.checkUserRole(userId);
-      
+      // Check if role exists in database with shorter timeout
       let existingRole = null;
-      let roleError = null;
       
       try {
-        const result = await Promise.race([rolePromise, timeoutPromise]);
-        if (result && typeof result === 'object' && 'data' in result) {
-          existingRole = (result as any).data;
-          roleError = (result as any).error;
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        if (!error && data) {
+          existingRole = data;
         }
       } catch (error) {
-        console.error('Role check failed or timed out:', error);
-        roleError = error;
-      }
-      
-      if (roleError && !roleError.message?.includes('No rows found')) {
-        console.error('Error checking user role:', roleError);
-        // Don't throw - continue with fallback
+        console.error('Role check failed:', error);
       }
       
       if (!existingRole) {
@@ -92,43 +83,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Check if wallet exists
-      const { data: existingWallet } = await AuthService.checkUserWallet(userId);
-      
-      if (!existingWallet) {
-        const walletType = userRole === 'teacher' ? 'admin' : 'user';
-        const walletAddress = `${Math.random().toString(16).slice(2, 10)}_${Math.random().toString(16).slice(2, 10)}`;
+      try {
+        const { data: existingWallet } = await AuthService.checkUserWallet(userId);
         
-        console.log('Creating new wallet:', { type: walletType, address: walletAddress });
-        try {
+        if (!existingWallet) {
+          const walletType = userRole === 'teacher' ? 'admin' : 'user';
+          const walletAddress = `${Math.random().toString(16).slice(2, 10)}_${Math.random().toString(16).slice(2, 10)}`;
+          
+          console.log('Creating new wallet:', { type: walletType, address: walletAddress });
           await AuthService.createUserWallet(userId, walletType, walletAddress);
-        } catch (error) {
-          console.error('Failed to create wallet:', error);
-          // Don't block on wallet creation
         }
+      } catch (error) {
+        console.error('Failed to create wallet:', error);
+        // Don't block on wallet creation
       }
       
       // Create profile based on role
       if (userRole === 'teacher') {
-        const { data: existingProfile } = await AuthService.checkTeacherProfile(userId);
-        
-        if (!existingProfile) {
-          console.log('Creating basic teacher profile');
-          try {
+        try {
+          const { data: existingProfile } = await AuthService.checkTeacherProfile(userId);
+          
+          if (!existingProfile) {
+            console.log('Creating basic teacher profile');
             await AuthService.createTeacherProfile(userId, school, subject, fullName);
-          } catch (error) {
-            console.error('Failed to create teacher profile:', error);
           }
+        } catch (error) {
+          console.error('Failed to create teacher profile:', error);
         }
       } else if (userRole === 'admin') {
-        const { data: existingProfile } = await supabase
-          .from('admin_profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        if (!existingProfile) {
-          console.log('Creating admin profile');
-          try {
+        try {
+          const { data: existingProfile } = await supabase
+            .from('admin_profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          if (!existingProfile) {
+            console.log('Creating admin profile');
             await supabase
               .from('admin_profiles')
               .insert({
@@ -144,23 +135,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   system_admin: true
                 }
               });
-          } catch (error) {
-            console.error('Failed to create admin profile:', error);
           }
+        } catch (error) {
+          console.error('Failed to create admin profile:', error);
         }
       } else {
-        const { data: existingStudent } = await AuthService.checkStudentProfile(userId);
-        
-        if (!existingStudent) {
-          const email = session.user.email;
-          const name = fullName || email.split('@')[0];
-                      
-          console.log('Creating student profile');
-          try {
+        try {
+          const { data: existingStudent } = await AuthService.checkStudentProfile(userId);
+          
+          if (!existingStudent) {
+            const email = session.user.email;
+            const name = fullName || email.split('@')[0];
+                        
+            console.log('Creating student profile');
             await AuthService.createStudentProfile(userId, email, name, school);
-          } catch (error) {
-            console.error('Failed to create student profile:', error);
           }
+        } catch (error) {
+          console.error('Failed to create student profile:', error);
         }
       }
       
@@ -173,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentPath = window.location.pathname;
       if (currentPath === '/auth' || currentPath === '/admin-auth' || currentPath === '/') {
         if (userRole === 'admin') {
-          navigate('/admin-portal');
+          navigate('/admin');
         } else {
           navigate('/dashboard');
         }
@@ -201,32 +192,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Found existing session for user:', session.user.id);
         setUser(session.user);
         
-        // Get the user role from database with timeout
-        const fetchRoleWithTimeout = async () => {
+        // Get the user role from database with shorter timeout
+        const fetchRole = async () => {
           try {
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Role fetch timeout')), 5000)
-            );
-            
-            const rolePromise = supabase
+            const { data, error } = await supabase
               .from('user_roles')
               .select('role')
               .eq('user_id', session.user.id)
               .maybeSingle();
-            
-            let data = null;
-            let error = null;
-            
-            try {
-              const result = await Promise.race([rolePromise, timeoutPromise]);
-              if (result && typeof result === 'object' && 'data' in result) {
-                data = (result as any).data;
-                error = (result as any).error;
-              }
-            } catch (timeoutError) {
-              console.error('Role fetch timed out:', timeoutError);
-              error = timeoutError;
-            }
             
             if (error) {
               console.error('Error fetching user role:', error);
@@ -241,8 +214,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Redirect admin users if they're on wrong page
               const currentPath = window.location.pathname;
               if (data.role === 'admin' && (currentPath === '/dashboard' || currentPath === '/auth')) {
-                navigate('/admin-portal');
-              } else if (data.role !== 'admin' && currentPath === '/admin-portal') {
+                navigate('/admin');
+              } else if (data.role !== 'admin' && currentPath === '/admin') {
                 navigate('/dashboard');
               }
             } else {
@@ -255,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         };
         
-        fetchRoleWithTimeout();
+        fetchRole();
       } else {
         console.log('No active session found');
         setUser(null);

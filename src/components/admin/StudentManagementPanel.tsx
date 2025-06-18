@@ -43,15 +43,21 @@ export const StudentManagementPanel = () => {
 
   const loadStudents = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('students')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading students:', error);
+        throw error;
+      }
+      
       setStudents(data || []);
     } catch (error) {
       console.error('Error loading students:', error);
+      setStudents([]);
       toast({
         variant: "destructive",
         title: "Error",
@@ -107,7 +113,9 @@ export const StudentManagementPanel = () => {
           ) : filteredStudents.length === 0 ? (
             <div className="text-center py-8">
               <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-400">No students found</p>
+              <p className="text-gray-400">
+                {searchTerm ? "No students found matching your search" : "No students found"}
+              </p>
             </div>
           ) : (
             <div className="grid gap-4">

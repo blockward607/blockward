@@ -5,6 +5,7 @@ import { Award, Book, ChartBar, Grid, Mail, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export const StudentDashboard = () => {
   const [studentEmail, setStudentEmail] = useState<string | null>(null);
@@ -18,8 +19,18 @@ export const StudentDashboard = () => {
 
   const fetchStudentInfo = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      setLoading(true);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        return;
+      }
+      
+      if (!session) {
+        console.log('No session found');
+        return;
+      }
 
       // Get student email
       setStudentEmail(session.user.email);
@@ -29,10 +40,15 @@ export const StudentDashboard = () => {
         .from('students')
         .select('points')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      setStudentPoints(studentData?.points || 0);
+      if (error) {
+        console.error('Error fetching student data:', error);
+        // Don't throw error, just use default values
+        setStudentPoints(0);
+      } else {
+        setStudentPoints(studentData?.points || 0);
+      }
     } catch (error) {
       console.error('Error fetching student info:', error);
       toast({
@@ -45,6 +61,15 @@ export const StudentDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+        <span className="ml-2 text-gray-300">Loading dashboard...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Student Info */}
@@ -55,7 +80,7 @@ export const StudentDashboard = () => {
               <User className="w-6 h-6 text-purple-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">My Profile</h3>
+              <h3 className="text-lg font-semibold text-white">My Profile</h3>
               <p className="text-sm text-gray-400">{studentEmail || 'Loading...'}</p>
             </div>
           </div>
@@ -74,7 +99,7 @@ export const StudentDashboard = () => {
               <div className="p-3 rounded-full bg-purple-600/20">
                 <Book className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold">My Classes</h3>
+              <h3 className="text-lg font-semibold text-white">My Classes</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">View your enrolled classes and assignments</p>
             <Link to="/classes" className="mt-auto text-purple-400 hover:text-purple-300">
@@ -89,7 +114,7 @@ export const StudentDashboard = () => {
               <div className="p-3 rounded-full bg-purple-600/20">
                 <ChartBar className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold">Behavior Points</h3>
+              <h3 className="text-lg font-semibold text-white">Behavior Points</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">Track your behavior points and achievements</p>
             <Link to="/behavior" className="mt-auto text-purple-400 hover:text-purple-300">
@@ -104,7 +129,7 @@ export const StudentDashboard = () => {
               <div className="p-3 rounded-full bg-purple-600/20">
                 <Award className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold">Achievements</h3>
+              <h3 className="text-lg font-semibold text-white">Achievements</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">View your earned achievements and badges</p>
             <Link to="/wallet" className="mt-auto text-purple-400 hover:text-purple-300">
@@ -119,7 +144,7 @@ export const StudentDashboard = () => {
               <div className="p-3 rounded-full bg-purple-600/20">
                 <Grid className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold">Seating Plans</h3>
+              <h3 className="text-lg font-semibold text-white">Seating Plans</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">View your class seating arrangements</p>
             <Link to="/seating" className="mt-auto text-purple-400 hover:text-purple-300">
@@ -137,7 +162,7 @@ export const StudentDashboard = () => {
               <div className="p-3 rounded-full bg-purple-600/20">
                 <Award className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold">My NFTs</h3>
+              <h3 className="text-lg font-semibold text-white">My NFTs</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">View your collected achievement NFTs</p>
             <Link to="/wallet" className="mt-auto text-purple-400 hover:text-purple-300">
@@ -152,7 +177,7 @@ export const StudentDashboard = () => {
               <div className="p-3 rounded-full bg-purple-600/20">
                 <Mail className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold">Messages</h3>
+              <h3 className="text-lg font-semibold text-white">Messages</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">Check messages from your teachers</p>
             <Link to="/messages" className="mt-auto text-purple-400 hover:text-purple-300">

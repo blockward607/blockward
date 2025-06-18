@@ -15,9 +15,16 @@ export const ProtectedRoute: React.FC = () => {
 
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
+        
+        if (error) {
+          console.error('Authentication error:', error);
+          setIsAuthenticated(false);
+          navigate('/auth');
+          return;
+        }
         
         if (!session) {
           console.log('No active session found, redirecting to auth page');

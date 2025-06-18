@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -42,12 +43,14 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
     setQuickMode(false);
   };
 
-  if (studentsLoading && students.length === 0) {
+  // Show loading state only if there are no students and we're still loading
+  if (studentsLoading && (!students || students.length === 0)) {
     return (
       <Card className="glass-card">
         <CardContent className="pt-6">
           <div className="flex justify-center items-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-gray-300">Loading attendance...</span>
           </div>
         </CardContent>
       </Card>
@@ -71,7 +74,7 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
       </div>
       {quickMode && isTeacher ? (
         <QuickAttendancePanel
-          students={students}
+          students={students || []}
           onAttendance={handleQuickDone}
         />
       ) : (
@@ -81,14 +84,14 @@ export const AttendanceTracker = ({ classroomId }: AttendanceTrackerProps) => {
             isTeacher={isTeacher}
             saving={saving}
             refreshing={refreshing}
-            students={students}
+            students={students || []}
             onDateChange={handleDateChange}
             handleSaveAttendance={handleSaveAttendance}
             refreshData={refreshData}
           />
 
           <AttendanceContent 
-            students={students}
+            students={students || []}
             loading={loading}
             isTeacher={isTeacher}
             updateStudentStatus={updateStudentStatus}
