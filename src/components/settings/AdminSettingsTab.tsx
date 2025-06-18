@@ -69,7 +69,7 @@ export const AdminSettingsTab = ({
             <Switch
               checked={adminPermissions.manage_teachers}
               onCheckedChange={(checked) => 
-                setAdminPermissions(prev => ({ ...prev, manage_teachers: checked }))
+                setAdminPermissions({ ...adminPermissions, manage_teachers: checked })
               }
             />
           </div>
@@ -82,7 +82,7 @@ export const AdminSettingsTab = ({
             <Switch
               checked={adminPermissions.manage_students}
               onCheckedChange={(checked) => 
-                setAdminPermissions(prev => ({ ...prev, manage_students: checked }))
+                setAdminPermissions({ ...adminPermissions, manage_students: checked })
               }
             />
           </div>
@@ -95,7 +95,7 @@ export const AdminSettingsTab = ({
             <Switch
               checked={adminPermissions.manage_classes}
               onCheckedChange={(checked) => 
-                setAdminPermissions(prev => ({ ...prev, manage_classes: checked }))
+                setAdminPermissions({ ...adminPermissions, manage_classes: checked })
               }
             />
           </div>
@@ -108,7 +108,7 @@ export const AdminSettingsTab = ({
             <Switch
               checked={adminPermissions.manage_settings}
               onCheckedChange={(checked) => 
-                setAdminPermissions(prev => ({ ...prev, manage_settings: checked }))
+                setAdminPermissions({ ...adminPermissions, manage_settings: checked })
               }
             />
           </div>
