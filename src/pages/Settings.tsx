@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -239,7 +240,7 @@ const SettingsPage = () => {
         .update({
           full_name: adminName,
           position: adminPosition,
-          permissions: adminPermissions
+          permissions: adminPermissions as any
         })
         .eq('user_id', session.user.id);
 
