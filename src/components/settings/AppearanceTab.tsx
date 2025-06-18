@@ -27,6 +27,16 @@ export const AppearanceTab = () => {
     );
   }
 
+  const handleDarkModeChange = (checked: boolean) => {
+    console.log('Dark mode switch toggled:', checked);
+    handleToggleDarkMode(checked);
+  };
+
+  const handleCompactViewChange = (checked: boolean) => {
+    console.log('Compact view switch toggled:', checked);
+    handleToggleCompactView(checked);
+  };
+
   return (
     <div className="space-y-8">
       <motion.div 
@@ -40,7 +50,7 @@ export const AppearanceTab = () => {
           Theme
         </h3>
         <div className="flex items-center justify-between bg-black/40 p-4 rounded-lg border border-purple-500/30">
-          <Label htmlFor="dark-mode" className="flex flex-col space-y-1">
+          <Label htmlFor="dark-mode" className="flex flex-col space-y-1 cursor-pointer">
             <span className="text-purple-300">Dark Mode</span>
             <span className="font-normal text-sm text-gray-400">
               Switch between light and dark theme
@@ -49,8 +59,7 @@ export const AppearanceTab = () => {
           <Switch 
             id="dark-mode" 
             checked={darkMode}
-            onCheckedChange={handleToggleDarkMode}
-            className="data-[state=checked]:bg-purple-700"
+            onCheckedChange={handleDarkModeChange}
           />
         </div>
       </motion.div>
@@ -66,7 +75,7 @@ export const AppearanceTab = () => {
           Layout
         </h3>
         <div className="flex items-center justify-between bg-black/40 p-4 rounded-lg border border-purple-500/30">
-          <Label htmlFor="compact-view" className="flex flex-col space-y-1">
+          <Label htmlFor="compact-view" className="flex flex-col space-y-1 cursor-pointer">
             <span className="text-purple-300">Compact View</span>
             <span className="font-normal text-sm text-gray-400">
               Use a more compact layout for the interface
@@ -75,8 +84,7 @@ export const AppearanceTab = () => {
           <Switch 
             id="compact-view" 
             checked={compactView}
-            onCheckedChange={handleToggleCompactView}
-            className="data-[state=checked]:bg-purple-700"
+            onCheckedChange={handleCompactViewChange}
           />
         </div>
       </motion.div>

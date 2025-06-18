@@ -18,8 +18,14 @@ export const useAppearanceSettings = () => {
       setLoading(true);
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session) {
-        console.error('Session error or no session:', sessionError);
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        setLoading(false);
+        return;
+      }
+
+      if (!session) {
+        console.log('No session found');
         setLoading(false);
         return;
       }
@@ -34,7 +40,6 @@ export const useAppearanceSettings = () => {
 
       if (error) {
         console.error('Error loading preferences:', error);
-        // Create default preferences if they don't exist
         await createDefaultPreferences(session.user.id);
       } else if (preferences) {
         console.log('Loaded preferences:', preferences);
@@ -46,6 +51,11 @@ export const useAppearanceSettings = () => {
       }
     } catch (error) {
       console.error('Error in loadPreferences:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load preferences"
+      });
     } finally {
       setLoading(false);
     }
@@ -86,7 +96,7 @@ export const useAppearanceSettings = () => {
           title: "Error",
           description: "Please log in to save preferences"
         });
-        return;
+        return false;
       }
 
       console.log(`Updating ${field} to ${value} for user:`, session.user.id);
@@ -111,6 +121,7 @@ export const useAppearanceSettings = () => {
         title: "Settings updated",
         description: "Your preferences have been saved.",
       });
+      return true;
     } catch (error: any) {
       console.error('Error updating preference:', error);
       toast({
@@ -118,19 +129,26 @@ export const useAppearanceSettings = () => {
         title: "Error",
         description: `Failed to save ${field}: ${error.message}`
       });
+      return false;
     }
   };
 
-  const handleToggleDarkMode = (checked: boolean) => {
+  const handleToggleDarkMode = async (checked: boolean) => {
     console.log('Toggling dark mode to:', checked);
-    setDarkMode(checked);
-    updatePreference('dark_mode', checked);
+    setDarkMode(checked); // Optimistic update
+    const success = await updatePreference('dark_mode', checked);
+    if (!success) {
+      setDarkMode(!checked); // Revert on failure
+    }
   };
 
-  const handleToggleCompactView = (checked: boolean) => {
+  const handleToggleCompactView = async (checked: boolean) => {
     console.log('Toggling compact view to:', checked);
-    setCompactView(checked);
-    updatePreference('compact_view', checked);
+    setCompactView(checked); // Optimistic update
+    const success = await updatePreference('compact_view', checked);
+    if (!success) {
+      setCompactView(!checked); // Revert on failure
+    }
   };
 
   return {
