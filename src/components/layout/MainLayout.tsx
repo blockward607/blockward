@@ -19,7 +19,8 @@ import {
   Layers,
   Megaphone,
   Shield,
-  LogOut
+  LogOut,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,7 @@ const teacherNavGroups = [
     name: "Account",
     items: [
       { name: "NFT Wallet", href: "/wallet", icon: Wallet },
+      { name: "Settings", href: "/settings", icon: Settings },
     ]
   },
 ];
@@ -72,6 +74,7 @@ const studentNavGroups = [
     name: "Account",
     items: [
       { name: "NFT Wallet", href: "/wallet", icon: Wallet },
+      { name: "Settings", href: "/settings", icon: Settings },
     ]
   },
 ];
