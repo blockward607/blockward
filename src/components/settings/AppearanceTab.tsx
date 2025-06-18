@@ -4,18 +4,28 @@ import { Label } from "@/components/ui/label";
 import { useAppearanceSettings } from "@/hooks/useAppearanceSettings";
 import { Button } from "@/components/ui/button";
 import { useTutorial } from "@/hooks/useTutorial";
-import { RefreshCcw, Sparkles } from "lucide-react";
+import { RefreshCcw, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const AppearanceTab = () => {
   const { 
     darkMode, 
     compactView, 
+    loading,
     handleToggleDarkMode, 
     handleToggleCompactView 
   } = useAppearanceSettings();
   
   const { resetTutorialStatus } = useTutorial();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+        <span className="ml-2 text-gray-400">Loading preferences...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

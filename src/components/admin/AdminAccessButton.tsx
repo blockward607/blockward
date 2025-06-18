@@ -61,51 +61,17 @@ export const AdminAccessButton = () => {
     }
   };
 
-  const handleAdminDashboard = async () => {
+  const handleNavigation = async (path: string) => {
     setActionLoading(true);
     try {
-      console.log('Navigating to admin dashboard');
-      navigate('/admin');
+      console.log('Navigating to:', path);
+      navigate(path);
     } catch (error) {
-      console.error('Error navigating to admin:', error);
+      console.error('Error navigating:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to access admin dashboard"
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleSchoolSetup = async () => {
-    setActionLoading(true);
-    try {
-      console.log('Navigating to school setup');
-      navigate('/school-setup');
-    } catch (error) {
-      console.error('Error navigating to school setup:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to access school setup"
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleAdminSetup = async () => {
-    setActionLoading(true);
-    try {
-      console.log('Navigating to admin setup');
-      navigate('/admin-setup');
-    } catch (error) {
-      console.error('Error navigating to admin setup:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to access admin setup"
+        description: "Failed to navigate"
       });
     } finally {
       setActionLoading(false);
@@ -125,7 +91,7 @@ export const AdminAccessButton = () => {
       {isAdmin ? (
         <>
           <Button 
-            onClick={handleAdminDashboard}
+            onClick={() => handleNavigation('/admin')}
             disabled={actionLoading}
             className="w-full bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
           >
@@ -137,7 +103,7 @@ export const AdminAccessButton = () => {
             Admin Dashboard
           </Button>
           <Button 
-            onClick={handleSchoolSetup}
+            onClick={() => handleNavigation('/school-setup')}
             disabled={actionLoading}
             variant="outline"
             className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-600/20 flex items-center gap-2"
@@ -153,7 +119,7 @@ export const AdminAccessButton = () => {
       ) : (
         <>
           <Button 
-            onClick={handleSchoolSetup}
+            onClick={() => handleNavigation('/school-setup')}
             disabled={actionLoading}
             className="w-full bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
           >
@@ -165,7 +131,7 @@ export const AdminAccessButton = () => {
             Setup School
           </Button>
           <Button 
-            onClick={handleAdminSetup}
+            onClick={() => handleNavigation('/admin-setup')}
             disabled={actionLoading}
             variant="outline"
             className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-600/20 flex items-center gap-2"

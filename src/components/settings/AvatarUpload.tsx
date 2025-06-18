@@ -16,22 +16,6 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
 
-  const createAvatarsBucketIfNeeded = async () => {
-    try {
-      const { data, error } = await supabase.storage.getBucket('avatars');
-      if (error && error.message.includes('The resource was not found')) {
-        console.log('Avatars bucket does not exist, creating it...');
-        const { error: createError } = await supabase.storage.createBucket('avatars', {
-          public: true
-        });
-        if (createError) throw createError;
-        console.log('Avatars bucket created successfully');
-      }
-    } catch (error) {
-      console.error('Error checking/creating avatars bucket:', error);
-    }
-  };
-
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
@@ -52,11 +36,8 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
         throw new Error('File size must be less than 5MB.');
       }
 
-      // Ensure bucket exists
-      await createAvatarsBucketIfNeeded();
-
       const fileExt = file.name.split('.').pop();
-      const filePath = `avatars/${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
       console.log('Uploading file to path:', filePath);
 
@@ -101,13 +82,6 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
     }
   };
 
-  const handleUploadClick = () => {
-    const input = document.getElementById('avatar-upload') as HTMLInputElement;
-    if (input) {
-      input.click();
-    }
-  };
-
   return (
     <div className="flex flex-col items-center gap-4 mb-6">
       <Avatar className="w-24 h-24 border-2 border-primary">
@@ -121,31 +95,37 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
       </Avatar>
       
       <div className="flex items-center">
-        <Button
-          variant="outline"
-          onClick={handleUploadClick}
-          disabled={uploading}
-          className="relative"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Picture
-            </>
-          )}
-        </Button>
         <input
-          id="avatar-upload"
           type="file"
           accept="image/*"
           onChange={uploadAvatar}
-          className="sr-only"
+          disabled={uploading}
+          className="hidden"
+          id="avatar-upload"
         />
+        <label htmlFor="avatar-upload">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={uploading}
+            className="cursor-pointer"
+            asChild
+          >
+            <span>
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Picture
+                </>
+              )}
+            </span>
+          </Button>
+        </label>
       </div>
     </div>
   );

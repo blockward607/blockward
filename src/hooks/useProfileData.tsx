@@ -67,11 +67,7 @@ export const useProfileData = () => {
         if (profile) {
           setFullName(profile.name || '');
           setSchool(profile.school || '');
-          // Students don't have a subject field
-          
-          // Check if avatar_url exists in the response before accessing it
-          const studentProfile = profile as any;
-          setAvatarUrl(studentProfile.avatar_url || null);
+          setAvatarUrl(null); // Students don't have avatar_url in the current schema
         }
       }
     } catch (error) {
@@ -113,14 +109,16 @@ export const useProfileData = () => {
       if (userRole?.role === 'teacher') {
         const { error } = await supabase
           .from('teacher_profiles')
-          .update({
+          .upsert({
+            user_id: session.user.id,
             full_name: fullName,
             school: school,
             subject: subject,
             avatar_url: avatarUrl,
             updated_at: new Date().toISOString()
-          })
-          .eq('user_id', session.user.id);
+          }, { 
+            onConflict: 'user_id'
+          });
           
         if (error) {
           console.error('Teacher profile update error:', error);
@@ -130,12 +128,13 @@ export const useProfileData = () => {
       } else {
         const { error } = await supabase
           .from('students')
-          .update({
+          .upsert({
+            user_id: session.user.id,
             name: fullName,
-            school: school,
-            avatar_url: avatarUrl
-          })
-          .eq('user_id', session.user.id);
+            school: school
+          }, { 
+            onConflict: 'user_id'
+          });
           
         if (error) {
           console.error('Student profile update error:', error);
