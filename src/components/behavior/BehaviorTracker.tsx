@@ -136,7 +136,7 @@ export const BehaviorTracker = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="text-white">Loading behavior records...</div>;
   }
 
   return (
@@ -229,89 +229,98 @@ export const BehaviorTracker = () => {
         </div>
       </div>
 
-      {viewType === 'list' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="p-4 glass-card bg-green-900/20">
-            <div className="flex items-center gap-2 mb-4">
-              <ThumbsUp className="w-5 h-5 text-green-400" />
-              <h3 className="font-semibold">Positive Behaviors</h3>
-            </div>
-            <div className="space-y-2">
-              {records.filter(r => r.points > 0).map((record) => (
-                <Card key={record.id} className="p-3 bg-green-900/10">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{record.students?.name}</p>
-                      <p className="text-sm text-gray-400">{record.description}</p>
-                      <span className="text-xs text-gray-500">Category: {record.category}</span>
-                    </div>
-                    <span className="text-green-400">+{record.points}</span>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-4 glass-card bg-red-900/20">
-            <div className="flex items-center gap-2 mb-4">
-              <ThumbsDown className="w-5 h-5 text-red-400" />
-              <h3 className="font-semibold">Negative Behaviors</h3>
-            </div>
-            <div className="space-y-2">
-              {records.filter(r => r.points < 0).map((record) => (
-                <Card key={record.id} className="p-3 bg-red-900/10">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{record.students?.name}</p>
-                      <p className="text-sm text-gray-400">{record.description}</p>
-                      <span className="text-xs text-gray-500">Category: {record.category}</span>
-                    </div>
-                    <span className="text-red-400">{record.points}</span>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </Card>
+      {records.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-400 text-lg">No behavior records found.</p>
+          <p className="text-gray-500 text-sm mt-2">Start by recording student behaviors using the button above.</p>
         </div>
-      )}
+      ) : (
+        <>
+          {viewType === 'list' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="p-4 glass-card bg-green-900/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <ThumbsUp className="w-5 h-5 text-green-400" />
+                  <h3 className="font-semibold">Positive Behaviors</h3>
+                </div>
+                <div className="space-y-2">
+                  {records.filter(r => r.points > 0).map((record) => (
+                    <Card key={record.id} className="p-3 bg-green-900/10">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{record.students?.name}</p>
+                          <p className="text-sm text-gray-400">{record.description}</p>
+                          <span className="text-xs text-gray-500">Category: {record.category}</span>
+                        </div>
+                        <span className="text-green-400">+{record.points}</span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </Card>
 
-      {viewType === 'bar' && (
-        <div className="h-[400px] mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={getBarChartData()}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="positive" fill="#4ade80" name="Positive Points" />
-              <Bar dataKey="negative" fill="#f87171" name="Negative Points" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+              <Card className="p-4 glass-card bg-red-900/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <ThumbsDown className="w-5 h-5 text-red-400" />
+                  <h3 className="font-semibold">Negative Behaviors</h3>
+                </div>
+                <div className="space-y-2">
+                  {records.filter(r => r.points < 0).map((record) => (
+                    <Card key={record.id} className="p-3 bg-red-900/10">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{record.students?.name}</p>
+                          <p className="text-sm text-gray-400">{record.description}</p>
+                          <span className="text-xs text-gray-500">Category: {record.category}</span>
+                        </div>
+                        <span className="text-red-400">{record.points}</span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          )}
 
-      {viewType === 'pie' && (
-        <div className="h-[400px] mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <RePieChart>
-              <Pie
-                data={getChartData()}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={150}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {getChartData().map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </RePieChart>
-          </ResponsiveContainer>
-        </div>
+          {viewType === 'bar' && (
+            <div className="h-[400px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={getBarChartData()}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="positive" fill="#4ade80" name="Positive Points" />
+                  <Bar dataKey="negative" fill="#f87171" name="Negative Points" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {viewType === 'pie' && (
+            <div className="h-[400px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie
+                    data={getChartData()}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    outerRadius={150}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {getChartData().map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </>
       )}
     </Card>
   );
