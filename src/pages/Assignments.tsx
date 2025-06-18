@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { StudentSelect } from "@/components/nft/StudentSelect";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useStudents } from "@/hooks/use-students";
 
 interface Assignment {
   id: string;
@@ -38,6 +39,7 @@ interface Assignment {
 
 const Assignments = () => {
   const { toast } = useToast();
+  const { students } = useStudents();
   const [loading, setLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [formData, setFormData] = useState({
@@ -49,35 +51,8 @@ const Assignments = () => {
     points: 100
   });
 
-  const [assignments, setAssignments] = useState<Assignment[]>([
-    {
-      id: "1",
-      title: "Math Problem Set",
-      description: "Complete problems 1-20 on page 45",
-      dueDate: "2023-11-15",
-      type: "homework",
-      status: "submitted",
-      points: 100
-    },
-    {
-      id: "2",
-      title: "Science Lab Report",
-      description: "Write a report on the water cycle experiment",
-      dueDate: "2023-11-20",
-      type: "project",
-      status: "in-progress",
-      points: 150
-    },
-    {
-      id: "3",
-      title: "History Essay",
-      description: "Write a 500-word essay on Ancient Rome",
-      dueDate: "2023-11-25",
-      type: "essay",
-      status: "not-started",
-      points: 200
-    }
-  ]);
+  // Remove pre-populated assignments - start with empty array
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,6 +243,7 @@ const Assignments = () => {
                   <StudentSelect
                     selectedStudentId={selectedStudent}
                     onStudentSelect={setSelectedStudent}
+                    students={students}
                   />
                 </div>
                 
@@ -297,47 +273,57 @@ const Assignments = () => {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Current Assignments</h2>
             
-            {assignments.map((assignment, index) => (
-              <motion.div 
-                key={assignment.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
-                <Card className="p-5 glass-card hover:shadow-md transition-all">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-full bg-purple-800/20">
-                      {getTypeIcon(assignment.type)}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-lg">{assignment.title}</h3>
-                          <p className="text-gray-400 text-sm mt-1">{assignment.description}</p>
-                        </div>
-                        
-                        <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(assignment.status)}`}>
-                          {assignment.status.replace('-', ' ')}
-                        </div>
+            {assignments.length === 0 ? (
+              <Card className="p-8 glass-card text-center">
+                <div className="text-gray-300 space-y-4">
+                  <FileText className="w-16 h-16 mx-auto text-purple-400 opacity-50" />
+                  <p className="text-xl">No assignments created yet</p>
+                  <p className="text-gray-400">Create your first assignment using the form above</p>
+                </div>
+              </Card>
+            ) : (
+              assignments.map((assignment, index) => (
+                <motion.div 
+                  key={assignment.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <Card className="p-5 glass-card hover:shadow-md transition-all">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-full bg-purple-800/20">
+                        {getTypeIcon(assignment.type)}
                       </div>
                       
-                      <div className="mt-4 flex flex-wrap gap-3 text-sm">
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <Calendar className="w-4 h-4" />
-                          <span>Due: {assignment.dueDate}</span>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold text-lg">{assignment.title}</h3>
+                            <p className="text-gray-400 text-sm mt-1">{assignment.description}</p>
+                          </div>
+                          
+                          <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(assignment.status)}`}>
+                            {assignment.status.replace('-', ' ')}
+                          </div>
                         </div>
                         
-                        <div className="flex items-center gap-1 text-purple-400">
-                          <Sparkles className="w-4 h-4" />
-                          <span>{assignment.points} Points</span>
+                        <div className="mt-4 flex flex-wrap gap-3 text-sm">
+                          <div className="flex items-center gap-1 text-gray-400">
+                            <Calendar className="w-4 h-4" />
+                            <span>Due: {assignment.dueDate}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1 text-purple-400">
+                            <Sparkles className="w-4 h-4" />
+                            <span>{assignment.points} Points</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
+                  </Card>
+                </motion.div>
+              ))
+            )}
           </div>
         </div>
         
@@ -349,48 +335,54 @@ const Assignments = () => {
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-400">Completed</span>
-                  <span className="text-purple-400">33%</span>
+                  <span className="text-purple-400">
+                    {assignments.length > 0 ? Math.round((assignments.filter(a => a.status === 'submitted').length / assignments.length) * 100) : 0}%
+                  </span>
                 </div>
                 <div className="h-2 bg-purple-900/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 w-1/3"></div>
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-500 to-indigo-500" 
+                    style={{ 
+                      width: assignments.length > 0 ? `${(assignments.filter(a => a.status === 'submitted').length / assignments.length) * 100}%` : '0%'
+                    }}
+                  ></div>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-purple-900/10 rounded-lg text-center">
                   <h4 className="text-gray-400 text-sm mb-1">To Do</h4>
-                  <p className="text-2xl font-bold text-white">2</p>
+                  <p className="text-2xl font-bold text-white">
+                    {assignments.filter(a => a.status !== 'submitted').length}
+                  </p>
                 </div>
                 
                 <div className="p-4 bg-purple-900/10 rounded-lg text-center">
                   <h4 className="text-gray-400 text-sm mb-1">Completed</h4>
-                  <p className="text-2xl font-bold text-white">1</p>
+                  <p className="text-2xl font-bold text-white">
+                    {assignments.filter(a => a.status === 'submitted').length}
+                  </p>
                 </div>
               </div>
               
-              <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-3">Upcoming Due Dates</h4>
-                <ul className="space-y-3">
-                  <li className="flex justify-between items-center p-3 bg-black/20 rounded-lg">
-                    <div>
-                      <p className="font-medium">Science Lab Report</p>
-                      <p className="text-sm text-gray-400">Due Nov 20</p>
-                    </div>
-                    <div className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 text-xs font-medium">
-                      In Progress
-                    </div>
-                  </li>
-                  <li className="flex justify-between items-center p-3 bg-black/20 rounded-lg">
-                    <div>
-                      <p className="font-medium">History Essay</p>
-                      <p className="text-sm text-gray-400">Due Nov 25</p>
-                    </div>
-                    <div className="px-2 py-1 rounded bg-purple-600/20 text-purple-400 text-xs font-medium">
-                      Not Started
-                    </div>
-                  </li>
-                </ul>
-              </div>
+              {assignments.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">Recent Assignments</h4>
+                  <ul className="space-y-3">
+                    {assignments.slice(0, 3).map((assignment) => (
+                      <li key={assignment.id} className="flex justify-between items-center p-3 bg-black/20 rounded-lg">
+                        <div>
+                          <p className="font-medium">{assignment.title}</p>
+                          <p className="text-sm text-gray-400">Due {assignment.dueDate}</p>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(assignment.status)}`}>
+                          {assignment.status.replace('-', ' ')}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </Card>
         </div>

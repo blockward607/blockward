@@ -1,4 +1,3 @@
-
 import { User, Users, Medal, Star, Loader2, Trophy, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Student } from "@/hooks/use-student-management";
@@ -25,14 +24,4 @@ export const getAvatarBorderColor = (points: number) => {
   if (points >= 400) return "border-blue-500";
   if (points >= 200) return "border-green-500";
   return "border-gray-600";
-};
-
-export const getDemoStudents = (): Student[] => {
-  return [
-    { id: "1", name: "Alex Johnson", user_id: "user1", points: 750, school: "Lincoln High", created_at: new Date().toISOString() },
-    { id: "2", name: "Maria Garcia", user_id: "user2", points: 520, school: "Washington Academy", created_at: new Date().toISOString() },
-    { id: "3", name: "James Wilson", user_id: "user3", points: 890, school: "Jefferson Middle School", created_at: new Date().toISOString() },
-    { id: "4", name: "Sophia Chen", user_id: "user4", points: 430, school: "Franklin Elementary", created_at: new Date().toISOString() },
-    { id: "5", name: "Ethan Williams", user_id: "user5", points: 670, school: "Roosevelt High", created_at: new Date().toISOString() },
-  ];
 };
