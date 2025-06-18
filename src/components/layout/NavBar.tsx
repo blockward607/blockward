@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiamondLogo } from "@/components/logo/DiamondLogo";
-import { SettingsDropdown } from "@/components/layout/SettingsDropdown";
 
 export const NavBar = () => {
   const navigate = useNavigate();
@@ -66,8 +65,6 @@ export const NavBar = () => {
           </button>
           
           <div className="flex items-center gap-3">
-            <SettingsDropdown />
-            
             <Button 
               onClick={handleSignIn}
               variant="ghost"
@@ -87,7 +84,6 @@ export const NavBar = () => {
         
         {/* Mobile menu button */}
         <div className="md:hidden flex items-center gap-2">
-          <SettingsDropdown />
           <Button
             variant="ghost"
             size="icon"
