@@ -24,6 +24,7 @@ const SettingsPage = () => {
   // User role state
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("general");
   
   // General Settings State
   const [autoGrading, setAutoGrading] = useState(true);
@@ -253,8 +254,8 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 bg-gray-800/50 p-1 rounded-lg">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'} bg-gray-800/50 p-1 rounded-lg`}>
           <TabsTrigger 
             value="general" 
             className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
