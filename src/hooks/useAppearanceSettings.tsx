@@ -25,7 +25,9 @@ export const useAppearanceSettings = () => {
       }
 
       if (!session) {
-        console.log('No session found');
+        console.log('No session found - using default settings');
+        setDarkMode(true);
+        setCompactView(false);
         setLoading(false);
         return;
       }
@@ -51,10 +53,13 @@ export const useAppearanceSettings = () => {
       }
     } catch (error) {
       console.error('Error in loadPreferences:', error);
+      // Use defaults if loading fails
+      setDarkMode(true);
+      setCompactView(false);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load preferences"
+        description: "Failed to load preferences, using defaults"
       });
     } finally {
       setLoading(false);
@@ -75,14 +80,18 @@ export const useAppearanceSettings = () => {
 
       if (error) {
         console.error('Error creating default preferences:', error);
-        throw error;
+        // Don't throw error, just use local state
       } else {
         console.log('Default preferences created successfully');
-        setDarkMode(true);
-        setCompactView(false);
       }
+      
+      setDarkMode(true);
+      setCompactView(false);
     } catch (error) {
       console.error('Failed to create default preferences:', error);
+      // Use local state if database fails
+      setDarkMode(true);
+      setCompactView(false);
     }
   };
 
@@ -91,12 +100,8 @@ export const useAppearanceSettings = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Please log in to save preferences"
-        });
-        return false;
+        console.log('No session - preference will only be local');
+        return true; // Allow local state to work without auth
       }
 
       console.log(`Updating ${field} to ${value} for user:`, session.user.id);
@@ -134,20 +139,24 @@ export const useAppearanceSettings = () => {
   };
 
   const handleToggleDarkMode = async (checked: boolean) => {
-    console.log('Toggling dark mode to:', checked);
-    setDarkMode(checked); // Optimistic update
+    console.log('Dark mode toggled to:', checked);
+    setDarkMode(checked); // Always update local state immediately
+    
+    // Try to save to database but don't revert if it fails
     const success = await updatePreference('dark_mode', checked);
     if (!success) {
-      setDarkMode(!checked); // Revert on failure
+      console.log('Database save failed but keeping local state');
     }
   };
 
   const handleToggleCompactView = async (checked: boolean) => {
-    console.log('Toggling compact view to:', checked);
-    setCompactView(checked); // Optimistic update
+    console.log('Compact view toggled to:', checked);
+    setCompactView(checked); // Always update local state immediately
+    
+    // Try to save to database but don't revert if it fails
     const success = await updatePreference('compact_view', checked);
     if (!success) {
-      setCompactView(!checked); // Revert on failure
+      console.log('Database save failed but keeping local state');
     }
   };
 
