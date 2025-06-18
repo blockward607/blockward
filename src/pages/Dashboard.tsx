@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -67,7 +66,7 @@ const Dashboard = () => {
           title: "Role Detection Issue",
           description: "Continuing with student access. Contact support if this persists.",
         });
-      }, 5000);
+      }, 3000); // Reduced to 3 seconds for faster fallback
       
       checkAuth().finally(() => {
         clearTimeout(timeoutId);
@@ -96,7 +95,7 @@ const Dashboard = () => {
 
       // Check user role with timeout
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Role query timeout')), 5000)
+        setTimeout(() => reject(new Error('Role query timeout')), 3000)
       );
       
       const rolePromise = supabase
@@ -193,7 +192,8 @@ const Dashboard = () => {
         description: "Continuing with limited access.",
       });
     } finally {
-      // CRITICAL FIX: Always exit loading state
+      // CRITICAL FIX: Always exit loading state - THIS IS THE KEY FIX
+      console.log('Dashboard: Setting loading to false in finally block');
       setLoading(false);
     }
   };
@@ -230,8 +230,8 @@ const Dashboard = () => {
     });
   };
 
-  // CRITICAL FIX: Only show loading if we actually have a user but no role AND we haven't timed out
-  if (loading && user) {
+  // CRITICAL FIX: Simplified loading condition - only show loading if we actually need to
+  if (loading) {
     console.log('Dashboard: Showing loading state', { loading, user: !!user, userRole });
 
     return (
