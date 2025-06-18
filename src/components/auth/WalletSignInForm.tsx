@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet, Link as LinkIcon, Loader2 } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { BlockchainWalletPanel } from "@/components/wallet/BlockchainWalletPanel";
-import { isValidAddress } from "@/utils/addressUtils";
 
 interface WalletSignInFormProps {
   setLoading: (loading: boolean) => void;
