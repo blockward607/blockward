@@ -27,7 +27,6 @@ const AdminAuth = () => {
 
   useEffect(() => {
     if (user) {
-      // Check if user is admin and redirect appropriately
       checkUserRoleAndRedirect();
     }
   }, [user, navigate]);
@@ -52,44 +51,70 @@ const AdminAuth = () => {
     }
   };
 
+  const resetFormState = () => {
+    setLoading(false);
+    setShowError(false);
+    setErrorMessage("");
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setShowError(false);
+    setErrorMessage("");
 
     try {
+      console.log('Attempting admin sign in for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Sign in error:', error);
         setErrorMessage(error.message);
         setShowError(true);
-      } else if (data.user) {
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        console.log('Sign in successful, checking admin role...');
+        
         // Check if user has admin role
-        const { data: roleData } = await supabase
+        const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', data.user.id)
           .single();
+
+        if (roleError) {
+          console.error('Error checking role:', roleError);
+          setErrorMessage("Error verifying admin privileges.");
+          setShowError(true);
+          setLoading(false);
+          await supabase.auth.signOut();
+          return;
+        }
 
         if (roleData?.role === 'admin') {
           toast({
             title: "Admin Login Successful",
             description: "Welcome to the admin portal"
           });
-          navigate('/admin-portal');
+          // Navigation will be handled by auth state change
         } else {
           setErrorMessage("Access denied. Admin privileges required.");
           setShowError(true);
+          setLoading(false);
           await supabase.auth.signOut();
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Unexpected sign in error:', error);
       setErrorMessage("An unexpected error occurred. Please try again.");
       setShowError(true);
-    } finally {
       setLoading(false);
     }
   };
@@ -98,34 +123,56 @@ const AdminAuth = () => {
     e.preventDefault();
     setLoading(true);
     setShowError(false);
+    setErrorMessage("");
 
     try {
+      console.log('Attempting admin sign up for:', email);
+      
+      if (!name.trim()) {
+        setErrorMessage("Admin name is required.");
+        setShowError(true);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             role: 'admin',
-            name: name,
-            full_name: name
+            name: name.trim(),
+            full_name: name.trim()
           },
           emailRedirectTo: window.location.origin + '/admin-portal'
         }
       });
 
       if (error) {
+        console.error('Sign up error:', error);
         setErrorMessage(error.message);
         setShowError(true);
-      } else if (data) {
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        console.log('Admin signup successful:', data.user.id);
         toast({
           title: "Admin Account Created",
           description: "Please check your email to confirm your admin account. You will be redirected to the admin portal upon confirmation.",
         });
+        
+        // Reset form
+        setEmail("");
+        setPassword("");
+        setName("");
+        setLoading(false);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Unexpected sign up error:', error);
       setErrorMessage("An unexpected error occurred. Please try again.");
       setShowError(true);
-    } finally {
       setLoading(false);
     }
   };
@@ -158,7 +205,10 @@ const AdminAuth = () => {
           <h2 className="text-2xl font-bold text-center mb-2 text-white">Administrator Portal</h2>
           <p className="text-center text-red-300 mb-6">Secure admin access only</p>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={(value) => {
+            setActiveTab(value);
+            resetFormState();
+          }}>
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-red-900/50">
               <TabsTrigger value="signin" className="data-[state=active]:bg-red-600 text-red-200">Sign In</TabsTrigger>
               <TabsTrigger value="signup" className="data-[state=active]:bg-red-600 text-red-200">Sign Up</TabsTrigger>
@@ -175,6 +225,7 @@ const AdminAuth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={loading}
                     className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
@@ -187,6 +238,7 @@ const AdminAuth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={loading}
                     className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
@@ -211,6 +263,7 @@ const AdminAuth = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
+                    disabled={loading}
                     className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
@@ -223,6 +276,7 @@ const AdminAuth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={loading}
                     className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
@@ -235,6 +289,7 @@ const AdminAuth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={loading}
                     className="bg-gray-800/50 border-red-500/30 text-white placeholder:text-gray-400"
                   />
                 </div>
