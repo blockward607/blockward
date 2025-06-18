@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Users, Shield, Bell, Database, Palette, Building } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+
+interface AdminPermissions {
+  manage_teachers: boolean;
+  manage_students: boolean;
+  manage_classes: boolean;
+  manage_settings: boolean;
+}
 
 const SettingsPage = () => {
   const { toast } = useToast();
@@ -47,7 +53,7 @@ const SettingsPage = () => {
   // Admin Settings State
   const [adminName, setAdminName] = useState("");
   const [adminPosition, setAdminPosition] = useState("");
-  const [adminPermissions, setAdminPermissions] = useState({
+  const [adminPermissions, setAdminPermissions] = useState<AdminPermissions>({
     manage_teachers: true,
     manage_students: true,
     manage_classes: true,
@@ -86,9 +92,10 @@ const SettingsPage = () => {
       if (preferences) {
         setTheme(preferences.dark_mode ? "dark" : "light");
         setCompactMode(preferences.compact_view || false);
-        setEmailNotifications(preferences.email_notifications || true);
-        setAutoGrading(preferences.auto_grading || true);
-        setStudentRegistration(preferences.student_registration || false);
+        // These don't exist in the schema, so we'll keep them as local state
+        setEmailNotifications(true);
+        setAutoGrading(true);
+        setStudentRegistration(false);
       }
 
       // Load admin data only if user is admin
@@ -105,12 +112,17 @@ const SettingsPage = () => {
         if (adminData) {
           setAdminName(adminData.full_name || "");
           setAdminPosition(adminData.position || "");
-          setAdminPermissions(adminData.permissions || {
-            manage_teachers: true,
-            manage_students: true,
-            manage_classes: true,
-            manage_settings: true
-          });
+          
+          // Handle permissions JSON with proper type checking
+          if (adminData.permissions && typeof adminData.permissions === 'object') {
+            const permissions = adminData.permissions as any;
+            setAdminPermissions({
+              manage_teachers: permissions.manage_teachers ?? true,
+              manage_students: permissions.manage_students ?? true,
+              manage_classes: permissions.manage_classes ?? true,
+              manage_settings: permissions.manage_settings ?? true
+            });
+          }
 
           if (adminData.schools) {
             setSchoolName(adminData.schools.name || "");
@@ -145,9 +157,7 @@ const SettingsPage = () => {
           user_id: session.user.id,
           dark_mode: theme === "dark",
           compact_view: compactMode,
-          email_notifications: emailNotifications,
-          auto_grading: autoGrading,
-          student_registration: studentRegistration,
+          tutorial_completed: false,
           updated_at: new Date().toISOString()
         });
 
