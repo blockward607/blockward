@@ -4,10 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Users, School, Settings, Award, BarChart3, Mail } from "lucide-react";
+import { Shield, Users, School, BarChart3, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -29,8 +27,8 @@ const TeacherAdminTab = () => {
     if (!user) return;
     
     try {
-      // Check if teacher has pending admin request
-      const { data } = await supabase
+      // Check if teacher has pending admin request using type assertion
+      const { data } = await (supabase as any)
         .from('admin_requests')
         .select('*')
         .eq('user_id', user.id)
@@ -48,7 +46,7 @@ const TeacherAdminTab = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('admin_requests')
         .insert({
           user_id: user.id,
