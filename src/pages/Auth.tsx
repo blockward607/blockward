@@ -37,6 +37,13 @@ const Auth = () => {
     }
   }, [location.state]);
 
+  // Clear error when switching tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setShowError(false);
+    setErrorMessage("");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
       <motion.div
@@ -51,7 +58,7 @@ const Auth = () => {
             <p className="text-gray-400 mt-2">Welcome to the future of education</p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>

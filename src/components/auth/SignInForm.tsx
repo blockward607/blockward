@@ -50,38 +50,27 @@ export const SignInForm = ({
     setLoading(true);
 
     try {
+      console.log('Attempting sign in for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Login error:", error);
         setErrorMessage(error.message);
         setShowError(true);
-        console.error("Login error:", error);
       } else if (data.user) {
-        // Check user role and redirect accordingly
-        const { data: userRole, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .single();
-
-        if (roleError) {
-          console.error("Error checking user role:", roleError);
-          // If we can't check the role, proceed to dashboard
-          navigate('/dashboard', { replace: true });
-        } else if (userRole) {
-          // Handle role-based redirection
-          if (userRole.role === 'admin') {
-            navigate('/admin-portal', { replace: true });
-          } else {
-            navigate('/dashboard', { replace: true });
-          }
-        } else {
-          // Navigate directly to dashboard if no role data found
-          navigate('/dashboard', { replace: true });
-        }
+        console.log('Sign in successful for user:', data.user.id);
+        
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        });
+        
+        // Navigate to dashboard - the auth provider will handle role-based redirection
+        navigate('/dashboard', { replace: true });
       }
     } catch (error) {
       console.error("Unexpected error:", error);

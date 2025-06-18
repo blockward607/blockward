@@ -67,6 +67,7 @@ export const SignUpFormFields = ({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             role: role,
             name: name.trim(),
@@ -82,10 +83,9 @@ export const SignUpFormFields = ({
       } else if (data.user) {
         console.log('Signup successful for user:', data.user.id);
         
-        // Don't wait for account setup - show success immediately
         toast({
           title: "Account created successfully!",
-          description: "Please check your email to verify your account.",
+          description: "You can now sign in with your credentials.",
         });
         
         // Clear form
@@ -93,10 +93,8 @@ export const SignUpFormFields = ({
         setPassword("");
         setName("");
         
-        // Navigate to auth page to show confirmation
-        setTimeout(() => {
-          navigate('/auth');
-        }, 2000);
+        // Navigate to auth page to show sign in form
+        navigate('/auth');
       }
     } catch (error) {
       console.error("Unexpected signup error:", error);

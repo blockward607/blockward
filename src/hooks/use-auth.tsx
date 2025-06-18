@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     
       console.log('Determined role:', userRole);
       
-      // Check if role exists in database with shorter timeout
+      // Check if role exists in database
       let existingRole = null;
       
       try {
@@ -73,8 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await AuthService.createUserRole(userId, userRole);
           setUserRole(userRole);
         } catch (error) {
-          console.error('Failed to create user role, using fallback:', error);
-          setUserRole('student'); // Always set a role
+          console.error('Failed to create user role:', error);
+          setUserRole('student');
         }
       } else {
         console.log('User role already exists:', existingRole);
@@ -95,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Failed to create wallet:', error);
-        // Don't block on wallet creation
       }
       
       // Create profile based on role
@@ -155,31 +154,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
-      toast({
-        title: "Welcome!",
-        description: "You have successfully signed in.",
-      });
-      
       // Navigate based on role
       const currentPath = window.location.pathname;
-      if (currentPath === '/auth' || currentPath === '/admin-auth' || currentPath === '/') {
+      if (currentPath === '/auth' || currentPath === '/signup' || currentPath === '/') {
         if (userRole === 'admin') {
-          navigate('/admin');
+          navigate('/admin-portal');
         } else {
           navigate('/dashboard');
         }
       }
     } catch (error) {
       console.error("Error during account setup:", error);
-      // Always set a fallback role to prevent infinite loading
       setUserRole('student');
-      toast({
-        variant: "destructive",
-        title: "Setup Error",
-        description: "Account setup had issues but you can continue as a student.",
-      });
     }
-  }, [navigate, toast]);
+  }, [navigate]);
 
   useEffect(() => {
     let mounted = true;
@@ -192,7 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Found existing session for user:', session.user.id);
         setUser(session.user);
         
-        // Get the user role from database with shorter timeout
+        // Get the user role from database
         const fetchRole = async () => {
           try {
             const { data, error } = await supabase
@@ -203,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (error) {
               console.error('Error fetching user role:', error);
-              setUserRole('student'); // Fallback role
+              setUserRole('student');
               return;
             }
             
@@ -213,9 +201,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               
               // Redirect admin users if they're on wrong page
               const currentPath = window.location.pathname;
-              if (data.role === 'admin' && (currentPath === '/dashboard' || currentPath === '/auth')) {
-                navigate('/admin');
-              } else if (data.role !== 'admin' && currentPath === '/admin') {
+              if (data.role === 'admin' && (currentPath === '/dashboard' || currentPath === '/auth' || currentPath === '/signup')) {
+                navigate('/admin-portal');
+              } else if (data.role !== 'admin' && currentPath === '/admin-portal') {
                 navigate('/dashboard');
               }
             } else {
@@ -224,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (error) {
             console.error('Failed to fetch role:', error);
-            setUserRole('student'); // Always set fallback
+            setUserRole('student');
           }
         };
         
