@@ -1,7 +1,9 @@
 
+import { useState } from "react";
 import { SignUpFormFields } from "./SignUpFormFields";
 
 interface SignUpFormProps {
+  role: 'teacher' | 'student';
   email: string;
   setEmail: (email: string) => void;
   password: string;

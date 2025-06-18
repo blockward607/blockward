@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState("signin");
+  const [role, setRole] = useState<'teacher' | 'student'>('student');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -37,13 +38,6 @@ const Auth = () => {
     }
   }, [location.state]);
 
-  // Clear error when switching tabs
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setShowError(false);
-    setErrorMessage("");
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
       <motion.div
@@ -58,7 +52,33 @@ const Auth = () => {
             <p className="text-gray-400 mt-2">Welcome to the future of education</p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
+          {/* Role Selection */}
+          <div className="mb-6">
+            <div className="flex rounded-lg overflow-hidden">
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'teacher'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('teacher')}
+              >
+                Teacher
+              </button>
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'student'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('student')}
+              >
+                Student
+              </button>
+            </div>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -66,6 +86,7 @@ const Auth = () => {
             
             <TabsContent value="signin">
               <SignInForm 
+                role={role}
                 email={email}
                 setEmail={setEmail}
                 password={password}
@@ -79,6 +100,7 @@ const Auth = () => {
             
             <TabsContent value="signup">
               <SignUpForm 
+                role={role}
                 email={email}
                 setEmail={setEmail}
                 password={password}

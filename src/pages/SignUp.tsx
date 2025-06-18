@@ -14,6 +14,7 @@ const SignUp = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { loading, setLoading } = useAuth();
+  const [role, setRole] = useState<'teacher' | 'student'>('teacher');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showError, setShowError] = useState(false);
@@ -54,7 +55,31 @@ const SignUp = () => {
           <h2 className="text-2xl font-bold text-center mb-6 text-white">Create Your Account</h2>
           
           <div className="space-y-6">
+            <div className="flex rounded-lg overflow-hidden">
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'teacher'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('teacher')}
+              >
+                Teacher
+              </button>
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'student'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('student')}
+              >
+                Student
+              </button>
+            </div>
+
             <SignUpForm
+              role={role}
               email={email}
               setEmail={setEmail}
               password={password}

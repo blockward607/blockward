@@ -1,11 +1,15 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Outlet } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-export const ProtectedRoute: React.FC = () => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -15,16 +19,9 @@ export const ProtectedRoute: React.FC = () => {
 
     const checkAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (!mounted) return;
-        
-        if (error) {
-          console.error('Authentication error:', error);
-          setIsAuthenticated(false);
-          navigate('/auth');
-          return;
-        }
         
         if (!session) {
           console.log('No active session found, redirecting to auth page');
@@ -86,5 +83,5 @@ export const ProtectedRoute: React.FC = () => {
     return null;
   }
 
-  return <Outlet />;
+  return <>{children}</>;
 };

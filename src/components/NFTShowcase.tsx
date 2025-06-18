@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Star, Medal, Crown, Brain, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,7 +122,48 @@ export const BlockWardShowcase = () => {
 
       if (error) throw error;
       
-      setStudents(data || []);
+      // Create demo students if they don't exist
+      const demoEmails = ["student1@example.com", "student2@example.com", "arya47332js@gmail.com", "youthinkofc@gmail.com"];
+      
+      for (const email of demoEmails) {
+        const username = email.split('@')[0];
+        const { data: existingStudent } = await supabase
+          .from('students')
+          .select('id')
+          .eq('name', username)
+          .maybeSingle();
+          
+        if (!existingStudent) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log(`Creating demo student: ${username}`);
+            
+            const { data: newStudent, error: studentError } = await supabase
+              .from('students')
+              .insert({
+                name: username,
+                points: 0
+              })
+              .select()
+              .single();
+              
+            if (studentError) {
+              console.error(`Error creating demo student ${username}:`, studentError);
+            } else {
+              console.log(`Demo student created: ${username}`);
+            }
+          }
+        }
+      }
+      
+      const { data: updatedData, error: refetchError } = await supabase
+        .from('students')
+        .select('*')
+        .order('name');
+        
+      if (refetchError) throw refetchError;
+      
+      setStudents(updatedData || []);
     } catch (error: any) {
       console.error('Error fetching students:', error);
       toast({
@@ -483,23 +525,17 @@ export const BlockWardShowcase = () => {
                       <SelectValue placeholder="Select student" />
                     </SelectTrigger>
                     <SelectContent className="bg-black/90 backdrop-blur-md border-purple-500/20">
-                      {students.length === 0 ? (
-                        <SelectItem value="no-students" disabled>
-                          No students available
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.name} ({student.points} points)
                         </SelectItem>
-                      ) : (
-                        students.map((student) => (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.name} ({student.points} points)
-                          </SelectItem>
-                        ))
-                      )}
+                      ))}
                     </SelectContent>
                   </Select>
 
                   <Button
                     className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                    disabled={transferring === blockWard.id || !selectedStudent || students.length === 0}
+                    disabled={transferring === blockWard.id || !selectedStudent}
                     onClick={() => transferBlockWard(blockWard, selectedStudent)}
                   >
                     {transferring === blockWard.id ? "Transferring..." : "Transfer BlockWard"}

@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 interface SignUpFormFieldsProps {
+  role: 'teacher' | 'student';
   email: string;
   setEmail: (email: string) => void;
   password: string;
@@ -18,6 +19,7 @@ interface SignUpFormFieldsProps {
 }
 
 export const SignUpFormFields = ({
+  role,
   email,
   setEmail,
   password,
@@ -26,130 +28,91 @@ export const SignUpFormFields = ({
   setShowError,
   setLoading,
 }: SignUpFormFieldsProps) => {
-  const [role, setRole] = useState<'teacher' | 'student'>('student');
-  const [name, setName] = useState("");
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [country, setCountry] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailLoading(true);
     setShowError(false);
-    
-    if (!validateEmail(email)) {
-      setErrorMessage("Please enter a valid email address");
+
+    if (!name) {
+      setErrorMessage("Please enter your name");
       setShowError(true);
-      return;
-    }
-    
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long");
-      setShowError(true);
+      setEmailLoading(false);
       return;
     }
 
-    if (!name.trim()) {
-      setErrorMessage("Please enter your full name");
+    if (!schoolName) {
+      setErrorMessage("Please enter your school name");
       setShowError(true);
+      setEmailLoading(false);
       return;
     }
-    
-    setLoading(true);
 
     try {
-      console.log('Starting signup process for:', email, 'with role:', role);
-      
+      console.log(`Signing up with email: ${email}, role: ${role}`);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             role: role,
-            name: name.trim(),
-            full_name: name.trim()
-          }
+            name: name,
+            school: schoolName,
+            country: country
+          },
+          emailRedirectTo: window.location.origin + '/dashboard'
         }
       });
 
       if (error) {
-        console.error("Sign up error:", error);
         setErrorMessage(error.message);
         setShowError(true);
-      } else if (data.user) {
-        console.log('Signup successful for user:', data.user.id);
-        
+        console.error("Signup error:", error);
+      } else if (data) {
         toast({
-          title: "Account created successfully!",
-          description: "You can now sign in with your credentials.",
+          title: "Account created",
+          description: "Please check your email to confirm your account.",
         });
-        
-        // Clear form
-        setEmail("");
-        setPassword("");
-        setName("");
-        
-        // Navigate to auth page to show sign in form
-        navigate('/auth');
       }
-    } catch (error) {
-      console.error("Unexpected signup error:", error);
+    } catch (error: any) {
+      console.error("Unexpected error:", error);
       setErrorMessage("An unexpected error occurred. Please try again.");
       setShowError(true);
     } finally {
+      setEmailLoading(false);
       setLoading(false);
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* Role Selection */}
-      <div className="space-y-2">
-        <Label>I am a:</Label>
-        <div className="flex rounded-lg overflow-hidden">
-          <button
-            type="button"
-            className={`flex-1 py-3 text-center font-medium transition-all ${
-              role === 'teacher'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-            onClick={() => setRole('teacher')}
-          >
-            Teacher
-          </button>
-          <button
-            type="button"
-            className={`flex-1 py-3 text-center font-medium transition-all ${
-              role === 'student'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-            onClick={() => setRole('student')}
-          >
-            Student
-          </button>
-        </div>
+      <div className="text-center mb-4">
+        <p className="text-sm text-gray-400">
+          Creating account as <span className="text-purple-400 font-medium">{role}</span>
+        </p>
       </div>
-
-      <form onSubmit={handleSignUp} className="space-y-4">
+      
+      <form onSubmit={handleSignup} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="signup-name" className="text-white">Full Name</Label>
           <Input 
-            id="name"
+            id="signup-name"
             type="text"
-            placeholder="Your full name"
+            placeholder="Your Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            className="glass-input text-white"
           />
         </div>
+        
         <div className="space-y-2">
-          <Label htmlFor="signup-email">Email</Label>
+          <Label htmlFor="signup-email" className="text-white">Email</Label>
           <Input 
             id="signup-email"
             type="email"
@@ -157,10 +120,12 @@ export const SignUpFormFields = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="glass-input text-white"
           />
         </div>
+        
         <div className="space-y-2">
-          <Label htmlFor="signup-password">Password</Label>
+          <Label htmlFor="signup-password" className="text-white">Password</Label>
           <Input 
             id="signup-password"
             type="password"
@@ -168,10 +133,45 @@ export const SignUpFormFields = ({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            className="glass-input text-white"
           />
         </div>
-        <Button type="submit" className="w-full">
-          Create Account
+        
+        <div className="space-y-2">
+          <Label htmlFor="signup-school" className="text-white">School Name</Label>
+          <Input 
+            id="signup-school"
+            type="text"
+            placeholder="Enter school name"
+            value={schoolName}
+            onChange={(e) => setSchoolName(e.target.value)}
+            required
+            className="glass-input text-white"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="signup-country" className="text-white">Country</Label>
+          <Input 
+            id="signup-country"
+            type="text"
+            placeholder="Enter country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            required
+            className="glass-input text-white"
+          />
+        </div>
+        
+        <Button type="submit" className="w-full" disabled={emailLoading}>
+          {emailLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating Account...
+            </>
+          ) : (
+            `Create ${role === 'teacher' ? 'Teacher' : 'Student'} Account`
+          )}
         </Button>
       </form>
     </div>
