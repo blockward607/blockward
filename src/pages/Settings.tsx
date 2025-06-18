@@ -10,6 +10,7 @@ import { User, School, Bell, Shield, Palette, Database } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { SchoolRegistrationForm } from "@/components/school/SchoolRegistrationForm";
+import TeacherAdminTab from "@/components/settings/TeacherAdminTab";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -106,6 +107,33 @@ const Settings = () => {
     });
   };
 
+  const getTabs = () => {
+    const baseTabs = [
+      { value: "profile", label: "Profile" },
+      { value: "notifications", label: "Notifications" },
+      { value: "appearance", label: "Appearance" },
+      { value: "security", label: "Security" },
+      { value: "data", label: "Data" }
+    ];
+
+    // Add admin tab for teachers
+    if (userRole === 'teacher') {
+      baseTabs.splice(1, 0, { value: "admin", label: "Admin Access" });
+    }
+
+    // Add school tabs for non-students
+    if (userRole !== 'student') {
+      if (!hasSchool) {
+        baseTabs.splice(-3, 0, { value: "school-register", label: "Register School" });
+      }
+      if (userRole === 'admin' || (userRole === 'teacher' && hasSchool)) {
+        baseTabs.splice(-3, 0, { value: "school", label: "School" });
+      }
+    }
+
+    return baseTabs;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6 flex items-center justify-center">
@@ -117,6 +145,8 @@ const Settings = () => {
     );
   }
 
+  const tabs = getTabs();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-4xl mx-auto">
@@ -126,18 +156,12 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 bg-gray-800">
-            <TabsTrigger value="profile" className="text-white">Profile</TabsTrigger>
-            {!hasSchool && userRole !== 'student' && (
-              <TabsTrigger value="school-register" className="text-white">Register School</TabsTrigger>
-            )}
-            {(userRole === 'admin' || (userRole === 'teacher' && hasSchool)) && (
-              <TabsTrigger value="school" className="text-white">School</TabsTrigger>
-            )}
-            <TabsTrigger value="notifications" className="text-white">Notifications</TabsTrigger>
-            <TabsTrigger value="appearance" className="text-white">Appearance</TabsTrigger>
-            <TabsTrigger value="security" className="text-white">Security</TabsTrigger>
-            <TabsTrigger value="data" className="text-white">Data</TabsTrigger>
+          <TabsList className={`grid w-full bg-gray-800`} style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="text-white">
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           <TabsContent value="profile">
@@ -175,6 +199,23 @@ const Settings = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {userRole === 'teacher' && (
+            <TabsContent value="admin">
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-white">
+                    <Shield className="w-5 h-5" />
+                    <span>Admin Access</span>
+                  </CardTitle>
+                  <CardDescription>Manage administrative features and permissions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TeacherAdminTab />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {!hasSchool && userRole !== 'student' && (
             <TabsContent value="school-register">
