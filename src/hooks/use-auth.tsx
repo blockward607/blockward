@@ -196,10 +196,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // If no role found, try to set up the account
               setupUserAccount(session);
             }
-          })
-          .catch((error) => {
-            console.error('Exception while fetching user role:', error);
-            setupUserAccount(session);
           });
       } else {
         console.log('No active session found');
