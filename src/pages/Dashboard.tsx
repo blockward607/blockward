@@ -25,7 +25,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { TutorialComponent, TutorialPrompt } = useTutorial();
-  const { userRole: authUserRole } = useAuth();
+  const { userRole: authUserRole, user } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,15 +33,22 @@ const Dashboard = () => {
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
 
-  // Add a debug log when role and showAnnouncementForm change
+  // Use auth hook role if available, otherwise use local state
   useEffect(() => {
-    console.log("userRole:", userRole, "showAnnouncementForm:", showAnnouncementForm);
-  }, [userRole, showAnnouncementForm]);
+    if (authUserRole) {
+      setUserRole(authUserRole);
+      setLoading(false);
+    }
+  }, [authUserRole]);
 
   useEffect(() => {
-    checkAuth();
+    if (user && !authUserRole) {
+      checkAuth();
+    } else if (!user) {
+      navigate('/auth');
+    }
     fetchAnnouncements();
-  }, []);
+  }, [user, authUserRole]);
 
   const checkAuth = async () => {
     try {
@@ -132,15 +139,21 @@ const Dashboard = () => {
     });
   };
 
-  if (loading) {
+  // Show loading while determining user role
+  if (loading || (user && !userRole)) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-purple-500" />
-          <p className="text-lg font-medium text-gray-300">Loading...</p>
+          <p className="text-lg font-medium text-gray-300">Loading dashboard...</p>
         </div>
       </div>
     );
+  }
+
+  // Redirect if no user
+  if (!user) {
+    return null;
   }
 
   return (

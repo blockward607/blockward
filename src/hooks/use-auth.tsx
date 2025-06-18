@@ -49,9 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     session.user.email.split('@')[0];
                     
       console.log('Determined role:', userRole);
-      setUserRole(userRole);
       
-      // Check if role exists
+      // Check if role exists in database
       const { data: existingRole, error: roleError } = await AuthService.checkUserRole(userId);
       
       if (roleError) {
@@ -61,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!existingRole) {
         console.log('Creating new user role:', userRole);
         await AuthService.createUserRole(userId, userRole);
+        setUserRole(userRole);
       } else {
         console.log('User role already exists:', existingRole);
         setUserRole(existingRole.role);
@@ -165,14 +165,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         setUser(session.user);
         
-        // Get the user role
+        // Get the user role from database
         supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', session.user.id)
           .single()
-          .then(({ data }) => {
+          .then(({ data, error }) => {
             if (data) {
+              console.log('Setting user role from database:', data.role);
               setUserRole(data.role);
               
               // Redirect admin users if they're on wrong page
@@ -182,6 +183,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               } else if (data.role !== 'admin' && currentPath === '/admin-portal') {
                 navigate('/dashboard');
               }
+            } else {
+              console.error('No role found for user, error:', error);
+              // If no role found, try to set up the account
+              setupUserAccount(session);
             }
           });
       } else {
