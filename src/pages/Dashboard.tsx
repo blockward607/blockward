@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TeacherAnnouncementForm } from "@/components/announcements/TeacherAnnouncementForm";
 import { AnnouncementList } from "@/components/announcements/AnnouncementList";
+import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
+import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
 import { useTutorial } from "@/hooks/useTutorial";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -65,7 +67,7 @@ const Dashboard = () => {
           title: "Role Detection Issue",
           description: "Continuing with student access. Contact support if this persists.",
         });
-      }, 8000); // 8 second timeout
+      }, 5000);
       
       checkAuth().finally(() => {
         clearTimeout(timeoutId);
@@ -259,42 +261,67 @@ const Dashboard = () => {
       
       <div className="flex-1 overflow-y-auto w-full p-6">
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold gradient-text">Announcements</h2>
-            
-            {userRole === 'teacher' && !showAnnouncementForm && (
-              <Button 
-                onClick={() => {
-                  console.log('Create Announcement button clicked');
-                  setShowAnnouncementForm(true)
-                }}
-                className="bg-purple-600 hover:bg-purple-700"
-                data-testid="create-announcement-btn"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                New Announcement
-              </Button>
-            )}
-          </div>
+          {/* Role-specific dashboard content */}
+          {userRole === 'teacher' ? (
+            <>
+              {/* Teacher Dashboard Components */}
+              <TeacherDashboard />
+              
+              {/* Announcements Section for Teachers */}
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold gradient-text">Announcements</h2>
+                
+                {!showAnnouncementForm && (
+                  <Button 
+                    onClick={() => {
+                      console.log('Create Announcement button clicked');
+                      setShowAnnouncementForm(true)
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700"
+                    data-testid="create-announcement-btn"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Announcement
+                  </Button>
+                )}
+              </div>
 
-          {userRole === 'teacher' && showAnnouncementForm && (
-            <Card className="p-6 mb-6 border-purple-500/30 bg-black/50">
-              <TeacherAnnouncementForm 
-                onSuccess={handleAnnouncementCreated}
-                onCancel={() => {
-                  console.log('Announcement form canceled');
-                  setShowAnnouncementForm(false)
-                }}
+              {showAnnouncementForm && (
+                <Card className="p-6 mb-6 border-purple-500/30 bg-black/50">
+                  <TeacherAnnouncementForm 
+                    onSuccess={handleAnnouncementCreated}
+                    onCancel={() => {
+                      console.log('Announcement form canceled');
+                      setShowAnnouncementForm(false)
+                    }}
+                  />
+                </Card>
+              )}
+
+              <AnnouncementList 
+                announcements={announcements} 
+                loading={loadingAnnouncements} 
+                isTeacher={true}
+                onAnnouncementDeleted={fetchAnnouncements}
               />
-            </Card>
+            </>
+          ) : (
+            <>
+              {/* Student Dashboard Components */}
+              <StudentDashboard />
+              
+              {/* Announcements Section for Students */}
+              <div>
+                <h2 className="text-2xl font-bold gradient-text mb-6">Announcements</h2>
+                <AnnouncementList 
+                  announcements={announcements} 
+                  loading={loadingAnnouncements} 
+                  isTeacher={false}
+                  onAnnouncementDeleted={fetchAnnouncements}
+                />
+              </div>
+            </>
           )}
-
-          <AnnouncementList 
-            announcements={announcements} 
-            loading={loadingAnnouncements} 
-            isTeacher={userRole === 'teacher'}
-            onAnnouncementDeleted={fetchAnnouncements}
-          />
         </div>
       </div>
     </div>
