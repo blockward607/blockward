@@ -21,43 +21,45 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
       setUploading(true);
       
       if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image to upload.');
+        toast({
+          variant: "destructive",
+          title: "No file selected",
+          description: "Please select an image to upload."
+        });
+        return;
       }
 
       const file = event.target.files[0];
       
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        throw new Error('Please select a valid image file.');
+        toast({
+          variant: "destructive",
+          title: "Invalid file type",
+          description: "Please select a valid image file (PNG, JPG, GIF, etc.)."
+        });
+        return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        throw new Error('File size must be less than 5MB.');
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "File size must be less than 5MB."
+        });
+        return;
       }
 
       const fileExt = file.name.split('.').pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
-      console.log('Uploading file to path:', filePath);
-
-      // First check if bucket exists, if not create it
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const avatarBucket = buckets?.find(bucket => bucket.name === 'avatars');
-      
-      if (!avatarBucket) {
-        console.log('Avatars bucket not found, creating...');
-        const { error: bucketError } = await supabase.storage.createBucket('avatars', {
-          public: true,
-          allowedMimeTypes: ['image/*'],
-          fileSizeLimit: 5242880 // 5MB
-        });
-        
-        if (bucketError) {
-          console.error('Error creating bucket:', bucketError);
-          throw new Error('Failed to create storage bucket');
-        }
-      }
+      console.log('Uploading avatar file:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        filePath: filePath
+      });
 
       // Upload the file to Supabase storage
       const { data, error: uploadError } = await supabase.storage
@@ -69,7 +71,20 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        throw uploadError;
+        if (uploadError.message.includes('Bucket not found')) {
+          toast({
+            variant: "destructive",
+            title: "Storage not ready",
+            description: "Avatar storage is not set up yet. Please contact support."
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Upload failed",
+            description: uploadError.message || "Failed to upload avatar."
+          });
+        }
+        return;
       }
 
       console.log('Upload successful:', data);
@@ -79,7 +94,11 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
         .from('avatars')
         .getPublicUrl(filePath);
 
-      console.log('Public URL:', publicUrl);
+      console.log('Public URL generated:', publicUrl);
+
+      if (!publicUrl) {
+        throw new Error('Failed to get public URL for uploaded file');
+      }
 
       onAvatarChange(publicUrl);
       
@@ -92,7 +111,7 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error.message || "Failed to upload avatar.",
+        description: error.message || "Failed to upload avatar. Please try again."
       });
     } finally {
       setUploading(false);

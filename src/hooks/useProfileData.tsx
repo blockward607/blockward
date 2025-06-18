@@ -22,7 +22,18 @@ export const useProfileData = () => {
   const fetchUserProfile = async () => {
     try {
       setProfileLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Please log in again."
+        });
+        navigate('/auth');
+        return;
+      }
       
       if (!session) {
         console.log('No session found, redirecting to auth');
@@ -32,11 +43,21 @@ export const useProfileData = () => {
       
       console.log('Session found, fetching profile for user:', session.user.id);
       
-      const { data: userRole } = await supabase
+      const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
+        
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load user role"
+        });
+        return;
+      }
         
       console.log('User role:', userRole);
         
@@ -45,37 +66,53 @@ export const useProfileData = () => {
           .from('teacher_profiles')
           .select('*')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
           
-        console.log('Teacher profile:', profile, 'Error:', error);
-          
-        if (profile) {
-          setFullName(profile.full_name || '');
-          setSchool(profile.school || '');
-          setSubject(profile.subject || '');
-          setAvatarUrl(profile.avatar_url || null);
+        if (error) {
+          console.error('Error fetching teacher profile:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load teacher profile"
+          });
+        } else {
+          console.log('Teacher profile loaded:', profile);
+          if (profile) {
+            setFullName(profile.full_name || '');
+            setSchool(profile.school || '');
+            setSubject(profile.subject || '');
+            setAvatarUrl(profile.avatar_url || null);
+          }
         }
       } else {
         const { data: profile, error } = await supabase
           .from('students')
           .select('*')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
           
-        console.log('Student profile:', profile, 'Error:', error);
-          
-        if (profile) {
-          setFullName(profile.name || '');
-          setSchool(profile.school || '');
-          setAvatarUrl(null); // Students don't have avatar_url in the current schema
+        if (error) {
+          console.error('Error fetching student profile:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load student profile"
+          });
+        } else {
+          console.log('Student profile loaded:', profile);
+          if (profile) {
+            setFullName(profile.name || '');
+            setSchool(profile.school || '');
+            setAvatarUrl(null); // Students don't have avatar_url in the current schema
+          }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching profile:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load user profile"
+        description: "Failed to load user profile: " + (error.message || "Unknown error")
       });
     } finally {
       setProfileLoading(false);
@@ -91,7 +128,7 @@ export const useProfileData = () => {
     if (!fullName.trim()) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Validation Error",
         description: "Full name is required"
       });
       return;
@@ -99,9 +136,14 @@ export const useProfileData = () => {
 
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (!session) {
+      if (sessionError || !session) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Please log in again."
+        });
         navigate('/auth');
         return;
       }
@@ -109,11 +151,16 @@ export const useProfileData = () => {
       console.log('Saving profile for user:', session.user.id);
       console.log('Profile data:', { fullName, school, subject, avatarUrl });
       
-      const { data: userRole } = await supabase
+      const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
+        
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        throw new Error('Failed to determine user role');
+      }
         
       if (userRole?.role === 'teacher') {
         const { error } = await supabase
@@ -131,7 +178,7 @@ export const useProfileData = () => {
           
         if (error) {
           console.error('Teacher profile update error:', error);
-          throw error;
+          throw new Error(`Failed to update teacher profile: ${error.message}`);
         }
         console.log('Teacher profile updated successfully');
       } else {
@@ -147,7 +194,7 @@ export const useProfileData = () => {
           
         if (error) {
           console.error('Student profile update error:', error);
-          throw error;
+          throw new Error(`Failed to update student profile: ${error.message}`);
         }
         console.log('Student profile updated successfully');
       }
@@ -156,12 +203,12 @@ export const useProfileData = () => {
         title: "Profile saved!",
         description: "Your profile has been updated successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
         variant: "destructive",
         title: "Save failed",
-        description: "Failed to update profile. Please try again."
+        description: error.message || "Failed to update profile. Please try again."
       });
     } finally {
       setLoading(false);

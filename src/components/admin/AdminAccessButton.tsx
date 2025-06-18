@@ -20,8 +20,13 @@ export const AdminAccessButton = () => {
   const checkAdminStatus = async () => {
     try {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        return;
+      }
+
       if (!session) {
         console.log('No session found');
         return;
@@ -30,11 +35,16 @@ export const AdminAccessButton = () => {
       console.log('Checking admin status for user:', session.user.id);
 
       // Check if user is admin
-      const { data: userRole } = await supabase
+      const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        return;
+      }
 
       console.log('User role:', userRole);
 
@@ -43,14 +53,18 @@ export const AdminAccessButton = () => {
 
       // Check if user has a school (admin profile)
       if (isUserAdmin) {
-        const { data: adminProfile } = await supabase
+        const { data: adminProfile, error: profileError } = await supabase
           .from('admin_profiles')
           .select('school_id')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
 
-        console.log('Admin profile:', adminProfile);
-        setHasSchool(!!adminProfile?.school_id);
+        if (profileError) {
+          console.error('Error fetching admin profile:', profileError);
+        } else {
+          console.log('Admin profile:', adminProfile);
+          setHasSchool(!!adminProfile?.school_id);
+        }
       }
 
     } catch (error) {
@@ -63,17 +77,29 @@ export const AdminAccessButton = () => {
   const handleNavigation = (path: string) => {
     try {
       console.log('Navigating to:', path);
+      
+      // Validate that the path exists before navigating
+      const validPaths = ['/admin', '/school-setup', '/admin-setup'];
+      if (!validPaths.includes(path)) {
+        toast({
+          variant: "destructive",
+          title: "Navigation Error",
+          description: "This feature is not available yet."
+        });
+        return;
+      }
+
       navigate(path);
       toast({
         title: "Navigating...",
-        description: `Going to ${path}`
+        description: `Going to ${path.replace('/', '').replace('-', ' ')}`
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error navigating:', error);
       toast({
         variant: "destructive",
         title: "Navigation Error",
-        description: "Failed to navigate. Please try again."
+        description: "Failed to navigate. Please try refreshing the page."
       });
     }
   };
@@ -82,7 +108,7 @@ export const AdminAccessButton = () => {
     return (
       <div className="flex items-center justify-center p-4">
         <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-        <span className="ml-2 text-sm text-gray-400">Loading...</span>
+        <span className="ml-2 text-sm text-gray-400">Loading admin status...</span>
       </div>
     );
   }
