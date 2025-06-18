@@ -88,6 +88,15 @@ export const useProfileData = () => {
   };
 
   const handleSaveProfile = async () => {
+    if (!fullName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Full name is required"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -111,9 +120,9 @@ export const useProfileData = () => {
           .from('teacher_profiles')
           .upsert({
             user_id: session.user.id,
-            full_name: fullName,
-            school: school,
-            subject: subject,
+            full_name: fullName.trim(),
+            school: school.trim() || null,
+            subject: subject.trim() || null,
             avatar_url: avatarUrl,
             updated_at: new Date().toISOString()
           }, { 
@@ -130,8 +139,8 @@ export const useProfileData = () => {
           .from('students')
           .upsert({
             user_id: session.user.id,
-            name: fullName,
-            school: school
+            name: fullName.trim(),
+            school: school.trim() || null
           }, { 
             onConflict: 'user_id'
           });
@@ -144,15 +153,15 @@ export const useProfileData = () => {
       }
       
       toast({
-        title: "Success",
-        description: "Profile updated successfully"
+        title: "Profile saved!",
+        description: "Your profile has been updated successfully"
       });
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to update profile"
+        title: "Save failed",
+        description: "Failed to update profile. Please try again."
       });
     } finally {
       setLoading(false);

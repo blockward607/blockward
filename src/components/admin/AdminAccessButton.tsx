@@ -12,7 +12,6 @@ export const AdminAccessButton = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [hasSchool, setHasSchool] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     checkAdminStatus();
@@ -61,20 +60,21 @@ export const AdminAccessButton = () => {
     }
   };
 
-  const handleNavigation = async (path: string) => {
-    setActionLoading(true);
+  const handleNavigation = (path: string) => {
     try {
       console.log('Navigating to:', path);
       navigate(path);
+      toast({
+        title: "Navigating...",
+        description: `Going to ${path}`
+      });
     } catch (error) {
       console.error('Error navigating:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to navigate"
+        title: "Navigation Error",
+        description: "Failed to navigate. Please try again."
       });
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -82,6 +82,7 @@ export const AdminAccessButton = () => {
     return (
       <div className="flex items-center justify-center p-4">
         <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+        <span className="ml-2 text-sm text-gray-400">Loading...</span>
       </div>
     );
   }
@@ -92,27 +93,17 @@ export const AdminAccessButton = () => {
         <>
           <Button 
             onClick={() => handleNavigation('/admin')}
-            disabled={actionLoading}
             className="w-full bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
           >
-            {actionLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Shield className="w-4 h-4" />
-            )}
+            <Shield className="w-4 h-4" />
             Admin Dashboard
           </Button>
           <Button 
             onClick={() => handleNavigation('/school-setup')}
-            disabled={actionLoading}
             variant="outline"
             className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-600/20 flex items-center gap-2"
           >
-            {actionLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <School className="w-4 h-4" />
-            )}
+            <School className="w-4 h-4" />
             {hasSchool ? 'School Settings' : 'Setup School'}
           </Button>
         </>
@@ -120,27 +111,17 @@ export const AdminAccessButton = () => {
         <>
           <Button 
             onClick={() => handleNavigation('/school-setup')}
-            disabled={actionLoading}
             className="w-full bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
           >
-            {actionLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Building className="w-4 h-4" />
-            )}
+            <Building className="w-4 h-4" />
             Setup School
           </Button>
           <Button 
             onClick={() => handleNavigation('/admin-setup')}
-            disabled={actionLoading}
             variant="outline"
             className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-600/20 flex items-center gap-2"
           >
-            {actionLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Settings className="w-4 h-4" />
-            )}
+            <Settings className="w-4 h-4" />
             Setup Admin Account
           </Button>
         </>

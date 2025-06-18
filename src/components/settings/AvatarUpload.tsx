@@ -41,10 +41,31 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
 
       console.log('Uploading file to path:', filePath);
 
+      // First check if bucket exists, if not create it
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const avatarBucket = buckets?.find(bucket => bucket.name === 'avatars');
+      
+      if (!avatarBucket) {
+        console.log('Avatars bucket not found, creating...');
+        const { error: bucketError } = await supabase.storage.createBucket('avatars', {
+          public: true,
+          allowedMimeTypes: ['image/*'],
+          fileSizeLimit: 5242880 // 5MB
+        });
+        
+        if (bucketError) {
+          console.error('Error creating bucket:', bucketError);
+          throw new Error('Failed to create storage bucket');
+        }
+      }
+
       // Upload the file to Supabase storage
       const { data, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
