@@ -12,11 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Users, Shield, Bell, Database, Palette, Building } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdminData } from "@/hooks/useAdminData";
 
 const SettingsPage = () => {
   const { toast } = useToast();
-  const { adminProfile, school, loading: adminLoading, updateSchool, updateAdminProfile } = useAdminData();
   
   // User role state
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -39,13 +37,12 @@ const SettingsPage = () => {
   const [passwordExpiry, setPasswordExpiry] = useState([90]);
   const [loginAttempts, setLoginAttempts] = useState([5]);
   
-  // School Settings State (for admins)
+  // School Settings State (for admins only)
   const [schoolName, setSchoolName] = useState("");
   const [schoolEmail, setSchoolEmail] = useState("");
   const [schoolAddress, setSchoolAddress] = useState("");
   const [schoolPhone, setSchoolPhone] = useState("");
   const [schoolWebsite, setSchoolWebsite] = useState("");
-  const [announcements, setAnnouncements] = useState("");
 
   // Admin Settings State
   const [adminName, setAdminName] = useState("");
@@ -58,57 +55,28 @@ const SettingsPage = () => {
   });
 
   useEffect(() => {
-    checkUserRole();
-    loadUserPreferences();
+    loadUserData();
   }, []);
 
-  useEffect(() => {
-    if (school) {
-      setSchoolName(school.name || "");
-      setSchoolEmail(school.contact_email || "");
-      setSchoolAddress(school.address || "");
-      setSchoolPhone(school.phone || "");
-      setSchoolWebsite(school.website || "");
-    }
-  }, [school]);
-
-  useEffect(() => {
-    if (adminProfile) {
-      setAdminName(adminProfile.full_name || "");
-      setAdminPosition(adminProfile.position || "");
-      setAdminPermissions(adminProfile.permissions || {
-        manage_teachers: true,
-        manage_students: true,
-        manage_classes: true,
-        manage_settings: true
-      });
-    }
-  }, [adminProfile]);
-
-  const checkUserRole = async () => {
+  const loadUserData = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        setLoading(false);
+        return;
+      }
 
+      // Check user role
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
         .single();
 
-      setUserRole(roleData?.role || null);
-    } catch (error) {
-      console.error('Error checking user role:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const role = roleData?.role || 'student';
+      setUserRole(role);
 
-  const loadUserPreferences = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
+      // Load user preferences
       const { data: preferences } = await supabase
         .from('user_preferences')
         .select('*')
@@ -118,9 +86,51 @@ const SettingsPage = () => {
       if (preferences) {
         setTheme(preferences.dark_mode ? "dark" : "light");
         setCompactMode(preferences.compact_view || false);
+        setEmailNotifications(preferences.email_notifications || true);
+        setAutoGrading(preferences.auto_grading || true);
+        setStudentRegistration(preferences.student_registration || false);
       }
+
+      // Load admin data only if user is admin
+      if (role === 'admin') {
+        const { data: adminData } = await supabase
+          .from('admin_profiles')
+          .select(`
+            *,
+            schools (*)
+          `)
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (adminData) {
+          setAdminName(adminData.full_name || "");
+          setAdminPosition(adminData.position || "");
+          setAdminPermissions(adminData.permissions || {
+            manage_teachers: true,
+            manage_students: true,
+            manage_classes: true,
+            manage_settings: true
+          });
+
+          if (adminData.schools) {
+            setSchoolName(adminData.schools.name || "");
+            setSchoolEmail(adminData.schools.contact_email || "");
+            setSchoolAddress(adminData.schools.address || "");
+            setSchoolPhone(adminData.schools.phone || "");
+            setSchoolWebsite(adminData.schools.website || "");
+          }
+        }
+      }
+
     } catch (error) {
-      console.error('Error loading user preferences:', error);
+      console.error('Error loading user data:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load settings data.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,14 +145,17 @@ const SettingsPage = () => {
           user_id: session.user.id,
           dark_mode: theme === "dark",
           compact_view: compactMode,
+          email_notifications: emailNotifications,
+          auto_grading: autoGrading,
+          student_registration: studentRegistration,
           updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
 
       toast({
-        title: "Preferences Saved",
-        description: "Your preferences have been updated successfully.",
+        title: "Settings Saved",
+        description: "Your preferences have been saved successfully.",
       });
     } catch (error) {
       console.error('Error saving preferences:', error);
@@ -154,37 +167,86 @@ const SettingsPage = () => {
     }
   };
 
-  const handleSaveSettings = (settingType: string) => {
-    if (settingType === "Appearance") {
-      saveUserPreferences();
-    } else {
+  const saveSchoolSettings = async () => {
+    if (userRole !== 'admin') return;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Get admin's school ID
+      const { data: adminData } = await supabase
+        .from('admin_profiles')
+        .select('school_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!adminData?.school_id) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No school associated with admin account.",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('schools')
+        .update({
+          name: schoolName,
+          contact_email: schoolEmail,
+          address: schoolAddress,
+          phone: schoolPhone,
+          website: schoolWebsite
+        })
+        .eq('id', adminData.school_id);
+
+      if (error) throw error;
+
       toast({
-        title: "Settings Saved",
-        description: `${settingType} settings have been updated successfully.`,
+        title: "School Settings Saved",
+        description: "School information has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving school settings:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save school settings.",
       });
     }
   };
 
-  const handleSaveSchoolSettings = async () => {
-    if (!school) return;
+  const saveAdminSettings = async () => {
+    if (userRole !== 'admin') return;
     
-    await updateSchool({
-      name: schoolName,
-      contact_email: schoolEmail,
-      address: schoolAddress,
-      phone: schoolPhone,
-      website: schoolWebsite
-    });
-  };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-  const handleSaveAdminSettings = async () => {
-    if (!adminProfile) return;
-    
-    await updateAdminProfile({
-      full_name: adminName,
-      position: adminPosition,
-      permissions: adminPermissions
-    });
+      const { error } = await supabase
+        .from('admin_profiles')
+        .update({
+          full_name: adminName,
+          position: adminPosition,
+          permissions: adminPermissions
+        })
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Admin Settings Saved",
+        description: "Admin profile has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving admin settings:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save admin settings.",
+      });
+    }
   };
 
   const handleResetSettings = () => {
@@ -206,7 +268,7 @@ const SettingsPage = () => {
     });
   };
 
-  if (loading || adminLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
@@ -232,7 +294,7 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-4'} bg-gray-800`}>
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : isTeacher ? 'grid-cols-4' : 'grid-cols-3'} bg-gray-800`}>
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             General
@@ -319,8 +381,8 @@ const SettingsPage = () => {
               </div>
 
               <Button 
-                onClick={() => handleSaveSettings("General")}
-                className="w-full"
+                onClick={saveUserPreferences}
+                className="w-full bg-purple-600 hover:bg-purple-700"
               >
                 Save General Settings
               </Button>
@@ -348,8 +410,8 @@ const SettingsPage = () => {
                 </div>
 
                 <Button 
-                  onClick={() => handleSaveSettings("Student")}
-                  className="w-full"
+                  onClick={saveUserPreferences}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
                 >
                   Save Student Settings
                 </Button>
@@ -401,8 +463,13 @@ const SettingsPage = () => {
               </div>
 
               <Button 
-                onClick={() => handleSaveSettings("Security")}
-                className="w-full"
+                onClick={() => {
+                  toast({
+                    title: "Security Settings Saved",
+                    description: "Your security preferences have been updated.",
+                  });
+                }}
+                className="w-full bg-purple-600 hover:bg-purple-700"
               >
                 Save Security Settings
               </Button>
@@ -455,8 +522,8 @@ const SettingsPage = () => {
               </div>
 
               <Button 
-                onClick={() => handleSaveSettings("Appearance")}
-                className="w-full"
+                onClick={saveUserPreferences}
+                className="w-full bg-purple-600 hover:bg-purple-700"
               >
                 Save Appearance Settings
               </Button>
@@ -479,6 +546,7 @@ const SettingsPage = () => {
                       value={schoolName}
                       onChange={(e) => setSchoolName(e.target.value)}
                       className="bg-gray-800 border-gray-600 text-white"
+                      placeholder="Enter school name"
                     />
                   </div>
 
@@ -489,6 +557,7 @@ const SettingsPage = () => {
                       value={schoolEmail}
                       onChange={(e) => setSchoolEmail(e.target.value)}
                       className="bg-gray-800 border-gray-600 text-white"
+                      placeholder="school@example.com"
                     />
                   </div>
 
@@ -499,6 +568,7 @@ const SettingsPage = () => {
                       onChange={(e) => setSchoolAddress(e.target.value)}
                       className="bg-gray-800 border-gray-600 text-white"
                       rows={3}
+                      placeholder="Enter school address"
                     />
                   </div>
 
@@ -508,6 +578,7 @@ const SettingsPage = () => {
                       value={schoolPhone}
                       onChange={(e) => setSchoolPhone(e.target.value)}
                       className="bg-gray-800 border-gray-600 text-white"
+                      placeholder="Enter phone number"
                     />
                   </div>
 
@@ -517,13 +588,13 @@ const SettingsPage = () => {
                       value={schoolWebsite}
                       onChange={(e) => setSchoolWebsite(e.target.value)}
                       className="bg-gray-800 border-gray-600 text-white"
-                      placeholder="https://..."
+                      placeholder="https://www.school.com"
                     />
                   </div>
 
                   <Button 
-                    onClick={handleSaveSchoolSettings}
-                    className="w-full"
+                    onClick={saveSchoolSettings}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
                   >
                     Save School Settings
                   </Button>
@@ -544,6 +615,7 @@ const SettingsPage = () => {
                       value={adminName}
                       onChange={(e) => setAdminName(e.target.value)}
                       className="bg-gray-800 border-gray-600 text-white"
+                      placeholder="Enter your full name"
                     />
                   </div>
 
@@ -614,8 +686,8 @@ const SettingsPage = () => {
                   </div>
 
                   <Button 
-                    onClick={handleSaveAdminSettings}
-                    className="w-full"
+                    onClick={saveAdminSettings}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
                   >
                     Save Admin Settings
                   </Button>
