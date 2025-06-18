@@ -1,189 +1,96 @@
 
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus, ChevronUp, ChevronDown } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ClassroomGrid } from "@/components/classroom/ClassroomGrid";
-import type { Classroom } from "@/types/classroom";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Users, Calendar, Settings } from "lucide-react";
+import { motion } from "framer-motion";
+import { Classroom } from "@/types/classroom";
 
 interface ClassroomListProps {
-  classrooms: Partial<Classroom>[];
+  classrooms: Classroom[];
+  userRole: 'teacher' | 'student' | null;
 }
 
-export const ClassroomList = ({ classrooms }: ClassroomListProps) => {
-  const [expanded, setExpanded] = useState(true);
-  const [newClassroom, setNewClassroom] = useState({
-    name: "",
-    description: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+export const ClassroomList = ({ classrooms, userRole }: ClassroomListProps) => {
+  const navigate = useNavigate();
 
-  const handleCreateClassroom = async () => {
-    if (!newClassroom.name.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter a classroom name"
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Not authenticated",
-          description: "Please log in to create a classroom"
-        });
-        return;
-      }
-
-      const { data: teacherProfile, error: profileError } = await supabase
-        .from('teacher_profiles')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (profileError) throw profileError;
-      
-      if (!teacherProfile) {
-        toast({
-          variant: "destructive",
-          title: "Profile not found",
-          description: "Teacher profile not found. Please contact support."
-        });
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('classrooms')
-        .insert([{
-          name: newClassroom.name,
-          description: newClassroom.description,
-          teacher_id: teacherProfile.id
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Automatically generate a classroom code for the new classroom
-      console.log("[ClassroomList] Generating classroom code for new classroom:", data.id);
-      
-      const { data: classroomCode, error: codeError } = await supabase.rpc('create_classroom_code', {
-        p_classroom_id: data.id,
-        p_created_by: session.user.id
-      });
-
-      if (codeError) {
-        console.error("[ClassroomList] Error generating classroom code:", codeError);
-        toast({
-          title: "Classroom Created",
-          description: "Classroom created successfully, but there was an issue generating the join code. You can generate one later."
-        });
-      } else {
-        console.log("[ClassroomList] Classroom code generated successfully:", classroomCode);
-        toast({
-          title: "Success",
-          description: `Classroom created successfully with join code: ${classroomCode}`
-        });
-      }
-
-      window.location.reload();
-
-      setNewClassroom({ name: "", description: "" });
-    } catch (error) {
-      console.error('Error creating classroom:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to create classroom"
-      });
-    } finally {
-      setLoading(false);
+  const handleClassroomClick = (classroom: Classroom) => {
+    if (userRole === 'teacher') {
+      navigate(`/class/${classroom.id}`);
+    } else {
+      navigate(`/class/${classroom.id}`);
     }
   };
 
-  return (
-    <Card className="p-6 glass-card">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
-          <h2 className="text-2xl font-semibold gradient-text">My Classrooms</h2>
-          {expanded ? <ChevronUp /> : <ChevronDown />}
-        </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="w-4 h-4 mr-2" /> New Classroom
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create New Classroom</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <Input
-                placeholder="Classroom name"
-                value={newClassroom.name}
-                onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
-                disabled={loading}
-              />
-              <Textarea
-                placeholder="Description"
-                value={newClassroom.description}
-                onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
-                disabled={loading}
-              />
-            </div>
-            <Button 
-              onClick={handleCreateClassroom} 
-              className="w-full bg-purple-600 hover:bg-purple-700"
-              disabled={loading || !newClassroom.name.trim()}
-            >
-              {loading ? "Creating..." : "Create Classroom"}
-            </Button>
-          </DialogContent>
-        </Dialog>
+  if (classrooms.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-gray-300 mb-2">
+          {userRole === 'teacher' ? 'No classes created yet' : 'No classes joined yet'}
+        </h3>
+        <p className="text-gray-500">
+          {userRole === 'teacher' 
+            ? 'Create your first class to get started' 
+            : 'Join a class using a class code or invitation link'
+          }
+        </p>
       </div>
-      
-      {expanded && (
-        <div className="grid gap-6">
-          {classrooms.map((classroom) => {
-            if (!classroom.id) return null;
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {classrooms.map((classroom, index) => (
+        <motion.div
+          key={classroom.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+        >
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-all duration-200 bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-500/20 hover:border-purple-400/40"
+            onClick={() => handleClassroomClick(classroom)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-lg font-semibold text-white mb-1">
+                    {classroom.name}
+                  </CardTitle>
+                  {classroom.section && (
+                    <Badge variant="secondary" className="text-xs bg-purple-600/20 text-purple-300">
+                      {classroom.section}
+                    </Badge>
+                  )}
+                </div>
+                {userRole === 'teacher' && (
+                  <Settings className="w-4 h-4 text-gray-400 hover:text-purple-400 transition-colors" />
+                )}
+              </div>
+            </CardHeader>
             
-            // Ensure we have all required fields with defaults
-            const fullClassroom: Classroom = {
-              id: classroom.id,
-              name: classroom.name || '',
-              description: classroom.description || '',
-              teacher_id: classroom.teacher_id || '',
-              school_id: classroom.school_id || null,
-              section: classroom.section || null,
-              created_at: classroom.created_at || '',
-              updated_at: classroom.updated_at || ''
-            };
-            
-            return <ClassroomGrid key={classroom.id} classroom={fullClassroom} />
-          })}
-          {classrooms.length === 0 && (
-            <p className="text-center text-gray-400">No classrooms found. Create your first classroom to get started!</p>
-          )}
-        </div>
-      )}
-    </Card>
+            <CardContent className="pt-0">
+              {classroom.description && (
+                <CardDescription className="text-gray-300 mb-4 line-clamp-2">
+                  {classroom.description}
+                </CardDescription>
+              )}
+              
+              <div className="flex items-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  <span>Students</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>Active</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
+    </div>
   );
 };

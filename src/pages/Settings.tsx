@@ -1,3 +1,4 @@
+
 import { Settings as SettingsIcon, Bell, Shield, Palette, User, Award, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -10,9 +11,9 @@ import {
 
 // Import our custom components
 import ProfileTab from "@/components/settings/ProfileTab";
-// import NotificationsTab from "@/components/settings/NotificationsTab";
 import { AppearanceTab } from "@/components/settings/AppearanceTab";
 import SecurityTab from "@/components/settings/SecurityTab";
+import { TeacherAdminTab } from "@/components/settings/TeacherAdminTab";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -56,9 +57,9 @@ const Settings = () => {
 
       <Card className="p-6">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[400px]">
+          <TabsList className="grid w-full grid-cols-5 lg:w-[500px]">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            {/* <TabsTrigger value="notifications">Notifications</TabsTrigger> */}
+            <TabsTrigger value="admin">Admin</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
@@ -67,9 +68,9 @@ const Settings = () => {
             <ProfileTab />
           </TabsContent>
 
-          {/* <TabsContent value="notifications">
-            <NotificationsTab />
-          </TabsContent> */}
+          <TabsContent value="admin">
+            <TeacherAdminTab />
+          </TabsContent>
 
           <TabsContent value="appearance">
             <AppearanceTab />
