@@ -255,31 +255,46 @@ const SettingsPage = () => {
 
       <Tabs defaultValue="general" className="space-y-6">
         <TabsList className="grid w-full grid-cols-5 bg-gray-800">
-          <TabsTrigger value="general" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
+          <TabsTrigger 
+            value="general" 
+            className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+          >
             <Settings className="h-4 w-4" />
             General
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
+          <TabsTrigger 
+            value="security" 
+            className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+          >
             <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
+          <TabsTrigger 
+            value="appearance" 
+            className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+          >
             <Palette className="h-4 w-4" />
             Appearance
           </TabsTrigger>
-          <TabsTrigger value="students" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
+          <TabsTrigger 
+            value="students" 
+            className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+          >
             <Users className="h-4 w-4" />
             Students
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="admin" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
+            <TabsTrigger 
+              value="admin" 
+              className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+            >
               <Building className="h-4 w-4" />
               Admin
             </TabsTrigger>
           )}
         </TabsList>
 
-        <TabsContent value="general">
+        <TabsContent value="general" className="mt-6">
           <GeneralSettingsTab
             autoGrading={autoGrading}
             setAutoGrading={setAutoGrading}
@@ -293,7 +308,7 @@ const SettingsPage = () => {
           />
         </TabsContent>
 
-        <TabsContent value="security">
+        <TabsContent value="security" className="mt-6">
           <SecuritySettingsTab
             twoFactorAuth={twoFactorAuth}
             setTwoFactorAuth={setTwoFactorAuth}
@@ -305,7 +320,7 @@ const SettingsPage = () => {
           />
         </TabsContent>
 
-        <TabsContent value="appearance">
+        <TabsContent value="appearance" className="mt-6">
           <AppearanceSettingsTab
             theme={theme}
             setTheme={setTheme}
@@ -317,7 +332,7 @@ const SettingsPage = () => {
           />
         </TabsContent>
 
-        <TabsContent value="students">
+        <TabsContent value="students" className="mt-6">
           <StudentsSettingsTab
             studentRegistration={studentRegistration}
             setStudentRegistration={setStudentRegistration}
@@ -326,7 +341,7 @@ const SettingsPage = () => {
         </TabsContent>
 
         {isAdmin && (
-          <TabsContent value="admin">
+          <TabsContent value="admin" className="mt-6">
             <AdminSettingsTab
               adminName={adminName}
               setAdminName={setAdminName}
