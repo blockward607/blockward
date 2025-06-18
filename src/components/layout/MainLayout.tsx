@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
@@ -7,7 +6,6 @@ import {
   Home,
   Users,
   BookOpen,
-  Settings,
   Menu,
   X,
   Bell,
@@ -50,7 +48,6 @@ const teacherNavGroups = [
     name: "Account",
     items: [
       { name: "NFT Wallet", href: "/wallet", icon: Wallet },
-      { name: "Settings", href: "/settings", icon: Settings },
     ]
   },
 ];
@@ -75,7 +72,6 @@ const studentNavGroups = [
     name: "Account",
     items: [
       { name: "NFT Wallet", href: "/wallet", icon: Wallet },
-      { name: "Settings", href: "/settings", icon: Settings },
     ]
   },
 ];
@@ -100,7 +96,6 @@ const adminNavGroups = [
   {
     name: "School",
     items: [
-      { name: "Settings", href: "/admin/settings", icon: Settings },
       { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
       { name: "NFT Management", href: "/admin/rewards", icon: Wallet },
     ]
