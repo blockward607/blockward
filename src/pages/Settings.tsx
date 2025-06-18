@@ -1,16 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Users, Shield, Bell, Database, Palette, Building } from "lucide-react";
+import { Settings, Users, Shield, Palette, Building } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GeneralSettingsTab } from "@/components/settings/GeneralSettingsTab";
 import { AppearanceSettingsTab } from "@/components/settings/AppearanceSettingsTab";
 import { SecuritySettingsTab } from "@/components/settings/SecuritySettingsTab";
 import { AdminSettingsTab } from "@/components/settings/AdminSettingsTab";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { StudentsSettingsTab } from "@/components/settings/StudentsSettingsTab";
 
 interface AdminPermissions {
   manage_teachers: boolean;
@@ -42,13 +41,6 @@ const SettingsPage = () => {
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
   const [passwordExpiry, setPasswordExpiry] = useState([90]);
   const [loginAttempts, setLoginAttempts] = useState([5]);
-  
-  // School Settings State
-  const [schoolName, setSchoolName] = useState("");
-  const [schoolEmail, setSchoolEmail] = useState("");
-  const [schoolAddress, setSchoolAddress] = useState("");
-  const [schoolPhone, setSchoolPhone] = useState("");
-  const [schoolWebsite, setSchoolWebsite] = useState("");
 
   // Admin Settings State
   const [adminName, setAdminName] = useState("");
@@ -123,14 +115,6 @@ const SettingsPage = () => {
               manage_classes: permissions.manage_classes ?? true,
               manage_settings: permissions.manage_settings ?? true
             });
-          }
-
-          if (adminData.schools) {
-            setSchoolName(adminData.schools.name || "");
-            setSchoolEmail(adminData.schools.contact_email || "");
-            setSchoolAddress(adminData.schools.address || "");
-            setSchoolPhone(adminData.schools.phone || "");
-            setSchoolWebsite(adminData.schools.website || "");
           }
         }
       }
@@ -270,28 +254,26 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : isTeacher ? 'grid-cols-4' : 'grid-cols-3'} bg-gray-800`}>
-          <TabsTrigger value="general" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-5 bg-gray-800">
+          <TabsTrigger value="general" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
             <Settings className="h-4 w-4" />
             General
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
+          <TabsTrigger value="security" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
             <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="flex items-center gap-2">
+          <TabsTrigger value="appearance" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
             <Palette className="h-4 w-4" />
             Appearance
           </TabsTrigger>
-          {isTeacher && (
-            <TabsTrigger value="students" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Students
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="students" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
+            <Users className="h-4 w-4" />
+            Students
+          </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="admin" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
+            <TabsTrigger value="admin" className="flex items-center gap-2 data-[state=active]:bg-purple-600">
+              <Building className="h-4 w-4" />
               Admin
             </TabsTrigger>
           )}
@@ -335,35 +317,13 @@ const SettingsPage = () => {
           />
         </TabsContent>
 
-        {isTeacher && (
-          <TabsContent value="students">
-            <Card className="bg-gray-900 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">Student Management</CardTitle>
-                <CardDescription>Control how students interact with your classes</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label className="text-white">Allow Student Self-Registration</Label>
-                    <p className="text-sm text-gray-400">Let students join classes using invitation codes</p>
-                  </div>
-                  <Switch
-                    checked={studentRegistration}
-                    onCheckedChange={setStudentRegistration}
-                  />
-                </div>
-
-                <Button 
-                  onClick={saveUserPreferences}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                >
-                  Save Student Settings
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
+        <TabsContent value="students">
+          <StudentsSettingsTab
+            studentRegistration={studentRegistration}
+            setStudentRegistration={setStudentRegistration}
+            onSave={saveUserPreferences}
+          />
+        </TabsContent>
 
         {isAdmin && (
           <TabsContent value="admin">
