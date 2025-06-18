@@ -254,112 +254,114 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 bg-gray-800">
+        <TabsList className="grid w-full grid-cols-5 bg-gray-800/50 p-1 rounded-lg">
           <TabsTrigger 
             value="general" 
-            className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+            className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
           >
             <Settings className="h-4 w-4" />
-            General
+            <span className="hidden sm:inline">General</span>
           </TabsTrigger>
           <TabsTrigger 
             value="security" 
-            className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+            className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
           >
             <Shield className="h-4 w-4" />
-            Security
+            <span className="hidden sm:inline">Security</span>
           </TabsTrigger>
           <TabsTrigger 
             value="appearance" 
-            className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+            className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
           >
             <Palette className="h-4 w-4" />
-            Appearance
+            <span className="hidden sm:inline">Appearance</span>
           </TabsTrigger>
           <TabsTrigger 
             value="students" 
-            className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+            className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
           >
             <Users className="h-4 w-4" />
-            Students
+            <span className="hidden sm:inline">Students</span>
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger 
               value="admin" 
-              className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white"
+              className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
             >
               <Building className="h-4 w-4" />
-              Admin
+              <span className="hidden sm:inline">Admin</span>
             </TabsTrigger>
           )}
         </TabsList>
 
-        <TabsContent value="general" className="mt-6">
-          <GeneralSettingsTab
-            autoGrading={autoGrading}
-            setAutoGrading={setAutoGrading}
-            emailNotifications={emailNotifications}
-            setEmailNotifications={setEmailNotifications}
-            classSize={classSize}
-            setClassSize={setClassSize}
-            sessionTimeout={sessionTimeout}
-            setSessionTimeout={setSessionTimeout}
-            onSave={saveUserPreferences}
-          />
-        </TabsContent>
-
-        <TabsContent value="security" className="mt-6">
-          <SecuritySettingsTab
-            twoFactorAuth={twoFactorAuth}
-            setTwoFactorAuth={setTwoFactorAuth}
-            passwordExpiry={passwordExpiry}
-            setPasswordExpiry={setPasswordExpiry}
-            loginAttempts={loginAttempts}
-            setLoginAttempts={setLoginAttempts}
-            onSave={saveSecuritySettings}
-          />
-        </TabsContent>
-
-        <TabsContent value="appearance" className="mt-6">
-          <AppearanceSettingsTab
-            theme={theme}
-            setTheme={setTheme}
-            fontSize={fontSize}
-            setFontSize={setFontSize}
-            compactMode={compactMode}
-            setCompactMode={setCompactMode}
-            onSave={saveUserPreferences}
-          />
-        </TabsContent>
-
-        <TabsContent value="students" className="mt-6">
-          <StudentsSettingsTab
-            studentRegistration={studentRegistration}
-            setStudentRegistration={setStudentRegistration}
-            onSave={saveUserPreferences}
-          />
-        </TabsContent>
-
-        {isAdmin && (
-          <TabsContent value="admin" className="mt-6">
-            <AdminSettingsTab
-              adminName={adminName}
-              setAdminName={setAdminName}
-              adminPosition={adminPosition}
-              setAdminPosition={setAdminPosition}
-              adminPermissions={adminPermissions}
-              setAdminPermissions={setAdminPermissions}
-              onSave={saveAdminSettings}
+        <div className="min-h-[400px]">
+          <TabsContent value="general" className="mt-6 space-y-0">
+            <GeneralSettingsTab
+              autoGrading={autoGrading}
+              setAutoGrading={setAutoGrading}
+              emailNotifications={emailNotifications}
+              setEmailNotifications={setEmailNotifications}
+              classSize={classSize}
+              setClassSize={setClassSize}
+              sessionTimeout={sessionTimeout}
+              setSessionTimeout={setSessionTimeout}
+              onSave={saveUserPreferences}
             />
           </TabsContent>
-        )}
+
+          <TabsContent value="security" className="mt-6 space-y-0">
+            <SecuritySettingsTab
+              twoFactorAuth={twoFactorAuth}
+              setTwoFactorAuth={setTwoFactorAuth}
+              passwordExpiry={passwordExpiry}
+              setPasswordExpiry={setPasswordExpiry}
+              loginAttempts={loginAttempts}
+              setLoginAttempts={setLoginAttempts}
+              onSave={saveSecuritySettings}
+            />
+          </TabsContent>
+
+          <TabsContent value="appearance" className="mt-6 space-y-0">
+            <AppearanceSettingsTab
+              theme={theme}
+              setTheme={setTheme}
+              fontSize={fontSize}
+              setFontSize={setFontSize}
+              compactMode={compactMode}
+              setCompactMode={setCompactMode}
+              onSave={saveUserPreferences}
+            />
+          </TabsContent>
+
+          <TabsContent value="students" className="mt-6 space-y-0">
+            <StudentsSettingsTab
+              studentRegistration={studentRegistration}
+              setStudentRegistration={setStudentRegistration}
+              onSave={saveUserPreferences}
+            />
+          </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="admin" className="mt-6 space-y-0">
+              <AdminSettingsTab
+                adminName={adminName}
+                setAdminName={setAdminName}
+                adminPosition={adminPosition}
+                setAdminPosition={setAdminPosition}
+                adminPermissions={adminPermissions}
+                setAdminPermissions={setAdminPermissions}
+                onSave={saveAdminSettings}
+              />
+            </TabsContent>
+          )}
+        </div>
       </Tabs>
 
       <div className="mt-8 flex justify-center">
         <Button 
           onClick={handleResetSettings}
           variant="destructive"
-          className="px-8"
+          className="px-8 bg-red-600 hover:bg-red-700 text-white"
         >
           Reset All Settings to Default
         </Button>
