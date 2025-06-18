@@ -103,13 +103,22 @@ const Dashboard = () => {
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      const { data: roleData, error: roleError } = await Promise.race([
-        rolePromise, 
-        timeoutPromise
-      ]).catch(() => ({ data: null, error: { message: 'Timeout' } }));
+      let data = null;
+      let error = null;
 
-      if (roleError) {
-        console.error('Dashboard: Error fetching role:', roleError);
+      try {
+        const result = await Promise.race([rolePromise, timeoutPromise]);
+        if (result && typeof result === 'object' && 'data' in result) {
+          data = (result as any).data;
+          error = (result as any).error;
+        }
+      } catch (timeoutError) {
+        console.error('Dashboard: Role query timed out:', timeoutError);
+        error = timeoutError;
+      }
+
+      if (error) {
+        console.error('Dashboard: Error fetching role:', error);
         // Set fallback role instead of blocking
         setUserRole("student");
         setUserName(session.user.email || "User");
@@ -122,7 +131,7 @@ const Dashboard = () => {
         return;
       }
 
-      if (!roleData) {
+      if (!data) {
         console.log('Dashboard: No role found for user, using fallback');
         setUserRole("student");
         setUserName(session.user.email || "User");
@@ -134,10 +143,10 @@ const Dashboard = () => {
         return;
       }
 
-      console.log('Dashboard: Role found:', roleData.role);
+      console.log('Dashboard: Role found:', data.role);
 
       // If user is admin, redirect to admin portal
-      if (roleData?.role === 'admin') {
+      if (data?.role === 'admin') {
         console.log('Dashboard: Admin user, redirecting to admin portal');
         navigate('/admin-portal');
         return;

@@ -50,10 +50,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     
       console.log('Determined role:', userRole);
       
-      // Check if role exists in database
-      const { data: existingRole, error: roleError } = await AuthService.checkUserRole(userId);
+      // Check if role exists in database with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Role check timeout')), 5000)
+      );
       
-      if (roleError && !roleError.message.includes('No rows found')) {
+      const rolePromise = AuthService.checkUserRole(userId);
+      
+      let existingRole = null;
+      let roleError = null;
+      
+      try {
+        const result = await Promise.race([rolePromise, timeoutPromise]);
+        if (result && typeof result === 'object' && 'data' in result) {
+          existingRole = (result as any).data;
+          roleError = (result as any).error;
+        }
+      } catch (error) {
+        console.error('Role check failed or timed out:', error);
+        roleError = error;
+      }
+      
+      if (roleError && !roleError.message?.includes('No rows found')) {
         console.error('Error checking user role:', roleError);
         // Don't throw - continue with fallback
       }
@@ -196,7 +214,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .eq('user_id', session.user.id)
               .maybeSingle();
             
-            const { data, error } = await Promise.race([rolePromise, timeoutPromise]);
+            let data = null;
+            let error = null;
+            
+            try {
+              const result = await Promise.race([rolePromise, timeoutPromise]);
+              if (result && typeof result === 'object' && 'data' in result) {
+                data = (result as any).data;
+                error = (result as any).error;
+              }
+            } catch (timeoutError) {
+              console.error('Role fetch timed out:', timeoutError);
+              error = timeoutError;
+            }
             
             if (error) {
               console.error('Error fetching user role:', error);
