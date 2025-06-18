@@ -84,8 +84,11 @@ const Dashboard = () => {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load user role. Please try refreshing."
+          description: "Failed to load user role. Defaulting to student access."
         });
+        // Set fallback role to prevent infinite loading
+        setUserRole("student");
+        setUserName(session.user.email);
         setLoading(false);
         return;
       }
@@ -94,10 +97,13 @@ const Dashboard = () => {
         console.log('Dashboard: No role found for user');
         toast({
           variant: "destructive",
-          title: "Account Setup Required",
-          description: "Please complete your account setup"
+          title: "No Role Found",
+          description: "You don't have a role assigned. Defaulting to student access."
         });
-        navigate('/auth');
+        // Set fallback role to prevent infinite loading
+        setUserRole("student");
+        setUserName(session.user.email);
+        setLoading(false);
         return;
       }
 
@@ -142,8 +148,11 @@ const Dashboard = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Something went wrong. Please try refreshing the page."
+        description: "Something went wrong. Defaulting to student access."
       });
+      // Always set a role to prevent infinite loading
+      setUserRole("student");
+      setUserName("User");
     } finally {
       setLoading(false);
     }
@@ -181,9 +190,25 @@ const Dashboard = () => {
     });
   };
 
-  // Show loading while determining user role
-  if (loading || (user && !userRole)) {
+  // Show loading while determining user role - but with timeout protection
+  if (loading && user) {
     console.log('Dashboard: Showing loading state', { loading, user: !!user, userRole });
+    
+    // Add timeout protection - if loading takes too long, show error
+    setTimeout(() => {
+      if (loading) {
+        console.error('Dashboard: Loading timeout - forcing fallback');
+        setUserRole("student");
+        setUserName(user?.email || "User");
+        setLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Loading Error",
+          description: "Dashboard took too long to load. Defaulting to student access."
+        });
+      }
+    }, 10000); // 10 second timeout
+
     return (
       <div className="flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center space-y-4">
