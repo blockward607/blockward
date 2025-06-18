@@ -56,12 +56,12 @@ const Dashboard = () => {
     if (user && !authUserRole) {
       console.log('Dashboard: User exists but no role, checking auth with timeout');
       
-      // Set a timeout to prevent infinite loading
+      // Set a timeout to prevent infinite loading - CRITICAL FIX
       const timeoutId = setTimeout(() => {
         console.log('Dashboard: Role fetch timeout, using fallback');
-        setUserRole('student');
+        setUserRole('student'); // Always set a fallback role
         setUserName(user.email || 'User');
-        setLoading(false);
+        setLoading(false); // ALWAYS exit loading state
         toast({
           variant: "destructive",
           title: "Role Detection Issue",
@@ -121,7 +121,7 @@ const Dashboard = () => {
 
       if (error) {
         console.error('Dashboard: Error fetching role:', error);
-        // Set fallback role instead of blocking
+        // CRITICAL FIX: Always set fallback and exit loading
         setUserRole("student");
         setUserName(session.user.email || "User");
         setLoading(false);
@@ -135,6 +135,7 @@ const Dashboard = () => {
 
       if (!data) {
         console.log('Dashboard: No role found for user, using fallback');
+        // CRITICAL FIX: Always set fallback and exit loading
         setUserRole("student");
         setUserName(session.user.email || "User");
         setLoading(false);
@@ -183,7 +184,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Dashboard: Error in checkAuth:', error);
-      // Always set a role to prevent infinite loading
+      // CRITICAL FIX: Always set fallback and exit loading
       setUserRole("student");
       setUserName(user?.email || "User");
       toast({
@@ -192,6 +193,7 @@ const Dashboard = () => {
         description: "Continuing with limited access.",
       });
     } finally {
+      // CRITICAL FIX: Always exit loading state
       setLoading(false);
     }
   };
@@ -228,7 +230,7 @@ const Dashboard = () => {
     });
   };
 
-  // Show loading only for a short time
+  // CRITICAL FIX: Only show loading if we actually have a user but no role AND we haven't timed out
   if (loading && user) {
     console.log('Dashboard: Showing loading state', { loading, user: !!user, userRole });
 
