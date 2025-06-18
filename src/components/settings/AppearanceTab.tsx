@@ -27,6 +27,16 @@ export const AppearanceTab = () => {
     );
   }
 
+  const handleDarkModeToggle = () => {
+    console.log('Dark mode switch clicked, current value:', darkMode, 'toggling to:', !darkMode);
+    handleToggleDarkMode(!darkMode);
+  };
+
+  const handleCompactViewToggle = () => {
+    console.log('Compact view switch clicked, current value:', compactView, 'toggling to:', !compactView);
+    handleToggleCompactView(!compactView);
+  };
+
   return (
     <div className="space-y-8">
       <motion.div 
@@ -49,10 +59,7 @@ export const AppearanceTab = () => {
           <Switch 
             id="dark-mode" 
             checked={darkMode}
-            onCheckedChange={(checked) => {
-              console.log('Dark mode switch clicked, new value:', checked);
-              handleToggleDarkMode(checked);
-            }}
+            onCheckedChange={handleDarkModeToggle}
           />
         </div>
       </motion.div>
@@ -77,10 +84,7 @@ export const AppearanceTab = () => {
           <Switch 
             id="compact-view" 
             checked={compactView}
-            onCheckedChange={(checked) => {
-              console.log('Compact view switch clicked, new value:', checked);
-              handleToggleCompactView(checked);
-            }}
+            onCheckedChange={handleCompactViewToggle}
           />
         </div>
       </motion.div>

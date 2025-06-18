@@ -20,6 +20,8 @@ export const useAppearanceSettings = () => {
       
       if (sessionError) {
         console.error('Session error:', sessionError);
+        setDarkMode(true);
+        setCompactView(false);
         setLoading(false);
         return;
       }
@@ -53,7 +55,6 @@ export const useAppearanceSettings = () => {
       }
     } catch (error) {
       console.error('Error in loadPreferences:', error);
-      // Use defaults if loading fails
       setDarkMode(true);
       setCompactView(false);
       toast({
@@ -80,7 +81,6 @@ export const useAppearanceSettings = () => {
 
       if (error) {
         console.error('Error creating default preferences:', error);
-        // Don't throw error, just use local state
       } else {
         console.log('Default preferences created successfully');
       }
@@ -89,7 +89,6 @@ export const useAppearanceSettings = () => {
       setCompactView(false);
     } catch (error) {
       console.error('Failed to create default preferences:', error);
-      // Use local state if database fails
       setDarkMode(true);
       setCompactView(false);
     }
@@ -101,7 +100,7 @@ export const useAppearanceSettings = () => {
       
       if (!session) {
         console.log('No session - preference will only be local');
-        return true; // Allow local state to work without auth
+        return true;
       }
 
       console.log(`Updating ${field} to ${value} for user:`, session.user.id);
@@ -138,26 +137,16 @@ export const useAppearanceSettings = () => {
     }
   };
 
-  const handleToggleDarkMode = async (checked: boolean) => {
-    console.log('Dark mode toggled to:', checked);
-    setDarkMode(checked); // Always update local state immediately
-    
-    // Try to save to database but don't revert if it fails
-    const success = await updatePreference('dark_mode', checked);
-    if (!success) {
-      console.log('Database save failed but keeping local state');
-    }
+  const handleToggleDarkMode = async (value: boolean) => {
+    console.log('handleToggleDarkMode called with:', value);
+    setDarkMode(value);
+    await updatePreference('dark_mode', value);
   };
 
-  const handleToggleCompactView = async (checked: boolean) => {
-    console.log('Compact view toggled to:', checked);
-    setCompactView(checked); // Always update local state immediately
-    
-    // Try to save to database but don't revert if it fails
-    const success = await updatePreference('compact_view', checked);
-    if (!success) {
-      console.log('Database save failed but keeping local state');
-    }
+  const handleToggleCompactView = async (value: boolean) => {
+    console.log('handleToggleCompactView called with:', value);
+    setCompactView(value);
+    await updatePreference('compact_view', value);
   };
 
   return {
