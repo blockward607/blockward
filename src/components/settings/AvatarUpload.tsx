@@ -16,6 +16,22 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
 
+  const createAvatarsBucketIfNeeded = async () => {
+    try {
+      const { data, error } = await supabase.storage.getBucket('avatars');
+      if (error && error.message.includes('The resource was not found')) {
+        console.log('Avatars bucket does not exist, creating it...');
+        const { error: createError } = await supabase.storage.createBucket('avatars', {
+          public: true
+        });
+        if (createError) throw createError;
+        console.log('Avatars bucket created successfully');
+      }
+    } catch (error) {
+      console.error('Error checking/creating avatars bucket:', error);
+    }
+  };
+
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
@@ -25,28 +41,43 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
       }
 
       const file = event.target.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please select a valid image file.');
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('File size must be less than 5MB.');
+      }
+
+      // Ensure bucket exists
+      await createAvatarsBucketIfNeeded();
+
       const fileExt = file.name.split('.').pop();
       const filePath = `avatars/${crypto.randomUUID()}.${fileExt}`;
 
-      // Check if avatars bucket exists and create it if it doesn't
-      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('avatars');
-      if (bucketError && bucketError.message.includes('The resource was not found')) {
-        await supabase.storage.createBucket('avatars', { public: true });
-      }
+      console.log('Uploading file to path:', filePath);
 
       // Upload the file to Supabase storage
-      const { error: uploadError } = await supabase.storage
+      const { data, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
+
+      console.log('Upload successful:', data);
 
       // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
+
+      console.log('Public URL:', publicUrl);
 
       onAvatarChange(publicUrl);
       
@@ -55,6 +86,7 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
         description: "Your profile picture has been updated successfully.",
       });
     } catch (error: any) {
+      console.error('Avatar upload error:', error);
       toast({
         variant: "destructive",
         title: "Upload failed",
@@ -62,6 +94,17 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
       });
     } finally {
       setUploading(false);
+      // Reset the input value so the same file can be selected again
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
+  const handleUploadClick = () => {
+    const input = document.getElementById('avatar-upload') as HTMLInputElement;
+    if (input) {
+      input.click();
     }
   };
 
@@ -80,7 +123,7 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
       <div className="flex items-center">
         <Button
           variant="outline"
-          onClick={() => document.getElementById('avatar-upload')?.click()}
+          onClick={handleUploadClick}
           disabled={uploading}
           className="relative"
         >
@@ -95,14 +138,14 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
               Upload Picture
             </>
           )}
-          <input
-            id="avatar-upload"
-            type="file"
-            accept="image/*"
-            onChange={uploadAvatar}
-            className="sr-only"
-          />
         </Button>
+        <input
+          id="avatar-upload"
+          type="file"
+          accept="image/*"
+          onChange={uploadAvatar}
+          className="sr-only"
+        />
       </div>
     </div>
   );

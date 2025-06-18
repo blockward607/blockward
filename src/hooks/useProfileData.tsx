@@ -21,12 +21,16 @@ export const useProfileData = () => {
 
   const fetchUserProfile = async () => {
     try {
+      setProfileLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.log('No session found, redirecting to auth');
         navigate('/auth');
         return;
       }
+      
+      console.log('Session found, fetching profile for user:', session.user.id);
       
       const { data: userRole } = await supabase
         .from('user_roles')
@@ -34,12 +38,16 @@ export const useProfileData = () => {
         .eq('user_id', session.user.id)
         .single();
         
+      console.log('User role:', userRole);
+        
       if (userRole?.role === 'teacher') {
         const { data: profile, error } = await supabase
           .from('teacher_profiles')
           .select('*')
           .eq('user_id', session.user.id)
           .single();
+          
+        console.log('Teacher profile:', profile, 'Error:', error);
           
         if (profile) {
           setFullName(profile.full_name || '');
@@ -54,15 +62,15 @@ export const useProfileData = () => {
           .eq('user_id', session.user.id)
           .single();
           
+        console.log('Student profile:', profile, 'Error:', error);
+          
         if (profile) {
           setFullName(profile.name || '');
           setSchool(profile.school || '');
           // Students don't have a subject field
           
           // Check if avatar_url exists in the response before accessing it
-          // This handles the case where the field might not be in the type definition
-          // but might be present in the actual database response
-          const studentProfile = profile as any; // Use type assertion to bypass TypeScript checking
+          const studentProfile = profile as any;
           setAvatarUrl(studentProfile.avatar_url || null);
         }
       }
@@ -79,6 +87,7 @@ export const useProfileData = () => {
   };
 
   const handleAvatarChange = (url: string) => {
+    console.log('Avatar changed to:', url);
     setAvatarUrl(url);
   };
 
@@ -91,6 +100,9 @@ export const useProfileData = () => {
         navigate('/auth');
         return;
       }
+      
+      console.log('Saving profile for user:', session.user.id);
+      console.log('Profile data:', { fullName, school, subject, avatarUrl });
       
       const { data: userRole } = await supabase
         .from('user_roles')
@@ -106,13 +118,16 @@ export const useProfileData = () => {
             school: school,
             subject: subject,
             avatar_url: avatarUrl,
-            updated_at: new Date().toISOString() // Convert Date to ISO string format
+            updated_at: new Date().toISOString()
           })
           .eq('user_id', session.user.id);
           
-        if (error) throw error;
+        if (error) {
+          console.error('Teacher profile update error:', error);
+          throw error;
+        }
+        console.log('Teacher profile updated successfully');
       } else {
-        // Add avatar_url to students table update
         const { error } = await supabase
           .from('students')
           .update({
@@ -122,7 +137,11 @@ export const useProfileData = () => {
           })
           .eq('user_id', session.user.id);
           
-        if (error) throw error;
+        if (error) {
+          console.error('Student profile update error:', error);
+          throw error;
+        }
+        console.log('Student profile updated successfully');
       }
       
       toast({
