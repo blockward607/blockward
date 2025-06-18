@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, X, Shield, Users, GraduationCap } from "lucide-react";
+import { Menu, X, Users, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InteractiveLogo } from "@/components/logo/InteractiveLogo";
 
@@ -30,13 +30,13 @@ export const NavBar = () => {
               <Link to="/auth">
                 <Button variant="ghost" className="text-gray-300 hover:text-white">
                   <Users className="mr-2 h-4 w-4" />
-                  Teacher/Student
+                  Sign In
                 </Button>
               </Link>
-              <Link to="/admin-auth">
-                <Button variant="outline" className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Admin
+              <Link to="/signup">
+                <Button variant="outline" className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up
                 </Button>
               </Link>
             </div>
@@ -80,13 +80,13 @@ export const NavBar = () => {
                 <Link to="/auth" onClick={() => setIsOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
                     <Users className="mr-2 h-4 w-4" />
-                    Teacher/Student Login
+                    Sign In
                   </Button>
                 </Link>
-                <Link to="/admin-auth" onClick={() => setIsOpen(false)}>
-                  <Button variant="outline" className="w-full justify-start border-red-500 text-red-400 hover:bg-red-500 hover:text-white">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin Portal
+                <Link to="/signup" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" className="w-full justify-start border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Sign Up
                   </Button>
                 </Link>
               </div>

@@ -29,11 +29,8 @@ import ClassroomInvite from "./pages/ClassroomInvite";
 import ClassroomSeating from "./pages/ClassroomSeating";
 import StudentDashboard from "./pages/StudentDashboard";
 import ViewTeacherDashboard from "./pages/ViewTeacherDashboard";
-import AdminAuth from "./pages/AdminAuth";
 import AdminPortal from "./pages/AdminPortal";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminSetup from "./pages/AdminSetup";
-import SchoolSetup from "./pages/SchoolSetup";
 import SignUp from "./pages/SignUp";
 import ResetPassword from "./pages/ResetPassword";
 import ResetPasswordOTP from "./pages/ResetPasswordOTP";
@@ -57,9 +54,6 @@ const App = () => (
             <Route path="/reset-password-otp" element={<ResetPasswordOTP />} />
             <Route path="/intro" element={<IntroPage />} />
             <Route path="/tutorial" element={<TutorialPage />} />
-            <Route path="/admin-auth" element={<AdminAuth />} />
-            <Route path="/admin-setup" element={<AdminSetup />} />
-            <Route path="/school-setup" element={<SchoolSetup />} />
             
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>

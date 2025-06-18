@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,14 +8,61 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { User, School, Bell, Shield, Palette, Database } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { SchoolRegistrationForm } from "@/components/school/SchoolRegistrationForm";
 
 const Settings = () => {
   const { toast } = useToast();
-  const { userRole } = useAuth();
+  const { userRole, user } = useAuth();
   const [schoolName, setSchoolName] = useState("BlockWard School");
   const [adminName, setAdminName] = useState("Administrator");
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
+  const [hasSchool, setHasSchool] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkUserSchoolStatus();
+  }, [user]);
+
+  const checkUserSchoolStatus = async () => {
+    if (!user) return;
+    
+    try {
+      // Check if user has a school association
+      if (userRole === 'admin') {
+        const { data: adminProfile } = await supabase
+          .from('admin_profiles')
+          .select('school_id, schools(name)')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (adminProfile?.school_id) {
+          setHasSchool(true);
+          if (adminProfile.schools) {
+            setSchoolName(adminProfile.schools.name);
+          }
+        }
+      } else if (userRole === 'teacher') {
+        const { data: teacherProfile } = await supabase
+          .from('teacher_profiles')
+          .select('school_id, schools(name)')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (teacherProfile?.school_id) {
+          setHasSchool(true);
+          if (teacherProfile.schools) {
+            setSchoolName(teacherProfile.schools.name);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking school status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSaveProfile = () => {
     toast({
@@ -60,6 +106,17 @@ const Settings = () => {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p>Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-4xl mx-auto">
@@ -71,7 +128,10 @@ const Settings = () => {
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 bg-gray-800">
             <TabsTrigger value="profile" className="text-white">Profile</TabsTrigger>
-            {userRole === 'admin' && (
+            {!hasSchool && userRole !== 'student' && (
+              <TabsTrigger value="school-register" className="text-white">Register School</TabsTrigger>
+            )}
+            {(userRole === 'admin' || (userRole === 'teacher' && hasSchool)) && (
               <TabsTrigger value="school" className="text-white">School</TabsTrigger>
             )}
             <TabsTrigger value="notifications" className="text-white">Notifications</TabsTrigger>
@@ -104,8 +164,9 @@ const Settings = () => {
                   <Input 
                     id="email"
                     type="email"
-                    placeholder="admin@school.edu"
-                    className="bg-gray-700 border-gray-600 text-white"
+                    value={user?.email || ""}
+                    disabled
+                    className="bg-gray-700 border-gray-600 text-white opacity-60"
                   />
                 </div>
                 <Button onClick={handleSaveProfile} className="bg-purple-600 hover:bg-purple-700">
@@ -115,7 +176,13 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          {userRole === 'admin' && (
+          {!hasSchool && userRole !== 'student' && (
+            <TabsContent value="school-register">
+              <SchoolRegistrationForm />
+            </TabsContent>
+          )}
+
+          {(userRole === 'admin' || (userRole === 'teacher' && hasSchool)) && (
             <TabsContent value="school">
               <Card className="bg-gray-800 border-gray-700">
                 <CardHeader>
@@ -133,27 +200,32 @@ const Settings = () => {
                       value={schoolName}
                       onChange={(e) => setSchoolName(e.target.value)}
                       className="bg-gray-700 border-gray-600 text-white"
+                      disabled={userRole !== 'admin'}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="schoolAddress" className="text-white">Address</Label>
-                    <Input 
-                      id="schoolAddress"
-                      placeholder="School address"
-                      className="bg-gray-700 border-gray-600 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="schoolPhone" className="text-white">Phone Number</Label>
-                    <Input 
-                      id="schoolPhone"
-                      placeholder="School phone number"
-                      className="bg-gray-700 border-gray-600 text-white"
-                    />
-                  </div>
-                  <Button onClick={handleSaveSchool} className="bg-purple-600 hover:bg-purple-700">
-                    Save School Settings
-                  </Button>
+                  {userRole === 'admin' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="schoolAddress" className="text-white">Address</Label>
+                        <Input 
+                          id="schoolAddress"
+                          placeholder="School address"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="schoolPhone" className="text-white">Phone Number</Label>
+                        <Input 
+                          id="schoolPhone"
+                          placeholder="School phone number"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                      <Button onClick={handleSaveSchool} className="bg-purple-600 hover:bg-purple-700">
+                        Save School Settings
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

@@ -8,7 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 interface SignInFormProps {
-  role: 'teacher' | 'student' | 'admin';
   email: string;
   setEmail: (email: string) => void;
   password: string;
@@ -20,7 +19,6 @@ interface SignInFormProps {
 }
 
 export const SignInForm = ({
-  role,
   email,
   setEmail,
   password,
@@ -62,7 +60,7 @@ export const SignInForm = ({
         setShowError(true);
         console.error("Login error:", error);
       } else if (data.user) {
-        // Check if the user's role matches the selected role
+        // Check user role and redirect accordingly
         const { data: userRole, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -76,20 +74,8 @@ export const SignInForm = ({
         } else if (userRole) {
           // Handle role-based redirection
           if (userRole.role === 'admin') {
-            if (role === 'admin') {
-              navigate('/admin-portal', { replace: true });
-            } else {
-              setErrorMessage(`This account is registered as an admin. Please select the admin role.`);
-              setShowError(true);
-              await supabase.auth.signOut();
-            }
-          } else if (userRole.role !== role) {
-            setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role.`);
-            setShowError(true);
-            // Sign out the user since role doesn't match
-            await supabase.auth.signOut();
+            navigate('/admin-portal', { replace: true });
           } else {
-            // Navigate to appropriate dashboard based on role
             navigate('/dashboard', { replace: true });
           }
         } else {
@@ -108,15 +94,6 @@ export const SignInForm = ({
 
   return (
     <div className="space-y-4">
-      <div className="text-center mb-4">
-        <p className="text-sm text-gray-400">
-          Signing in as <span className={`font-medium ${
-            role === 'admin' ? 'text-red-400' : 
-            role === 'teacher' ? 'text-indigo-400' : 'text-purple-400'
-          }`}>{role}</span>
-        </p>
-      </div>
-      
       <form onSubmit={handleSignIn} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
@@ -141,7 +118,7 @@ export const SignInForm = ({
           />
         </div>
         <Button type="submit" className="w-full">
-          Sign In as {role === 'teacher' ? 'Teacher' : role === 'student' ? 'Student' : 'Admin'}
+          Sign In
         </Button>
         <div className="text-center mt-4">
           <button 

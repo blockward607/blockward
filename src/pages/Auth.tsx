@@ -11,7 +11,6 @@ import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState("signin");
-  const [role, setRole] = useState<'teacher' | 'student' | 'admin'>('student');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -52,42 +51,6 @@ const Auth = () => {
             <p className="text-gray-400 mt-2">Welcome to the future of education</p>
           </div>
 
-          {/* Role Selection */}
-          <div className="mb-6">
-            <div className="grid grid-cols-3 rounded-lg overflow-hidden">
-              <button
-                className={`py-3 text-center font-medium transition-all ${
-                  role === 'teacher'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-                onClick={() => setRole('teacher')}
-              >
-                Teacher
-              </button>
-              <button
-                className={`py-3 text-center font-medium transition-all ${
-                  role === 'student'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-                onClick={() => setRole('student')}
-              >
-                Student
-              </button>
-              <button
-                className={`py-3 text-center font-medium transition-all ${
-                  role === 'admin'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-                onClick={() => setRole('admin')}
-              >
-                Admin
-              </button>
-            </div>
-          </div>
-
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -96,7 +59,6 @@ const Auth = () => {
             
             <TabsContent value="signin">
               <SignInForm 
-                role={role}
                 email={email}
                 setEmail={setEmail}
                 password={password}
@@ -110,7 +72,6 @@ const Auth = () => {
             
             <TabsContent value="signup">
               <SignUpForm 
-                role={role}
                 email={email}
                 setEmail={setEmail}
                 password={password}

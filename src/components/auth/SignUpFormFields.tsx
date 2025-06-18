@@ -5,11 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SignUpFormFieldsProps {
-  role: 'teacher' | 'student' | 'admin';
   email: string;
   setEmail: (email: string) => void;
   password: string;
@@ -20,7 +18,6 @@ interface SignUpFormFieldsProps {
 }
 
 export const SignUpFormFields = ({
-  role,
   email,
   setEmail,
   password,
@@ -29,125 +26,122 @@ export const SignUpFormFields = ({
   setShowError,
   setLoading,
 }: SignUpFormFieldsProps) => {
+  const [role, setRole] = useState<'teacher' | 'student'>('student');
+  const [name, setName] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [schoolName, setSchoolName] = useState("");
-  const [country, setCountry] = useState("");
-  const [emailLoading, setEmailLoading] = useState(false);
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setEmailLoading(true);
     setShowError(false);
-
-    if (!name) {
-      setErrorMessage("Please enter your name");
+    
+    if (!validateEmail(email)) {
+      setErrorMessage("Please enter a valid email address");
       setShowError(true);
-      setEmailLoading(false);
+      return;
+    }
+    
+    if (password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters long");
+      setShowError(true);
       return;
     }
 
-    if (!schoolName) {
-      setErrorMessage("Please enter your school name");
+    if (!name.trim()) {
+      setErrorMessage("Please enter your full name");
       setShowError(true);
-      setEmailLoading(false);
       return;
     }
+    
+    setLoading(true);
 
     try {
-      console.log(`Signing up with email: ${email}, role: ${role}`);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             role: role,
-            name: name,
-            school: schoolName,
-            country: country
-          },
-          emailRedirectTo: role === 'admin' 
-            ? window.location.origin + '/admin-portal'
-            : window.location.origin + '/dashboard'
+            name: name.trim(),
+            full_name: name.trim()
+          }
         }
       });
 
       if (error) {
         setErrorMessage(error.message);
         setShowError(true);
-        console.error("Signup error:", error);
-      } else if (data) {
+        console.error("Sign up error:", error);
+      } else if (data.user) {
         toast({
-          title: "Account created",
-          description: "Please check your email to confirm your account.",
+          title: "Account created successfully!",
+          description: "Please check your email to verify your account.",
         });
         
-        // For admins, show a special message about admin portal access
-        if (role === 'admin') {
-          toast({
-            title: "Admin Account Created",
-            description: "After email confirmation, you'll have access to the Admin Portal with full system controls.",
-          });
-        }
+        // Clear form
+        setEmail("");
+        setPassword("");
+        setName("");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Unexpected error:", error);
       setErrorMessage("An unexpected error occurred. Please try again.");
       setShowError(true);
     } finally {
-      setEmailLoading(false);
       setLoading(false);
-    }
-  };
-
-  const getRoleDisplayName = () => {
-    switch (role) {
-      case 'teacher': return 'Teacher';
-      case 'student': return 'Student';
-      case 'admin': return 'Admin';
-      default: return role;
-    }
-  };
-
-  const getRoleColor = () => {
-    switch (role) {
-      case 'teacher': return 'text-indigo-400';
-      case 'student': return 'text-purple-400';
-      case 'admin': return 'text-red-400';
-      default: return 'text-purple-400';
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="text-center mb-4">
-        <p className="text-sm text-gray-400">
-          Creating account as <span className={`font-medium ${getRoleColor()}`}>{getRoleDisplayName()}</span>
-        </p>
-        {role === 'admin' && (
-          <p className="text-xs text-red-300 mt-1">
-            Admin accounts get full system access including user management, security controls, and system monitoring.
-          </p>
-        )}
+      {/* Role Selection */}
+      <div className="space-y-2">
+        <Label>I am a:</Label>
+        <div className="flex rounded-lg overflow-hidden">
+          <button
+            type="button"
+            className={`flex-1 py-3 text-center font-medium transition-all ${
+              role === 'teacher'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+            onClick={() => setRole('teacher')}
+          >
+            Teacher
+          </button>
+          <button
+            type="button"
+            className={`flex-1 py-3 text-center font-medium transition-all ${
+              role === 'student'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+            onClick={() => setRole('student')}
+          >
+            Student
+          </button>
+        </div>
       </div>
-      
-      <form onSubmit={handleSignup} className="space-y-4">
+
+      <form onSubmit={handleSignUp} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="signup-name" className="text-white">Full Name</Label>
+          <Label htmlFor="name">Full Name</Label>
           <Input 
-            id="signup-name"
+            id="name"
             type="text"
-            placeholder="Your Name"
+            placeholder="Your full name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="glass-input text-white"
           />
         </div>
-        
         <div className="space-y-2">
-          <Label htmlFor="signup-email" className="text-white">Email</Label>
+          <Label htmlFor="signup-email">Email</Label>
           <Input 
             id="signup-email"
             type="email"
@@ -155,12 +149,10 @@ export const SignUpFormFields = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="glass-input text-white"
           />
         </div>
-        
         <div className="space-y-2">
-          <Label htmlFor="signup-password" className="text-white">Password</Label>
+          <Label htmlFor="signup-password">Password</Label>
           <Input 
             id="signup-password"
             type="password"
@@ -168,45 +160,10 @@ export const SignUpFormFields = ({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="glass-input text-white"
           />
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="signup-school" className="text-white">School Name</Label>
-          <Input 
-            id="signup-school"
-            type="text"
-            placeholder="Enter school name"
-            value={schoolName}
-            onChange={(e) => setSchoolName(e.target.value)}
-            required
-            className="glass-input text-white"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="signup-country" className="text-white">Country</Label>
-          <Input 
-            id="signup-country"
-            type="text"
-            placeholder="Enter country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            required
-            className="glass-input text-white"
-          />
-        </div>
-        
-        <Button type="submit" className="w-full" disabled={emailLoading}>
-          {emailLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating Account...
-            </>
-          ) : (
-            `Create ${getRoleDisplayName()} Account`
-          )}
+        <Button type="submit" className="w-full">
+          Create Account
         </Button>
       </form>
     </div>
