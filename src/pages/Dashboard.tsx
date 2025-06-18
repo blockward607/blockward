@@ -35,6 +35,7 @@ const Dashboard = () => {
 
   // Use auth hook role if available, otherwise use local state
   useEffect(() => {
+    console.log('Dashboard: Auth user role changed:', authUserRole);
     if (authUserRole) {
       setUserRole(authUserRole);
       setLoading(false);
@@ -42,9 +43,13 @@ const Dashboard = () => {
   }, [authUserRole]);
 
   useEffect(() => {
+    console.log('Dashboard: User or role changed:', { user: !!user, authUserRole });
+    
     if (user && !authUserRole) {
+      console.log('Dashboard: User exists but no role, checking auth');
       checkAuth();
     } else if (!user) {
+      console.log('Dashboard: No user, redirecting to auth');
       navigate('/auth');
     }
     fetchAnnouncements();
@@ -52,8 +57,10 @@ const Dashboard = () => {
 
   const checkAuth = async () => {
     try {
+      console.log('Dashboard: Checking authentication');
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.log('Dashboard: No session found');
         toast({
           variant: "destructive",
           title: "Not authenticated",
@@ -63,15 +70,42 @@ const Dashboard = () => {
         return;
       }
 
+      console.log('Dashboard: Session found, checking role for user:', session.user.id);
+
       // Check user role first
-      const { data: roleData } = await supabase
+      const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('Dashboard: Error fetching role:', roleError);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load user role. Please try refreshing."
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!roleData) {
+        console.log('Dashboard: No role found for user');
+        toast({
+          variant: "destructive",
+          title: "Account Setup Required",
+          description: "Please complete your account setup"
+        });
+        navigate('/auth');
+        return;
+      }
+
+      console.log('Dashboard: Role found:', roleData.role);
 
       // If user is admin, redirect to admin portal
       if (roleData?.role === 'admin') {
+        console.log('Dashboard: Admin user, redirecting to admin portal');
         navigate('/admin-portal');
         return;
       }
@@ -83,6 +117,7 @@ const Dashboard = () => {
         .single();
       
       if (teacherData) {
+        console.log('Dashboard: Teacher profile found');
         setUserRole('teacher');
         setUserName(teacherData.full_name || session.user.email);
       } else {
@@ -93,15 +128,22 @@ const Dashboard = () => {
           .single();
           
         if (studentData) {
+          console.log('Dashboard: Student profile found');
           setUserRole('student');
           setUserName(studentData.name || session.user.email);
         } else {
+          console.log('Dashboard: No profile found, defaulting to student');
           setUserRole('student');
           setUserName(session.user.email);
         }
       }
     } catch (error) {
-      console.error('Error in checkAuth:', error);
+      console.error('Dashboard: Error in checkAuth:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Something went wrong. Please try refreshing the page."
+      });
     } finally {
       setLoading(false);
     }
@@ -141,11 +183,15 @@ const Dashboard = () => {
 
   // Show loading while determining user role
   if (loading || (user && !userRole)) {
+    console.log('Dashboard: Showing loading state', { loading, user: !!user, userRole });
     return (
       <div className="flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-purple-500" />
           <p className="text-lg font-medium text-gray-300">Loading dashboard...</p>
+          <p className="text-sm text-gray-400">
+            {!user ? 'Checking authentication...' : 'Loading user profile...'}
+          </p>
         </div>
       </div>
     );
@@ -153,8 +199,11 @@ const Dashboard = () => {
 
   // Redirect if no user
   if (!user) {
+    console.log('Dashboard: No user, returning null');
     return null;
   }
+
+  console.log('Dashboard: Rendering dashboard with role:', userRole);
 
   return (
     <div className="h-full w-full flex flex-col">

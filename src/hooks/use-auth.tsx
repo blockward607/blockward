@@ -163,15 +163,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
+        console.log('Found existing session for user:', session.user.id);
         setUser(session.user);
         
-        // Get the user role from database
+        // Get the user role from database with better error handling
         supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', session.user.id)
-          .single()
+          .maybeSingle()
           .then(({ data, error }) => {
+            if (error) {
+              console.error('Error fetching user role:', error);
+              // Try to set up the account if there's an error
+              setupUserAccount(session);
+              return;
+            }
+            
             if (data) {
               console.log('Setting user role from database:', data.role);
               setUserRole(data.role);
@@ -184,12 +192,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 navigate('/dashboard');
               }
             } else {
-              console.error('No role found for user, error:', error);
+              console.log('No role found for user, setting up account');
               // If no role found, try to set up the account
               setupUserAccount(session);
             }
+          })
+          .catch((error) => {
+            console.error('Exception while fetching user role:', error);
+            setupUserAccount(session);
           });
       } else {
+        console.log('No active session found');
         setUser(null);
         setUserRole(null);
       }
@@ -204,6 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user || null);
         await setupUserAccount(session);
       } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
         setUser(null);
         setUserRole(null);
         navigate('/');
