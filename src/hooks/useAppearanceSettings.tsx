@@ -18,21 +18,14 @@ export const useAppearanceSettings = () => {
       setLoading(true);
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        setLoading(false);
-        return;
-      }
-
-      if (!session) {
-        console.log('No session found');
+      if (sessionError || !session) {
+        console.error('Session error or no session:', sessionError);
         setLoading(false);
         return;
       }
 
       console.log('Loading preferences for user:', session.user.id);
 
-      // Use maybeSingle instead of single to avoid crashes when no preferences exist
       const { data: preferences, error } = await supabase
         .from('user_preferences')
         .select('*')
@@ -41,29 +34,18 @@ export const useAppearanceSettings = () => {
 
       if (error) {
         console.error('Error loading preferences:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load preferences. Using defaults."
-        });
-      } else {
+        // Create default preferences if they don't exist
+        await createDefaultPreferences(session.user.id);
+      } else if (preferences) {
         console.log('Loaded preferences:', preferences);
-        if (preferences) {
-          setDarkMode(preferences.dark_mode ?? true);
-          setCompactView(preferences.compact_view ?? false);
-        } else {
-          // No preferences found, create defaults
-          console.log('No preferences found, creating defaults');
-          await createDefaultPreferences(session.user.id);
-        }
+        setDarkMode(preferences.dark_mode ?? true);
+        setCompactView(preferences.compact_view ?? false);
+      } else {
+        console.log('No preferences found, creating defaults');
+        await createDefaultPreferences(session.user.id);
       }
     } catch (error) {
-      console.error('Error loading preferences:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load preferences"
-      });
+      console.error('Error in loadPreferences:', error);
     } finally {
       setLoading(false);
     }
@@ -71,6 +53,7 @@ export const useAppearanceSettings = () => {
 
   const createDefaultPreferences = async (userId: string) => {
     try {
+      console.log('Creating default preferences for user:', userId);
       const { error } = await supabase
         .from('user_preferences')
         .insert({
@@ -82,23 +65,26 @@ export const useAppearanceSettings = () => {
 
       if (error) {
         console.error('Error creating default preferences:', error);
+        throw error;
       } else {
         console.log('Default preferences created successfully');
+        setDarkMode(true);
+        setCompactView(false);
       }
     } catch (error) {
-      console.error('Error creating default preferences:', error);
+      console.error('Failed to create default preferences:', error);
     }
   };
 
   const updatePreference = async (field: string, value: boolean) => {
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (sessionError || !session) {
+      if (!session) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Authentication required"
+          description: "Please log in to save preferences"
         });
         return;
       }
@@ -130,7 +116,7 @@ export const useAppearanceSettings = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: `Failed to save ${field}: ${error.message || 'Unknown error'}`
+        description: `Failed to save ${field}: ${error.message}`
       });
     }
   };

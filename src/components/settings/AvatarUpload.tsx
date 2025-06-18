@@ -31,17 +31,16 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
 
       const file = event.target.files[0];
       
-      // Validate file type
+      // Validate file
       if (!file.type.startsWith('image/')) {
         toast({
           variant: "destructive",
           title: "Invalid file type",
-          description: "Please select a valid image file (PNG, JPG, GIF, etc.)."
+          description: "Please select a valid image file."
         });
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({
           variant: "destructive",
@@ -51,22 +50,33 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
         return;
       }
 
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Please log in to upload an avatar."
+        });
+        return;
+      }
 
-      console.log('Uploading avatar file:', {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${session.user.id}/${Date.now()}.${fileExt}`;
+
+      console.log('Uploading avatar:', {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
         filePath: filePath
       });
 
-      // Upload the file to Supabase storage
+      // Upload file
       const { data, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         });
 
       if (uploadError) {
@@ -74,40 +84,36 @@ const AvatarUpload = ({ avatarUrl, fullName, onAvatarChange }: AvatarUploadProps
         toast({
           variant: "destructive",
           title: "Upload failed",
-          description: uploadError.message || "Failed to upload avatar."
+          description: uploadError.message
         });
         return;
       }
 
       console.log('Upload successful:', data);
 
-      // Get the public URL for the uploaded file
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      console.log('Public URL generated:', publicUrl);
+      console.log('Public URL:', publicUrl);
 
-      if (!publicUrl) {
-        throw new Error('Failed to get public URL for uploaded file');
+      if (publicUrl) {
+        onAvatarChange(publicUrl);
+        toast({
+          title: "Avatar updated",
+          description: "Your profile picture has been updated successfully.",
+        });
       }
-
-      onAvatarChange(publicUrl);
-      
-      toast({
-        title: "Avatar updated",
-        description: "Your profile picture has been updated successfully.",
-      });
     } catch (error: any) {
       console.error('Avatar upload error:', error);
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error.message || "Failed to upload avatar. Please try again."
+        description: error.message || "Failed to upload avatar."
       });
     } finally {
       setUploading(false);
-      // Reset the input value so the same file can be selected again
       if (event.target) {
         event.target.value = '';
       }
