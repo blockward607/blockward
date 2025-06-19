@@ -32,44 +32,50 @@ export const AdminButtonGrid = ({ adminButtons, stats }: AdminButtonGridProps) =
       setActionLoading(button.title);
       
       let targetRoute = button.route;
+      let toastMessage = `Opening ${button.title}...`;
       
+      // Handle route mapping and validation
       switch (button.route) {
         case "/admin/teachers":
           targetRoute = "/admin";
-          toast({
-            title: "Teacher Management",
-            description: "Opening teacher management in admin dashboard."
-          });
+          toastMessage = "Opening teacher management in admin dashboard.";
           break;
         case "/admin/analytics":
           targetRoute = "/dashboard";
-          toast({
-            title: "Coming Soon",
-            description: "Analytics page is coming soon. Redirecting to dashboard."
-          });
+          toastMessage = "Analytics page is coming soon. Redirecting to dashboard.";
           break;
         case "/admin/requests":
           targetRoute = "/admin";
-          toast({
-            title: "Admin Requests",
-            description: "Opening admin dashboard to manage requests."
-          });
+          toastMessage = "Opening admin dashboard to manage requests.";
+          break;
+        case "/students":
+          targetRoute = "/students";
+          break;
+        case "/classes":
+          targetRoute = "/classes";
+          break;
+        case "/school-setup":
+          targetRoute = "/settings";
+          toastMessage = "Opening school settings.";
           break;
         default:
+          // For any unrecognized routes, go to dashboard
+          targetRoute = "/dashboard";
+          toastMessage = `${button.title} feature is being prepared. Redirecting to dashboard.`;
           break;
       }
       
-      console.log(`✅ Navigating to: ${targetRoute}`);
-      navigate(targetRoute);
+      console.log(`✅ Navigating from ${button.route} to: ${targetRoute}`);
       
-      if (!["Teacher Management", "Coming Soon", "Admin Requests"].some(msg => 
-        button.title.includes("Teacher") || button.title.includes("Analytics") || button.title.includes("Requests")
-      )) {
-        toast({
-          title: "Navigation",
-          description: `Opening ${button.title}...`
-        });
-      }
+      toast({
+        title: "Navigation",
+        description: toastMessage
+      });
+      
+      // Small delay to show the toast
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      navigate(targetRoute);
       
     } catch (error) {
       console.error('❌ Navigation error:', error);
@@ -98,10 +104,18 @@ export const AdminButtonGrid = ({ adminButtons, stats }: AdminButtonGridProps) =
     }
   };
 
+  if (!adminButtons || adminButtons.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-400">No admin buttons available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {adminButtons.map((button, index) => {
-        const IconComponent = iconMap[button.icon];
+        const IconComponent = iconMap[button.icon] || iconMap['Settings'];
         const isLoading = actionLoading === button.title;
         const { count, isUrgent } = getButtonCount(button.title);
         
@@ -190,7 +204,7 @@ export const AdminButtonGrid = ({ adminButtons, stats }: AdminButtonGridProps) =
                         Loading...
                       </span>
                     ) : (
-                      `Access ${button.title}`
+                      `Open ${button.title}`
                     )}
                   </motion.div>
                 </Button>
