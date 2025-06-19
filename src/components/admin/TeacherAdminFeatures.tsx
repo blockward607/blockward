@@ -17,12 +17,11 @@ import {
   UserCheck,
   Bell
 } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 export const TeacherAdminFeatures = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
 
   const adminFeatures = [
@@ -116,13 +115,12 @@ export const TeacherAdminFeatures = () => {
     console.log(`🚀 Navigating to ${title} at route: ${route}`);
     
     try {
-      // Use window.location for immediate navigation
-      window.location.href = route;
+      // Use React Router navigate for proper SPA navigation
+      navigate(route);
       
-      // Also show toast for feedback
       toast({
-        title: "Navigating...",
-        description: `Opening ${title}`,
+        title: "Success",
+        description: `Navigating to ${title}`,
       });
       
     } catch (error) {
@@ -148,7 +146,8 @@ export const TeacherAdminFeatures = () => {
           return (
             <Card 
               key={feature.title} 
-              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border`}
+              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border cursor-pointer`}
+              onClick={() => handleAccessClick(feature.route, feature.title)}
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="p-3 rounded-full bg-black/20">
@@ -159,7 +158,10 @@ export const TeacherAdminFeatures = () => {
                   <p className="text-gray-300 text-sm mb-4">{feature.description}</p>
                 </div>
                 <Button 
-                  onClick={() => handleAccessClick(feature.route, feature.title)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAccessClick(feature.route, feature.title);
+                  }}
                   className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200"
                 >
                   Access {feature.title}
