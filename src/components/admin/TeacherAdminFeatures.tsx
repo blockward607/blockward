@@ -121,18 +121,26 @@ export const TeacherAdminFeatures = () => {
     
     try {
       console.log(`Attempting navigation from ${location.pathname} to ${route}`);
-      navigate(route);
       
-      // Add a small delay to see if navigation actually happens
+      // Force navigation with replace to ensure clean transition
+      navigate(route, { replace: false });
+      
+      // Show success toast
+      toast({
+        title: "Navigating...",
+        description: `Going to ${title}`,
+      });
+      
+      // Add a small delay to check if navigation actually happens
       setTimeout(() => {
         console.log(`Post-navigation location: ${window.location.pathname}`);
-        console.log(`Navigation should be complete`);
+        if (window.location.pathname === route) {
+          console.log(`✅ Navigation successful to ${route}`);
+        } else {
+          console.log(`❌ Navigation failed - still at ${window.location.pathname}`);
+        }
       }, 100);
       
-      toast({
-        title: "Navigation Attempted",
-        description: `Trying to go to ${title} (${route})`,
-      });
     } catch (error) {
       console.error("Navigation failed with error:", error);
       toast({
@@ -157,7 +165,8 @@ export const TeacherAdminFeatures = () => {
           return (
             <Card 
               key={feature.title} 
-              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border`}
+              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border cursor-pointer`}
+              onClick={() => handleAccessClick(feature.route, feature.title)}
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="p-3 rounded-full bg-black/20">
