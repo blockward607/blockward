@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +40,7 @@ const Dashboard = () => {
     notifications: []
   });
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     loadUserData();
@@ -199,33 +199,67 @@ const Dashboard = () => {
     }
   };
 
+  const handleQuickAction = async (actionTitle: string, actionPath: string) => {
+    console.log(`🔥 Quick action clicked: ${actionTitle} -> ${actionPath}`);
+    
+    if (actionLoading) {
+      console.log('⚠️ Action already in progress, ignoring click');
+      return;
+    }
+
+    try {
+      setActionLoading(actionTitle);
+      
+      toast({
+        title: "Navigation",
+        description: `Opening ${actionTitle}...`
+      });
+      
+      // Small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      console.log(`✅ Navigating to: ${actionPath}`);
+      navigate(actionPath);
+      
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+      toast({
+        variant: "destructive",
+        title: "Navigation Error",
+        description: `Failed to open ${actionTitle}. Please try again.`
+      });
+    } finally {
+      setTimeout(() => setActionLoading(null), 500);
+    }
+  };
+
   const quickActions = userRole === 'teacher' ? [
     {
       title: "Create Class",
       description: "Start a new classroom",
       icon: Plus,
-      action: () => navigate('/classes'),
+      path: "/classes",
       color: "bg-blue-500"
     },
     {
       title: "Add Students",
       description: "Invite students to join",
       icon: Users,
-      action: () => navigate('/students'),
+      path: "/students",
       color: "bg-green-500"
     },
     {
       title: "New Assignment",
       description: "Create an assignment",
       icon: BookOpen,
-      action: () => navigate('/assignments'),
+      path: "/assignments",
       color: "bg-purple-500"
     },
     {
       title: "View Analytics",
       description: "Check class performance",
       icon: TrendingUp,
-      action: () => navigate('/analytics'),
+      path: "/analytics",
       color: "bg-orange-500"
     }
   ] : [
@@ -233,28 +267,28 @@ const Dashboard = () => {
       title: "My Classes",
       description: "View enrolled classes",
       icon: BookOpen,
-      action: () => navigate('/classes'),
+      path: "/classes",
       color: "bg-blue-500"
     },
     {
       title: "Assignments",
       description: "Check upcoming work",
       icon: Calendar,
-      action: () => navigate('/assignments'),
+      path: "/assignments",
       color: "bg-green-500"
     },
     {
       title: "NFT Wallet",
       description: "View achievements",
       icon: Award,
-      action: () => navigate('/wallet'),
+      path: "/wallet",
       color: "bg-purple-500"
     },
     {
       title: "Progress",
       description: "Track your learning",
       icon: TrendingUp,
-      action: () => navigate('/progress'),
+      path: "/progress",
       color: "bg-orange-500"
     }
   ];
@@ -388,20 +422,23 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action) => {
               const Icon = action.icon;
+              const isLoading = actionLoading === action.title;
+              
               return (
                 <Button
                   key={action.title}
-                  onClick={() => {
-                    console.log('Quick action clicked:', action.title);
-                    action.action();
-                  }}
-                  className="h-auto p-4 flex flex-col items-center gap-3 bg-gray-700/50 hover:bg-gray-600/50 text-white border border-gray-600"
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => handleQuickAction(action.title, action.path)}
+                  className="h-auto p-4 flex flex-col items-center gap-3 bg-gray-700/50 hover:bg-gray-600/50 text-white border border-gray-600 cursor-pointer transition-all duration-200 hover:scale-105"
                 >
                   <div className={`p-3 rounded-lg ${action.color}`}>
                     <Icon className="h-6 w-6 text-white" />
                   </div>
                   <div className="text-center">
-                    <p className="font-medium">{action.title}</p>
+                    <p className="font-medium">
+                      {isLoading ? 'Loading...' : action.title}
+                    </p>
                     <p className="text-xs text-gray-400">{action.description}</p>
                   </div>
                 </Button>

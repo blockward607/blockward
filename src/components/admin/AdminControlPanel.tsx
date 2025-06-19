@@ -36,6 +36,7 @@ export const AdminControlPanel = () => {
     pendingRequests: 0
   });
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     loadAdminStats();
@@ -82,12 +83,55 @@ export const AdminControlPanel = () => {
     }
   };
 
+  const handleActionClick = async (route: string, title: string) => {
+    console.log(`🔥 Admin action clicked: ${title} -> ${route}`);
+    
+    if (actionLoading) {
+      console.log('⚠️ Action already in progress, ignoring click');
+      return;
+    }
+
+    try {
+      setActionLoading(title);
+      
+      // Check if it's a dashboard navigation
+      if (route === '/admin') {
+        console.log('✅ Navigating to admin dashboard');
+        navigate('/admin');
+        toast({
+          title: "Navigation",
+          description: `Opening ${title}...`
+        });
+        return;
+      }
+
+      // For other routes, navigate to dashboard with section
+      console.log(`✅ Navigating to dashboard with section: ${title}`);
+      navigate('/dashboard', { state: { section: title.toLowerCase() } });
+      
+      toast({
+        title: "Navigation",
+        description: `Opening ${title} section...`
+      });
+      
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+      toast({
+        variant: "destructive",
+        title: "Navigation Error",
+        description: `Failed to open ${title}. Please try again.`
+      });
+    } finally {
+      setTimeout(() => setActionLoading(null), 500);
+    }
+  };
+
   const adminActions = [
     {
       title: "Manage Students",
       description: "View and manage all students",
       icon: Users,
-      route: "/admin/students",
+      route: "/students",
       color: "bg-blue-500",
       count: stats.totalStudents
     },
@@ -95,7 +139,7 @@ export const AdminControlPanel = () => {
       title: "Manage Teachers", 
       description: "View and manage teacher accounts",
       icon: UserPlus,
-      route: "/admin/teachers",
+      route: "/teachers",
       color: "bg-green-500",
       count: stats.totalTeachers
     },
@@ -103,7 +147,7 @@ export const AdminControlPanel = () => {
       title: "Classroom Management",
       description: "Oversee all classrooms",
       icon: BookOpen,
-      route: "/admin/classes",
+      route: "/classes",
       color: "bg-purple-500",
       count: stats.totalClasses
     },
@@ -111,35 +155,26 @@ export const AdminControlPanel = () => {
       title: "School Settings",
       description: "Configure school preferences",
       icon: School,
-      route: "/admin/school",
+      route: "/school-setup",
       color: "bg-orange-500"
     },
     {
       title: "System Analytics",
       description: "View detailed analytics",
       icon: BarChart3,
-      route: "/admin/analytics",
+      route: "/analytics",
       color: "bg-cyan-500"
     },
     {
       title: "Admin Requests",
       description: "Review pending requests",
       icon: Shield,
-      route: "/admin/requests",
+      route: "/admin-requests",
       color: "bg-red-500",
       count: stats.pendingRequests,
       urgent: stats.pendingRequests > 0
     }
   ];
-
-  const handleActionClick = (route: string, title: string) => {
-    console.log(`Admin action clicked: ${title} -> ${route}`);
-    navigate(route);
-    toast({
-      title: "Navigation",
-      description: `Opening ${title}...`
-    });
-  };
 
   if (loading) {
     return (
@@ -160,17 +195,21 @@ export const AdminControlPanel = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Admin Control Panel</h2>
         <Button 
-          onClick={() => navigate('/admin')}
-          className="bg-purple-600 hover:bg-purple-700"
+          type="button"
+          onClick={() => handleActionClick('/admin', 'Full Dashboard')}
+          disabled={actionLoading !== null}
+          className="bg-purple-600 hover:bg-purple-700 cursor-pointer"
         >
           <Eye className="w-4 h-4 mr-2" />
-          Full Dashboard
+          {actionLoading === 'Full Dashboard' ? 'Loading...' : 'Full Dashboard'}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {adminActions.map((action) => {
           const Icon = action.icon;
+          const isLoading = actionLoading === action.title;
+          
           return (
             <Card 
               key={action.title}
@@ -196,16 +235,18 @@ export const AdminControlPanel = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-400 text-sm">{action.description}</p>
+                <p className="text-gray-400 text-sm mb-4">{action.description}</p>
                 <Button 
-                  className="w-full mt-4 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/30"
+                  type="button"
+                  disabled={isLoading}
+                  className="w-full bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/30 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleActionClick(action.route, action.title);
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Access {action.title}
+                  {isLoading ? 'Loading...' : `Access ${action.title}`}
                 </Button>
               </CardContent>
             </Card>
