@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SettingsDropdown } from "./SettingsDropdown";
 
 // Combine related routes into groups
 const teacherNavGroups = [
@@ -266,28 +267,32 @@ export const MainLayout = () => {
       )}
 
       {!isMainPage && (
-        <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-2 p-4 bg-black/90 backdrop-blur-xl border-b border-purple-500/20">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="bg-purple-900/30 hover:bg-purple-800/40"
-          >
-            {isSidebarOpen ? (
-              <X className="h-6 w-6 text-purple-300" />
-            ) : (
-              <Menu className="h-6 w-6 text-purple-300" />
-            )}
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToHome}
-            className="bg-purple-900/30 hover:bg-purple-800/40"
-          >
-            <Home className="h-6 w-6 text-purple-300" />
-          </Button>
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-black/90 backdrop-blur-xl border-b border-purple-500/20">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="bg-purple-900/30 hover:bg-purple-800/40"
+            >
+              {isSidebarOpen ? (
+                <X className="h-6 w-6 text-purple-300" />
+              ) : (
+                <Menu className="h-6 w-6 text-purple-300" />
+              )}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToHome}
+              className="bg-purple-900/30 hover:bg-purple-800/40"
+            >
+              <Home className="h-6 w-6 text-purple-300" />
+            </Button>
+          </div>
+
+          <SettingsDropdown userRole={userRole} />
         </div>
       )}
 
