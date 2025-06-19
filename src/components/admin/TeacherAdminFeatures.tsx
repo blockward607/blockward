@@ -30,105 +30,127 @@ export const TeacherAdminFeatures = () => {
       description: "Add, remove, and manage student accounts",
       icon: Users,
       route: "/students",
-      color: "bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20"
+      color: "bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20",
+      available: true
     },
     {
       title: "Class Management",
       description: "Create and manage your classes",
       icon: BookOpen,
       route: "/classes",
-      color: "bg-green-500/10 border-green-500/20 hover:bg-green-500/20"
+      color: "bg-green-500/10 border-green-500/20 hover:bg-green-500/20",
+      available: true
     },
     {
       title: "Assignments",
       description: "Create and manage assignments",
       icon: FileText,
       route: "/assignments",
-      color: "bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20"
+      color: "bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20",
+      available: true
     },
     {
       title: "Attendance Tracking",
       description: "Monitor and manage student attendance",
       icon: UserCheck,
       route: "/attendance",
-      color: "bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20"
+      color: "bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20",
+      available: true
     },
     {
       title: "Behavior Management",
       description: "Track student behavior and discipline",
       icon: Shield,
       route: "/behavior",
-      color: "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20"
+      color: "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20",
+      available: true
     },
     {
       title: "Analytics Dashboard",
       description: "View detailed performance analytics",
       icon: BarChart,
       route: "/dashboard",
-      color: "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20"
+      color: "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20",
+      available: true
     },
     {
       title: "Announcements",
       description: "Send announcements to your classes",
       icon: Megaphone,
       route: "/notifications",
-      color: "bg-red-500/10 border-red-500/20 hover:bg-red-500/20"
+      color: "bg-red-500/10 border-red-500/20 hover:bg-red-500/20",
+      available: true
     },
     {
       title: "Notifications",
       description: "Manage system notifications",
       icon: Bell,
       route: "/notifications",
-      color: "bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20"
+      color: "bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20",
+      available: true
     },
     {
       title: "NFT Rewards",
       description: "Create and manage NFT rewards",
       icon: Trophy,
       route: "/wallet",
-      color: "bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20"
+      color: "bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20",
+      available: true
     },
     {
       title: "Class Schedule",
       description: "Manage class schedules and timetables",
       icon: Calendar,
       route: "/classes",
-      color: "bg-teal-500/10 border-teal-500/20 hover:bg-teal-500/20"
+      color: "bg-teal-500/10 border-teal-500/20 hover:bg-teal-500/20",
+      available: true
     },
     {
       title: "Communication",
       description: "Message students and parents",
       icon: MessageSquare,
       route: "/notifications",
-      color: "bg-pink-500/10 border-pink-500/20 hover:bg-pink-500/20"
+      color: "bg-pink-500/10 border-pink-500/20 hover:bg-pink-500/20",
+      available: true
     },
     {
       title: "Teacher Settings",
       description: "Configure your teaching preferences",
       icon: Settings,
       route: "/settings",
-      color: "bg-gray-500/10 border-gray-500/20 hover:bg-gray-500/20"
+      color: "bg-gray-500/10 border-gray-500/20 hover:bg-gray-500/20",
+      available: true
     }
   ];
 
-  const handleAccessClick = (route: string, title: string) => {
-    console.log(`🚀 Navigating to ${title} at route: ${route}`);
+  const handleAccessClick = (route: string, title: string, available: boolean) => {
+    console.log(`🚀 Attempting to navigate to ${title} at route: ${route}`);
+    console.log(`📍 Feature available: ${available}`);
     
+    if (!available) {
+      toast({
+        variant: "destructive",
+        title: "Feature Coming Soon",
+        description: `${title} is currently being developed and will be available soon.`,
+      });
+      return;
+    }
+
     try {
-      // Use React Router navigate for proper SPA navigation
+      console.log(`✅ Navigating to ${route}`);
       navigate(route);
       
       toast({
-        title: "Success",
-        description: `Navigating to ${title}`,
+        title: "Navigation Successful",
+        description: `Opening ${title}...`,
       });
       
     } catch (error) {
-      console.error("Navigation failed:", error);
+      console.error("❌ Navigation failed:", error);
       toast({
         variant: "destructive",
         title: "Navigation Error",
-        description: `Failed to navigate to ${title}`,
+        description: `Failed to navigate to ${title}. Please try again.`,
       });
     }
   };
@@ -146,25 +168,32 @@ export const TeacherAdminFeatures = () => {
           return (
             <Card 
               key={feature.title} 
-              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border cursor-pointer`}
-              onClick={() => handleAccessClick(feature.route, feature.title)}
+              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border cursor-pointer ${!feature.available ? 'opacity-75' : ''}`}
+              onClick={() => handleAccessClick(feature.route, feature.title, feature.available)}
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="p-3 rounded-full bg-black/20">
                   <Icon className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    {feature.title}
+                    {!feature.available && <span className="text-xs text-gray-400 ml-2">(Coming Soon)</span>}
+                  </h3>
                   <p className="text-gray-300 text-sm mb-4">{feature.description}</p>
                 </div>
                 <Button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleAccessClick(feature.route, feature.title);
+                    handleAccessClick(feature.route, feature.title, feature.available);
                   }}
-                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200"
+                  className={`w-full transition-all duration-200 ${
+                    feature.available 
+                      ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20' 
+                      : 'bg-gray-600/50 hover:bg-gray-600/70 text-gray-300 border border-gray-500/20'
+                  }`}
                 >
-                  Access {feature.title}
+                  {feature.available ? `Access ${feature.title}` : 'Coming Soon'}
                 </Button>
               </div>
             </Card>
