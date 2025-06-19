@@ -113,7 +113,7 @@ export const TeacherAdminFeatures = () => {
   ];
 
   const handleAccessClick = (route: string, title: string) => {
-    console.log(`=== NAVIGATION DEBUG ===`);
+    console.log(`=== BUTTON CLICK DEBUG ===`);
     console.log(`Current location: ${location.pathname}`);
     console.log(`Button clicked: ${title}`);
     console.log(`Target route: ${route}`);
@@ -122,8 +122,8 @@ export const TeacherAdminFeatures = () => {
     try {
       console.log(`Attempting navigation from ${location.pathname} to ${route}`);
       
-      // Force navigation with replace to ensure clean transition
-      navigate(route, { replace: false });
+      // Force navigation
+      navigate(route);
       
       // Show success toast
       toast({
@@ -131,15 +131,7 @@ export const TeacherAdminFeatures = () => {
         description: `Going to ${title}`,
       });
       
-      // Add a small delay to check if navigation actually happens
-      setTimeout(() => {
-        console.log(`Post-navigation location: ${window.location.pathname}`);
-        if (window.location.pathname === route) {
-          console.log(`✅ Navigation successful to ${route}`);
-        } else {
-          console.log(`❌ Navigation failed - still at ${window.location.pathname}`);
-        }
-      }, 100);
+      console.log(`✅ Navigation command sent to ${route}`);
       
     } catch (error) {
       console.error("Navigation failed with error:", error);
@@ -165,8 +157,7 @@ export const TeacherAdminFeatures = () => {
           return (
             <Card 
               key={feature.title} 
-              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border cursor-pointer`}
-              onClick={() => handleAccessClick(feature.route, feature.title)}
+              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border`}
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="p-3 rounded-full bg-black/20">
@@ -178,7 +169,7 @@ export const TeacherAdminFeatures = () => {
                 </div>
                 <Button 
                   onClick={(e) => {
-                    console.log(`Button physically clicked: ${feature.title}`);
+                    console.log(`🔥 BUTTON PHYSICALLY CLICKED: ${feature.title}`);
                     e.preventDefault();
                     e.stopPropagation();
                     handleAccessClick(feature.route, feature.title);
