@@ -1,9 +1,5 @@
-
 import { TabsContent } from "@/components/ui/tabs";
 import { GeneralSettingsTab } from "./GeneralSettingsTab";
-import { SecuritySettingsTab } from "./SecuritySettingsTab";
-import { AppearanceSettingsTab } from "./AppearanceSettingsTab";
-import { StudentsSettingsTab } from "./StudentsSettingsTab";
 import { AdminSettingsTab } from "./AdminSettingsTab";
 
 interface AdminPermissions {
@@ -27,7 +23,7 @@ interface SettingsContentProps {
   sessionTimeout: number[];
   setSessionTimeout: (value: number[]) => void;
   
-  // Security settings
+  // Security settings (keeping for backward compatibility but not using)
   twoFactorAuth: boolean;
   setTwoFactorAuth: (value: boolean) => void;
   passwordExpiry: number[];
@@ -35,7 +31,7 @@ interface SettingsContentProps {
   loginAttempts: number[];
   setLoginAttempts: (value: number[]) => void;
   
-  // Appearance settings
+  // Appearance settings (keeping for backward compatibility but not using)
   theme: string;
   setTheme: (value: string) => void;
   fontSize: number[];
@@ -43,7 +39,7 @@ interface SettingsContentProps {
   compactMode: boolean;
   setCompactMode: (value: boolean) => void;
   
-  // Student settings
+  // Student settings (keeping for backward compatibility but not using)
   studentRegistration: boolean;
   setStudentRegistration: (value: boolean) => void;
   
@@ -74,39 +70,6 @@ export const SettingsContent = (props: SettingsContentProps) => {
           setClassSize={props.setClassSize}
           sessionTimeout={props.sessionTimeout}
           setSessionTimeout={props.setSessionTimeout}
-          onSave={props.onSaveUserPreferences}
-        />
-      </TabsContent>
-
-      <TabsContent value="security">
-        <SecuritySettingsTab
-          twoFactorAuth={props.twoFactorAuth}
-          setTwoFactorAuth={props.setTwoFactorAuth}
-          passwordExpiry={props.passwordExpiry}
-          setPasswordExpiry={props.setPasswordExpiry}
-          loginAttempts={props.loginAttempts}
-          setLoginAttempts={props.setLoginAttempts}
-          onSave={props.onSaveSecuritySettings}
-          userRole={props.userRole}
-        />
-      </TabsContent>
-
-      <TabsContent value="appearance">
-        <AppearanceSettingsTab
-          theme={props.theme}
-          setTheme={props.setTheme}
-          fontSize={props.fontSize}
-          setFontSize={props.setFontSize}
-          compactMode={props.compactMode}
-          setCompactMode={props.setCompactMode}
-          onSave={props.onSaveUserPreferences}
-        />
-      </TabsContent>
-
-      <TabsContent value="students">
-        <StudentsSettingsTab
-          studentRegistration={props.studentRegistration}
-          setStudentRegistration={props.setStudentRegistration}
           onSave={props.onSaveUserPreferences}
         />
       </TabsContent>

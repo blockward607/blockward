@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Settings, User, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,7 +61,11 @@ export const SettingsDropdown = ({ userRole }: SettingsDropdownProps) => {
   };
 
   const handleAdminClick = () => {
-    navigate('/admin');
+    if (userRole === 'admin') {
+      navigate('/admin');
+    } else if (userRole === 'teacher') {
+      navigate('/teacher-admin');
+    }
     setIsOpen(false);
   };
 

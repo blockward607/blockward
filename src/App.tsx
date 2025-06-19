@@ -36,6 +36,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminSetup from "./pages/AdminSetup";
 import SchoolSetup from "./pages/SchoolSetup";
 import Behavior from "./pages/Behavior";
+import TeacherAdminFeatures from "@/components/admin/TeacherAdminFeatures";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="student-dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
             <Route path="view-teacher-dashboard" element={<ProtectedRoute><ViewTeacherDashboard /></ProtectedRoute>} />
             <Route path="behavior" element={<ProtectedRoute><Behavior /></ProtectedRoute>} />
+            <Route path="teacher-admin" element={<ProtectedRoute><TeacherAdminFeatures /></ProtectedRoute>} />
             
             {/* Class-specific routes */}
             <Route path="class/:id" element={<ProtectedRoute><ClassDetails /></ProtectedRoute>} />
