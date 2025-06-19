@@ -49,9 +49,10 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
         description: `The BlockWard has been transferred to ${studentName}!`
       });
 
-      // Refresh available NFTs
-      refreshNfts();
+      // Reset form and refresh data
       setSelectedNft("");
+      setSelectedStudent("");
+      refreshNfts();
 
     } catch (error: any) {
       console.error('Error transferring NFT:', error);
@@ -64,6 +65,14 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
       setTransferLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+      </div>
+    );
+  }
 
   if (!isTeacher) {
     return <StudentMessage />;
@@ -79,7 +88,7 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
           selectedStudent={selectedStudent}
           setSelectedStudent={setSelectedStudent}
           loading={loading}
-          disabled={disabled}
+          disabled={disabled || transferLoading}
         />
         
         <NFTSelector
@@ -87,7 +96,7 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
           selectedNft={selectedNft}
           setSelectedNft={setSelectedNft}
           loading={loading}
-          disabled={disabled}
+          disabled={disabled || transferLoading}
         />
         
         {availableNfts.length === 0 && <EmptyNFTState />}

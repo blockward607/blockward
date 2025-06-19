@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
+import { Home, User, BookOpen, Phone, Menu, X, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiamondLogo } from "@/components/logo/DiamondLogo";
 
@@ -13,8 +13,8 @@ export const NavBar = () => {
     navigate('/auth');
   };
   
-  const handleSignUp = () => {
-    navigate('/auth?signup=true');
+  const handleAdminPanel = () => {
+    navigate('/admin-login');
   };
   
   const scrollToSection = (sectionId: string) => {
@@ -28,7 +28,7 @@ export const NavBar = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-purple-900/20">
       <div className="container mx-auto py-4 px-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
           <DiamondLogo size={32} />
           <h1 className="text-3xl blockward-logo">BlockWard</h1>
         </div>
@@ -74,10 +74,12 @@ export const NavBar = () => {
             </Button>
             
             <Button 
-              onClick={handleSignUp}
-              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
+              onClick={handleAdminPanel}
+              variant="outline"
+              className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white flex items-center gap-2"
             >
-              Sign Up
+              <Shield className="h-4 w-4" />
+              Admin Panel
             </Button>
           </div>
         </nav>
@@ -137,10 +139,11 @@ export const NavBar = () => {
             </Button>
             
             <Button 
-              onClick={handleSignUp}
-              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900"
+              onClick={handleAdminPanel}
+              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
             >
-              Sign Up
+              <Shield className="h-4 w-4" />
+              Admin Panel
             </Button>
           </div>
         </div>

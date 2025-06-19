@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Wallet, Copy, ExternalLink, Send } from "lucide-react";
@@ -12,6 +13,7 @@ export const WalletPanel = () => {
   const [nftCount, setNftCount] = useState(0);
   const [balance, setBalance] = useState(0);
   const [address, setAddress] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkUserRole();
@@ -22,7 +24,10 @@ export const WalletPanel = () => {
   const checkUserRole = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        setLoading(false);
+        return;
+      }
 
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
@@ -64,7 +69,10 @@ export const WalletPanel = () => {
   const fetchWalletDetails = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        setLoading(false);
+        return;
+      }
 
       const { data: walletData } = await supabase
         .from('wallets')
@@ -99,30 +107,47 @@ export const WalletPanel = () => {
           }
         }
       }
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching wallet details:', error);
+      setLoading(false);
     }
   };
 
   const copyAddressToClipboard = () => {
     if (address) {
-      navigator.clipboard.writeText(address);
-      toast({
-        title: "Address Copied",
-        description: "Wallet address copied to clipboard"
+      navigator.clipboard.writeText(address).then(() => {
+        toast({
+          title: "Address Copied",
+          description: "Wallet address copied to clipboard"
+        });
+      }).catch(() => {
+        toast({
+          variant: "destructive",
+          title: "Copy Failed",
+          description: "Could not copy address to clipboard"
+        });
       });
     }
   };
 
   const openExternalWalletViewer = () => {
     if (address) {
-      window.open(`https://example.com/wallet/${address}`, '_blank');
+      window.open(`https://etherscan.io/address/${address}`, '_blank');
       toast({
         title: "External Viewer",
         description: "Opening wallet in external viewer"
       });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -145,6 +170,7 @@ export const WalletPanel = () => {
                   size="icon" 
                   className="h-6 w-6" 
                   onClick={copyAddressToClipboard}
+                  disabled={!address}
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
@@ -153,6 +179,7 @@ export const WalletPanel = () => {
                   size="icon" 
                   className="h-6 w-6" 
                   onClick={openExternalWalletViewer}
+                  disabled={!address}
                 >
                   <ExternalLink className="h-3 w-3" />
                 </Button>

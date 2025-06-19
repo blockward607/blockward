@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,7 +61,11 @@ export const SignInForm = ({
         setErrorMessage(error.message);
         setShowError(true);
         console.error("Login error:", error);
-      } else if (data.user) {
+        setLoading(false);
+        return;
+      } 
+      
+      if (data.user) {
         // Check if the user's role matches the selected role
         const { data: userRole, error: roleError } = await supabase
           .from('user_roles')
@@ -70,10 +75,17 @@ export const SignInForm = ({
 
         if (roleError) {
           console.error("Error checking user role:", roleError);
-          // If we can't check the role, proceed anyway
+          // If we can't check the role, proceed to dashboard
+          toast({
+            title: "Welcome back!",
+            description: "Successfully signed in",
+          });
           navigate('/dashboard', { replace: true });
-        } else if (userRole) {
-          // Handle admin role redirection - check access level
+          return;
+        } 
+
+        if (userRole) {
+          // Handle different roles
           if (userRole.role === 'admin') {
             const { data: adminProfile } = await supabase
               .from('admin_profiles')
@@ -83,21 +95,37 @@ export const SignInForm = ({
 
             // Super admins go to super-admin panel, others go to regular admin
             if (adminProfile?.access_level === 'super_admin') {
+              toast({
+                title: "Welcome Super Admin!",
+                description: "Successfully authenticated",
+              });
               navigate('/super-admin', { replace: true });
             } else {
+              toast({
+                title: "Welcome Admin!",
+                description: "Successfully authenticated",
+              });
               navigate('/admin', { replace: true });
             }
           } else if (userRole.role !== role) {
-            setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role.`);
+            setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role or use the admin login.`);
             setShowError(true);
             // Sign out the user since role doesn't match
             await supabase.auth.signOut();
           } else {
             // Navigate to appropriate dashboard based on role
+            toast({
+              title: "Welcome back!",
+              description: `Successfully signed in as ${role}`,
+            });
             navigate('/dashboard', { replace: true });
           }
         } else {
           // Navigate directly to dashboard if no role data found
+          toast({
+            title: "Welcome back!",
+            description: "Successfully signed in",
+          });
           navigate('/dashboard', { replace: true });
         }
       }
@@ -141,7 +169,7 @@ export const SignInForm = ({
             required
           />
         </div>
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={setLoading}>
           Sign In as {role === 'teacher' ? 'Teacher' : 'Student'}
         </Button>
         <div className="text-center mt-4">
