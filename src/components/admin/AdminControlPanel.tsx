@@ -98,9 +98,18 @@ export const AdminControlPanel = () => {
       
       switch (route) {
         case "/students":
+          targetRoute = "/students"; // This route exists
+          break;
         case "/teachers":
+          // Navigate to a teacher management section within admin
+          targetRoute = "/admin"; // For now, go to admin dashboard
+          toast({
+            title: "Teacher Management",
+            description: "Opening teacher management in admin dashboard."
+          });
+          break;
         case "/classes":
-          targetRoute = route; // These routes exist
+          targetRoute = "/classes"; // This route exists
           break;
         case "/school-setup":
           targetRoute = "/school-setup"; // This route exists
@@ -128,10 +137,12 @@ export const AdminControlPanel = () => {
       console.log(`✅ Navigating to: ${targetRoute}`);
       navigate(targetRoute);
       
-      toast({
-        title: "Navigation",
-        description: `Opening ${title}...`
-      });
+      if (title !== "Manage Teachers") {
+        toast({
+          title: "Navigation",
+          description: `Opening ${title}...`
+        });
+      }
       
     } catch (error) {
       console.error('❌ Navigation error:', error);
