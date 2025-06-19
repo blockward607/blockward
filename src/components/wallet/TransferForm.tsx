@@ -82,38 +82,45 @@ export const TransferForm = ({ disabled = false }: TransferFormProps) => {
     <div className="space-y-4 pt-4 border-t border-gray-700">
       <h3 className="font-semibold">Transfer BlockWards</h3>
       
-      <div className="space-y-4">
-        <StudentSelector 
-          students={students}
-          selectedStudent={selectedStudent}
-          setSelectedStudent={setSelectedStudent}
-          loading={loading}
-          disabled={disabled || transferLoading}
-        />
-        
-        <NFTSelector
-          nfts={availableNfts}
-          selectedNft={selectedNft}
-          setSelectedNft={setSelectedNft}
-          loading={loading}
-          disabled={disabled || transferLoading}
-        />
-        
-        {availableNfts.length === 0 && <EmptyNFTState />}
-        
-        <Button 
-          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-          disabled={!selectedStudent || !selectedNft || loading || transferLoading || disabled}
-          onClick={handleTransferNft}
-        >
-          {transferLoading ? "Transferring..." : (
-            <>
-              <Gift className="w-4 h-4 mr-2" />
-              Send BlockWard
-            </>
-          )}
-        </Button>
-      </div>
+      {students.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-400 mb-4">No students found in your classroom.</p>
+          <p className="text-sm text-gray-500">Add students to your classroom to start transferring BlockWards.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <StudentSelector 
+            students={students}
+            selectedStudent={selectedStudent}
+            setSelectedStudent={setSelectedStudent}
+            loading={loading}
+            disabled={disabled || transferLoading}
+          />
+          
+          <NFTSelector
+            nfts={availableNfts}
+            selectedNft={selectedNft}
+            setSelectedNft={setSelectedNft}
+            loading={loading}
+            disabled={disabled || transferLoading}
+          />
+          
+          {availableNfts.length === 0 && <EmptyNFTState />}
+          
+          <Button 
+            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+            disabled={!selectedStudent || !selectedNft || loading || transferLoading || disabled}
+            onClick={handleTransferNft}
+          >
+            {transferLoading ? "Transferring..." : (
+              <>
+                <Gift className="w-4 h-4 mr-2" />
+                Send BlockWard
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

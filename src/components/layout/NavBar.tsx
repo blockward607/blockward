@@ -10,10 +10,12 @@ export const NavBar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const handleSignIn = () => {
+    setMobileMenuOpen(false);
     navigate('/auth');
   };
   
   const handleAdminPanel = () => {
+    setMobileMenuOpen(false);
     navigate('/admin-login');
   };
   

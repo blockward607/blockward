@@ -50,12 +50,18 @@ export const SignInForm = ({
       return;
     }
     
+    if (!password || password.trim().length === 0) {
+      setErrorMessage("Please enter your password");
+      setShowError(true);
+      return;
+    }
+    
     setIsLoading(true);
     setLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -63,8 +69,6 @@ export const SignInForm = ({
         setErrorMessage(error.message);
         setShowError(true);
         console.error("Login error:", error);
-        setIsLoading(false);
-        setLoading(false);
         return;
       } 
       
@@ -160,6 +164,7 @@ export const SignInForm = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={isLoading}
           />
         </div>
         <div className="space-y-2">
@@ -171,6 +176,7 @@ export const SignInForm = ({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={isLoading}
           />
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
@@ -180,7 +186,8 @@ export const SignInForm = ({
           <button 
             type="button"
             onClick={onForgotPasswordClick}
-            className="text-sm text-purple-400 hover:text-purple-300 underline"
+            className="text-sm text-purple-400 hover:text-purple-300 underline disabled:opacity-50"
+            disabled={isLoading}
           >
             Forgot your password?
           </button>
