@@ -15,6 +15,7 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
   // Debug logging
   console.log("ClassesPageHeader - userRole:", userRole);
   console.log("ClassesPageHeader - should show create button:", userRole === 'teacher');
+  console.log("ClassesPageHeader - dialog open:", showCreateDialog);
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -31,7 +32,7 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
               console.log("Create Class button clicked");
               setShowCreateDialog(true);
             }} 
-            className="w-full sm:w-auto flex gap-2 bg-purple-600 hover:bg-purple-700"
+            className="w-full sm:w-auto flex gap-2 bg-purple-600 hover:bg-purple-700 relative z-10"
           >
             <Plus className="h-4 w-4" />
             Create Class
@@ -40,17 +41,16 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
         {/* Debug info - remove this after testing */}
         {process.env.NODE_ENV === 'development' && (
           <div className="text-xs text-gray-500 mt-2">
-            Debug: Role = {userRole || 'null'}
+            Debug: Role = {userRole || 'null'}, Dialog = {showCreateDialog ? 'open' : 'closed'}
           </div>
         )}
       </div>
       
-      {showCreateDialog && (
-        <CreateClassroomDialog 
-          onOpenChange={setShowCreateDialog}
-          onClassroomCreated={onClassroomCreated}
-        />
-      )}
+      <CreateClassroomDialog 
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onClassroomCreated={onClassroomCreated}
+      />
     </div>
   );
 };

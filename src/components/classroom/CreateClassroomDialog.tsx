@@ -16,11 +16,12 @@ import { Database } from "@/integrations/supabase/types";
 type Classroom = Database['public']['Tables']['classrooms']['Row'];
 
 interface CreateClassroomDialogProps {
+  open: boolean;
   onClassroomCreated: (newClassroom: Classroom) => void;
   onOpenChange: (open: boolean) => void;
 }
 
-export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: CreateClassroomDialogProps) => {
+export const CreateClassroomDialog = ({ open, onClassroomCreated, onOpenChange }: CreateClassroomDialogProps) => {
   const [newClassroom, setNewClassroom] = useState({
     name: "",
     description: "",
@@ -68,7 +69,7 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
         return;
       }
 
-      // Create the classroom - THIS WAS THE MISSING LOGIC
+      // Create the classroom
       const { data: newClassroomData, error } = await supabase
         .from('classrooms')
         .insert([
@@ -132,8 +133,8 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
   };
 
   return (
-    <Dialog open={true} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)] z-50">
         <DialogHeader>
           <DialogTitle className="text-xl text-center text-white">Create New Classroom</DialogTitle>
         </DialogHeader>
