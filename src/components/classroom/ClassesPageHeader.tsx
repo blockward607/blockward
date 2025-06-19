@@ -17,6 +17,18 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
   console.log("ClassesPageHeader - should show create button:", userRole === 'teacher');
   console.log("ClassesPageHeader - dialog open:", showCreateDialog);
 
+  const handleCreateClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Create Class button clicked");
+    setShowCreateDialog(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    console.log("Dialog state changing to:", open);
+    setShowCreateDialog(open);
+  };
+
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <div>
@@ -28,11 +40,9 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
       <div className="flex flex-col sm:flex-row gap-3">
         {userRole === 'teacher' && (
           <Button 
-            onClick={() => {
-              console.log("Create Class button clicked");
-              setShowCreateDialog(true);
-            }} 
-            className="w-full sm:w-auto flex gap-2 bg-purple-600 hover:bg-purple-700 relative z-10"
+            onClick={handleCreateClick}
+            className="w-full sm:w-auto flex gap-2 bg-purple-600 hover:bg-purple-700 relative z-10 cursor-pointer"
+            type="button"
           >
             <Plus className="h-4 w-4" />
             Create Class
@@ -48,7 +58,7 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
       
       <CreateClassroomDialog 
         open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
+        onOpenChange={handleDialogClose}
         onClassroomCreated={onClassroomCreated}
       />
     </div>

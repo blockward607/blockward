@@ -29,7 +29,17 @@ export const CreateClassroomDialog = ({ open, onClassroomCreated, onOpenChange }
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const createNewClass = async () => {
+  const handleClose = () => {
+    setNewClassroom({ name: "", description: "" });
+    onOpenChange(false);
+  };
+
+  const createNewClass = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (!newClassroom.name.trim()) {
       toast({
         variant: "destructive",
@@ -41,6 +51,7 @@ export const CreateClassroomDialog = ({ open, onClassroomCreated, onOpenChange }
 
     try {
       setLoading(true);
+      console.log("Creating classroom with data:", newClassroom);
       
       // Get user session
       const { data: { session } } = await supabase.auth.getSession();
@@ -61,10 +72,11 @@ export const CreateClassroomDialog = ({ open, onClassroomCreated, onOpenChange }
         .single();
 
       if (profileError || !teacherProfile) {
+        console.error('Teacher profile error:', profileError);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Teacher profile not found"
+          description: "Teacher profile not found. Please complete your profile setup first."
         });
         return;
       }
@@ -92,6 +104,8 @@ export const CreateClassroomDialog = ({ open, onClassroomCreated, onOpenChange }
         return;
       }
 
+      console.log("Classroom created successfully:", newClassroomData);
+
       // Automatically generate a classroom code for the new classroom
       console.log("[CreateClassroomDialog] Generating classroom code for new classroom:", newClassroomData.id);
       
@@ -111,7 +125,7 @@ export const CreateClassroomDialog = ({ open, onClassroomCreated, onOpenChange }
         console.log("[CreateClassroomDialog] Classroom code generated successfully:", classroomCode);
         toast({
           title: "Success",
-          description: `Classroom created successfully with join code: ${classroomCode}`
+          description: `Classroom "${newClassroomData.name}" created successfully with join code: ${classroomCode}`
         });
       }
 
@@ -132,45 +146,54 @@ export const CreateClassroomDialog = ({ open, onClassroomCreated, onOpenChange }
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createNewClass(e);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)] z-50">
+      <DialogContent className="sm:max-w-[425px] bg-[#25293A] border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.4)] z-[100]">
         <DialogHeader>
           <DialogTitle className="text-xl text-center text-white">Create New Classroom</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Input
-            placeholder="Classroom name *"
-            value={newClassroom.name}
-            onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
-            className="bg-black/50 border-purple-500/30 text-white"
-            disabled={loading}
-          />
-          <Textarea
-            placeholder="Description (optional)"
-            value={newClassroom.description}
-            onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
-            className="bg-black/50 border-purple-500/30 text-white min-h-[100px]"
-            disabled={loading}
-          />
-        </div>
-        <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            className="flex-1"
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={createNewClass} 
-            className="flex-1 bg-purple-600 hover:bg-purple-700"
-            disabled={loading || !newClassroom.name.trim()}
-          >
-            {loading ? "Creating..." : "Create Classroom"}
-          </Button>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4 py-4">
+            <Input
+              placeholder="Classroom name *"
+              value={newClassroom.name}
+              onChange={(e) => setNewClassroom({ ...newClassroom, name: e.target.value })}
+              className="bg-black/50 border-purple-500/30 text-white"
+              disabled={loading}
+              required
+            />
+            <Textarea
+              placeholder="Description (optional)"
+              value={newClassroom.description}
+              onChange={(e) => setNewClassroom({ ...newClassroom, description: e.target.value })}
+              className="bg-black/50 border-purple-500/30 text-white min-h-[100px]"
+              disabled={loading}
+            />
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              type="button"
+              variant="outline" 
+              onClick={handleClose}
+              className="flex-1"
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+              className="flex-1 bg-purple-600 hover:bg-purple-700"
+              disabled={loading || !newClassroom.name.trim()}
+            >
+              {loading ? "Creating..." : "Create Classroom"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
