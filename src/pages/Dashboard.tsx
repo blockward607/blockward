@@ -1,178 +1,439 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { Loader2, Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { TeacherAnnouncementForm } from "@/components/announcements/TeacherAnnouncementForm";
-import { AnnouncementList } from "@/components/announcements/AnnouncementList";
-import { useTutorial } from "@/hooks/useTutorial";
 
-type Notification = {
-  id: string;
-  title: string;
-  message: string;
-  created_at: string;
-  classroom_id?: string | null;
-  type?: string;
-};
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Users, 
+  BookOpen, 
+  Calendar, 
+  Award, 
+  TrendingUp, 
+  Bell,
+  Plus,
+  Eye
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { AdminControlPanel } from "@/components/admin/AdminControlPanel";
+
+interface DashboardStats {
+  totalStudents: number;
+  totalClasses: number;
+  totalAssignments: number;
+  totalNFTs: number;
+  recentActivity: any[];
+  notifications: any[];
+}
 
 const Dashboard = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const { TutorialComponent, TutorialPrompt } = useTutorial();
+  const { toast } = useToast();
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalStudents: 0,
+    totalClasses: 0,
+    totalAssignments: 0,
+    totalNFTs: 0,
+    recentActivity: [],
+    notifications: []
+  });
   const [loading, setLoading] = useState(true);
-  const [announcements, setAnnouncements] = useState<Notification[]>([]);
-  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
-  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
-
-  // Add a debug log when role and showAnnouncementForm change
-  useEffect(() => {
-    console.log("userRole:", userRole, "showAnnouncementForm:", showAnnouncementForm);
-  }, [userRole, showAnnouncementForm]);
 
   useEffect(() => {
-    checkAuth();
-    fetchAnnouncements();
+    loadUserData();
   }, []);
 
-  const checkAuth = async () => {
+  const loadUserData = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Not authenticated",
-          description: "Please log in to access the dashboard"
-        });
         navigate('/auth');
         return;
       }
 
-      const { data: teacherData } = await supabase
-        .from('teacher_profiles')
-        .select('full_name')
+      // Get user role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
         .eq('user_id', session.user.id)
         .single();
-      
-      if (teacherData) {
-        setUserRole('teacher');
-        setUserName(teacherData.full_name || session.user.email);
-      } else {
-        const { data: studentData } = await supabase
-          .from('students')
-          .select('name')
-          .eq('user_id', session.user.id)
-          .single();
-          
-        if (studentData) {
-          setUserRole('student');
-          setUserName(studentData.name || session.user.email);
-        } else {
-          setUserRole('student');
-          setUserName(session.user.email);
-        }
+
+      const role = roleData?.role || 'student';
+      setUserRole(role);
+
+      // Redirect admin users to admin dashboard
+      if (role === 'admin') {
+        navigate('/admin');
+        return;
       }
+
+      // Load stats based on role
+      if (role === 'teacher') {
+        await loadTeacherStats(session.user.id);
+      } else {
+        await loadStudentStats(session.user.id);
+      }
+
     } catch (error) {
-      console.error('Error in checkAuth:', error);
+      console.error('Error loading dashboard data:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load dashboard data"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchAnnouncements = async () => {
+  const loadTeacherStats = async (userId: string) => {
     try {
-      setLoadingAnnouncements(true);
-      const { data, error } = await supabase
+      // Get teacher profile
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (!teacherProfile) return;
+
+      // Load teacher's classrooms
+      const { data: classrooms } = await supabase
+        .from('classrooms')
+        .select(`
+          id,
+          name,
+          classroom_students(count)
+        `)
+        .eq('teacher_id', teacherProfile.id);
+
+      // Load assignments
+      const { data: assignments } = await supabase
+        .from('assignments')
+        .select('id')
+        .in('classroom_id', classrooms?.map(c => c.id) || []);
+
+      // Load recent notifications
+      const { data: notifications } = await supabase
         .from('notifications')
         .select('*')
-        .eq('type', 'announcement')
-        .order('created_at', { ascending: false });
+        .in('classroom_id', classrooms?.map(c => c.id) || [])
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-      if (error) throw error;
-      setAnnouncements(data || []);
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load announcements"
+      const totalStudents = classrooms?.reduce((sum, c) => sum + (c.classroom_students?.length || 0), 0) || 0;
+
+      setStats({
+        totalStudents,
+        totalClasses: classrooms?.length || 0,
+        totalAssignments: assignments?.length || 0,
+        totalNFTs: 0,
+        recentActivity: [],
+        notifications: notifications || []
       });
-    } finally {
-      setLoadingAnnouncements(false);
+
+    } catch (error) {
+      console.error('Error loading teacher stats:', error);
     }
   };
 
-  const handleAnnouncementCreated = () => {
-    fetchAnnouncements();
-    setShowAnnouncementForm(false);
-    toast({
-      title: "Success",
-      description: "Announcement published successfully"
-    });
+  const loadStudentStats = async (userId: string) => {
+    try {
+      // Get student profile
+      const { data: student } = await supabase
+        .from('students')
+        .select('id, points')
+        .eq('user_id', userId)
+        .single();
+
+      if (!student) return;
+
+      // Load student's classes
+      const { data: enrollments } = await supabase
+        .from('classroom_students')
+        .select(`
+          classroom_id,
+          classrooms(name, description)
+        `)
+        .eq('student_id', student.id);
+
+      // Load student's assignments
+      const classroomIds = enrollments?.map(e => e.classroom_id) || [];
+      const { data: assignments } = await supabase
+        .from('assignments')
+        .select('*')
+        .in('classroom_id', classroomIds)
+        .order('due_date', { ascending: true })
+        .limit(5);
+
+      // Load student's NFTs
+      const { data: wallet } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      let nftCount = 0;
+      if (wallet) {
+        const { data: nfts } = await supabase
+          .from('nfts')
+          .select('id')
+          .eq('owner_wallet_id', wallet.id);
+        nftCount = nfts?.length || 0;
+      }
+
+      setStats({
+        totalStudents: 0,
+        totalClasses: enrollments?.length || 0,
+        totalAssignments: assignments?.length || 0,
+        totalNFTs: nftCount,
+        recentActivity: assignments || [],
+        notifications: []
+      });
+
+    } catch (error) {
+      console.error('Error loading student stats:', error);
+    }
   };
+
+  const quickActions = userRole === 'teacher' ? [
+    {
+      title: "Create Class",
+      description: "Start a new classroom",
+      icon: Plus,
+      action: () => navigate('/classes'),
+      color: "bg-blue-500"
+    },
+    {
+      title: "Add Students",
+      description: "Invite students to join",
+      icon: Users,
+      action: () => navigate('/students'),
+      color: "bg-green-500"
+    },
+    {
+      title: "New Assignment",
+      description: "Create an assignment",
+      icon: BookOpen,
+      action: () => navigate('/assignments'),
+      color: "bg-purple-500"
+    },
+    {
+      title: "View Analytics",
+      description: "Check class performance",
+      icon: TrendingUp,
+      action: () => navigate('/analytics'),
+      color: "bg-orange-500"
+    }
+  ] : [
+    {
+      title: "My Classes",
+      description: "View enrolled classes",
+      icon: BookOpen,
+      action: () => navigate('/classes'),
+      color: "bg-blue-500"
+    },
+    {
+      title: "Assignments",
+      description: "Check upcoming work",
+      icon: Calendar,
+      action: () => navigate('/assignments'),
+      color: "bg-green-500"
+    },
+    {
+      title: "NFT Wallet",
+      description: "View achievements",
+      icon: Award,
+      action: () => navigate('/wallet'),
+      color: "bg-purple-500"
+    },
+    {
+      title: "Progress",
+      description: "Track your learning",
+      icon: TrendingUp,
+      action: () => navigate('/progress'),
+      color: "bg-orange-500"
+    }
+  ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full w-full">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-500" />
-          <p className="text-lg font-medium text-gray-300">Loading...</p>
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="bg-gray-800/50 border-gray-700 animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-20 bg-gray-700 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full w-full flex flex-col">
-      {TutorialComponent}
-      {TutorialPrompt}
-      <DashboardHeader userName={userName} />
-      
-      <div className="flex-1 overflow-y-auto w-full p-6">
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold gradient-text">Announcements</h2>
-            
-            {userRole === 'teacher' && !showAnnouncementForm && (
-              <Button 
-                onClick={() => {
-                  console.log('Create Announcement button clicked');
-                  setShowAnnouncementForm(true)
-                }}
-                className="bg-purple-600 hover:bg-purple-700"
-                data-testid="create-announcement-btn"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                New Announcement
-              </Button>
-            )}
-          </div>
+    <div className="container mx-auto p-6 max-w-7xl space-y-8">
+      {/* Welcome Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-4"
+      >
+        <h1 className="text-4xl font-bold text-white">
+          Welcome to BlockWard
+        </h1>
+        <p className="text-xl text-gray-400">
+          {userRole === 'teacher' ? 'Manage your classroom and inspire students' : 'Continue your learning journey'}
+        </p>
+      </motion.div>
 
-          {userRole === 'teacher' && showAnnouncementForm && (
-            <Card className="p-6 mb-6 border-purple-500/30 bg-black/50">
-              <TeacherAnnouncementForm 
-                onSuccess={handleAnnouncementCreated}
-                onCancel={() => {
-                  console.log('Announcement form canceled');
-                  setShowAnnouncementForm(false)
-                }}
-              />
-            </Card>
-          )}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">
+                  {userRole === 'teacher' ? 'Students' : 'Classes'}
+                </p>
+                <p className="text-3xl font-bold text-white">
+                  {userRole === 'teacher' ? stats.totalStudents : stats.totalClasses}
+                </p>
+              </div>
+              <Users className="h-8 w-8 text-blue-400" />
+            </div>
+          </CardContent>
+        </Card>
 
-          <AnnouncementList 
-            announcements={announcements} 
-            loading={loadingAnnouncements} 
-            isTeacher={userRole === 'teacher'}
-            onAnnouncementDeleted={fetchAnnouncements}
-          />
-        </div>
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">
+                  {userRole === 'teacher' ? 'Classes' : 'Assignments'}
+                </p>
+                <p className="text-3xl font-bold text-white">
+                  {userRole === 'teacher' ? stats.totalClasses : stats.totalAssignments}
+                </p>
+              </div>
+              <BookOpen className="h-8 w-8 text-green-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">
+                  {userRole === 'teacher' ? 'Assignments' : 'NFTs Earned'}
+                </p>
+                <p className="text-3xl font-bold text-white">
+                  {userRole === 'teacher' ? stats.totalAssignments : stats.totalNFTs}
+                </p>
+              </div>
+              {userRole === 'teacher' ? (
+                <Calendar className="h-8 w-8 text-purple-400" />
+              ) : (
+                <Award className="h-8 w-8 text-purple-400" />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Notifications</p>
+                <p className="text-3xl font-bold text-white">{stats.notifications.length}</p>
+              </div>
+              <Bell className="h-8 w-8 text-orange-400" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Teacher Admin Panel */}
+      {userRole === 'teacher' && (
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Teacher Controls
+            </CardTitle>
+            <CardDescription>
+              Quick access to administrative functions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdminControlPanel />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Actions */}
+      <Card className="bg-gray-800/50 border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-white">Quick Actions</CardTitle>
+          <CardDescription>
+            Common tasks and shortcuts
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Button
+                  key={action.title}
+                  onClick={() => {
+                    console.log('Quick action clicked:', action.title);
+                    action.action();
+                  }}
+                  className="h-auto p-4 flex flex-col items-center gap-3 bg-gray-700/50 hover:bg-gray-600/50 text-white border border-gray-600"
+                >
+                  <div className={`p-3 rounded-lg ${action.color}`}>
+                    <Icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium">{action.title}</p>
+                    <p className="text-xs text-gray-400">{action.description}</p>
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity */}
+      {stats.recentActivity.length > 0 && (
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.recentActivity.slice(0, 5).map((activity, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">{activity.title}</p>
+                    <p className="text-gray-400 text-sm">{activity.description}</p>
+                  </div>
+                  <Badge variant="secondary">
+                    {activity.due_date ? new Date(activity.due_date).toLocaleDateString() : 'No due date'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

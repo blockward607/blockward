@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link, useLocation, Outlet } from "react-router-dom";
@@ -109,6 +110,7 @@ const adminNavGroups = [
 export const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -120,44 +122,63 @@ export const MainLayout = () => {
   useEffect(() => {
     if (!isMainPage) {
       checkAuth();
+    } else {
+      setLoading(false);
     }
   }, [isMainPage]);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Not authenticated",
+          description: "Please log in to access this page"
+        });
+        navigate('/auth');
+        return;
+      }
+
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      const role = roleData?.role || null;
+      setUserRole(role);
+
+      // Redirect admin users to admin dashboard if they're on regular dashboard
+      if (role === 'admin' && location.pathname === '/dashboard') {
+        navigate('/admin');
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
       toast({
         variant: "destructive",
-        title: "Not authenticated",
-        description: "Please log in to access this page"
+        title: "Authentication Error",
+        description: "Failed to verify authentication"
       });
-      navigate('/auth');
-      return;
-    }
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .single();
-
-    setUserRole(roleData?.role || null);
-
-    // Redirect admin users to admin dashboard
-    if (roleData?.role === 'admin' && location.pathname === '/dashboard') {
-      navigate('/admin');
+    } finally {
+      setLoading(false);
     }
   };
 
   const toggleSidebar = () => {
+    console.log('Sidebar toggled:', !isSidebarOpen);
     setIsSidebarOpen(!isSidebarOpen);
   };
 
   const goToHome = () => {
+    console.log('Home button clicked');
     navigate('/');
   };
 
   const handleLogout = async () => {
+    console.log('Logout button clicked');
     try {
       await supabase.auth.signOut();
       toast({
@@ -166,6 +187,7 @@ export const MainLayout = () => {
       });
       navigate('/auth');
     } catch (error) {
+      console.error('Logout error:', error);
       toast({
         variant: "destructive",
         title: "Error logging out",
@@ -182,6 +204,17 @@ export const MainLayout = () => {
     navGroups = teacherNavGroups;
   } else {
     navGroups = studentNavGroups;
+  }
+
+  if (loading && !isMainPage) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -234,6 +267,7 @@ export const MainLayout = () => {
                         <Link
                           key={item.name}
                           to={item.href}
+                          onClick={() => console.log('Nav item clicked:', item.name)}
                           className={cn(
                             "flex items-center px-4 py-3 rounded-lg",
                             "text-gray-300 hover:bg-purple-900/30",
@@ -273,7 +307,7 @@ export const MainLayout = () => {
               variant="ghost"
               size="icon"
               onClick={toggleSidebar}
-              className="bg-purple-900/30 hover:bg-purple-800/40"
+              className="bg-purple-900/30 hover:bg-purple-800/40 transition-all duration-200 hover:scale-105"
             >
               {isSidebarOpen ? (
                 <X className="h-6 w-6 text-purple-300" />
@@ -286,13 +320,23 @@ export const MainLayout = () => {
               variant="ghost"
               size="icon"
               onClick={goToHome}
-              className="bg-purple-900/30 hover:bg-purple-800/40"
+              className="bg-purple-900/30 hover:bg-purple-800/40 transition-all duration-200 hover:scale-105"
             >
               <Home className="h-6 w-6 text-purple-300" />
             </Button>
           </div>
 
-          <SettingsDropdown userRole={userRole} />
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-purple-900/30 hover:bg-purple-800/40 text-purple-300 transition-all duration-200 hover:scale-105"
+            >
+              <Bell className="h-5 w-5" />
+            </Button>
+            
+            <SettingsDropdown userRole={userRole} />
+          </div>
         </div>
       )}
 
