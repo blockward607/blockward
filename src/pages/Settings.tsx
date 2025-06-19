@@ -231,11 +231,6 @@ const SettingsPage = () => {
     });
   };
 
-  const handleTabChange = (value: string) => {
-    console.log('Tab changed to:', value);
-    setActiveTab(value);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -263,12 +258,11 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'} bg-gray-800/50 p-1 rounded-lg`}>
           <TabsTrigger 
             value="general" 
             className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
-            onClick={() => console.log('General tab clicked')}
           >
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">General</span>
@@ -276,7 +270,6 @@ const SettingsPage = () => {
           <TabsTrigger 
             value="security" 
             className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
-            onClick={() => console.log('Security tab clicked')}
           >
             <Shield className="h-4 w-4" />
             <span className="hidden sm:inline">Security</span>
@@ -284,7 +277,6 @@ const SettingsPage = () => {
           <TabsTrigger 
             value="appearance" 
             className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
-            onClick={() => console.log('Appearance tab clicked')}
           >
             <Palette className="h-4 w-4" />
             <span className="hidden sm:inline">Appearance</span>
@@ -292,7 +284,6 @@ const SettingsPage = () => {
           <TabsTrigger 
             value="students" 
             className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
-            onClick={() => console.log('Students tab clicked')}
           >
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Students</span>
@@ -301,7 +292,6 @@ const SettingsPage = () => {
             <TabsTrigger 
               value="admin" 
               className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
-              onClick={() => console.log('Admin tab clicked')}
             >
               <Building className="h-4 w-4" />
               <span className="hidden sm:inline">Admin</span>
