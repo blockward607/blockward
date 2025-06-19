@@ -72,7 +72,7 @@ export const TeacherAdminFeatures = () => {
       title: "Announcements",
       description: "Send announcements to your classes",
       icon: Megaphone,
-      route: "/dashboard",
+      route: "/notifications",
       color: "bg-red-500/10 border-red-500/20 hover:bg-red-500/20"
     },
     {
@@ -113,32 +113,24 @@ export const TeacherAdminFeatures = () => {
   ];
 
   const handleAccessClick = (route: string, title: string) => {
-    console.log(`=== BUTTON CLICK DEBUG ===`);
-    console.log(`Current location: ${location.pathname}`);
-    console.log(`Button clicked: ${title}`);
-    console.log(`Target route: ${route}`);
-    console.log(`Current timestamp: ${new Date().toISOString()}`);
+    console.log(`🚀 Navigating to ${title} at route: ${route}`);
     
     try {
-      console.log(`Attempting navigation from ${location.pathname} to ${route}`);
+      // Use window.location for immediate navigation
+      window.location.href = route;
       
-      // Force navigation
-      navigate(route);
-      
-      // Show success toast
+      // Also show toast for feedback
       toast({
         title: "Navigating...",
-        description: `Going to ${title}`,
+        description: `Opening ${title}`,
       });
       
-      console.log(`✅ Navigation command sent to ${route}`);
-      
     } catch (error) {
-      console.error("Navigation failed with error:", error);
+      console.error("Navigation failed:", error);
       toast({
         variant: "destructive",
         title: "Navigation Error",
-        description: `Failed to navigate to ${route}: ${error}`,
+        description: `Failed to navigate to ${title}`,
       });
     }
   };
@@ -148,7 +140,6 @@ export const TeacherAdminFeatures = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Teacher Admin Features</h1>
         <p className="text-gray-400">Manage your classroom and students with these comprehensive admin tools</p>
-        <p className="text-gray-500 text-sm mt-2">Current page: {location.pathname}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -168,12 +159,7 @@ export const TeacherAdminFeatures = () => {
                   <p className="text-gray-300 text-sm mb-4">{feature.description}</p>
                 </div>
                 <Button 
-                  onClick={(e) => {
-                    console.log(`🔥 BUTTON PHYSICALLY CLICKED: ${feature.title}`);
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleAccessClick(feature.route, feature.title);
-                  }}
+                  onClick={() => handleAccessClick(feature.route, feature.title)}
                   className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200"
                 >
                   Access {feature.title}
