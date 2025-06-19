@@ -12,42 +12,60 @@ export const TeacherAdminFeatures = () => {
       title: "Manage Students",
       description: "Add, remove, and manage student accounts",
       icon: Users,
-      action: () => navigate('/students'),
+      action: () => {
+        console.log("Navigating to /students");
+        navigate('/students');
+      },
       color: "bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20"
     },
     {
       title: "Class Management",
       description: "Create and manage your classes",
       icon: BookOpen,
-      action: () => navigate('/classes'),
+      action: () => {
+        console.log("Navigating to /classes");
+        navigate('/classes');
+      },
       color: "bg-green-500/10 border-green-500/20 hover:bg-green-500/20"
     },
     {
       title: "Analytics",
       description: "View student performance and class statistics",
       icon: BarChart,
-      action: () => navigate('/dashboard'),
+      action: () => {
+        console.log("Navigating to /dashboard");
+        navigate('/dashboard');
+      },
       color: "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20"
     },
     {
       title: "Assignments",
       description: "Create and manage assignments",
       icon: FileText,
-      action: () => navigate('/assignments'),
+      action: () => {
+        console.log("Navigating to /assignments");
+        navigate('/assignments');
+      },
       color: "bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20"
     },
     {
       title: "Announcements",
       description: "Send announcements to your classes",
       icon: Megaphone,
-      action: () => navigate('/dashboard'),
+      action: () => {
+        console.log("Navigating to /dashboard for announcements");
+        navigate('/dashboard');
+      },
       color: "bg-red-500/10 border-red-500/20 hover:bg-red-500/20"
     },
     {
       title: "Teacher Settings",
       description: "Configure your teaching preferences",
       icon: Settings,
-      action: () => navigate('/settings'),
+      action: () => {
+        console.log("Navigating to /settings");
+        navigate('/settings');
+      },
       color: "bg-gray-500/10 border-gray-500/20 hover:bg-gray-500/20"
     }
   ];
