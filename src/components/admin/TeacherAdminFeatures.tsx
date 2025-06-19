@@ -27,129 +27,102 @@ export const TeacherAdminFeatures = () => {
       title: "Manage Students",
       description: "Add, remove, and manage student accounts",
       icon: Users,
-      action: () => {
-        console.log("Navigating to /students");
-        navigate('/students');
-      },
+      route: "/students",
       color: "bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20"
     },
     {
       title: "Class Management",
       description: "Create and manage your classes",
       icon: BookOpen,
-      action: () => {
-        console.log("Navigating to /classes");
-        navigate('/classes');
-      },
+      route: "/classes",
       color: "bg-green-500/10 border-green-500/20 hover:bg-green-500/20"
     },
     {
       title: "Assignments",
       description: "Create and manage assignments",
       icon: FileText,
-      action: () => {
-        console.log("Navigating to /assignments");
-        navigate('/assignments');
-      },
+      route: "/assignments",
       color: "bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20"
     },
     {
       title: "Attendance Tracking",
       description: "Monitor and manage student attendance",
       icon: UserCheck,
-      action: () => {
-        console.log("Navigating to /attendance");
-        navigate('/attendance');
-      },
+      route: "/attendance",
       color: "bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20"
     },
     {
       title: "Behavior Management",
       description: "Track student behavior and discipline",
       icon: Shield,
-      action: () => {
-        console.log("Navigating to /behavior");
-        navigate('/behavior');
-      },
+      route: "/behavior",
       color: "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20"
     },
     {
       title: "Analytics Dashboard",
       description: "View detailed performance analytics",
       icon: BarChart,
-      action: () => {
-        console.log("Navigating to /dashboard");
-        navigate('/dashboard');
-      },
+      route: "/dashboard",
       color: "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20"
     },
     {
       title: "Announcements",
       description: "Send announcements to your classes",
       icon: Megaphone,
-      action: () => {
-        console.log("Navigating to /dashboard");
-        navigate('/dashboard');
-      },
+      route: "/dashboard",
       color: "bg-red-500/10 border-red-500/20 hover:bg-red-500/20"
     },
     {
       title: "Notifications",
       description: "Manage system notifications",
       icon: Bell,
-      action: () => {
-        console.log("Navigating to /notifications");
-        navigate('/notifications');
-      },
+      route: "/notifications",
       color: "bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20"
     },
     {
       title: "NFT Rewards",
       description: "Create and manage NFT rewards",
       icon: Trophy,
-      action: () => {
-        console.log("Navigating to /wallet");
-        navigate('/wallet');
-      },
+      route: "/wallet",
       color: "bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20"
     },
     {
       title: "Class Schedule",
       description: "Manage class schedules and timetables",
       icon: Calendar,
-      action: () => {
-        console.log("Navigating to /classes");
-        navigate('/classes');
-      },
+      route: "/classes",
       color: "bg-teal-500/10 border-teal-500/20 hover:bg-teal-500/20"
     },
     {
       title: "Communication",
       description: "Message students and parents",
       icon: MessageSquare,
-      action: () => {
-        console.log("Navigating to /notifications");
-        navigate('/notifications');
-      },
+      route: "/notifications",
       color: "bg-pink-500/10 border-pink-500/20 hover:bg-pink-500/20"
     },
     {
       title: "Teacher Settings",
       description: "Configure your teaching preferences",
       icon: Settings,
-      action: () => {
-        console.log("Navigating to /settings");
-        navigate('/settings');
-      },
+      route: "/settings",
       color: "bg-gray-500/10 border-gray-500/20 hover:bg-gray-500/20"
     }
   ];
 
   const handleFeatureClick = (feature: any) => {
-    console.log("Feature clicked:", feature.title);
-    if (feature.action) {
-      feature.action();
+    console.log("Feature clicked:", feature.title, "navigating to:", feature.route);
+    try {
+      navigate(feature.route);
+    } catch (error) {
+      console.error("Navigation error:", error);
     }
+  };
+
+  const handleAccessClick = (e: React.MouseEvent, feature: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Access button clicked for:", feature.title);
+    handleFeatureClick(feature);
   };
 
   return (
@@ -177,11 +150,7 @@ export const TeacherAdminFeatures = () => {
                   <p className="text-gray-300 text-sm mb-4">{feature.description}</p>
                 </div>
                 <Button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log("Access button clicked for:", feature.title);
-                    handleFeatureClick(feature);
-                  }}
+                  onClick={(e) => handleAccessClick(e, feature)}
                   className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200"
                 >
                   Access
