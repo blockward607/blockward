@@ -7,11 +7,17 @@ import { GraduationCap, ArrowRight, BookOpen } from "lucide-react";
 export const Hero = () => {
   const navigate = useNavigate();
   
-  const handleGetStarted = () => {
+  const handleGetStarted = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🔥 Get Started button clicked');
     navigate('/auth');
   };
   
-  const handleLearnMore = () => {
+  const handleLearnMore = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🔥 Learn More button clicked');
     document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
   };
   
@@ -27,8 +33,8 @@ export const Hero = () => {
             key={i}
             className="absolute w-4 h-4 bg-purple-500/20 rounded-full"
             initial={{ 
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight 
+              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
+              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800)
             }}
             animate={{
               y: [0, -20, 0],
@@ -94,8 +100,9 @@ export const Hero = () => {
             className="flex flex-wrap gap-4 justify-center"
           >
             <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-none modern-shadow transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+              size="lg"
+              type="button"
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-none modern-shadow transition-all duration-300 transform hover:scale-105 flex items-center gap-2 cursor-pointer z-10"
               onClick={handleGetStarted}
             >
               Get Started <ArrowRight className="w-4 h-4" />
@@ -103,7 +110,8 @@ export const Hero = () => {
             <Button 
               size="lg" 
               variant="ghost"
-              className="text-gray-400 hover:text-white transition-all duration-300 flex items-center gap-2"
+              type="button"
+              className="text-gray-400 hover:text-white transition-all duration-300 flex items-center gap-2 cursor-pointer z-10"
               onClick={handleLearnMore}
             >
               How It Works <BookOpen className="w-4 h-4 ml-2" />
