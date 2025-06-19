@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -232,8 +233,19 @@ const SettingsPage = () => {
   };
 
   const handleTabChange = (value: string) => {
-    console.log('Switching to tab:', value);
+    console.log('Tab change triggered:', value);
+    console.log('Current activeTab before change:', activeTab);
     setActiveTab(value);
+    console.log('Tab changed to:', value);
+  };
+
+  // Debug click handler
+  const handleTabClick = (value: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('Tab clicked:', value);
+    console.log('Click event:', event);
+    handleTabChange(value);
   };
 
   if (loading) {
@@ -264,41 +276,46 @@ const SettingsPage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5 bg-gray-800 border border-gray-700">
+        <TabsList className="flex w-full bg-muted p-1 rounded-md">
           <TabsTrigger 
             value="general" 
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            onClick={(e) => handleTabClick('general', e)}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className="h-4 w-4" />
             General
           </TabsTrigger>
           <TabsTrigger 
-            value="security" 
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            value="security"
+            onClick={(e) => handleTabClick('security', e)}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
-            <Shield className="h-4 w-4 mr-2" />
+            <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
           <TabsTrigger 
-            value="appearance" 
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            value="appearance"
+            onClick={(e) => handleTabClick('appearance', e)}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
-            <Palette className="h-4 w-4 mr-2" />
+            <Palette className="h-4 w-4" />
             Appearance
           </TabsTrigger>
           <TabsTrigger 
-            value="students" 
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            value="students"
+            onClick={(e) => handleTabClick('students', e)}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
-            <Users className="h-4 w-4 mr-2" />
+            <Users className="h-4 w-4" />
             Students
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger 
-              value="admin" 
-              className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+              value="admin"
+              onClick={(e) => handleTabClick('admin', e)}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              <Building className="h-4 w-4 mr-2" />
+              <Building className="h-4 w-4" />
               Admin
             </TabsTrigger>
           )}
