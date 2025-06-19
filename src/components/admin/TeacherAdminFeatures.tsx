@@ -109,20 +109,9 @@ export const TeacherAdminFeatures = () => {
     }
   ];
 
-  const handleFeatureClick = (feature: any) => {
-    console.log("Feature clicked:", feature.title, "navigating to:", feature.route);
-    try {
-      navigate(feature.route);
-    } catch (error) {
-      console.error("Navigation error:", error);
-    }
-  };
-
-  const handleAccessClick = (e: React.MouseEvent, feature: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log("Access button clicked for:", feature.title);
-    handleFeatureClick(feature);
+  const handleAccessClick = (route: string) => {
+    console.log("Navigating to:", route);
+    navigate(route);
   };
 
   return (
@@ -138,8 +127,7 @@ export const TeacherAdminFeatures = () => {
           return (
             <Card 
               key={feature.title} 
-              className={`p-6 ${feature.color} transition-all duration-200 cursor-pointer hover:scale-105 border`}
-              onClick={() => handleFeatureClick(feature)}
+              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border`}
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="p-3 rounded-full bg-black/20">
@@ -150,7 +138,7 @@ export const TeacherAdminFeatures = () => {
                   <p className="text-gray-300 text-sm mb-4">{feature.description}</p>
                 </div>
                 <Button 
-                  onClick={(e) => handleAccessClick(e, feature)}
+                  onClick={() => handleAccessClick(feature.route)}
                   className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200"
                 >
                   Access
