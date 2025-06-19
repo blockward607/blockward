@@ -1,108 +1,141 @@
 
-import { useState, useCallback, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const useClassroomManagement = () => {
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
-  const [selectedClassroom, setSelectedClassroom] = useState<any | null>(null);
-  const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [selectedClassroom, setSelectedClassroom] = useState<any>(null);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
-  const refreshClassrooms = useCallback(async () => {
-    setLoading(true);
-
+  const fetchUserRole = useCallback(async () => {
     try {
-      if (!user) {
-        setClassrooms([]);
-        setUserRole(null);
-        setLoading(false);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return null;
+      }
+
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      const role = roleData?.role || 'student';
+      console.log('useClassroomManagement - fetched role:', role);
+      setUserRole(role);
+      return role;
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      return 'student';
+    }
+  }, [navigate]);
+
+  const refreshClassrooms = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate('/auth');
         return;
       }
 
-      // Determine user role(s)
-      const { data: userRoles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
-
-      if (userRoles?.some((r) => r.role === "teacher")) {
-        setUserRole("teacher");
-        // Teacher: fetch all classrooms where teacher_id matches teacher_profiles.id
+      const role = await fetchUserRole();
+      
+      if (role === 'teacher') {
+        // Get teacher's classrooms
         const { data: teacherProfile } = await supabase
-          .from("teacher_profiles")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        const { data: foundClassrooms, error } = await supabase
-          .from("classrooms")
-          .select("*")
-          .eq("teacher_id", teacherProfile?.id);
-        if (error) throw error;
-        setClassrooms(foundClassrooms || []);
-      } else if (userRoles?.some((r) => r.role === "student")) {
-        setUserRole("student");
-        // Student: get student id for user, fetch from classroom_students mapping
-        const { data: studentProfile } = await supabase
-          .from("students")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (!studentProfile?.id) {
-          setClassrooms([]);
-          setLoading(false);
-          return;
+          .from('teacher_profiles')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (teacherProfile) {
+          const { data: teacherClassrooms } = await supabase
+            .from('classrooms')
+            .select(`
+              *,
+              classroom_students(count)
+            `)
+            .eq('teacher_id', teacherProfile.id);
+
+          setClassrooms(teacherClassrooms || []);
         }
-        const { data: mappings, error: mappingError } = await supabase
-          .from("classroom_students")
-          .select(`
-            classroom_id,
-            classrooms (
-              *
-            )
-          `)
-          .eq("student_id", studentProfile.id);
-        if (mappingError) throw mappingError;
-        // Extract classrooms
-        const mappedClassrooms = (mappings || [])
-          .map((m: any) => m.classrooms)
-          .filter(Boolean);
-        setClassrooms(mappedClassrooms);
       } else {
-        setUserRole(null);
-        setClassrooms([]);
+        // Get student's enrolled classrooms
+        const { data: student } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (student) {
+          const { data: enrollments } = await supabase
+            .from('classroom_students')
+            .select(`
+              classroom_id,
+              classrooms(*)
+            `)
+            .eq('student_id', student.id);
+
+          const studentClassrooms = enrollments?.map(e => e.classrooms).filter(Boolean) || [];
+          setClassrooms(studentClassrooms);
+        }
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error fetching classrooms:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to load classrooms",
+        description: "Failed to load classrooms"
       });
-      setClassrooms([]);
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [navigate, toast, fetchUserRole]);
+
+  const handleClassroomCreated = useCallback((newClassroom: any) => {
+    console.log('New classroom created:', newClassroom);
+    setClassrooms(prev => [...prev, newClassroom]);
+    toast({
+      title: "Success",
+      description: "Classroom created successfully!"
+    });
+  }, [toast]);
+
+  const handleDeleteClassroom = useCallback(async (classroomId: string) => {
+    try {
+      const { error } = await supabase
+        .from('classrooms')
+        .delete()
+        .eq('id', classroomId);
+
+      if (error) throw error;
+
+      setClassrooms(prev => prev.filter(c => c.id !== classroomId));
+      toast({
+        title: "Success",
+        description: "Classroom deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting classroom:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete classroom"
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
     refreshClassrooms();
   }, [refreshClassrooms]);
-
-  // These methods can be implemented further as needed
-  // For now, just include the most critical ones
-  const handleClassroomCreated = (classroom: any) => {
-    setClassrooms((prev) => [...prev, classroom]);
-    setSelectedClassroom(classroom);
-  };
-  const handleDeleteClassroom = (classroomId: string) => {
-    setClassrooms((prev) => prev.filter((c) => c.id !== classroomId));
-    if (selectedClassroom?.id === classroomId) {
-      setSelectedClassroom(null);
-    }
-  };
 
   return {
     classrooms,
@@ -112,6 +145,6 @@ export const useClassroomManagement = () => {
     setSelectedClassroom,
     handleClassroomCreated,
     handleDeleteClassroom,
-    refreshClassrooms,
+    refreshClassrooms
   };
 };
