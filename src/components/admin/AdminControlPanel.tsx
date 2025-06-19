@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,7 @@ interface AdminButton {
   icon: string;
   route: string;
   color: string;
-  permissions: any[];
+  permissions: any;
   is_active: boolean;
   sort_order: number;
 }
@@ -104,7 +103,13 @@ export const AdminControlPanel = () => {
         return;
       }
 
-      setAdminButtons(buttons || []);
+      // Transform the data to match our interface, ensuring permissions is properly handled
+      const transformedButtons = buttons?.map(button => ({
+        ...button,
+        permissions: Array.isArray(button.permissions) ? button.permissions : []
+      })) || [];
+
+      setAdminButtons(transformedButtons);
     } catch (error) {
       console.error('Error loading admin buttons:', error);
     }
