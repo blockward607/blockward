@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,9 +7,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
+import AdminLogin from "./pages/AdminLogin";
 import Dashboard from "./pages/Dashboard";
 import Classes from "./pages/Classes";
 import Students from "./pages/Students";
@@ -51,6 +54,7 @@ const App = () => (
             <Route index element={<Index />} />
             <Route path="home" element={<Home />} />
             <Route path="auth" element={<Auth />} />
+            <Route path="admin-login" element={<AdminLogin />} />
             <Route path="signup" element={<SignUp />} />
             <Route path="reset-password" element={<ResetPassword />} />
             <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
@@ -83,7 +87,20 @@ const App = () => (
             <Route path="class/:id/seating" element={<ProtectedRoute><ClassroomSeating /></ProtectedRoute>} />
             <Route path="classroom/:id/invite" element={<ProtectedRoute><ClassroomInvite /></ProtectedRoute>} />
             
-            {/* Admin Routes */}
+            {/* Super Admin Routes */}
+            <Route path="super-admin" element={<AdminLayout />}>
+              <Route index element={<SuperAdminDashboard />} />
+              <Route path="schools" element={<div className="p-6 text-white">School Management - Coming Soon</div>} />
+              <Route path="teachers" element={<div className="p-6 text-white">Teacher Management - Coming Soon</div>} />
+              <Route path="students" element={<div className="p-6 text-white">Student Oversight - Coming Soon</div>} />
+              <Route path="blockchain" element={<div className="p-6 text-white">Blockchain Settings - Coming Soon</div>} />
+              <Route path="rules" element={<div className="p-6 text-white">Rules & Categories - Coming Soon</div>} />
+              <Route path="analytics" element={<div className="p-6 text-white">Analytics & Reporting - Coming Soon</div>} />
+              <Route path="system" element={<div className="p-6 text-white">System Settings - Coming Soon</div>} />
+              <Route path="security" element={<div className="p-6 text-white">Audit & Security - Coming Soon</div>} />
+            </Route>
+            
+            {/* Regular Admin Routes */}
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="teachers" element={<div className="p-6 text-white">Admin Teachers Management - Coming Soon</div>} />

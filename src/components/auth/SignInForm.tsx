@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,9 +73,20 @@ export const SignInForm = ({
           // If we can't check the role, proceed anyway
           navigate('/dashboard', { replace: true });
         } else if (userRole) {
-          // NEW: Handle admin role redirection
+          // Handle admin role redirection - check access level
           if (userRole.role === 'admin') {
-            navigate('/admin', { replace: true });
+            const { data: adminProfile } = await supabase
+              .from('admin_profiles')
+              .select('access_level')
+              .eq('user_id', data.user.id)
+              .single();
+
+            // Super admins go to super-admin panel, others go to regular admin
+            if (adminProfile?.access_level === 'super_admin') {
+              navigate('/super-admin', { replace: true });
+            } else {
+              navigate('/admin', { replace: true });
+            }
           } else if (userRole.role !== role) {
             setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role.`);
             setShowError(true);
