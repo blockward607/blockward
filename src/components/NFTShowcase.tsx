@@ -122,48 +122,7 @@ export const BlockWardShowcase = () => {
 
       if (error) throw error;
       
-      // Create demo students if they don't exist
-      const demoEmails = ["student1@example.com", "student2@example.com", "arya47332js@gmail.com", "youthinkofc@gmail.com"];
-      
-      for (const email of demoEmails) {
-        const username = email.split('@')[0];
-        const { data: existingStudent } = await supabase
-          .from('students')
-          .select('id')
-          .eq('name', username)
-          .maybeSingle();
-          
-        if (!existingStudent) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            console.log(`Creating demo student: ${username}`);
-            
-            const { data: newStudent, error: studentError } = await supabase
-              .from('students')
-              .insert({
-                name: username,
-                points: 0
-              })
-              .select()
-              .single();
-              
-            if (studentError) {
-              console.error(`Error creating demo student ${username}:`, studentError);
-            } else {
-              console.log(`Demo student created: ${username}`);
-            }
-          }
-        }
-      }
-      
-      const { data: updatedData, error: refetchError } = await supabase
-        .from('students')
-        .select('*')
-        .order('name');
-        
-      if (refetchError) throw refetchError;
-      
-      setStudents(updatedData || []);
+      setStudents(data || []);
     } catch (error: any) {
       console.error('Error fetching students:', error);
       toast({
@@ -274,7 +233,6 @@ export const BlockWardShowcase = () => {
         throw new Error('Student not found');
       }
       
-      // Use student ID if user_id is missing (for demo students)
       const studentUserId = studentData.user_id || studentId;
       
       const { data: studentWallet, error: studentWalletError } = await supabase
@@ -518,7 +476,7 @@ export const BlockWardShowcase = () => {
                 {blockWard.points} points
               </p>
 
-              {isTeacher && (
+              {isTeacher && students.length > 0 && (
                 <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-95 group-hover:scale-100">
                   <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                     <SelectTrigger className="w-full mb-4 bg-black/20 backdrop-blur-sm">
@@ -540,6 +498,12 @@ export const BlockWardShowcase = () => {
                   >
                     {transferring === blockWard.id ? "Transferring..." : "Transfer BlockWard"}
                   </Button>
+                </div>
+              )}
+
+              {isTeacher && students.length === 0 && (
+                <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p className="text-gray-400 text-sm">No students found. Add students to your classroom first.</p>
                 </div>
               )}
             </motion.div>
