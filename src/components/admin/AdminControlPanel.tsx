@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,31 @@ interface AdminStats {
   pendingRequests: number;
 }
 
+interface AdminButton {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  route: string;
+  color: string;
+  permissions: any[];
+  is_active: boolean;
+  sort_order: number;
+}
+
+const iconMap: { [key: string]: any } = {
+  Users,
+  UserPlus,
+  BookOpen,
+  School,
+  BarChart3,
+  Shield,
+  Settings,
+  Building,
+  Plus,
+  Eye
+};
+
 export const AdminControlPanel = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -34,12 +60,55 @@ export const AdminControlPanel = () => {
     totalClasses: 0,
     pendingRequests: 0
   });
+  const [adminButtons, setAdminButtons] = useState<AdminButton[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAdminStats();
+    loadAdminData();
   }, []);
+
+  const loadAdminData = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Load admin buttons and stats in parallel
+      const [buttonsResult, statsResult] = await Promise.all([
+        loadAdminButtons(),
+        loadAdminStats()
+      ]);
+
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load admin data"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAdminButtons = async () => {
+    try {
+      const { data: buttons, error } = await supabase
+        .from('admin_buttons')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) {
+        console.error('Error loading admin buttons:', error);
+        return;
+      }
+
+      setAdminButtons(buttons || []);
+    } catch (error) {
+      console.error('Error loading admin buttons:', error);
+    }
+  };
 
   const loadAdminStats = async () => {
     try {
@@ -72,18 +141,11 @@ export const AdminControlPanel = () => {
 
     } catch (error) {
       console.error('Error loading admin stats:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load admin statistics"
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleActionClick = async (route: string, title: string) => {
-    console.log(`🔥 Admin action clicked: ${title} -> ${route}`);
+  const handleActionClick = async (button: AdminButton) => {
+    console.log(`🔥 Admin button clicked: ${button.title} -> ${button.route}`);
     
     if (actionLoading) {
       console.log('⚠️ Action already in progress, ignoring click');
@@ -91,39 +153,28 @@ export const AdminControlPanel = () => {
     }
 
     try {
-      setActionLoading(title);
+      setActionLoading(button.title);
       
-      // Map routes to actual existing pages
-      let targetRoute = route;
+      // Direct navigation to the route stored in database
+      let targetRoute = button.route;
       
-      switch (route) {
-        case "/students":
-          targetRoute = "/students"; // This route exists
-          break;
-        case "/teachers":
-          // Navigate to a teacher management section within admin
-          targetRoute = "/admin"; // For now, go to admin dashboard
+      // Handle special cases for routes that don't exist yet
+      switch (button.route) {
+        case "/admin/teachers":
+          targetRoute = "/admin";
           toast({
             title: "Teacher Management",
             description: "Opening teacher management in admin dashboard."
           });
           break;
-        case "/classes":
-          targetRoute = "/classes"; // This route exists
-          break;
-        case "/school-setup":
-          targetRoute = "/school-setup"; // This route exists
-          break;
-        case "/analytics":
-          // Redirect to dashboard for now since analytics page doesn't exist
+        case "/admin/analytics":
           targetRoute = "/dashboard";
           toast({
             title: "Coming Soon",
             description: "Analytics page is coming soon. Redirecting to dashboard."
           });
           break;
-        case "/admin-requests":
-          // Redirect to admin dashboard since admin requests page doesn't exist
+        case "/admin/requests":
           targetRoute = "/admin";
           toast({
             title: "Admin Requests",
@@ -131,16 +182,20 @@ export const AdminControlPanel = () => {
           });
           break;
         default:
-          targetRoute = route;
+          // Use the route as-is for existing pages
+          break;
       }
       
       console.log(`✅ Navigating to: ${targetRoute}`);
       navigate(targetRoute);
       
-      if (title !== "Manage Teachers") {
+      // Show navigation toast for most actions
+      if (!["Teacher Management", "Coming Soon", "Admin Requests"].some(msg => 
+        button.title.includes("Teacher") || button.title.includes("Analytics") || button.title.includes("Requests")
+      )) {
         toast({
           title: "Navigation",
-          description: `Opening ${title}...`
+          description: `Opening ${button.title}...`
         });
       }
       
@@ -149,62 +204,12 @@ export const AdminControlPanel = () => {
       toast({
         variant: "destructive",
         title: "Navigation Error",
-        description: `Failed to open ${title}. Please try again.`
+        description: `Failed to open ${button.title}. Please try again.`
       });
     } finally {
       setTimeout(() => setActionLoading(null), 500);
     }
   };
-
-  const adminActions = [
-    {
-      title: "Manage Students",
-      description: "View and manage all students",
-      icon: Users,
-      route: "/students",
-      color: "bg-blue-500",
-      count: stats.totalStudents
-    },
-    {
-      title: "Manage Teachers", 
-      description: "View and manage teacher accounts",
-      icon: UserPlus,
-      route: "/teachers",
-      color: "bg-green-500",
-      count: stats.totalTeachers
-    },
-    {
-      title: "Classroom Management",
-      description: "Oversee all classrooms",
-      icon: BookOpen,
-      route: "/classes",
-      color: "bg-purple-500",
-      count: stats.totalClasses
-    },
-    {
-      title: "School Settings",
-      description: "Configure school preferences",
-      icon: School,
-      route: "/school-setup",
-      color: "bg-orange-500"
-    },
-    {
-      title: "System Analytics",
-      description: "View detailed analytics",
-      icon: BarChart3,
-      route: "/analytics",
-      color: "bg-cyan-500"
-    },
-    {
-      title: "Admin Requests",
-      description: "Review pending requests",
-      icon: Shield,
-      route: "/admin-requests",
-      color: "bg-red-500",
-      count: stats.pendingRequests,
-      urgent: stats.pendingRequests > 0
-    }
-  ];
 
   if (loading) {
     return (
@@ -226,53 +231,73 @@ export const AdminControlPanel = () => {
         <h2 className="text-2xl font-bold text-white">Admin Control Panel</h2>
         <Button 
           type="button"
-          onClick={() => handleActionClick('/admin', 'Full Dashboard')}
+          onClick={() => navigate('/admin')}
           disabled={actionLoading !== null}
           className="bg-purple-600 hover:bg-purple-700 cursor-pointer"
         >
           <Eye className="w-4 h-4 mr-2" />
-          {actionLoading === 'Full Dashboard' ? 'Loading...' : 'Full Dashboard'}
+          Full Dashboard
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {adminActions.map((action) => {
-          const Icon = action.icon;
-          const isLoading = actionLoading === action.title;
+        {adminButtons.map((button) => {
+          const IconComponent = iconMap[button.icon] || Settings;
+          const isLoading = actionLoading === button.title;
+          
+          // Get count based on button title
+          let count: number | undefined;
+          let isUrgent = false;
+          
+          switch (button.title) {
+            case 'Manage Students':
+              count = stats.totalStudents;
+              break;
+            case 'Manage Teachers':
+              count = stats.totalTeachers;
+              break;
+            case 'Classroom Management':
+              count = stats.totalClasses;
+              break;
+            case 'Admin Requests':
+              count = stats.pendingRequests;
+              isUrgent = stats.pendingRequests > 0;
+              break;
+          }
           
           return (
             <Card 
-              key={action.title}
+              key={button.id}
               className="bg-gray-800/50 border-gray-700 hover:border-purple-500/50 transition-all duration-300 hover:scale-105 cursor-pointer"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className={`p-2 rounded-lg ${action.color}`}>
-                    <Icon className="h-6 w-6 text-white" />
+                  <div className={`p-2 rounded-lg ${button.color}`}>
+                    <IconComponent className="h-6 w-6 text-white" />
                   </div>
-                  {action.count !== undefined && (
+                  {count !== undefined && (
                     <Badge 
-                      variant={action.urgent ? "destructive" : "secondary"}
-                      className={action.urgent ? "animate-pulse" : ""}
+                      variant={isUrgent ? "destructive" : "secondary"}
+                      className={isUrgent ? "animate-pulse" : ""}
                     >
-                      {action.count}
+                      {count}
                     </Badge>
                   )}
                 </div>
                 <CardTitle className="text-white text-lg">
-                  {action.title}
+                  {button.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-400 text-sm mb-4">{action.description}</p>
+                <p className="text-gray-400 text-sm mb-4">{button.description}</p>
                 <Button 
                   type="button"
                   disabled={isLoading}
                   className="w-full bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/30 cursor-pointer"
-                  onClick={() => handleActionClick(action.route, action.title)}
+                  onClick={() => handleActionClick(button)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  {isLoading ? 'Loading...' : `Access ${action.title}`}
+                  {isLoading ? 'Loading...' : `Access ${button.title}`}
                 </Button>
               </CardContent>
             </Card>
