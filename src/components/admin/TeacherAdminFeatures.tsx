@@ -18,9 +18,11 @@ import {
   Bell
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export const TeacherAdminFeatures = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const adminFeatures = [
     {
@@ -109,9 +111,24 @@ export const TeacherAdminFeatures = () => {
     }
   ];
 
-  const handleAccessClick = (route: string) => {
-    console.log("Navigating to:", route);
-    navigate(route);
+  const handleAccessClick = (route: string, title: string) => {
+    console.log(`Access button clicked for: ${title}`);
+    console.log(`Attempting to navigate to: ${route}`);
+    
+    try {
+      navigate(route);
+      toast({
+        title: "Navigation",
+        description: `Navigating to ${title}`,
+      });
+    } catch (error) {
+      console.error("Navigation failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to navigate. Please try again.",
+      });
+    }
   };
 
   return (
@@ -138,7 +155,11 @@ export const TeacherAdminFeatures = () => {
                   <p className="text-gray-300 text-sm mb-4">{feature.description}</p>
                 </div>
                 <Button 
-                  onClick={() => handleAccessClick(feature.route)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAccessClick(feature.route, feature.title);
+                  }}
                   className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200"
                 >
                   Access
