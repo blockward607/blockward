@@ -88,7 +88,7 @@ export const TeacherAdminFeatures = () => {
       description: "Send announcements to your classes",
       icon: Megaphone,
       action: () => {
-        console.log("Navigating to /dashboard for announcements");
+        console.log("Navigating to /dashboard");
         navigate('/dashboard');
       },
       color: "bg-red-500/10 border-red-500/20 hover:bg-red-500/20"
@@ -118,7 +118,7 @@ export const TeacherAdminFeatures = () => {
       description: "Manage class schedules and timetables",
       icon: Calendar,
       action: () => {
-        console.log("Navigating to /classes for schedule");
+        console.log("Navigating to /classes");
         navigate('/classes');
       },
       color: "bg-teal-500/10 border-teal-500/20 hover:bg-teal-500/20"
@@ -128,7 +128,7 @@ export const TeacherAdminFeatures = () => {
       description: "Message students and parents",
       icon: MessageSquare,
       action: () => {
-        console.log("Navigating to /notifications for communication");
+        console.log("Navigating to /notifications");
         navigate('/notifications');
       },
       color: "bg-pink-500/10 border-pink-500/20 hover:bg-pink-500/20"
@@ -165,7 +165,7 @@ export const TeacherAdminFeatures = () => {
           return (
             <Card 
               key={feature.title} 
-              className={`p-6 ${feature.color} transition-all duration-200 cursor-pointer hover:scale-105`}
+              className={`p-6 ${feature.color} transition-all duration-200 cursor-pointer hover:scale-105 border`}
               onClick={() => handleFeatureClick(feature)}
             >
               <div className="flex flex-col items-center text-center space-y-4">
@@ -179,6 +179,7 @@ export const TeacherAdminFeatures = () => {
                 <Button 
                   onClick={(e) => {
                     e.stopPropagation();
+                    console.log("Access button clicked for:", feature.title);
                     handleFeatureClick(feature);
                   }}
                   className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200"
