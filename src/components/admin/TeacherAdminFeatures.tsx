@@ -17,10 +17,12 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export const TeacherAdminFeatures = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [loadingFeature, setLoadingFeature] = useState<string | null>(null);
 
   const adminFeatures = [
     {
@@ -121,10 +123,15 @@ export const TeacherAdminFeatures = () => {
     }
   ];
 
-  const handleNavigation = (route: string, title: string, available: boolean) => {
+  const handleNavigation = async (route: string, title: string, available: boolean) => {
     console.log(`🔥 Button clicked for ${title}`);
     console.log(`📍 Route: ${route}, Available: ${available}`);
     
+    if (loadingFeature) {
+      console.log('Another feature is loading, ignoring click');
+      return;
+    }
+
     if (!available) {
       console.log(`⚠️ Feature ${title} is not available`);
       toast({
@@ -136,7 +143,12 @@ export const TeacherAdminFeatures = () => {
     }
 
     try {
+      setLoadingFeature(title);
       console.log(`✅ Navigating to ${route} for ${title}`);
+      
+      // Small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       navigate(route);
       
       toast({
@@ -151,6 +163,9 @@ export const TeacherAdminFeatures = () => {
         title: "Navigation Error",
         description: `Failed to navigate to ${title}. Please try again.`,
       });
+    } finally {
+      // Reset loading state after navigation
+      setTimeout(() => setLoadingFeature(null), 500);
     }
   };
 
@@ -164,10 +179,12 @@ export const TeacherAdminFeatures = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {adminFeatures.map((feature) => {
           const Icon = feature.icon;
+          const isLoading = loadingFeature === feature.title;
+          
           return (
             <Card 
               key={feature.title} 
-              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border cursor-pointer ${!feature.available ? 'opacity-75' : ''}`}
+              className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border cursor-pointer ${!feature.available ? 'opacity-75' : ''} ${isLoading ? 'opacity-50' : ''}`}
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="p-3 rounded-full bg-black/20">
@@ -187,8 +204,9 @@ export const TeacherAdminFeatures = () => {
                       ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20' 
                       : 'bg-gray-600/50 hover:bg-gray-600/70 text-gray-300 border border-gray-500/20'
                   }`}
+                  disabled={isLoading || !feature.available}
                 >
-                  {feature.available ? `Access ${feature.title}` : 'Coming Soon'}
+                  {isLoading ? 'Loading...' : (feature.available ? `Access ${feature.title}` : 'Coming Soon')}
                 </Button>
               </div>
             </Card>

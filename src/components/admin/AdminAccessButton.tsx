@@ -91,10 +91,28 @@ export const AdminAccessButton = () => {
     }
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = async (path: string, buttonName: string) => {
     try {
-      console.log('Navigating to:', path);
+      console.log(`${buttonName} button clicked - navigating to:`, path);
+      
+      // Prevent multiple clicks
+      if (loading) {
+        console.log('Navigation already in progress, ignoring click');
+        return;
+      }
+
+      setLoading(true);
+      
+      // Small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       navigate(path);
+      
+      toast({
+        title: "Navigation",
+        description: `Opening ${buttonName}...`
+      });
+      
     } catch (error: any) {
       console.error('Error navigating:', error);
       toast({
@@ -102,10 +120,13 @@ export const AdminAccessButton = () => {
         title: "Navigation Error",
         description: "Failed to navigate. Please try refreshing the page."
       });
+    } finally {
+      // Reset loading after navigation
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
-  if (loading) {
+  if (loading && !userRole) {
     return (
       <div className="flex items-center justify-center p-4">
         <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
@@ -119,16 +140,18 @@ export const AdminAccessButton = () => {
     return (
       <div className="space-y-2">
         <Button 
-          onClick={() => handleNavigation('/admin')}
-          className="w-full bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
+          onClick={() => handleNavigation('/admin', 'Admin Dashboard')}
+          className="w-full bg-purple-600 hover:bg-purple-700 flex items-center gap-2 transition-colors"
+          disabled={loading}
         >
           <Shield className="w-4 h-4" />
-          Admin Dashboard
+          {loading ? 'Loading...' : 'Admin Dashboard'}
         </Button>
         <Button 
-          onClick={() => handleNavigation('/school-setup')}
+          onClick={() => handleNavigation('/school-setup', 'School Setup')}
           variant="outline"
-          className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-600/20 flex items-center gap-2"
+          className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-600/20 flex items-center gap-2 transition-colors"
+          disabled={loading}
         >
           <School className="w-4 h-4" />
           {hasSchool ? 'School Settings' : 'Setup School'}
@@ -141,16 +164,18 @@ export const AdminAccessButton = () => {
     return (
       <div className="space-y-2">
         <Button 
-          onClick={() => handleNavigation('/school-setup')}
-          className="w-full bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+          onClick={() => handleNavigation('/school-setup', 'School Setup')}
+          className="w-full bg-blue-600 hover:bg-blue-700 flex items-center gap-2 transition-colors"
+          disabled={loading}
         >
           <Building className="w-4 h-4" />
-          {hasSchool ? 'School Settings' : 'Setup School'}
+          {loading ? 'Loading...' : (hasSchool ? 'School Settings' : 'Setup School')}
         </Button>
         <Button 
-          onClick={() => handleNavigation('/admin-setup')}
+          onClick={() => handleNavigation('/admin-setup', 'Admin Setup')}
           variant="outline"
-          className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-600/20 flex items-center gap-2"
+          className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-600/20 flex items-center gap-2 transition-colors"
+          disabled={loading}
         >
           <Settings className="w-4 h-4" />
           Request Admin Access
@@ -163,16 +188,18 @@ export const AdminAccessButton = () => {
   return (
     <div className="space-y-2">
       <Button 
-        onClick={() => handleNavigation('/dashboard')}
-        className="w-full bg-green-600 hover:bg-green-700 flex items-center gap-2"
+        onClick={() => handleNavigation('/dashboard', 'Dashboard')}
+        className="w-full bg-green-600 hover:bg-green-700 flex items-center gap-2 transition-colors"
+        disabled={loading}
       >
         <Building className="w-4 h-4" />
-        Go to Dashboard
+        {loading ? 'Loading...' : 'Go to Dashboard'}
       </Button>
       <Button 
-        onClick={() => handleNavigation('/admin-setup')}
+        onClick={() => handleNavigation('/admin-setup', 'Admin Setup')}
         variant="outline"
-        className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-600/20 flex items-center gap-2"
+        className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-600/20 flex items-center gap-2 transition-colors"
+        disabled={loading}
       >
         <Settings className="w-4 h-4" />
         Request Admin Access

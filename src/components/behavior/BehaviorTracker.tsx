@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export const BehaviorTracker = () => {
   const [viewType, setViewType] = useState<'list' | 'bar' | 'pie'>('list');
   const [selectedStudent, setSelectedStudent] = useState("");
   const [students, setStudents] = useState<any[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     type: 'positive',
@@ -33,21 +35,27 @@ export const BehaviorTracker = () => {
   }, []);
 
   const fetchStudents = async () => {
-    const { data, error } = await supabase
-      .from('students')
-      .select('*')
-      .order('name');
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('name');
 
-    if (error) {
-      console.error('Error fetching students:', error);
-      return;
+      if (error) {
+        console.error('Error fetching students:', error);
+        return;
+      }
+
+      console.log('Students fetched:', data?.length || 0);
+      setStudents(data || []);
+    } catch (error) {
+      console.error('Error in fetchStudents:', error);
     }
-
-    setStudents(data || []);
   };
 
   const fetchBehaviorRecords = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('behavior_records')
         .select(`
@@ -58,9 +66,15 @@ export const BehaviorTracker = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching behavior records:', error);
+        throw error;
+      }
+
+      console.log('Behavior records fetched:', data?.length || 0);
       setRecords(data || []);
     } catch (error: any) {
+      console.error('Error in fetchBehaviorRecords:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -71,7 +85,13 @@ export const BehaviorTracker = () => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Form submitted with data:', formData);
+    console.log('Selected student:', selectedStudent);
+
     if (!selectedStudent) {
       toast({
         variant: "destructive",
@@ -81,25 +101,49 @@ export const BehaviorTracker = () => {
       return;
     }
 
+    if (!formData.description.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please provide a description"
+      });
+      return;
+    }
+
     try {
+      const pointsValue = formData.type === 'positive' ? Math.abs(formData.points) : -Math.abs(formData.points);
+      
+      console.log('Inserting behavior record:', {
+        student_id: selectedStudent,
+        type: formData.type,
+        points: pointsValue,
+        description: formData.description.trim(),
+        category: formData.category
+      });
+
       const { error } = await supabase
         .from('behavior_records')
         .insert({
           student_id: selectedStudent,
           type: formData.type,
-          points: formData.type === 'positive' ? Math.abs(formData.points) : -Math.abs(formData.points),
-          description: formData.description,
+          points: pointsValue,
+          description: formData.description.trim(),
           category: formData.category
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Behavior record created successfully');
 
       toast({
         title: "Success",
         description: "Behavior record added successfully"
       });
 
-      fetchBehaviorRecords();
+      // Reset form and close dialog
       setFormData({
         type: 'positive',
         points: 1,
@@ -107,12 +151,33 @@ export const BehaviorTracker = () => {
         category: 'academic'
       });
       setSelectedStudent("");
+      setDialogOpen(false);
+      
+      // Refresh records
+      await fetchBehaviorRecords();
+
     } catch (error: any) {
+      console.error('Error creating behavior record:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message
+        description: error.message || "Failed to create behavior record"
       });
+    }
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    console.log('Dialog open state changing to:', open);
+    setDialogOpen(open);
+    if (!open) {
+      // Reset form when closing
+      setFormData({
+        type: 'positive',
+        points: 1,
+        description: '',
+        category: 'academic'
+      });
+      setSelectedStudent("");
     }
   };
 
@@ -136,7 +201,11 @@ export const BehaviorTracker = () => {
   };
 
   if (loading) {
-    return <div className="text-white">Loading behavior records...</div>;
+    return (
+      <Card className="p-6 glass-card">
+        <div className="text-white text-center">Loading behavior records...</div>
+      </Card>
+    );
   }
 
   return (
@@ -155,17 +224,23 @@ export const BehaviorTracker = () => {
             </SelectContent>
           </Select>
           
-          <Dialog>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button 
+                className="bg-purple-600 hover:bg-purple-700 transition-colors"
+                onClick={() => {
+                  console.log('Record Behavior button clicked');
+                  setDialogOpen(true);
+                }}
+              >
                 <Plus className="w-4 h-4 mr-2" /> Record Behavior
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Record New Behavior</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select student" />
@@ -211,19 +286,36 @@ export const BehaviorTracker = () => {
                   type="number"
                   placeholder="Points"
                   value={formData.points}
-                  onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 1 })}
+                  min="1"
+                  max="10"
                 />
 
                 <Textarea
-                  placeholder="Description"
+                  placeholder="Description *"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  required
                 />
 
-                <Button onClick={handleSubmit} className="w-full">
-                  Submit
-                </Button>
-              </div>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => handleDialogOpenChange(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                    disabled={!selectedStudent || !formData.description.trim()}
+                  >
+                    Submit
+                  </Button>
+                </div>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
@@ -241,42 +333,48 @@ export const BehaviorTracker = () => {
               <Card className="p-4 glass-card bg-green-900/20">
                 <div className="flex items-center gap-2 mb-4">
                   <ThumbsUp className="w-5 h-5 text-green-400" />
-                  <h3 className="font-semibold">Positive Behaviors</h3>
+                  <h3 className="font-semibold text-white">Positive Behaviors</h3>
                 </div>
                 <div className="space-y-2">
                   {records.filter(r => r.points > 0).map((record) => (
                     <Card key={record.id} className="p-3 bg-green-900/10">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium">{record.students?.name}</p>
+                          <p className="font-medium text-white">{record.students?.name}</p>
                           <p className="text-sm text-gray-400">{record.description}</p>
                           <span className="text-xs text-gray-500">Category: {record.category}</span>
                         </div>
-                        <span className="text-green-400">+{record.points}</span>
+                        <span className="text-green-400 font-semibold">+{record.points}</span>
                       </div>
                     </Card>
                   ))}
+                  {records.filter(r => r.points > 0).length === 0 && (
+                    <p className="text-gray-500 text-sm text-center py-4">No positive behaviors recorded yet.</p>
+                  )}
                 </div>
               </Card>
 
               <Card className="p-4 glass-card bg-red-900/20">
                 <div className="flex items-center gap-2 mb-4">
                   <ThumbsDown className="w-5 h-5 text-red-400" />
-                  <h3 className="font-semibold">Negative Behaviors</h3>
+                  <h3 className="font-semibold text-white">Negative Behaviors</h3>
                 </div>
                 <div className="space-y-2">
                   {records.filter(r => r.points < 0).map((record) => (
                     <Card key={record.id} className="p-3 bg-red-900/10">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium">{record.students?.name}</p>
+                          <p className="font-medium text-white">{record.students?.name}</p>
                           <p className="text-sm text-gray-400">{record.description}</p>
                           <span className="text-xs text-gray-500">Category: {record.category}</span>
                         </div>
-                        <span className="text-red-400">{record.points}</span>
+                        <span className="text-red-400 font-semibold">{record.points}</span>
                       </div>
                     </Card>
                   ))}
+                  {records.filter(r => r.points < 0).length === 0 && (
+                    <p className="text-gray-500 text-sm text-center py-4">No negative behaviors recorded yet.</p>
+                  )}
                 </div>
               </Card>
             </div>
