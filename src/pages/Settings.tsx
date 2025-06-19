@@ -231,6 +231,11 @@ const SettingsPage = () => {
     });
   };
 
+  const handleTabChange = (value: string) => {
+    console.log('Switching to tab:', value);
+    setActiveTab(value);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -258,49 +263,49 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'} bg-gray-800/50 p-1 rounded-lg`}>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5 bg-gray-800 border border-gray-700">
           <TabsTrigger 
             value="general" 
-            className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
           >
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">General</span>
+            <Settings className="h-4 w-4 mr-2" />
+            General
           </TabsTrigger>
           <TabsTrigger 
             value="security" 
-            className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
           >
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Security</span>
+            <Shield className="h-4 w-4 mr-2" />
+            Security
           </TabsTrigger>
           <TabsTrigger 
             value="appearance" 
-            className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
           >
-            <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Appearance</span>
+            <Palette className="h-4 w-4 mr-2" />
+            Appearance
           </TabsTrigger>
           <TabsTrigger 
             value="students" 
-            className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
           >
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Students</span>
+            <Users className="h-4 w-4 mr-2" />
+            Students
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger 
               value="admin" 
-              className="flex items-center gap-2 px-4 py-2 rounded-md transition-all data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700"
+              className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
             >
-              <Building className="h-4 w-4" />
-              <span className="hidden sm:inline">Admin</span>
+              <Building className="h-4 w-4 mr-2" />
+              Admin
             </TabsTrigger>
           )}
         </TabsList>
 
-        <div className="min-h-[400px]">
-          <TabsContent value="general" className="mt-6 space-y-0">
+        <div className="mt-6">
+          <TabsContent value="general">
             <GeneralSettingsTab
               autoGrading={autoGrading}
               setAutoGrading={setAutoGrading}
@@ -314,7 +319,7 @@ const SettingsPage = () => {
             />
           </TabsContent>
 
-          <TabsContent value="security" className="mt-6 space-y-0">
+          <TabsContent value="security">
             <SecuritySettingsTab
               twoFactorAuth={twoFactorAuth}
               setTwoFactorAuth={setTwoFactorAuth}
@@ -327,7 +332,7 @@ const SettingsPage = () => {
             />
           </TabsContent>
 
-          <TabsContent value="appearance" className="mt-6 space-y-0">
+          <TabsContent value="appearance">
             <AppearanceSettingsTab
               theme={theme}
               setTheme={setTheme}
@@ -339,7 +344,7 @@ const SettingsPage = () => {
             />
           </TabsContent>
 
-          <TabsContent value="students" className="mt-6 space-y-0">
+          <TabsContent value="students">
             <StudentsSettingsTab
               studentRegistration={studentRegistration}
               setStudentRegistration={setStudentRegistration}
@@ -348,7 +353,7 @@ const SettingsPage = () => {
           </TabsContent>
 
           {isAdmin && (
-            <TabsContent value="admin" className="mt-6 space-y-0">
+            <TabsContent value="admin">
               <AdminSettingsTab
                 adminName={adminName}
                 setAdminName={setAdminName}
