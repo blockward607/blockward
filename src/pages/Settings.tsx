@@ -232,22 +232,6 @@ const SettingsPage = () => {
     });
   };
 
-  const handleTabChange = (value: string) => {
-    console.log('Tab change triggered:', value);
-    console.log('Current activeTab before change:', activeTab);
-    setActiveTab(value);
-    console.log('Tab changed to:', value);
-  };
-
-  // Debug click handler
-  const handleTabClick = (value: string, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    console.log('Tab clicked:', value);
-    console.log('Click event:', event);
-    handleTabChange(value);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -275,47 +259,27 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="flex w-full bg-muted p-1 rounded-md">
-          <TabsTrigger 
-            value="general" 
-            onClick={(e) => handleTabClick('general', e)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            <Settings className="h-4 w-4" />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="general">
+            <Settings className="h-4 w-4 mr-2" />
             General
           </TabsTrigger>
-          <TabsTrigger 
-            value="security"
-            onClick={(e) => handleTabClick('security', e)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            <Shield className="h-4 w-4" />
+          <TabsTrigger value="security">
+            <Shield className="h-4 w-4 mr-2" />
             Security
           </TabsTrigger>
-          <TabsTrigger 
-            value="appearance"
-            onClick={(e) => handleTabClick('appearance', e)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            <Palette className="h-4 w-4" />
+          <TabsTrigger value="appearance">
+            <Palette className="h-4 w-4 mr-2" />
             Appearance
           </TabsTrigger>
-          <TabsTrigger 
-            value="students"
-            onClick={(e) => handleTabClick('students', e)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            <Users className="h-4 w-4" />
+          <TabsTrigger value="students">
+            <Users className="h-4 w-4 mr-2" />
             Students
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger 
-              value="admin"
-              onClick={(e) => handleTabClick('admin', e)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-            >
-              <Building className="h-4 w-4" />
+            <TabsTrigger value="admin">
+              <Building className="h-4 w-4 mr-2" />
               Admin
             </TabsTrigger>
           )}
