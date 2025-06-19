@@ -10,15 +10,25 @@ export const Hero = () => {
   const handleGetStarted = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔥 Get Started button clicked');
+    console.log('🔥 Get Started button clicked - navigating to /auth');
     navigate('/auth');
   };
   
   const handleLearnMore = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔥 Learn More button clicked');
-    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+    console.log('🔥 Learn More button clicked - scrolling to about section');
+    const aboutSection = document.getElementById('about');
+    if (aboutSection) {
+      aboutSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      console.warn('About section not found, trying alternative selectors');
+      // Try alternative ways to find the about section
+      const howItWorks = document.querySelector('[id*="about"], [class*="about"], [data-section="about"]');
+      if (howItWorks) {
+        howItWorks.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   };
   
   return (
@@ -100,18 +110,18 @@ export const Hero = () => {
             className="flex flex-wrap gap-4 justify-center"
           >
             <Button 
-              size="lg"
               type="button"
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-none modern-shadow transition-all duration-300 transform hover:scale-105 flex items-center gap-2 cursor-pointer z-10"
+              size="lg"
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-none modern-shadow transition-all duration-300 transform hover:scale-105 flex items-center gap-2 cursor-pointer relative z-20"
               onClick={handleGetStarted}
             >
               Get Started <ArrowRight className="w-4 h-4" />
             </Button>
             <Button 
+              type="button"
               size="lg" 
               variant="ghost"
-              type="button"
-              className="text-gray-400 hover:text-white transition-all duration-300 flex items-center gap-2 cursor-pointer z-10"
+              className="text-gray-400 hover:text-white transition-all duration-300 flex items-center gap-2 cursor-pointer relative z-20"
               onClick={handleLearnMore}
             >
               How It Works <BookOpen className="w-4 h-4 ml-2" />

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Hero } from '@/components/Hero';
 import { Features } from '@/components/Features';
 import { HowItWorks } from '@/components/HowItWorks';
@@ -16,21 +16,21 @@ const Index = () => {
   const handleSignIn = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔥 Sign In button clicked (Index)');
+    console.log('🔥 Sign In button clicked (Index) - navigating to /auth');
     navigate('/auth');
   };
 
   const handleAdminPanel = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔥 Admin Panel button clicked (Index)');
+    console.log('🔥 Admin Panel button clicked (Index) - navigating to /admin-login');
     navigate('/admin-login');
   };
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔥 Logo clicked (Index)');
+    console.log('🔥 Logo clicked (Index) - navigating to /');
     navigate('/');
   };
 
@@ -43,7 +43,7 @@ const Index = () => {
             <button
               type="button"
               onClick={handleLogoClick}
-              className="text-2xl font-bold text-white cursor-pointer"
+              className="text-2xl font-bold text-white cursor-pointer hover:text-purple-400 transition-colors relative z-20"
             >
               BlockWard
             </button>
@@ -51,14 +51,14 @@ const Index = () => {
               <Button 
                 type="button"
                 variant="outline" 
-                className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white cursor-pointer"
+                className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white cursor-pointer relative z-20"
                 onClick={handleSignIn}
               >
                 Sign In
               </Button>
               <Button 
                 type="button"
-                className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 cursor-pointer"
+                className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 cursor-pointer relative z-20"
                 onClick={handleAdminPanel}
               >
                 <Shield className="h-4 w-4" />
