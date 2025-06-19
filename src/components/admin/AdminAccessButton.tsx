@@ -24,6 +24,7 @@ export const AdminAccessButton = () => {
       
       if (sessionError || !session) {
         console.error('Session error:', sessionError);
+        setLoading(false);
         return;
       }
 
@@ -38,6 +39,7 @@ export const AdminAccessButton = () => {
 
       if (roleError) {
         console.error('Error fetching user role:', roleError);
+        setLoading(false);
         return;
       }
 
@@ -79,6 +81,11 @@ export const AdminAccessButton = () => {
 
     } catch (error) {
       console.error('Error checking user status:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to check user status"
+      });
     } finally {
       setLoading(false);
     }
@@ -102,7 +109,7 @@ export const AdminAccessButton = () => {
     return (
       <div className="flex items-center justify-center p-4">
         <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-        <span className="ml-2 text-sm text-gray-400">Loading...</span>
+        <span className="ml-2 text-sm text-gray-400">Loading permissions...</span>
       </div>
     );
   }
@@ -152,15 +159,15 @@ export const AdminAccessButton = () => {
     );
   }
 
-  // For students or users without roles
+  // For students or users without roles - but still show options
   return (
     <div className="space-y-2">
       <Button 
-        onClick={() => handleNavigation('/school-setup')}
-        className="w-full bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+        onClick={() => handleNavigation('/dashboard')}
+        className="w-full bg-green-600 hover:bg-green-700 flex items-center gap-2"
       >
         <Building className="w-4 h-4" />
-        Setup School
+        Go to Dashboard
       </Button>
       <Button 
         onClick={() => handleNavigation('/admin-setup')}

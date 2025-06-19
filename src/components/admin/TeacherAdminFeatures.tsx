@@ -8,12 +8,10 @@ import {
   Settings, 
   FileText, 
   Megaphone, 
-  Palette,
   Shield,
   Calendar,
   Trophy,
   MessageSquare,
-  Database,
   UserCheck,
   Bell
 } from "lucide-react";

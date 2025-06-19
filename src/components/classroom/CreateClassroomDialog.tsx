@@ -68,7 +68,7 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
         return;
       }
 
-      // Create the classroom
+      // Create the classroom - THIS WAS THE MISSING LOGIC
       const { data: newClassroomData, error } = await supabase
         .from('classrooms')
         .insert([
@@ -81,7 +81,15 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating classroom:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "Failed to create classroom"
+        });
+        return;
+      }
 
       // Automatically generate a classroom code for the new classroom
       console.log("[CreateClassroomDialog] Generating classroom code for new classroom:", newClassroomData.id);
@@ -106,13 +114,9 @@ export const CreateClassroomDialog = ({ onClassroomCreated, onOpenChange }: Crea
         });
       }
 
-      // Reset form
+      // Reset form and close dialog
       setNewClassroom({ name: "", description: "" });
-      
-      // Call the callback to update the parent component
       onClassroomCreated(newClassroomData);
-      
-      // Close dialog
       onOpenChange(false);
       
     } catch (error: any) {
