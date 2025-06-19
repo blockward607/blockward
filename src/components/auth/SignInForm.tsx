@@ -32,6 +32,7 @@ export const SignInForm = ({
 }: SignInFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,6 +50,7 @@ export const SignInForm = ({
       return;
     }
     
+    setIsLoading(true);
     setLoading(true);
 
     try {
@@ -61,6 +63,7 @@ export const SignInForm = ({
         setErrorMessage(error.message);
         setShowError(true);
         console.error("Login error:", error);
+        setIsLoading(false);
         setLoading(false);
         return;
       } 
@@ -134,6 +137,7 @@ export const SignInForm = ({
       setErrorMessage("An unexpected error occurred. Please try again.");
       setShowError(true);
     } finally {
+      setIsLoading(false);
       setLoading(false);
     }
   };
@@ -169,8 +173,8 @@ export const SignInForm = ({
             required
           />
         </div>
-        <Button type="submit" className="w-full" disabled={setLoading}>
-          Sign In as {role === 'teacher' ? 'Teacher' : 'Student'}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Signing in..." : `Sign In as ${role === 'teacher' ? 'Teacher' : 'Student'}`}
         </Button>
         <div className="text-center mt-4">
           <button 
