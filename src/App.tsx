@@ -36,7 +36,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminSetup from "./pages/AdminSetup";
 import SchoolSetup from "./pages/SchoolSetup";
 import Behavior from "./pages/Behavior";
-import TeacherAdminFeatures from "@/components/admin/TeacherAdminFeatures";
+import { TeacherAdminFeatures } from "@/components/admin/TeacherAdminFeatures";
 
 const queryClient = new QueryClient();
 
