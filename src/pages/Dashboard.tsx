@@ -210,6 +210,33 @@ const Dashboard = () => {
     try {
       setActionLoading(actionTitle);
       
+      // Map routes to ensure they exist
+      let targetRoute = actionPath;
+      
+      switch (actionPath) {
+        case "/progress":
+          // Redirect to dashboard since progress page doesn't exist yet
+          targetRoute = "/dashboard";
+          toast({
+            title: "Coming Soon",
+            description: "Progress tracking is coming soon!"
+          });
+          break;
+        case "/analytics":
+          // Redirect to dashboard since analytics page doesn't exist yet
+          targetRoute = "/dashboard";
+          toast({
+            title: "Coming Soon", 
+            description: "Analytics page is coming soon!"
+          });
+          break;
+        default:
+          // Keep the original route for existing pages
+          targetRoute = actionPath;
+      }
+      
+      console.log(`✅ Navigating to: ${targetRoute}`);
+      
       toast({
         title: "Navigation",
         description: `Opening ${actionTitle}...`
@@ -218,8 +245,7 @@ const Dashboard = () => {
       // Small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      console.log(`✅ Navigating to: ${actionPath}`);
-      navigate(actionPath);
+      navigate(targetRoute);
       
     } catch (error) {
       console.error('❌ Navigation error:', error);

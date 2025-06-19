@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,24 +93,44 @@ export const AdminControlPanel = () => {
     try {
       setActionLoading(title);
       
-      // Check if it's a dashboard navigation
-      if (route === '/admin') {
-        console.log('✅ Navigating to admin dashboard');
-        navigate('/admin');
-        toast({
-          title: "Navigation",
-          description: `Opening ${title}...`
-        });
-        return;
+      // Map routes to actual existing pages
+      let targetRoute = route;
+      
+      switch (route) {
+        case "/students":
+        case "/teachers":
+        case "/classes":
+          targetRoute = route; // These routes exist
+          break;
+        case "/school-setup":
+          targetRoute = "/school-setup"; // This route exists
+          break;
+        case "/analytics":
+          // Redirect to dashboard for now since analytics page doesn't exist
+          targetRoute = "/dashboard";
+          toast({
+            title: "Coming Soon",
+            description: "Analytics page is coming soon. Redirecting to dashboard."
+          });
+          break;
+        case "/admin-requests":
+          // Redirect to admin dashboard since admin requests page doesn't exist
+          targetRoute = "/admin";
+          toast({
+            title: "Admin Requests",
+            description: "Opening admin dashboard to manage requests."
+          });
+          break;
+        default:
+          targetRoute = route;
       }
-
-      // For other routes, navigate to dashboard with section
-      console.log(`✅ Navigating to dashboard with section: ${title}`);
-      navigate('/dashboard', { state: { section: title.toLowerCase() } });
+      
+      console.log(`✅ Navigating to: ${targetRoute}`);
+      navigate(targetRoute);
       
       toast({
         title: "Navigation",
-        description: `Opening ${title} section...`
+        description: `Opening ${title}...`
       });
       
     } catch (error) {
@@ -214,7 +233,6 @@ export const AdminControlPanel = () => {
             <Card 
               key={action.title}
               className="bg-gray-800/50 border-gray-700 hover:border-purple-500/50 transition-all duration-300 hover:scale-105 cursor-pointer"
-              onClick={() => handleActionClick(action.route, action.title)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -240,10 +258,7 @@ export const AdminControlPanel = () => {
                   type="button"
                   disabled={isLoading}
                   className="w-full bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/30 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleActionClick(action.route, action.title);
-                  }}
+                  onClick={() => handleActionClick(action.route, action.title)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   {isLoading ? 'Loading...' : `Access ${action.title}`}
