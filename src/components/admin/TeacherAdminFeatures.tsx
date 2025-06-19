@@ -123,11 +123,12 @@ export const TeacherAdminFeatures = () => {
     }
   ];
 
-  const handleAccessClick = (route: string, title: string, available: boolean) => {
-    console.log(`🚀 Attempting to navigate to ${title} at route: ${route}`);
-    console.log(`📍 Feature available: ${available}`);
+  const handleNavigation = (route: string, title: string, available: boolean) => {
+    console.log(`🔥 Button clicked for ${title}`);
+    console.log(`📍 Route: ${route}, Available: ${available}`);
     
     if (!available) {
+      console.log(`⚠️ Feature ${title} is not available`);
       toast({
         variant: "destructive",
         title: "Feature Coming Soon",
@@ -137,7 +138,7 @@ export const TeacherAdminFeatures = () => {
     }
 
     try {
-      console.log(`✅ Navigating to ${route}`);
+      console.log(`✅ Navigating to ${route} for ${title}`);
       navigate(route);
       
       toast({
@@ -169,7 +170,6 @@ export const TeacherAdminFeatures = () => {
             <Card 
               key={feature.title} 
               className={`p-6 ${feature.color} transition-all duration-200 hover:scale-105 border cursor-pointer ${!feature.available ? 'opacity-75' : ''}`}
-              onClick={() => handleAccessClick(feature.route, feature.title, feature.available)}
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="p-3 rounded-full bg-black/20">
@@ -183,10 +183,7 @@ export const TeacherAdminFeatures = () => {
                   <p className="text-gray-300 text-sm mb-4">{feature.description}</p>
                 </div>
                 <Button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAccessClick(feature.route, feature.title, feature.available);
-                  }}
+                  onClick={() => handleNavigation(feature.route, feature.title, feature.available)}
                   className={`w-full transition-all duration-200 ${
                     feature.available 
                       ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20' 
