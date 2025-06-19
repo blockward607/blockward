@@ -17,11 +17,12 @@ import {
   UserCheck,
   Bell
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 export const TeacherAdminFeatures = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const adminFeatures = [
@@ -112,21 +113,32 @@ export const TeacherAdminFeatures = () => {
   ];
 
   const handleAccessClick = (route: string, title: string) => {
-    console.log(`Access button clicked for: ${title}`);
-    console.log(`Attempting to navigate to: ${route}`);
+    console.log(`=== NAVIGATION DEBUG ===`);
+    console.log(`Current location: ${location.pathname}`);
+    console.log(`Button clicked: ${title}`);
+    console.log(`Target route: ${route}`);
+    console.log(`Current timestamp: ${new Date().toISOString()}`);
     
     try {
+      console.log(`Attempting navigation from ${location.pathname} to ${route}`);
       navigate(route);
+      
+      // Add a small delay to see if navigation actually happens
+      setTimeout(() => {
+        console.log(`Post-navigation location: ${window.location.pathname}`);
+        console.log(`Navigation should be complete`);
+      }, 100);
+      
       toast({
-        title: "Navigation",
-        description: `Navigating to ${title}`,
+        title: "Navigation Attempted",
+        description: `Trying to go to ${title} (${route})`,
       });
     } catch (error) {
-      console.error("Navigation failed:", error);
+      console.error("Navigation failed with error:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to navigate. Please try again.",
+        title: "Navigation Error",
+        description: `Failed to navigate to ${route}: ${error}`,
       });
     }
   };
@@ -136,6 +148,7 @@ export const TeacherAdminFeatures = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Teacher Admin Features</h1>
         <p className="text-gray-400">Manage your classroom and students with these comprehensive admin tools</p>
+        <p className="text-gray-500 text-sm mt-2">Current page: {location.pathname}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -156,13 +169,14 @@ export const TeacherAdminFeatures = () => {
                 </div>
                 <Button 
                   onClick={(e) => {
+                    console.log(`Button physically clicked: ${feature.title}`);
                     e.preventDefault();
                     e.stopPropagation();
                     handleAccessClick(feature.route, feature.title);
                   }}
                   className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200"
                 >
-                  Access
+                  Access {feature.title}
                 </Button>
               </div>
             </Card>
