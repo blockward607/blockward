@@ -1,319 +1,343 @@
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Users, 
-  GraduationCap, 
-  School, 
-  Settings, 
-  BarChart3, 
-  Mail, 
-  Award,
-  Calendar,
-  FileText,
-  Shield,
-  Home,
-  UserCog
-} from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TeacherManagement } from "@/components/admin/TeacherManagement";
-import { HomeroomManagement } from "@/components/admin/HomeroomManagement";
-import { AccessLevelManagement } from "@/components/admin/AccessLevelManagement";
+import { 
+  School, 
+  Users, 
+  GraduationCap, 
+  Coins, 
+  Trophy, 
+  BarChart3, 
+  Settings, 
+  Shield, 
+  FileText,
+  Bell,
+  Palette,
+  Lock,
+  UserPlus,
+  BookOpen,
+  Wallet,
+  ChartBar,
+  Eye,
+  Download
+} from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
-interface AdminStats {
-  totalTeachers: number;
-  totalStudents: number;
-  totalClasses: number;
-  totalNFTs: number;
+interface AdminSection {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  color: string;
+  features: string[];
 }
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [adminProfile, setAdminProfile] = useState<any>(null);
-  const [school, setSchool] = useState<any>(null);
-  const [stats, setStats] = useState<AdminStats>({
-    totalTeachers: 0,
-    totalStudents: 0,
-    totalClasses: 0,
-    totalNFTs: 0
-  });
+  const [activeSection, setActiveSection] = useState<string>("overview");
 
-  useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate('/auth');
-        return;
-      }
-
-      // Check if user is admin
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (!userRole || userRole.role !== 'admin') {
-        toast({
-          variant: "destructive",
-          title: "Access Denied",
-          description: "You don't have admin privileges"
-        });
-        navigate('/dashboard');
-        return;
-      }
-
-      // Get admin profile and school
-      const { data: adminData } = await supabase
-        .from('admin_profiles')
-        .select(`
-          *,
-          schools (*)
-        `)
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (adminData) {
-        setAdminProfile(adminData);
-        setSchool(adminData.schools);
-        await loadStats(adminData.school_id);
-      }
-
-    } catch (error) {
-      console.error('Error checking admin access:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load admin dashboard"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStats = async (schoolId: string) => {
-    try {
-      // Get teacher count
-      const { count: teacherCount } = await supabase
-        .from('teacher_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('school_id', schoolId);
-
-      // Get student count  
-      const { count: studentCount } = await supabase
-        .from('students')
-        .select('*', { count: 'exact', head: true })
-        .eq('school_id', schoolId);
-
-      // Get classroom count
-      const { count: classCount } = await supabase
-        .from('classrooms')
-        .select('*', { count: 'exact', head: true });
-
-      // Get NFT count
-      const { count: nftCount } = await supabase
-        .from('nfts')
-        .select('*', { count: 'exact', head: true });
-
-      setStats({
-        totalTeachers: teacherCount || 0,
-        totalStudents: studentCount || 0,
-        totalClasses: classCount || 0,
-        totalNFTs: nftCount || 0
-      });
-
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4 text-lg">Loading Admin Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const quickActions = [
+  const adminSections: AdminSection[] = [
     {
-      title: "Send Announcements",
-      description: "Broadcast messages to users",
-      icon: Mail,
-      action: () => navigate('/admin/announcements'),
-      color: "bg-orange-500"
+      id: "schools",
+      title: "School / Institution Management",
+      description: "Manage schools, assign admins, and oversee institutional operations",
+      icon: School,
+      color: "from-blue-600 to-cyan-600",
+      features: [
+        "Create / Manage Schools",
+        "Assign School Admins", 
+        "View All Classes by School",
+        "School-level NFT Analytics"
+      ]
     },
     {
-      title: "View Analytics",
-      description: "School performance metrics",
+      id: "teachers",
+      title: "Teacher Management",
+      description: "Add, manage, and monitor teacher accounts and permissions",
+      icon: UserPlus,
+      color: "from-green-600 to-emerald-600",
+      features: [
+        "Add / Remove Teachers",
+        "Assign Teachers to Classes",
+        "Set Permissions (NFT mint access)",
+        "Monitor Teacher Activity Logs",
+        "Suspend / Archive Teacher Accounts"
+      ]
+    },
+    {
+      id: "students",
+      title: "Student Oversight",
+      description: "Comprehensive student management across all classes",
+      icon: GraduationCap,
+      color: "from-purple-600 to-pink-600",
+      features: [
+        "View All Students (cross-class)",
+        "Filter by Class, Achievement Type, XP",
+        "Bulk Wallet Setup (for minors)",
+        "Reset Student Passwords or Logins"
+      ]
+    },
+    {
+      id: "blockchain",
+      title: "NFT Contract & Blockchain Settings",
+      description: "Manage smart contracts and blockchain configurations",
+      icon: Coins,
+      color: "from-orange-600 to-red-600",
+      features: [
+        "View Smart Contract Details",
+        "Manage Contract Metadata Settings",
+        "Toggle Soulbound vs Transferable NFTs",
+        "Enable/Disable Wallet Requirements",
+        "Customize NFT Templates"
+      ]
+    },
+    {
+      id: "rules",
+      title: "Rules & Categories Configuration",
+      description: "Define achievement systems and gamification rules",
+      icon: Trophy,
+      color: "from-yellow-600 to-orange-600",
+      features: [
+        "Define Achievement Categories",
+        "Set XP Values per Category",
+        "Create Custom Badges / Auto-Unlock Criteria",
+        "Define Leaderboard Rules"
+      ]
+    },
+    {
+      id: "analytics",
+      title: "Analytics & Reporting",
+      description: "Comprehensive insights and data export capabilities",
       icon: BarChart3,
-      action: () => navigate('/admin/analytics'),
-      color: "bg-indigo-500"
+      color: "from-indigo-600 to-purple-600",
+      features: [
+        "Class-wise & School-wide XP Summary",
+        "NFT Minting Trends",
+        "Most Active Teachers / Students",
+        "Export Reports (PDF, Excel, JSON)"
+      ]
     },
     {
-      title: "Manage Rewards",
-      description: "Configure NFTs and rewards",
-      icon: Award,
-      action: () => navigate('/admin/rewards'),
-      color: "bg-yellow-500"
-    },
-    {
-      title: "School Settings",
-      description: "Configure school information",
+      id: "system",
+      title: "System Settings",
+      description: "Platform configuration and customization options",
       icon: Settings,
-      action: () => navigate('/school-setup'),
-      color: "bg-purple-500"
+      color: "from-teal-600 to-blue-600",
+      features: [
+        "Language & Regional Options",
+        "School Branding (logos, UI themes)",
+        "Notification Settings",
+        "Connected Integrations"
+      ]
+    },
+    {
+      id: "security",
+      title: "Audit & Security",
+      description: "Security monitoring and compliance management",
+      icon: Shield,
+      color: "from-red-600 to-pink-600",
+      features: [
+        "Admin Access Logs",
+        "NFT Mint/Burn Logs",
+        "Data Protection (GDPR toggle)",
+        "Set Two-Factor Authentication (2FA)"
+      ]
     }
   ];
 
+  useEffect(() => {
+    // Check admin authentication
+    if (!user) {
+      navigate('/admin-login');
+    }
+  }, [user, navigate]);
+
+  const handleSectionClick = (sectionId: string) => {
+    setActiveSection(sectionId);
+    toast({
+      title: "Section Selected",
+      description: `Opening ${adminSections.find(s => s.id === sectionId)?.title}...`
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto space-y-8"
-      >
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900">
+      <div className="container mx-auto p-6 max-w-7xl">
         {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-            Admin Dashboard
-          </h1>
-          <p className="text-xl text-gray-300">
-            Welcome back, {adminProfile?.full_name || 'Administrator'}
-          </p>
-          {school && (
-            <p className="text-lg text-gray-400">
-              Managing {school.name} | Access Level: {adminProfile?.access_level?.replace('_', ' ')}
-            </p>
-          )}
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                BlockWard Admin Panel
+              </h1>
+              <p className="text-gray-300 mt-2">Comprehensive school management and blockchain administration</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/dashboard')}
+              className="border-purple-500/30 text-purple-300 hover:bg-purple-500/20"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Dashboard
+            </Button>
+          </div>
+        </motion.div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-200">Total Teachers</CardTitle>
-              <GraduationCap className="h-4 w-4 text-blue-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalTeachers}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-200">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-green-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalStudents}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-200">Total Classes</CardTitle>
-              <School className="h-4 w-4 text-purple-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalClasses}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-200">Total NFTs</CardTitle>
-              <Award className="h-4 w-4 text-yellow-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalNFTs}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Management Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800">
-            <TabsTrigger value="overview" className="text-white">Overview</TabsTrigger>
-            <TabsTrigger value="teachers" className="text-white">Teachers</TabsTrigger>
-            <TabsTrigger value="homerooms" className="text-white">Homerooms</TabsTrigger>
-            <TabsTrigger value="access" className="text-white">Access Levels</TabsTrigger>
+        {/* Main Content */}
+        <Tabs value={activeSection} onValueChange={setActiveSection} className="space-y-6">
+          <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 bg-gray-800/50 p-2">
+            <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+            {adminSections.map(section => (
+              <TabsTrigger 
+                key={section.id} 
+                value={section.id}
+                className="text-xs"
+              >
+                {section.title.split(' ')[0]}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
+          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Quick Actions */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {quickActions.map((action, index) => {
-                  const Icon = action.icon;
-                  return (
-                    <motion.div
-                      key={action.title}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <Card className="bg-gray-800 border-gray-700 hover:border-purple-500 transition-colors cursor-pointer group">
-                        <CardHeader>
-                          <div className="flex items-center space-x-3">
-                            <div className={`p-3 rounded-lg ${action.color}`}>
-                              <Icon className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-white group-hover:text-purple-300 transition-colors">
-                                {action.title}
-                              </CardTitle>
-                              <CardDescription className="text-gray-400">
-                                {action.description}
-                              </CardDescription>
-                            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {adminSections.map((section, index) => {
+                const Icon = section.icon;
+                return (
+                  <motion.div
+                    key={section.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02, y: -5 }}
+                    className="group cursor-pointer"
+                    onClick={() => handleSectionClick(section.id)}
+                  >
+                    <Card className={`h-full bg-gradient-to-br ${section.color}/10 border-gray-700/50 hover:border-purple-500/40 transition-all duration-300`}>
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`p-2 rounded-lg bg-gradient-to-r ${section.color}/20`}>
+                            <Icon className="w-5 h-5 text-white" />
                           </div>
-                        </CardHeader>
-                        <CardContent>
-                          <Button 
-                            onClick={action.action}
-                            className="w-full bg-purple-600 hover:bg-purple-700"
-                          >
-                            Access
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                        </div>
+                        <CardTitle className="text-lg text-white group-hover:text-purple-200 transition-colors">
+                          {section.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-400 text-sm mb-4 group-hover:text-gray-300 transition-colors">
+                          {section.description}
+                        </p>
+                        <div className="space-y-1">
+                          {section.features.slice(0, 3).map((feature, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-xs text-gray-500">
+                              <div className="w-1 h-1 bg-purple-400 rounded-full" />
+                              {feature}
+                            </div>
+                          ))}
+                          {section.features.length > 3 && (
+                            <div className="text-xs text-purple-400">
+                              +{section.features.length - 3} more features
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </div>
           </TabsContent>
 
-          <TabsContent value="teachers">
-            <TeacherManagement />
-          </TabsContent>
-
-          <TabsContent value="homerooms">
-            <HomeroomManagement />
-          </TabsContent>
-
-          <TabsContent value="access">
-            <AccessLevelManagement />
-          </TabsContent>
+          {/* Individual Section Tabs */}
+          {adminSections.map(section => (
+            <TabsContent key={section.id} value={section.id} className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-6"
+              >
+                <Card className="bg-gray-800/50 border-gray-700">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-3 rounded-lg bg-gradient-to-r ${section.color}/20`}>
+                        <section.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-white">{section.title}</CardTitle>
+                        <p className="text-gray-400">{section.description}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {section.features.map((feature, idx) => (
+                        <Button
+                          key={idx}
+                          variant="outline"
+                          className="justify-start h-auto p-4 border-gray-600 hover:border-purple-500/50 hover:bg-purple-500/10"
+                          onClick={() => toast({
+                            title: "Feature Coming Soon",
+                            description: `${feature} will be available in the next update.`
+                          })}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-purple-400 rounded-full" />
+                            <span className="text-left">{feature}</span>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+          ))}
         </Tabs>
-      </motion.div>
+
+        {/* Future Features Section */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-12"
+        >
+          <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-purple-500/30">
+            <CardHeader>
+              <CardTitle className="text-xl text-white flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Future Admin Features
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { name: "AI Auto-Flagging for Unusual Behaviour", icon: Eye },
+                  { name: "Attendance Sync with SIS", icon: BookOpen },
+                  { name: "District-wide Leaderboards", icon: Trophy },
+                  { name: "Multi-Admin Collaboration", icon: Users }
+                ].map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30">
+                    <feature.icon className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-gray-300">{feature.name}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
     </div>
   );
 };
