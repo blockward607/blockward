@@ -174,9 +174,7 @@ const AdminDashboard = () => {
     
     try {
       const results = await Promise.allSettled([
-        supabase.from('students').select('i
-
-d', { count: 'exact' }),
+        supabase.from('students').select('id', { count: 'exact' }),
         supabase.from('teacher_profiles').select('id', { count: 'exact' }),
         supabase.from('classrooms').select('id', { count: 'exact' }),
         supabase.from('assignments').select('id', { count: 'exact' }),
