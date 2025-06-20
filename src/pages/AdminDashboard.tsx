@@ -15,7 +15,9 @@ import {
   Shield, 
   Settings, 
   Download,
-  TrendingUp
+  TrendingUp,
+  BarChart3,
+  UserCog
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -205,6 +207,15 @@ const AdminDashboard = () => {
       features: ["Broadcast Messages", "Targeted Alerts", "Push Notifications", "Email Alerts"]
     },
     {
+      id: "analytics",
+      title: "Analytics & Reports",
+      description: "View detailed analytics and generate reports",
+      icon: BarChart3,
+      color: "from-cyan-500 to-cyan-600",
+      stats: "Live",
+      features: ["User Analytics", "Performance Reports", "Usage Statistics", "Export Data"]
+    },
+    {
       id: "backup",
       title: "Backup & Export",
       description: "Download database backups and export reports",
@@ -266,7 +277,7 @@ const AdminDashboard = () => {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-6 gap-2 bg-slate-800/80 p-2 border border-slate-700/50 backdrop-blur-sm">
+          <TabsList className="grid grid-cols-2 lg:grid-cols-4 gap-2 bg-slate-800/80 p-2 border border-slate-700/50 backdrop-blur-sm">
             <TabsTrigger 
               value="overview" 
               className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
@@ -274,28 +285,22 @@ const AdminDashboard = () => {
               Overview
             </TabsTrigger>
             <TabsTrigger 
-              value="teachers" 
-              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors text-xs"
+              value="management" 
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
             >
-              Teachers
+              Management
             </TabsTrigger>
             <TabsTrigger 
-              value="students" 
-              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors text-xs"
+              value="analytics" 
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
             >
-              Students
+              Analytics
             </TabsTrigger>
             <TabsTrigger 
-              value="classes" 
-              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors text-xs"
+              value="system" 
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
             >
-              Classes
-            </TabsTrigger>
-            <TabsTrigger 
-              value="nfts" 
-              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors text-xs"
-            >
-              NFTs
+              System
             </TabsTrigger>
           </TabsList>
 
@@ -322,7 +327,80 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          {/* Individual feature tabs would go here */}
+          <TabsContent value="management" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {adminSections.filter(section => 
+                ['teachers', 'students', 'classes', 'assignments'].includes(section.id)
+              ).map((section, index) => (
+                <motion.div
+                  key={section.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <AdminStatsCard
+                    title={section.title}
+                    description={section.description}
+                    icon={section.icon}
+                    stats={section.stats}
+                    color={section.color}
+                    features={section.features}
+                    onClick={() => console.log(`Navigate to ${section.id}`)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {adminSections.filter(section => 
+                ['analytics', 'nft-tracker', 'security'].includes(section.id)
+              ).map((section, index) => (
+                <motion.div
+                  key={section.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <AdminStatsCard
+                    title={section.title}
+                    description={section.description}
+                    icon={section.icon}
+                    stats={section.stats}
+                    color={section.color}
+                    features={section.features}
+                    onClick={() => console.log(`Navigate to ${section.id}`)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="system" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {adminSections.filter(section => 
+                ['settings', 'backup', 'uploads', 'notifications', 'moderation'].includes(section.id)
+              ).map((section, index) => (
+                <motion.div
+                  key={section.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <AdminStatsCard
+                    title={section.title}
+                    description={section.description}
+                    icon={section.icon}
+                    stats={section.stats}
+                    color={section.color}
+                    features={section.features}
+                    onClick={() => console.log(`Navigate to ${section.id}`)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </TabsContent>
         </Tabs>
 
         <AdminSystemStatus />
