@@ -32,11 +32,13 @@ export const SignInForm = ({
   onForgotPasswordClick,
 }: SignInFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLocalLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalLoading(true);
     setLoading(true);
     setShowError(false);
 
@@ -91,6 +93,7 @@ export const SignInForm = ({
       setErrorMessage("An unexpected error occurred");
       setShowError(true);
     } finally {
+      setLocalLoading(false);
       setLoading(false);
     }
   };
@@ -171,7 +174,7 @@ export const SignInForm = ({
         <Button
           type="submit"
           className={`w-full bg-gradient-to-r from-${roleColor}-600 to-${roleColor}-700 hover:from-${roleColor}-700 hover:to-${roleColor}-800 text-white`}
-          disabled={setLoading}
+          disabled={loading}
         >
           Sign In as {role.charAt(0).toUpperCase() + role.slice(1)}
         </Button>

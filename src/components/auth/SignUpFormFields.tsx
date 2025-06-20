@@ -34,17 +34,20 @@ export const SignUpFormFields = ({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [school, setSchool] = useState("");
   const [subject, setSubject] = useState("");
+  const [loading, setLocalLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalLoading(true);
     setLoading(true);
     setShowError(false);
 
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match");
       setShowError(true);
+      setLocalLoading(false);
       setLoading(false);
       return;
     }
@@ -96,6 +99,7 @@ export const SignUpFormFields = ({
       setErrorMessage("An unexpected error occurred during signup");
       setShowError(true);
     } finally {
+      setLocalLoading(false);
       setLoading(false);
     }
   };
@@ -228,7 +232,7 @@ export const SignUpFormFields = ({
         <Button
           type="submit"
           className={`w-full bg-gradient-to-r from-${roleColor}-600 to-${roleColor}-700 hover:from-${roleColor}-700 hover:to-${roleColor}-800 text-white`}
-          disabled={setLoading}
+          disabled={loading}
         >
           Create {role.charAt(0).toUpperCase() + role.slice(1)} Account
         </Button>
