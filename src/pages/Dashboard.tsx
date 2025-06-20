@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +12,8 @@ import {
   TrendingUp, 
   Bell,
   Plus,
-  Eye
+  Eye,
+  ArrowRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -265,28 +267,36 @@ const Dashboard = () => {
       description: "Start a new classroom",
       icon: Plus,
       path: "/classes",
-      color: "bg-blue-500"
+      color: "from-blue-500 to-cyan-500",
+      bgColor: "bg-blue-500/10",
+      borderColor: "border-blue-500/20"
     },
     {
       title: "Add Students",
       description: "Invite students to join",
       icon: Users,
       path: "/students",
-      color: "bg-green-500"
+      color: "from-green-500 to-emerald-500",
+      bgColor: "bg-green-500/10",
+      borderColor: "border-green-500/20"
     },
     {
       title: "New Assignment",
       description: "Create an assignment",
       icon: BookOpen,
       path: "/assignments",
-      color: "bg-purple-500"
+      color: "from-purple-500 to-pink-500",
+      bgColor: "bg-purple-500/10",
+      borderColor: "border-purple-500/20"
     },
     {
       title: "View Analytics",
       description: "Check class performance",
       icon: TrendingUp,
       path: "/analytics",
-      color: "bg-orange-500"
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-500/10",
+      borderColor: "border-orange-500/20"
     }
   ] : [
     {
@@ -294,28 +304,36 @@ const Dashboard = () => {
       description: "View enrolled classes",
       icon: BookOpen,
       path: "/classes",
-      color: "bg-blue-500"
+      color: "from-blue-500 to-cyan-500",
+      bgColor: "bg-blue-500/10",
+      borderColor: "border-blue-500/20"
     },
     {
       title: "Assignments",
       description: "Check upcoming work",
       icon: Calendar,
       path: "/assignments",
-      color: "bg-green-500"
+      color: "from-green-500 to-emerald-500",
+      bgColor: "bg-green-500/10",
+      borderColor: "border-green-500/20"
     },
     {
       title: "NFT Wallet",
       description: "View achievements",
       icon: Award,
       path: "/wallet",
-      color: "bg-purple-500"
+      color: "from-purple-500 to-pink-500",
+      bgColor: "bg-purple-500/10",
+      borderColor: "border-purple-500/20"
     },
     {
       title: "Progress",
       description: "Track your learning",
       icon: TrendingUp,
       path: "/progress",
-      color: "bg-orange-500"
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-500/10",
+      borderColor: "border-orange-500/20"
     }
   ];
 
@@ -436,38 +454,92 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {/* Quick Actions */}
-      <Card className="bg-gray-800/50 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white">Quick Actions</CardTitle>
-          <CardDescription>
-            Common tasks and shortcuts
-          </CardDescription>
+      {/* Quick Actions - Enhanced UI */}
+      <Card className="bg-gray-800/50 border-gray-700 overflow-hidden">
+        <CardHeader className="pb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl text-white flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-blue-500/20">
+                  <TrendingUp className="h-6 w-6 text-purple-400" />
+                </div>
+                Quick Actions
+              </CardTitle>
+              <CardDescription className="text-lg mt-2">
+                {userRole === 'teacher' ? 'Essential tools for classroom management' : 'Navigate your learning journey'}
+              </CardDescription>
+            </div>
+            <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+              {quickActions.length} Actions
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {quickActions.map((action, index) => {
               const Icon = action.icon;
               const isLoading = actionLoading === action.title;
               
               return (
-                <Button
+                <motion.div
                   key={action.title}
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleQuickAction(action.title, action.path)}
-                  className="h-auto p-4 flex flex-col items-center gap-3 bg-gray-700/50 hover:bg-gray-600/50 text-white border border-gray-600 cursor-pointer transition-all duration-200 hover:scale-105"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group"
                 >
-                  <div className={`p-3 rounded-lg ${action.color}`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-medium">
-                      {isLoading ? 'Loading...' : action.title}
-                    </p>
-                    <p className="text-xs text-gray-400">{action.description}</p>
-                  </div>
-                </Button>
+                  <Card className={`h-full ${action.bgColor} ${action.borderColor} border-2 hover:border-opacity-60 transition-all duration-300 cursor-pointer relative overflow-hidden`}>
+                    {/* Gradient overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+                    
+                    {/* Glow effect */}
+                    <div className={`absolute -inset-0.5 bg-gradient-to-r ${action.color} rounded-lg blur opacity-0 group-hover:opacity-20 transition-opacity duration-300`} />
+                    
+                    <CardContent className="relative p-6 flex flex-col h-full">
+                      <div className="flex items-center justify-between mb-4">
+                        <motion.div 
+                          className={`p-3 rounded-xl bg-gradient-to-r ${action.color} shadow-lg`}
+                          whileHover={{ rotate: 5, scale: 1.05 }}
+                          transition={{ type: "spring", stiffness: 400 }}
+                        >
+                          <Icon className="h-6 w-6 text-white" />
+                        </motion.div>
+                        <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
+                      </div>
+                      
+                      <div className="space-y-2 flex-grow">
+                        <h3 className="font-bold text-lg text-white group-hover:text-purple-200 transition-colors">
+                          {action.title}
+                        </h3>
+                        <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors leading-relaxed">
+                          {action.description}
+                        </p>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => handleQuickAction(action.title, action.path)}
+                        className={`w-full mt-4 bg-gradient-to-r ${action.color} hover:shadow-lg text-white border-0 font-medium transition-all duration-300 group-hover:shadow-xl`}
+                        size="sm"
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Loading...
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span>Open</span>
+                            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
