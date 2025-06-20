@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -26,6 +25,10 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminQuickStats } from "@/components/admin/AdminQuickStats";
 import { AdminStatsCard } from "@/components/admin/AdminStatsCard";
 import { AdminSystemStatus } from "@/components/admin/AdminSystemStatus";
+import { UserManagement } from "@/components/admin/UserManagement";
+import { SystemMonitoring } from "@/components/admin/SystemMonitoring";
+import { SecurityControls } from "@/components/admin/SecurityControls";
+import { TechnicalSettings } from "@/components/admin/TechnicalSettings";
 
 interface AdminStats {
   totalStudents: number;
@@ -135,112 +138,112 @@ const AdminDashboard = () => {
 
   const adminSections = [
     {
-      id: "teachers",
-      title: "Manage Teachers",
-      description: "View, add, edit teacher accounts and permissions",
+      id: "user-management",
+      title: "User Management",
+      description: "Manage all users, roles, and account permissions across the platform",
       icon: Users,
       color: "from-blue-500 to-blue-600",
+      stats: stats.totalStudents + stats.totalTeachers,
+      features: ["Create/Edit/Delete Users", "Role Assignment", "Password Resets", "Account Suspension", "Bulk Actions", "User Analytics"]
+    },
+    {
+      id: "system-monitoring",
+      title: "System Monitoring",
+      description: "Real-time monitoring of system performance, resources, and health",
+      icon: BarChart3,
+      color: "from-green-500 to-green-600",
+      stats: "Live",
+      features: ["CPU & Memory Usage", "Database Performance", "Active Sessions", "Response Times", "System Logs", "Alert Management"]
+    },
+    {
+      id: "security-controls",
+      title: "Security Controls",
+      description: "Advanced security settings, threat monitoring, and access controls",
+      icon: Shield,
+      color: "from-red-500 to-red-600",
+      stats: "Active",
+      features: ["2FA Configuration", "IP Whitelisting", "Session Management", "Security Events", "Audit Logs", "Emergency Controls"]
+    },
+    {
+      id: "technical-settings",
+      title: "Technical Settings",
+      description: "System configuration, database settings, and integration management",
+      icon: Settings,
+      color: "from-purple-500 to-purple-600",
+      stats: "Config",
+      features: ["Database Config", "Email Settings", "API Management", "Branding Options", "Backup Settings", "Performance Tuning"]
+    },
+    {
+      id: "teachers",
+      title: "Teacher Administration",
+      description: "Comprehensive teacher account and permission management",
+      icon: GraduationCap,
+      color: "from-indigo-500 to-indigo-600",
       stats: stats.totalTeachers,
-      features: ["Add/Edit/Delete", "Reset Passwords", "Assign Classes", "Account Status"]
+      features: ["Teacher Profiles", "Class Assignments", "Permission Levels", "Activity Monitoring", "Bulk Operations", "Training Resources"]
     },
     {
       id: "students", 
-      title: "Manage Students",
-      description: "Student registration, bulk upload, and account management",
-      icon: GraduationCap,
-      color: "from-green-500 to-green-600",
+      title: "Student Administration",
+      description: "Student registration, bulk management, and academic oversight",
+      icon: UserCog,
+      color: "from-cyan-500 to-cyan-600",
       stats: stats.totalStudents,
-      features: ["Bulk CSV Upload", "Password Reset", "Class Assignment", "Suspend/Ban"]
+      features: ["Student Profiles", "Bulk CSV Import", "Class Enrollment", "Progress Tracking", "Parent Communication", "Academic Records"]
     },
     {
       id: "classes",
       title: "Class Management",
-      description: "Create, edit classes and manage visibility settings",
+      description: "Classroom creation, teacher assignments, and curriculum control",
       icon: School,
-      color: "from-purple-500 to-purple-600",
+      color: "from-teal-500 to-teal-600",
       stats: stats.activeClasses,
-      features: ["Create/Edit Classes", "Assign Teachers", "Set Subjects", "Control Visibility"]
+      features: ["Create/Edit Classes", "Teacher Assignment", "Student Enrollment", "Resource Management", "Schedule Coordination", "Performance Analytics"]
     },
     {
       id: "assignments",
-      title: "Assignment Control",
-      description: "Monitor and manage all assignments across classes",
+      title: "Assignment Oversight",
+      description: "Platform-wide assignment monitoring and content management",
       icon: FileText,
       color: "from-orange-500 to-orange-600",
       stats: stats.totalAssignments,
-      features: ["View All Tasks", "Delete Content", "Clone Assignments", "Add Templates"]
+      features: ["Assignment Templates", "Content Moderation", "Plagiarism Detection", "Grade Analytics", "Due Date Management", "Resource Library"]
     },
     {
-      id: "moderation",
-      title: "Content Moderation",
-      description: "Monitor chats, messages and filter inappropriate content",
-      icon: MessageSquare,
-      color: "from-red-500 to-red-600",
-      stats: "24/7",
-      features: ["Monitor Chats", "AI Filtering", "Report Management", "Block Content"]
-    },
-    {
-      id: "nft-tracker",
-      title: "NFT & Code Tracker",
-      description: "Track NFT minting, class codes and blockchain activity",
+      id: "nft-blockchain",
+      title: "NFT & Blockchain",
+      description: "Blockchain integration, NFT management, and wallet oversight",
       icon: Coins,
       color: "from-yellow-500 to-yellow-600",
       stats: stats.nftsMinted,
-      features: ["Code Usage", "NFT Tracking", "Expiry Control", "Wallet Mapping"]
+      features: ["NFT Templates", "Wallet Management", "Transaction Monitoring", "Blockchain Settings", "Smart Contracts", "Achievement Tracking"]
     },
     {
-      id: "uploads",
-      title: "Upload Center",
-      description: "Upload school-wide materials and resources",
-      icon: Upload,
-      color: "from-indigo-500 to-indigo-600",
-      stats: "∞",
-      features: ["Upload Materials", "Auto-Publish", "Video/PDF Support", "Bulk Upload"]
-    },
-    {
-      id: "notifications",
-      title: "Notifications",
-      description: "Send announcements and alerts to users",
-      icon: Bell,
+      id: "communication",
+      title: "Communication Hub",
+      description: "Platform-wide messaging, announcements, and notification control",
+      icon: MessageSquare,
       color: "from-pink-500 to-pink-600",
       stats: "Active",
-      features: ["Broadcast Messages", "Targeted Alerts", "Push Notifications", "Email Alerts"]
+      features: ["Broadcast Messages", "Emergency Alerts", "Email Integration", "Push Notifications", "Message Moderation", "Communication Logs"]
     },
     {
-      id: "analytics",
+      id: "analytics-reports",
       title: "Analytics & Reports",
-      description: "View detailed analytics and generate reports",
-      icon: BarChart3,
-      color: "from-cyan-500 to-cyan-600",
-      stats: "Live",
-      features: ["User Analytics", "Performance Reports", "Usage Statistics", "Export Data"]
+      description: "Comprehensive data analytics, insights, and automated reporting",
+      icon: TrendingUp,
+      color: "from-violet-500 to-violet-600",
+      stats: "Live Data",
+      features: ["Usage Analytics", "Performance Reports", "Custom Dashboards", "Data Export", "Trend Analysis", "Predictive Insights"]
     },
     {
-      id: "backup",
-      title: "Backup & Export",
-      description: "Download database backups and export reports",
+      id: "maintenance",
+      title: "System Maintenance",
+      description: "Database management, backups, updates, and system maintenance",
       icon: Download,
-      color: "from-teal-500 to-teal-600",
-      stats: "Ready",
-      features: ["User Data Export", "Assignment Backup", "NFT Records", "CSV Reports"]
-    },
-    {
-      id: "security",
-      title: "Security & Logs",
-      description: "Monitor login history and access patterns",
-      icon: Shield,
       color: "from-gray-500 to-gray-600",
-      stats: stats.recentActivity,
-      features: ["Login History", "Failed Attempts", "Access Logs", "IP Tracking"]
-    },
-    {
-      id: "settings",
-      title: "Site Settings",
-      description: "Configure school branding, themes and access control",
-      icon: Settings,
-      color: "from-slate-500 to-slate-600",
-      stats: "Config",
-      features: ["School Branding", "Color Themes", "Maintenance Mode", "Registration Control"]
+      stats: "Scheduled",
+      features: ["Database Backups", "System Updates", "Cache Management", "Log Rotation", "Performance Optimization", "Health Checks"]
     }
   ];
 
@@ -277,7 +280,7 @@ const AdminDashboard = () => {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-2 lg:grid-cols-4 gap-2 bg-slate-800/80 p-2 border border-slate-700/50 backdrop-blur-sm">
+          <TabsList className="grid grid-cols-2 lg:grid-cols-5 gap-2 bg-slate-800/80 p-2 border border-slate-700/50 backdrop-blur-sm">
             <TabsTrigger 
               value="overview" 
               className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
@@ -285,22 +288,28 @@ const AdminDashboard = () => {
               Overview
             </TabsTrigger>
             <TabsTrigger 
-              value="management" 
+              value="user-management" 
               className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
             >
-              Management
+              Users
             </TabsTrigger>
             <TabsTrigger 
-              value="analytics" 
+              value="system-monitoring" 
               className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
             >
-              Analytics
+              Monitoring
             </TabsTrigger>
             <TabsTrigger 
-              value="system" 
+              value="security-controls" 
               className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
             >
-              System
+              Security
+            </TabsTrigger>
+            <TabsTrigger 
+              value="technical-settings" 
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
+            >
+              Settings
             </TabsTrigger>
           </TabsList>
 
@@ -327,10 +336,27 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="management" className="space-y-6">
+          <TabsContent value="user-management" className="space-y-6">
+            <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="system-monitoring" className="space-y-6">
+            <SystemMonitoring />
+          </TabsContent>
+
+          <TabsContent value="security-controls" className="space-y-6">
+            <SecurityControls />
+          </TabsContent>
+
+          <TabsContent value="technical-settings" className="space-y-6">
+            <TechnicalSettings />
+          </TabsContent>
+
+          {/* Existing tabs with enhanced management sections */}
+          <TabsContent value="teachers" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {adminSections.filter(section => 
-                ['teachers', 'students', 'classes', 'assignments'].includes(section.id)
+                ['teachers', 'classes', 'assignments'].includes(section.id)
               ).map((section, index) => (
                 <motion.div
                   key={section.id}
@@ -352,10 +378,10 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
+          <TabsContent value="students" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {adminSections.filter(section => 
-                ['analytics', 'nft-tracker', 'security'].includes(section.id)
+                ['students', 'analytics-reports', 'communication'].includes(section.id)
               ).map((section, index) => (
                 <motion.div
                   key={section.id}
@@ -377,10 +403,10 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="system" className="space-y-6">
+          <TabsContent value="nft-blockchain" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {adminSections.filter(section => 
-                ['settings', 'backup', 'uploads', 'notifications', 'moderation'].includes(section.id)
+                ['nft-blockchain', 'maintenance', 'communication'].includes(section.id)
               ).map((section, index) => (
                 <motion.div
                   key={section.id}
