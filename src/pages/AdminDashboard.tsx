@@ -36,16 +36,6 @@ import { SystemMonitoring } from "@/components/admin/SystemMonitoring";
 import { SecurityControls } from "@/components/admin/SecurityControls";
 import { TechnicalSettings } from "@/components/admin/TechnicalSettings";
 import { TeacherManagement } from "@/components/admin/TeacherManagement";
-import { StudentManagement } from "@/components/admin/StudentManagement";
-import { ClassManagement } from "@/components/admin/ClassManagement";
-import { AssignmentControl } from "@/components/admin/AssignmentControl";
-import { ContentModeration } from "@/components/admin/ContentModeration";
-import { NFTTracker } from "@/components/admin/NFTTracker";
-import { UploadCenter } from "@/components/admin/UploadCenter";
-import { NotificationSystem } from "@/components/admin/NotificationSystem";
-import { BackupExport } from "@/components/admin/BackupExport";
-import { AccessLogs } from "@/components/admin/AccessLogs";
-import { SiteSettings } from "@/components/admin/SiteSettings";
 
 interface AdminStats {
   totalStudents: number;
@@ -237,7 +227,7 @@ const AdminDashboard = () => {
     { label: "Classes", value: stats.activeClasses, icon: School, color: "bg-gradient-to-r from-purple-500 to-purple-600" },
     { label: "Assignments", value: stats.totalAssignments, icon: FileText, color: "bg-gradient-to-r from-orange-500 to-orange-600" },
     { label: "NFTs Minted", value: stats.nftsMinted, icon: Coins, color: "bg-gradient-to-r from-yellow-500 to-yellow-600" },
-    { label: "Completion Rate", value: `${stats.assignmentCompletionRate}%`, icon: TrendingUp, color: "bg-gradient-to-r from-pink-500 to-pink-600" }
+    { label: "Completion Rate", value: stats.assignmentCompletionRate, icon: TrendingUp, color: "bg-gradient-to-r from-pink-500 to-pink-600" }
   ];
 
   const adminSections = [
@@ -294,60 +284,6 @@ const AdminDashboard = () => {
       color: "from-yellow-500 to-yellow-600",
       stats: stats.nftUsageCount,
       features: ["Minting Tracker", "Code Usage Analytics", "Expiry Management", "Wallet Mapping", "Blockchain Integration"]
-    },
-    {
-      id: "upload-center",
-      title: "Upload Center",
-      description: "Upload school-wide materials and auto-publish to all class dashboards.",
-      icon: Upload,
-      color: "from-indigo-500 to-indigo-600",
-      stats: "Active",
-      features: ["Video Upload", "PDF Management", "Presentation Sharing", "Auto-Publishing", "Resource Library"]
-    },
-    {
-      id: "notifications",
-      title: "Notification System",
-      description: "Send announcements to all users, specific classes, or individuals.",
-      icon: Bell,
-      color: "from-pink-500 to-pink-600",
-      stats: "Live",
-      features: ["Broadcast Messages", "Class Targeting", "Individual Alerts", "Push Notifications", "Email Integration"]
-    },
-    {
-      id: "backup-export",
-      title: "Backup & Export",
-      description: "Download database backups, export reports, and manage system data.",
-      icon: Download,
-      color: "from-cyan-500 to-cyan-600",
-      stats: "Ready",
-      features: ["User Data Export", "Assignment Backup", "NFT Records", "Activity Reports", "CSV Generation"]
-    },
-    {
-      id: "access-logs",
-      title: "Security & Access Logs",
-      description: "Monitor login history, failed attempts, and route access tracking.",
-      icon: Lock,
-      color: "from-gray-500 to-gray-600",
-      stats: "Monitoring",
-      features: ["Login History", "Failed Attempts", "IP Tracking", "Route Monitoring", "Security Analytics"]
-    },
-    {
-      id: "site-settings",
-      title: "Site Settings",
-      description: "Customize school branding, themes, maintenance mode, and registration control.",
-      icon: Palette,
-      color: "from-violet-500 to-violet-600",
-      stats: "Config",
-      features: ["Logo/Theme Customization", "Color Schemes", "Maintenance Mode", "Registration Control", "Domain Management"]
-    },
-    {
-      id: "system-monitoring",
-      title: "System Monitoring",
-      description: "Real-time system performance, database health, and resource monitoring.",
-      icon: BarChart3,
-      color: "from-teal-500 to-teal-600",
-      stats: "Live",
-      features: ["Performance Metrics", "Database Health", "Resource Usage", "Error Tracking", "Uptime Monitoring"]
     }
   ];
 
@@ -437,47 +373,28 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="students" className="space-y-6">
-            <StudentManagement />
+            <UserManagement />
           </TabsContent>
 
           <TabsContent value="classes" className="space-y-6">
-            <ClassManagement />
+            <div className="text-center text-white">
+              <h3 className="text-xl font-bold mb-4">Class Management</h3>
+              <p className="text-gray-400">Class management features coming soon...</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="assignments" className="space-y-6">
-            <AssignmentControl />
+            <div className="text-center text-white">
+              <h3 className="text-xl font-bold mb-4">Assignment Control</h3>
+              <p className="text-gray-400">Assignment control features coming soon...</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="moderation" className="space-y-6">
-            <ContentModeration />
-          </TabsContent>
-
-          <TabsContent value="nft-tracker" className="space-y-6">
-            <NFTTracker />
-          </TabsContent>
-
-          <TabsContent value="upload-center" className="space-y-6">
-            <UploadCenter />
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
-            <NotificationSystem />
-          </TabsContent>
-
-          <TabsContent value="backup-export" className="space-y-6">
-            <BackupExport />
-          </TabsContent>
-
-          <TabsContent value="access-logs" className="space-y-6">
-            <AccessLogs />
-          </TabsContent>
-
-          <TabsContent value="site-settings" className="space-y-6">
-            <SiteSettings />
-          </TabsContent>
-
-          <TabsContent value="system-monitoring" className="space-y-6">
-            <SystemMonitoring />
+            <div className="text-center text-white">
+              <h3 className="text-xl font-bold mb-4">Content Moderation</h3>
+              <p className="text-gray-400">Content moderation features coming soon...</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="system" className="space-y-6">
@@ -514,6 +431,7 @@ const AdminDashboard = () => {
               </motion.div>
             </div>
             
+            <SystemMonitoring />
             <SecurityControls />
           </TabsContent>
         </Tabs>

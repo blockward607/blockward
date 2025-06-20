@@ -1,131 +1,109 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, Settings, School } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { GraduationCap, Shield, Ban, Unlock, Search, UserPlus, Trash2, Key } from "lucide-react";
 
 interface Teacher {
   id: string;
-  full_name: string;
   user_id: string;
-  assignments: Array<{
-    id: string;
-    assignment_type: string;
-    classrooms: {
-      id: string;
-      name: string;
-    };
-  }>;
-}
-
-interface Classroom {
-  id: string;
-  name: string;
-  description: string;
+  full_name: string;
+  subject: string;
+  school: string;
+  created_at: string;
+  is_active: boolean;
 }
 
 export const TeacherManagement = () => {
   const { toast } = useToast();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTeacher, setSelectedTeacher] = useState<string>("");
-  const [selectedClassroom, setSelectedClassroom] = useState<string>("");
-  const [assignmentType, setAssignmentType] = useState<string>("subject_teacher");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("all");
 
   useEffect(() => {
-    loadData();
+    loadTeachers();
   }, []);
 
-  const loadData = async () => {
+  const loadTeachers = async () => {
     try {
-      // Load teachers with their assignments
-      const { data: teachersData } = await supabase
+      const { data: teacherProfiles, error } = await supabase
         .from('teacher_profiles')
-        .select(`
-          id,
-          full_name,
-          user_id,
-          teacher_class_assignments (
-            id,
-            assignment_type,
-            classrooms (
-              id,
-              name
-            )
-          )
-        `);
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      // Load classrooms
-      const { data: classroomsData } = await supabase
-        .from('classrooms')
-        .select('id, name, description');
+      if (error) throw error;
 
-      // Transform the data to match our Teacher interface
-      const transformedTeachers = (teachersData || []).map(teacher => ({
-        id: teacher.id,
-        full_name: teacher.full_name,
-        user_id: teacher.user_id,
-        assignments: teacher.teacher_class_assignments || []
-      }));
+      const teachersData = teacherProfiles?.map(profile => ({
+        id: profile.id,
+        user_id: profile.user_id,
+        full_name: profile.full_name || 'Unknown Teacher',
+        subject: profile.subject || 'General',
+        school: profile.school || 'Default School',
+        created_at: profile.created_at,
+        is_active: true
+      })) || [];
 
-      setTeachers(transformedTeachers);
-      setClassrooms(classroomsData || []);
+      setTeachers(teachersData);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading teachers:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load teacher and classroom data"
+        description: "Failed to load teachers"
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const assignTeacherToClassroom = async () => {
-    if (!selectedTeacher || !selectedClassroom) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please select both a teacher and a classroom"
-      });
-      return;
-    }
-
+  const resetTeacherPassword = async (teacherId: string) => {
     try {
-      const { error } = await supabase.rpc('assign_teacher_to_classroom', {
-        p_teacher_id: selectedTeacher,
-        p_classroom_id: selectedClassroom,
-        p_assignment_type: assignmentType
-      });
-
-      if (error) throw error;
-
       toast({
-        title: "Success",
-        description: "Teacher assigned to classroom successfully"
+        title: "Password Reset",
+        description: "Password reset email sent to teacher"
       });
-
-      loadData();
-      setSelectedTeacher("");
-      setSelectedClassroom("");
-    } catch (error: any) {
-      console.error('Error assigning teacher:', error);
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to assign teacher"
+        title: "Error", 
+        description: "Failed to reset password"
       });
     }
   };
+
+  const toggleTeacherStatus = async (teacherId: string, currentStatus: boolean) => {
+    try {
+      setTeachers(teachers.map(teacher => 
+        teacher.id === teacherId ? { ...teacher, is_active: !currentStatus } : teacher
+      ));
+      
+      toast({
+        title: currentStatus ? "Teacher Deactivated" : "Teacher Activated",
+        description: `Teacher account ${currentStatus ? 'deactivated' : 'activated'} successfully`
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update teacher status"
+      });
+    }
+  };
+
+  const filteredTeachers = teachers.filter(teacher => {
+    const matchesSearch = teacher.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         teacher.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSubject = subjectFilter === "all" || teacher.subject === subjectFilter;
+    return matchesSearch && matchesSubject;
+  });
 
   if (loading) {
     return (
@@ -140,115 +118,118 @@ export const TeacherManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Teacher Management</h2>
-          <p className="text-gray-400">Manage teacher assignments to classes and homerooms</p>
+          <p className="text-gray-400">Manage teacher accounts, passwords, and class assignments</p>
         </div>
+        <Button className="bg-green-600 hover:bg-green-700">
+          <UserPlus className="w-4 h-4 mr-2" />
+          Add New Teacher
+        </Button>
       </div>
 
-      {/* Assignment Form */}
+      {/* Filters */}
       <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <UserPlus className="w-5 h-5" />
-            Assign Teacher to Classroom
-          </CardTitle>
-          <CardDescription className="text-gray-400">
-            Select a teacher and classroom to create an assignment
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-gray-200">Teacher</Label>
-              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                  <SelectValue placeholder="Select teacher" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teachers.map((teacher) => (
-                    <SelectItem key={teacher.id} value={teacher.id}>
-                      {teacher.full_name || `Teacher ${teacher.id.slice(0, 8)}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search teachers by name or subject..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
             </div>
-
-            <div>
-              <Label className="text-gray-200">Classroom</Label>
-              <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                  <SelectValue placeholder="Select classroom" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classrooms.map((classroom) => (
-                    <SelectItem key={classroom.id} value={classroom.id}>
-                      {classroom.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-gray-200">Assignment Type</Label>
-              <Select value={assignmentType} onValueChange={setAssignmentType}>
-                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="subject_teacher">Subject Teacher</SelectItem>
-                  <SelectItem value="form_tutor">Form Tutor</SelectItem>
-                  <SelectItem value="assistant">Teaching Assistant</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+              <SelectTrigger className="w-40 bg-gray-700 border-gray-600 text-white">
+                <SelectValue placeholder="Filter by subject" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Subjects</SelectItem>
+                <SelectItem value="Mathematics">Mathematics</SelectItem>
+                <SelectItem value="English">English</SelectItem>
+                <SelectItem value="Science">Science</SelectItem>
+                <SelectItem value="History">History</SelectItem>
+                <SelectItem value="General">General</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
-          <Button 
-            onClick={assignTeacherToClassroom}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Assign Teacher
-          </Button>
         </CardContent>
       </Card>
 
-      {/* Teachers List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {teachers.map((teacher) => (
-          <motion.div
-            key={teacher.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  {teacher.full_name || `Teacher ${teacher.id.slice(0, 8)}`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-300">Assignments:</h4>
-                  {teacher.assignments && teacher.assignments.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {teacher.assignments.map((assignment: any, index: number) => (
-                        <Badge key={index} variant="secondary" className="bg-purple-600/20 text-purple-300">
-                          {assignment.classrooms?.name} ({assignment.assignment_type})
-                        </Badge>
-                      ))}
+      {/* Teachers Table */}
+      <Card className="bg-gray-800 border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <GraduationCap className="w-5 h-5" />
+            Teachers ({filteredTeachers.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-gray-300">Teacher</TableHead>
+                <TableHead className="text-gray-300">Subject</TableHead>
+                <TableHead className="text-gray-300">School</TableHead>
+                <TableHead className="text-gray-300">Status</TableHead>
+                <TableHead className="text-gray-300">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTeachers.map((teacher) => (
+                <TableRow key={teacher.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium text-white">{teacher.full_name}</div>
+                      <div className="text-sm text-gray-400">ID: {teacher.id.slice(0, 8)}...</div>
                     </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm">No assignments yet</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-blue-400 border-blue-400">
+                      {teacher.subject}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-300">{teacher.school}</TableCell>
+                  <TableCell>
+                    <Badge variant={teacher.is_active ? 'default' : 'secondary'}>
+                      {teacher.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => resetTeacherPassword(teacher.id)}
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      >
+                        <Key className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => toggleTeacherStatus(teacher.id, teacher.is_active)}
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      >
+                        {teacher.is_active ? <Ban className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-600 text-red-400 hover:bg-red-600/20"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
