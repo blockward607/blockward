@@ -11,49 +11,50 @@ export const useAdminAuth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("signin");
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(false); // Changed to false by default
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    let mounted = true;
+    console.log('useAdminAuth: Checking initial auth state');
     
-    const checkAdminAuth = async () => {
+    const checkInitialAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (!mounted) return;
-        
         if (session) {
+          console.log('useAdminAuth: Found existing session for user:', session.user.id);
+          
+          // Check if user is already admin
           const { data: userRole } = await supabase
             .from('user_roles')
             .select('role')
             .eq('user_id', session.user.id)
             .single();
 
-          if (mounted && userRole?.role === 'admin') {
+          if (userRole?.role === 'admin') {
+            console.log('useAdminAuth: User is admin, redirecting to dashboard');
+            toast({
+              title: "Welcome back!",
+              description: "Redirecting to admin dashboard..."
+            });
             navigate('/admin-dashboard', { replace: true });
             return;
+          } else {
+            console.log('useAdminAuth: User is not admin, staying on login page');
           }
         }
       } catch (error) {
-        console.error('Auth check error:', error);
-      } finally {
-        if (mounted) {
-          setIsInitializing(false);
-        }
+        console.error('useAdminAuth: Error checking initial auth:', error);
       }
     };
 
-    checkAdminAuth();
-
-    return () => {
-      mounted = false;
-    };
-  }, [navigate]);
+    checkInitialAuth();
+  }, [navigate, toast]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('useAdminAuth: Starting admin login for:', email);
     setLoading(true);
 
     try {
@@ -63,6 +64,7 @@ export const useAdminAuth = () => {
       });
 
       if (error) {
+        console.error('useAdminAuth: Login error:', error);
         toast({
           variant: "destructive",
           title: "Login Failed",
@@ -72,6 +74,9 @@ export const useAdminAuth = () => {
       }
 
       if (data.user) {
+        console.log('useAdminAuth: Login successful for user:', data.user.id);
+        
+        // Check user role
         const { data: userRole, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -79,16 +84,40 @@ export const useAdminAuth = () => {
           .single();
 
         if (roleError || !userRole) {
+          console.log('useAdminAuth: No role found, checking if we can create admin role');
+          
+          // Try to promote user to admin if no role exists
+          try {
+            const { error: promoteError } = await supabase.rpc('promote_user_to_admin', {
+              target_user_id: data.user.id,
+              admin_name: fullName || data.user.email?.split('@')[0] || 'Administrator',
+              admin_position: 'Administrator'
+            });
+
+            if (!promoteError) {
+              console.log('useAdminAuth: Successfully promoted user to admin');
+              toast({
+                title: "Admin Account Created",
+                description: "Welcome to the admin panel!",
+              });
+              navigate('/admin-dashboard', { replace: true });
+              return;
+            }
+          } catch (promoteError) {
+            console.error('useAdminAuth: Failed to promote user:', promoteError);
+          }
+          
           toast({
             variant: "destructive",
             title: "Access Denied",
-            description: "Unable to verify admin privileges",
+            description: "Unable to verify admin privileges. Please contact support.",
           });
           await supabase.auth.signOut();
           return;
         }
 
         if (userRole.role !== 'admin') {
+          console.log('useAdminAuth: User role is not admin:', userRole.role);
           toast({
             variant: "destructive",
             title: "Access Denied",
@@ -98,6 +127,7 @@ export const useAdminAuth = () => {
           return;
         }
 
+        console.log('useAdminAuth: Admin login successful, redirecting to dashboard');
         toast({
           title: "Welcome to Admin Panel",
           description: "Successfully authenticated as administrator",
@@ -106,6 +136,7 @@ export const useAdminAuth = () => {
         navigate('/admin-dashboard', { replace: true });
       }
     } catch (error) {
+      console.error('useAdminAuth: Unexpected login error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -128,6 +159,7 @@ export const useAdminAuth = () => {
       return;
     }
 
+    console.log('useAdminAuth: Starting admin signup for:', email);
     setLoading(true);
 
     try {
@@ -143,6 +175,7 @@ export const useAdminAuth = () => {
       });
 
       if (error) {
+        console.error('useAdminAuth: Signup error:', error);
         toast({
           variant: "destructive",
           title: "Signup Failed",
@@ -152,19 +185,36 @@ export const useAdminAuth = () => {
       }
 
       if (data.user) {
-        await supabase.from('user_roles').insert({
-          user_id: data.user.id,
-          role: 'admin'
-        });
+        console.log('useAdminAuth: Signup successful for user:', data.user.id);
+        
+        // Try to promote to admin immediately
+        try {
+          const { error: promoteError } = await supabase.rpc('promote_user_to_admin', {
+            target_user_id: data.user.id,
+            admin_name: fullName || 'Administrator',
+            admin_position: 'Administrator'
+          });
+
+          if (!promoteError) {
+            console.log('useAdminAuth: Successfully created admin account');
+            toast({
+              title: "Admin Account Created",
+              description: "Your admin account is ready! You can now sign in.",
+            });
+          }
+        } catch (promoteError) {
+          console.error('useAdminAuth: Failed to promote new user:', promoteError);
+        }
 
         toast({
-          title: "Admin Account Created",
+          title: "Account Created",
           description: "Please check your email to verify your account, then sign in.",
         });
         
         setActiveTab("signin");
       }
     } catch (error) {
+      console.error('useAdminAuth: Unexpected signup error:', error);
       toast({
         variant: "destructive", 
         title: "Error",
