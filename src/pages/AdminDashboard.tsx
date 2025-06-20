@@ -55,42 +55,79 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAdminAuthentication();
-    fetchAdminStats();
+    console.log('AdminDashboard: Starting authentication and data fetch');
+    
+    const initializeDashboard = async () => {
+      try {
+        await checkAdminAuthentication();
+        await fetchAdminStats();
+      } catch (error) {
+        console.error('Dashboard initialization error:', error);
+        setLoading(false);
+      }
+    };
+
+    initializeDashboard();
   }, [user, navigate]);
 
   const checkAdminAuthentication = async () => {
+    console.log('AdminDashboard: Checking admin authentication for user:', user?.id);
+    
     if (!user) {
+      console.log('AdminDashboard: No user found, redirecting to admin login');
       navigate('/admin-login');
       return;
     }
 
     try {
-      const { data: userRole } = await supabase
+      const { data: userRole, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .single();
 
+      if (error) {
+        console.error('AdminDashboard: Error fetching user role:', error);
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Failed to verify admin privileges"
+        });
+        navigate('/admin-login');
+        return;
+      }
+
       if (!userRole || userRole.role !== 'admin') {
+        console.log('AdminDashboard: User is not admin, role:', userRole?.role);
         toast({
           variant: "destructive",
           title: "Access Denied",
           description: "Admin privileges required"
         });
         navigate('/admin-login');
+        return;
       }
+
+      console.log('AdminDashboard: Admin authentication successful');
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      console.error('AdminDashboard: Admin auth check error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Authentication check failed"
+      });
       navigate('/admin-login');
     }
   };
 
   const fetchAdminStats = async () => {
+    console.log('AdminDashboard: Fetching admin statistics');
+    
     try {
       setLoading(true);
       
-      const [studentsRes, teachersRes, classesRes, assignmentsRes, nftsRes] = await Promise.all([
+      // Use Promise.allSettled to handle individual query failures gracefully
+      const results = await Promise.allSettled([
         supabase.from('students').select('id', { count: 'exact' }),
         supabase.from('teacher_profiles').select('id', { count: 'exact' }),
         supabase.from('classrooms').select('id', { count: 'exact' }),
@@ -98,27 +135,51 @@ const AdminDashboard = () => {
         supabase.from('nfts').select('id', { count: 'exact' })
       ]);
 
+      console.log('AdminDashboard: Query results:', results);
+
+      // Extract counts with fallbacks
+      const studentsCount = results[0].status === 'fulfilled' ? results[0].value.count || 0 : 0;
+      const teachersCount = results[1].status === 'fulfilled' ? results[1].value.count || 0 : 0;
+      const classesCount = results[2].status === 'fulfilled' ? results[2].value.count || 0 : 0;
+      const assignmentsCount = results[3].status === 'fulfilled' ? results[3].value.count || 0 : 0;
+      const nftsCount = results[4].status === 'fulfilled' ? results[4].value.count || 0 : 0;
+
       setStats({
-        totalStudents: studentsRes.count || 0,
-        totalTeachers: teachersRes.count || 0,
-        activeClasses: classesRes.count || 0,
-        totalAssignments: assignmentsRes.count || 0,
-        nftsMinted: nftsRes.count || 0,
+        totalStudents: studentsCount,
+        totalTeachers: teachersCount,
+        activeClasses: classesCount,
+        totalAssignments: assignmentsCount,
+        nftsMinted: nftsCount,
         recentActivity: 12
       });
+
+      console.log('AdminDashboard: Stats updated successfully');
     } catch (error) {
-      console.error('Error fetching admin stats:', error);
+      console.error('AdminDashboard: Error fetching stats:', error);
+      
+      // Set default stats on error
+      setStats({
+        totalStudents: 0,
+        totalTeachers: 0,
+        activeClasses: 0,
+        totalAssignments: 0,
+        nftsMinted: 0,
+        recentActivity: 0
+      });
+      
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load dashboard statistics"
+        title: "Data Loading Error",
+        description: "Some dashboard statistics may not be available"
       });
     } finally {
+      console.log('AdminDashboard: Setting loading to false');
       setLoading(false);
     }
   };
 
   const handleLogout = async () => {
+    console.log('AdminDashboard: Logging out');
     await supabase.auth.signOut();
     toast({
       title: "Logged Out",
@@ -248,15 +309,19 @@ const AdminDashboard = () => {
   ];
 
   if (loading) {
+    console.log('AdminDashboard: Rendering loading state');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto mb-4"></div>
           <p className="text-white text-lg">Loading Admin Dashboard...</p>
+          <p className="text-gray-400 text-sm mt-2">Verifying permissions and fetching data...</p>
         </div>
       </div>
     );
   }
+
+  console.log('AdminDashboard: Rendering main dashboard');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">

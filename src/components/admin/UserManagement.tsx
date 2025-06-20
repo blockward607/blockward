@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,64 +37,102 @@ export const UserManagement = () => {
   }, [users, searchTerm, roleFilter]);
 
   const loadUsers = async () => {
+    console.log('UserManagement: Loading users');
+    
     try {
       setLoading(true);
       
-      // Get all users with their roles and profile information
-      const { data: userData, error: userError } = await supabase
+      // First, get basic user roles
+      console.log('UserManagement: Fetching user roles');
+      const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select(`
-          user_id,
-          role,
-          students!inner(name),
-          teacher_profiles!inner(full_name)
-        `);
+        .select('user_id, role');
 
-      if (userError) {
-        console.error('User data error:', userError);
-        // Fallback: Get user roles without profiles
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('user_roles')
-          .select('user_id, role');
-          
-        if (fallbackError) throw fallbackError;
-        
-        const userList: User[] = fallbackData?.map(user => ({
-          id: user.user_id,
-          email: `user-${user.user_id.slice(0, 8)}@school.edu`,
-          role: user.role,
-          created_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString(),
-          is_active: true,
-          profile_name: 'Anonymous User'
-        })) || [];
-        
-        setUsers(userList);
+      if (rolesError) {
+        console.error('UserManagement: Error fetching user roles:', rolesError);
+        throw rolesError;
+      }
+
+      console.log('UserManagement: Found user roles:', userRoles?.length);
+
+      if (!userRoles || userRoles.length === 0) {
+        console.log('UserManagement: No user roles found');
+        setUsers([]);
         return;
       }
 
-      // Transform data for display
-      const userList: User[] = userData?.map(user => ({
-        id: user.user_id,
-        email: `user-${user.user_id.slice(0, 8)}@school.edu`,
-        role: user.role,
-        created_at: new Date().toISOString(),
-        last_sign_in_at: new Date().toISOString(),
-        is_active: true,
-        profile_name: user.role === 'student' 
-          ? (Array.isArray(user.students) && user.students.length > 0 ? user.students[0].name : 'Student User')
-          : (Array.isArray(user.teacher_profiles) && user.teacher_profiles.length > 0 ? user.teacher_profiles[0].full_name : 'Teacher User')
-      })) || [];
+      // Get student profiles separately
+      const studentIds = userRoles.filter(ur => ur.role === 'student').map(ur => ur.user_id);
+      let studentProfiles: any[] = [];
+      
+      if (studentIds.length > 0) {
+        console.log('UserManagement: Fetching student profiles for', studentIds.length, 'students');
+        const { data: students, error: studentsError } = await supabase
+          .from('students')
+          .select('user_id, name')
+          .in('user_id', studentIds);
+          
+        if (studentsError) {
+          console.warn('UserManagement: Error fetching students:', studentsError);
+        } else {
+          studentProfiles = students || [];
+        }
+      }
 
+      // Get teacher profiles separately
+      const teacherIds = userRoles.filter(ur => ur.role === 'teacher' || ur.role === 'admin').map(ur => ur.user_id);
+      let teacherProfiles: any[] = [];
+      
+      if (teacherIds.length > 0) {
+        console.log('UserManagement: Fetching teacher profiles for', teacherIds.length, 'teachers');
+        const { data: teachers, error: teachersError } = await supabase
+          .from('teacher_profiles')
+          .select('user_id, full_name')
+          .in('user_id', teacherIds);
+          
+        if (teachersError) {
+          console.warn('UserManagement: Error fetching teachers:', teachersError);
+        } else {
+          teacherProfiles = teachers || [];
+        }
+      }
+
+      // Combine data
+      const userList: User[] = userRoles.map(userRole => {
+        let profileName = 'Anonymous User';
+        
+        if (userRole.role === 'student') {
+          const studentProfile = studentProfiles.find(s => s.user_id === userRole.user_id);
+          profileName = studentProfile?.name || 'Student User';
+        } else {
+          const teacherProfile = teacherProfiles.find(t => t.user_id === userRole.user_id);
+          profileName = teacherProfile?.full_name || 'Teacher User';
+        }
+
+        return {
+          id: userRole.user_id,
+          email: `user-${userRole.user_id.slice(0, 8)}@school.edu`,
+          role: userRole.role,
+          created_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          is_active: true,
+          profile_name: profileName
+        };
+      });
+
+      console.log('UserManagement: Successfully loaded', userList.length, 'users');
       setUsers(userList);
     } catch (error: any) {
-      console.error('Error loading users:', error);
+      console.error('UserManagement: Error loading users:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load users"
+        description: "Failed to load users. Please try again."
       });
+      // Set empty array on error so UI can still render
+      setUsers([]);
     } finally {
+      console.log('UserManagement: Setting loading to false');
       setLoading(false);
     }
   };
@@ -155,12 +192,15 @@ export const UserManagement = () => {
   };
 
   if (loading) {
+    console.log('UserManagement: Rendering loading state');
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
       </div>
     );
   }
+
+  console.log('UserManagement: Rendering user list with', filteredUsers.length, 'users');
 
   return (
     <div className="space-y-6">
