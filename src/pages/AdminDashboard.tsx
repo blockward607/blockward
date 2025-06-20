@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -41,6 +40,7 @@ import { TeacherManagement } from "@/components/admin/TeacherManagement";
 import { PendingUsersManagement } from "@/components/admin/PendingUsersManagement";
 import { AdminNotifications } from "@/components/admin/AdminNotifications";
 import { InstitutionCodeManager } from "@/components/admin/InstitutionCodeManager";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 interface AdminStats {
   totalStudents: number;
@@ -313,144 +313,142 @@ const AdminDashboard = () => {
   console.log('AdminDashboard: Rendering comprehensive admin dashboard');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute -bottom-40 right-1/4 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+      {/* Admin Sidebar */}
+      <div className="flex-shrink-0">
+        <AdminSidebar 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+          pendingCount={stats.pendingUsers}
+        />
       </div>
 
-      <div className="container mx-auto p-6 max-w-7xl relative z-10">
-        <AdminHeader onLogout={handleLogout} />
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <AdminQuickStats stats={quickStats} />
-        </motion.div>
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/2 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute -bottom-40 right-1/4 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-          <div className="lg:col-span-3">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid grid-cols-3 lg:grid-cols-6 gap-2 bg-slate-800/80 p-2 border border-slate-700/50 backdrop-blur-sm">
-                <TabsTrigger value="overview" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="pending" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-                  Pending
-                  {stats.pendingUsers > 0 && (
-                    <span className="ml-1 bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                      {stats.pendingUsers}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="teachers" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-                  Teachers
-                </TabsTrigger>
-                <TabsTrigger value="students" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-                  Students
-                </TabsTrigger>
-                <TabsTrigger value="institution" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-                  Institution
-                </TabsTrigger>
-                <TabsTrigger value="system" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-                  System
-                </TabsTrigger>
-              </TabsList>
+        <div className="container mx-auto p-6 max-w-7xl relative z-10 h-screen overflow-y-auto">
+          <AdminHeader onLogout={handleLogout} />
+          
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <AdminQuickStats stats={quickStats} />
+          </motion.div>
 
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {adminSections.map((section, index) => (
-                    <motion.div
-                      key={section.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <AdminStatsCard
-                        title={section.title}
-                        description={section.description}
-                        icon={section.icon}
-                        stats={section.stats}
-                        color={section.color}
-                        features={section.features}
-                        onClick={() => setActiveTab(section.id)}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-              </TabsContent>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div className="lg:col-span-3">
+              <div className="space-y-6">
+                {activeTab === "overview" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {adminSections.map((section, index) => (
+                      <motion.div
+                        key={section.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <AdminStatsCard
+                          title={section.title}
+                          description={section.description}
+                          icon={section.icon}
+                          stats={section.stats}
+                          color={section.color}
+                          features={section.features}
+                          onClick={() => setActiveTab(section.id)}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
 
-              <TabsContent value="pending" className="space-y-6">
-                <PendingUsersManagement />
-              </TabsContent>
-
-              <TabsContent value="teachers" className="space-y-6">
-                <TeacherManagement />
-              </TabsContent>
-
-              <TabsContent value="students" className="space-y-6">
-                <UserManagement />
-              </TabsContent>
-
-              <TabsContent value="institution" className="space-y-6">
-                <InstitutionCodeManager />
-              </TabsContent>
-
-              <TabsContent value="classes" className="space-y-6">
-                <div className="text-center text-white">
-                  <h3 className="text-xl font-bold mb-4">Class Management</h3>
-                  <p className="text-gray-400">Class management features coming soon...</p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="system" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <AdminStatsCard
-                      title="System Monitoring"
-                      description="Real-time system performance and health monitoring"
-                      icon={BarChart3}
-                      stats="Live"
-                      color="from-green-500 to-green-600"
-                      features={["Performance Metrics", "Database Health", "Error Tracking"]}
-                      onClick={() => setActiveTab("system-monitoring")}
-                    />
-                  </motion.div>
-                  
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <AdminStatsCard
-                      title="Security Controls"
-                      description="Advanced security settings and access management"
-                      icon={Shield}
-                      stats="Protected"
-                      color="from-red-500 to-red-600"
-                      features={["Access Control", "Security Logs", "Threat Detection"]}
-                      onClick={() => setActiveTab("security-controls")}
-                    />
-                  </motion.div>
-                </div>
+                {activeTab === "pending" && <PendingUsersManagement />}
+                {activeTab === "teachers" && <TeacherManagement />}
+                {activeTab === "students" && <UserManagement />}
+                {activeTab === "institution" && <InstitutionCodeManager />}
                 
-                <SystemMonitoring />
-                <SecurityControls />
-              </TabsContent>
-            </Tabs>
-          </div>
+                {activeTab === "classes" && (
+                  <div className="text-center text-white">
+                    <h3 className="text-xl font-bold mb-4">Class Management</h3>
+                    <p className="text-gray-400">Class management features coming soon...</p>
+                  </div>
+                )}
 
-          <div className="space-y-6">
-            <AdminNotifications />
-            <AdminSystemStatus />
+                {activeTab === "announcements" && (
+                  <div className="text-center text-white">
+                    <h3 className="text-xl font-bold mb-4">Announcements</h3>
+                    <p className="text-gray-400">Announcement management features coming soon...</p>
+                  </div>
+                )}
+
+                {activeTab === "reports" && (
+                  <div className="text-center text-white">
+                    <h3 className="text-xl font-bold mb-4">Reports & Analytics</h3>
+                    <p className="text-gray-400">Analytics and reporting features coming soon...</p>
+                  </div>
+                )}
+
+                {activeTab === "moderation" && (
+                  <div className="text-center text-white">
+                    <h3 className="text-xl font-bold mb-4">Content Moderation</h3>
+                    <p className="text-gray-400">Content moderation features coming soon...</p>
+                  </div>
+                )}
+
+                {activeTab === "system" && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <AdminStatsCard
+                          title="System Monitoring"
+                          description="Real-time system performance and health monitoring"
+                          icon={BarChart3}
+                          stats="Live"
+                          color="from-green-500 to-green-600"
+                          features={["Performance Metrics", "Database Health", "Error Tracking"]}
+                          onClick={() => {}}
+                        />
+                      </motion.div>
+                      
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <AdminStatsCard
+                          title="Security Controls"
+                          description="Advanced security settings and access management"
+                          icon={Shield}
+                          stats="Protected"
+                          color="from-red-500 to-red-600"
+                          features={["Access Control", "Security Logs", "Threat Detection"]}
+                          onClick={() => {}}
+                        />
+                      </motion.div>
+                    </div>
+                    
+                    <SystemMonitoring />
+                    <SecurityControls />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <AdminNotifications />
+              <AdminSystemStatus />
+            </div>
           </div>
         </div>
       </div>
