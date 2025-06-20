@@ -1,14 +1,15 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff, User, GraduationCap, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 interface SignInFormProps {
-  role: 'teacher' | 'student';
+  role: 'teacher' | 'student' | 'admin';
   email: string;
   setEmail: (email: string) => void;
   password: string;
@@ -30,169 +31,161 @@ export const SignInForm = ({
   setLoading,
   onForgotPasswordClick,
 }: SignInFormProps) => {
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowError(false);
-    
-    // Validate email format
-    if (!validateEmail(email)) {
-      setErrorMessage("Please enter a valid email address");
-      setShowError(true);
-      return;
-    }
-    
-    if (!password || password.trim().length === 0) {
-      setErrorMessage("Please enter your password");
-      setShowError(true);
-      return;
-    }
-    
-    setIsLoading(true);
     setLoading(true);
+    setShowError(false);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email,
         password,
       });
 
       if (error) {
         setErrorMessage(error.message);
         setShowError(true);
-        console.error("Login error:", error);
         return;
-      } 
-      
+      }
+
       if (data.user) {
-        // Check if the user's role matches the selected role
-        const { data: userRole, error: roleError } = await supabase
+        // Check if user role matches selected role
+        const { data: userRole } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', data.user.id)
           .single();
 
-        if (roleError) {
-          console.error("Error checking user role:", roleError);
-          // If we can't check the role, proceed to dashboard
-          toast({
-            title: "Welcome back!",
-            description: "Successfully signed in",
-          });
-          navigate('/dashboard', { replace: true });
-          return;
-        } 
-
-        if (userRole) {
-          // Handle different roles
-          if (userRole.role === 'admin') {
-            const { data: adminProfile } = await supabase
-              .from('admin_profiles')
-              .select('access_level')
-              .eq('user_id', data.user.id)
-              .single();
-
-            // Super admins go to super-admin panel, others go to regular admin
-            if (adminProfile?.access_level === 'super_admin') {
-              toast({
-                title: "Welcome Super Admin!",
-                description: "Successfully authenticated",
-              });
-              navigate('/super-admin', { replace: true });
-            } else {
-              toast({
-                title: "Welcome Admin!",
-                description: "Successfully authenticated",
-              });
-              navigate('/admin', { replace: true });
-            }
-          } else if (userRole.role !== role) {
-            setErrorMessage(`This account is registered as a ${userRole.role}. Please select the correct role or use the admin login.`);
+        if (userRole?.role !== role) {
+          if (role === 'admin') {
+            setErrorMessage("Admin access denied. Please use the Admin Panel login.");
             setShowError(true);
-            // Sign out the user since role doesn't match
             await supabase.auth.signOut();
+            return;
           } else {
-            // Navigate to appropriate dashboard based on role
-            toast({
-              title: "Welcome back!",
-              description: `Successfully signed in as ${role}`,
-            });
-            navigate('/dashboard', { replace: true });
+            setErrorMessage(`Please select the correct role: ${userRole?.role || 'unknown'}`);
+            setShowError(true);
+            await supabase.auth.signOut();
+            return;
           }
+        }
+
+        toast({
+          title: `Welcome ${role}!`,
+          description: "You have successfully signed in.",
+        });
+
+        // Redirect based on role
+        if (role === 'admin') {
+          navigate('/admin-dashboard');
         } else {
-          // Navigate directly to dashboard if no role data found
-          toast({
-            title: "Welcome back!",
-            description: "Successfully signed in",
-          });
-          navigate('/dashboard', { replace: true });
+          navigate('/dashboard');
         }
       }
     } catch (error) {
-      console.error("Unexpected error:", error);
-      setErrorMessage("An unexpected error occurred. Please try again.");
+      console.error('Sign in error:', error);
+      setErrorMessage("An unexpected error occurred");
       setShowError(true);
     } finally {
-      setIsLoading(false);
       setLoading(false);
     }
   };
 
+  const getRoleIcon = () => {
+    switch (role) {
+      case 'teacher':
+        return <User className="w-5 h-5" />;
+      case 'student':
+        return <GraduationCap className="w-5 h-5" />;
+      case 'admin':
+        return <Shield className="w-5 h-5" />;
+      default:
+        return <User className="w-5 h-5" />;
+    }
+  };
+
+  const getRoleColor = () => {
+    switch (role) {
+      case 'teacher':
+        return 'indigo';
+      case 'student':
+        return 'purple';
+      case 'admin':
+        return 'red';
+      default:
+        return 'purple';
+    }
+  };
+
+  const roleColor = getRoleColor();
+
   return (
     <div className="space-y-4">
       <div className="text-center mb-4">
-        <p className="text-sm text-gray-400">
-          Signing in as <span className="text-purple-400 font-medium">{role}</span>
-        </p>
+        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-${roleColor}-600/20 border border-${roleColor}-500/30`}>
+          {getRoleIcon()}
+          <span className={`text-${roleColor}-300 capitalize`}>Signing in as {role}</span>
+        </div>
       </div>
-      
+
       <form onSubmit={handleSignIn} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input 
+          <Label htmlFor="email" className="text-gray-300">Email</Label>
+          <Input
             id="email"
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            disabled={isLoading}
+            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
           />
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input 
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-          />
+          <Label htmlFor="password" className="text-gray-300">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Signing in..." : `Sign In as ${role === 'teacher' ? 'Teacher' : 'Student'}`}
+
+        <Button
+          type="submit"
+          className={`w-full bg-gradient-to-r from-${roleColor}-600 to-${roleColor}-700 hover:from-${roleColor}-700 hover:to-${roleColor}-800 text-white`}
+          disabled={setLoading}
+        >
+          Sign In as {role.charAt(0).toUpperCase() + role.slice(1)}
         </Button>
-        <div className="text-center mt-4">
-          <button 
-            type="button"
-            onClick={onForgotPasswordClick}
-            className="text-sm text-purple-400 hover:text-purple-300 underline disabled:opacity-50"
-            disabled={isLoading}
-          >
-            Forgot your password?
-          </button>
-        </div>
       </form>
+
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={onForgotPasswordClick}
+          className="text-sm text-gray-400 hover:text-gray-300 underline"
+        >
+          Forgot your password?
+        </button>
+      </div>
     </div>
   );
 };

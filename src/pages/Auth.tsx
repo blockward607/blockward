@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState("signin");
-  const [role, setRole] = useState<'teacher' | 'student'>('student');
+  const [role, setRole] = useState<'teacher' | 'student' | 'admin'>('student');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -74,6 +74,16 @@ const Auth = () => {
                 onClick={() => setRole('student')}
               >
                 Student
+              </button>
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'admin'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('admin')}
+              >
+                Admin
               </button>
             </div>
           </div>
