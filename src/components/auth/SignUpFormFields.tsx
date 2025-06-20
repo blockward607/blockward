@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +72,13 @@ export const SignUpFormFields = ({
     }
   };
 
+  // Auto-validate institution code when it changes
+  useEffect(() => {
+    if (showInstitutionCode && formData.institutionCode && formData.institutionCode.length >= 6) {
+      validateInstitutionCode(formData.institutionCode);
+    }
+  }, [formData.institutionCode, showInstitutionCode]);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -105,7 +113,7 @@ export const SignUpFormFields = ({
               id="institutionCode"
               type="text"
               value={formData.institutionCode}
-              onChange={(e) => handleInputChange('institutionCode', e.target.value)}
+              onChange={(e) => handleInputChange('institutionCode', e.target.value.toUpperCase())}
               placeholder="Enter your school's institution code"
               className="bg-gray-700 border-gray-600 text-white uppercase"
               maxLength={6}

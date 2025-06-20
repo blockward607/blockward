@@ -14,9 +14,40 @@ interface SignUpFormProps {
 }
 
 export const SignUpForm = (props: SignUpFormProps) => {
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: props.email,
+    password: props.password,
+    confirmPassword: "",
+    institutionCode: ""
+  });
+
+  // Update formData when props change
+  useState(() => {
+    setFormData(prev => ({
+      ...prev,
+      email: props.email,
+      password: props.password
+    }));
+  });
+
+  const handleValidation = (isValid: boolean, message?: string) => {
+    if (!isValid && message) {
+      props.setErrorMessage(message);
+      props.setShowError(true);
+    } else {
+      props.setShowError(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <SignUpFormFields {...props} />
+      <SignUpFormFields
+        formData={formData}
+        setFormData={setFormData}
+        showInstitutionCode={props.role === 'teacher' || props.role === 'student'}
+        onInstitutionValidation={handleValidation}
+      />
     </div>
   );
 };

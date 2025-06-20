@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,9 +65,10 @@ export const PendingUsersManagement = () => {
 
       if (error) throw error;
 
-      const result = data as ApiResponse;
+      // Handle the response properly - data might be boolean or object
+      const success = data === true || (typeof data === 'object' && data !== null);
       
-      if (result.success) {
+      if (success) {
         toast({
           title: action === 'approve' ? "User Approved" : "User Rejected",
           description: `User has been ${action}d successfully`
@@ -77,7 +77,7 @@ export const PendingUsersManagement = () => {
         // Remove from pending list
         setPendingUsers(pendingUsers.filter(user => user.id !== userId));
       } else {
-        throw new Error(result.error || 'Unknown error');
+        throw new Error('Operation failed');
       }
     } catch (error: any) {
       console.error(`Error ${action}ing user:`, error);
@@ -99,9 +99,10 @@ export const PendingUsersManagement = () => {
 
       if (error) throw error;
 
-      const result = data as ApiResponse;
+      // Handle the response properly - data might be boolean or object
+      const success = data === true || (typeof data === 'object' && data !== null);
       
-      if (result.success) {
+      if (success) {
         toast({
           title: "User Rejected",
           description: "User request has been rejected"
@@ -109,7 +110,7 @@ export const PendingUsersManagement = () => {
         
         setPendingUsers(pendingUsers.filter(user => user.id !== userId));
       } else {
-        throw new Error(result.error || 'Unknown error');
+        throw new Error('Operation failed');
       }
     } catch (error: any) {
       console.error('Error rejecting user:', error);
