@@ -16,17 +16,12 @@ import {
   Shield, 
   FileText,
   Bell,
-  Palette,
-  Lock,
-  UserPlus,
-  BookOpen,
-  Wallet,
-  ChartBar,
   Eye,
-  Download
+  LogOut
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminSection {
   id: string;
@@ -49,7 +44,7 @@ const AdminDashboard = () => {
       title: "School / Institution Management",
       description: "Manage schools, assign admins, and oversee institutional operations",
       icon: School,
-      color: "from-blue-600 to-cyan-600",
+      color: "from-red-600 to-red-700",
       features: [
         "Create / Manage Schools",
         "Assign School Admins", 
@@ -61,8 +56,8 @@ const AdminDashboard = () => {
       id: "teachers",
       title: "Teacher Management",
       description: "Add, manage, and monitor teacher accounts and permissions",
-      icon: UserPlus,
-      color: "from-green-600 to-emerald-600",
+      icon: Users,
+      color: "from-red-500 to-red-600",
       features: [
         "Add / Remove Teachers",
         "Assign Teachers to Classes",
@@ -76,7 +71,7 @@ const AdminDashboard = () => {
       title: "Student Oversight",
       description: "Comprehensive student management across all classes",
       icon: GraduationCap,
-      color: "from-purple-600 to-pink-600",
+      color: "from-red-600 to-red-800",
       features: [
         "View All Students (cross-class)",
         "Filter by Class, Achievement Type, XP",
@@ -89,7 +84,7 @@ const AdminDashboard = () => {
       title: "NFT Contract & Blockchain Settings",
       description: "Manage smart contracts and blockchain configurations",
       icon: Coins,
-      color: "from-orange-600 to-red-600",
+      color: "from-red-700 to-red-900",
       features: [
         "View Smart Contract Details",
         "Manage Contract Metadata Settings",
@@ -103,7 +98,7 @@ const AdminDashboard = () => {
       title: "Rules & Categories Configuration",
       description: "Define achievement systems and gamification rules",
       icon: Trophy,
-      color: "from-yellow-600 to-orange-600",
+      color: "from-red-500 to-red-700",
       features: [
         "Define Achievement Categories",
         "Set XP Values per Category",
@@ -116,7 +111,7 @@ const AdminDashboard = () => {
       title: "Analytics & Reporting",
       description: "Comprehensive insights and data export capabilities",
       icon: BarChart3,
-      color: "from-indigo-600 to-purple-600",
+      color: "from-red-600 to-red-800",
       features: [
         "Class-wise & School-wide XP Summary",
         "NFT Minting Trends",
@@ -129,7 +124,7 @@ const AdminDashboard = () => {
       title: "System Settings",
       description: "Platform configuration and customization options",
       icon: Settings,
-      color: "from-teal-600 to-blue-600",
+      color: "from-red-700 to-red-900",
       features: [
         "Language & Regional Options",
         "School Branding (logos, UI themes)",
@@ -142,7 +137,7 @@ const AdminDashboard = () => {
       title: "Audit & Security",
       description: "Security monitoring and compliance management",
       icon: Shield,
-      color: "from-red-600 to-pink-600",
+      color: "from-red-800 to-red-900",
       features: [
         "Admin Access Logs",
         "NFT Mint/Burn Logs",
@@ -153,11 +148,44 @@ const AdminDashboard = () => {
   ];
 
   useEffect(() => {
-    // Check admin authentication
+    checkAdminAuthentication();
+  }, [user, navigate]);
+
+  const checkAdminAuthentication = async () => {
     if (!user) {
       navigate('/admin-login');
+      return;
     }
-  }, [user, navigate]);
+
+    try {
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!userRole || userRole.role !== 'admin') {
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: "Admin privileges required"
+        });
+        navigate('/admin-login');
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      navigate('/admin-login');
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logged Out",
+      description: "Successfully logged out of admin panel"
+    });
+    navigate('/admin-login');
+  };
 
   const handleSectionClick = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -168,7 +196,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/20 to-black">
       <div className="container mx-auto p-6 max-w-7xl">
         {/* Header */}
         <motion.div 
@@ -178,31 +206,46 @@ const AdminDashboard = () => {
         >
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                BlockWard Admin Panel
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-red-400 via-red-300 to-red-500 bg-clip-text text-transparent">
+                BlockWard Admin Control Center
               </h1>
-              <p className="text-gray-300 mt-2">Comprehensive school management and blockchain administration</p>
+              <p className="text-red-300 mt-2">Comprehensive platform administration and management</p>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/dashboard')}
-              className="border-purple-500/30 text-purple-300 hover:bg-purple-500/20"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              View Dashboard
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/dashboard')}
+                className="border-red-500/30 text-red-300 hover:bg-red-500/20 hover:border-red-400"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Dashboard
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                className="border-red-500/30 text-red-300 hover:bg-red-500/20 hover:border-red-400"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
         </motion.div>
 
         {/* Main Content */}
         <Tabs value={activeSection} onValueChange={setActiveSection} className="space-y-6">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 bg-gray-800/50 p-2">
-            <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+          <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 bg-red-900/30 p-2 border border-red-700/30">
+            <TabsTrigger 
+              value="overview" 
+              className="text-xs text-red-300 data-[state=active]:bg-red-600/40 data-[state=active]:text-white"
+            >
+              Overview
+            </TabsTrigger>
             {adminSections.map(section => (
               <TabsTrigger 
                 key={section.id} 
                 value={section.id}
-                className="text-xs"
+                className="text-xs text-red-300 data-[state=active]:bg-red-600/40 data-[state=active]:text-white"
               >
                 {section.title.split(' ')[0]}
               </TabsTrigger>
@@ -224,30 +267,30 @@ const AdminDashboard = () => {
                     className="group cursor-pointer"
                     onClick={() => handleSectionClick(section.id)}
                   >
-                    <Card className={`h-full bg-gradient-to-br ${section.color}/10 border-gray-700/50 hover:border-purple-500/40 transition-all duration-300`}>
+                    <Card className={`h-full bg-gradient-to-br ${section.color}/10 border-red-700/30 hover:border-red-500/50 transition-all duration-300 shadow-lg shadow-red-900/10`}>
                       <CardHeader className="pb-4">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className={`p-2 rounded-lg bg-gradient-to-r ${section.color}/20`}>
-                            <Icon className="w-5 h-5 text-white" />
+                          <div className={`p-2 rounded-lg bg-gradient-to-r ${section.color}/30 border border-red-500/20`}>
+                            <Icon className="w-5 h-5 text-red-300" />
                           </div>
                         </div>
-                        <CardTitle className="text-lg text-white group-hover:text-purple-200 transition-colors">
+                        <CardTitle className="text-lg text-white group-hover:text-red-200 transition-colors">
                           {section.title}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-gray-400 text-sm mb-4 group-hover:text-gray-300 transition-colors">
+                        <p className="text-red-400 text-sm mb-4 group-hover:text-red-300 transition-colors">
                           {section.description}
                         </p>
                         <div className="space-y-1">
                           {section.features.slice(0, 3).map((feature, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-xs text-gray-500">
-                              <div className="w-1 h-1 bg-purple-400 rounded-full" />
+                            <div key={idx} className="flex items-center gap-2 text-xs text-red-500">
+                              <div className="w-1 h-1 bg-red-400 rounded-full" />
                               {feature}
                             </div>
                           ))}
                           {section.features.length > 3 && (
-                            <div className="text-xs text-purple-400">
+                            <div className="text-xs text-red-400 font-medium">
                               +{section.features.length - 3} more features
                             </div>
                           )}
@@ -268,15 +311,15 @@ const AdminDashboard = () => {
                 animate={{ opacity: 1 }}
                 className="space-y-6"
               >
-                <Card className="bg-gray-800/50 border-gray-700">
+                <Card className="bg-red-900/20 border-red-700/30 shadow-lg shadow-red-900/10">
                   <CardHeader>
                     <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-lg bg-gradient-to-r ${section.color}/20`}>
-                        <section.icon className="w-6 h-6 text-white" />
+                      <div className={`p-3 rounded-lg bg-gradient-to-r ${section.color}/30 border border-red-500/30`}>
+                        <section.icon className="w-6 h-6 text-red-300" />
                       </div>
                       <div>
                         <CardTitle className="text-xl text-white">{section.title}</CardTitle>
-                        <p className="text-gray-400">{section.description}</p>
+                        <p className="text-red-400">{section.description}</p>
                       </div>
                     </div>
                   </CardHeader>
@@ -286,14 +329,14 @@ const AdminDashboard = () => {
                         <Button
                           key={idx}
                           variant="outline"
-                          className="justify-start h-auto p-4 border-gray-600 hover:border-purple-500/50 hover:bg-purple-500/10"
+                          className="justify-start h-auto p-4 border-red-600/30 hover:border-red-500/50 hover:bg-red-500/10 text-red-300 hover:text-red-200"
                           onClick={() => toast({
                             title: "Feature Coming Soon",
                             description: `${feature} will be available in the next update.`
                           })}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-purple-400 rounded-full" />
+                            <div className="w-2 h-2 bg-red-400 rounded-full" />
                             <span className="text-left">{feature}</span>
                           </div>
                         </Button>
@@ -313,7 +356,7 @@ const AdminDashboard = () => {
           transition={{ delay: 0.5 }}
           className="mt-12"
         >
-          <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-purple-500/30">
+          <Card className="bg-gradient-to-r from-red-900/20 to-red-800/20 border-red-500/30 shadow-lg shadow-red-900/10">
             <CardHeader>
               <CardTitle className="text-xl text-white flex items-center gap-2">
                 <FileText className="w-5 h-5" />
@@ -324,13 +367,13 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { name: "AI Auto-Flagging for Unusual Behaviour", icon: Eye },
-                  { name: "Attendance Sync with SIS", icon: BookOpen },
+                  { name: "Attendance Sync with SIS", icon: Bell },
                   { name: "District-wide Leaderboards", icon: Trophy },
                   { name: "Multi-Admin Collaboration", icon: Users }
                 ].map((feature, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30">
-                    <feature.icon className="w-4 h-4 text-purple-400" />
-                    <span className="text-sm text-gray-300">{feature.name}</span>
+                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-red-800/20 border border-red-700/20">
+                    <feature.icon className="w-4 h-4 text-red-400" />
+                    <span className="text-sm text-red-300">{feature.name}</span>
                   </div>
                 ))}
               </div>

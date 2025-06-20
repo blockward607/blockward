@@ -37,7 +37,7 @@ const AdminLogin = () => {
         .single();
 
       if (userRole?.role === 'admin') {
-        navigate('/admin');
+        navigate('/admin-dashboard');
       }
     }
   };
@@ -93,7 +93,7 @@ const AdminLogin = () => {
           description: "Successfully authenticated as administrator",
         });
 
-        navigate('/admin');
+        navigate('/admin-dashboard');
       }
     } catch (error) {
       toast({
@@ -142,7 +142,6 @@ const AdminLogin = () => {
       }
 
       if (data.user) {
-        // Create admin role
         await supabase.from('user_roles').insert({
           user_id: data.user.id,
           role: 'admin'
@@ -167,7 +166,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/30 to-blue-900/20 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/50 to-black flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -177,33 +176,39 @@ const AdminLogin = () => {
         <Button 
           variant="ghost" 
           onClick={() => navigate('/')}
-          className="mb-4 text-purple-400 hover:text-purple-300"
+          className="mb-4 text-red-400 hover:text-red-300 hover:bg-red-950/30"
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
         </Button>
 
-        <Card className="bg-gray-900/50 backdrop-blur-lg border-purple-500/20 shadow-2xl">
+        <Card className="bg-red-950/30 backdrop-blur-lg border-red-500/30 shadow-2xl shadow-red-900/20">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center mb-4">
-              <div className="p-4 rounded-full bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30">
-                <Shield className="h-8 w-8 text-purple-400" />
+              <div className="p-4 rounded-full bg-gradient-to-r from-red-600/30 to-red-800/30 border border-red-500/40">
+                <Shield className="h-8 w-8 text-red-400" />
               </div>
             </div>
             <CardTitle className="text-3xl font-bold text-white mb-2">
-              Admin Access
+              Admin Portal
             </CardTitle>
-            <p className="text-gray-400">
-              Secure administrator portal for BlockWard
+            <p className="text-red-300">
+              Secure administrator access to BlockWard
             </p>
           </CardHeader>
 
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 bg-gray-800/50">
-                <TabsTrigger value="signin" className="text-gray-300 data-[state=active]:text-white">
+              <TabsList className="grid w-full grid-cols-2 bg-red-900/30 border border-red-700/30">
+                <TabsTrigger 
+                  value="signin" 
+                  className="text-red-300 data-[state=active]:text-white data-[state=active]:bg-red-600/40"
+                >
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="text-gray-300 data-[state=active]:text-white">
+                <TabsTrigger 
+                  value="signup" 
+                  className="text-red-300 data-[state=active]:text-white data-[state=active]:bg-red-600/40"
+                >
                   Sign Up
                 </TabsTrigger>
               </TabsList>
@@ -211,7 +216,7 @@ const AdminLogin = () => {
               <TabsContent value="signin">
                 <form onSubmit={handleAdminLogin} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="admin-email" className="text-gray-300 flex items-center gap-2">
+                    <Label htmlFor="admin-email" className="text-red-300 flex items-center gap-2">
                       <Mail className="w-4 h-4" />
                       Administrator Email
                     </Label>
@@ -222,12 +227,12 @@ const AdminLogin = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-purple-500"
+                      className="bg-red-900/20 border-red-700/50 text-white placeholder:text-red-400/70 focus:border-red-500 focus:ring-red-500/20"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="admin-password" className="text-gray-300 flex items-center gap-2">
+                    <Label htmlFor="admin-password" className="text-red-300 flex items-center gap-2">
                       <Lock className="w-4 h-4" />
                       Password
                     </Label>
@@ -239,12 +244,12 @@ const AdminLogin = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 pr-10 focus:border-purple-500"
+                        className="bg-red-900/20 border-red-700/50 text-white placeholder:text-red-400/70 pr-10 focus:border-red-500 focus:ring-red-500/20"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-400 hover:text-red-300"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -254,7 +259,7 @@ const AdminLogin = () => {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium h-11"
+                    className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium h-11 shadow-lg shadow-red-900/25"
                   >
                     {loading ? "Authenticating..." : "Access Admin Panel"}
                   </Button>
@@ -264,7 +269,7 @@ const AdminLogin = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleAdminSignup} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="full-name" className="text-gray-300 flex items-center gap-2">
+                    <Label htmlFor="full-name" className="text-red-300 flex items-center gap-2">
                       <UserPlus className="w-4 h-4" />
                       Full Name
                     </Label>
@@ -275,12 +280,12 @@ const AdminLogin = () => {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
-                      className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-purple-500"
+                      className="bg-red-900/20 border-red-700/50 text-white placeholder:text-red-400/70 focus:border-red-500 focus:ring-red-500/20"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-gray-300 flex items-center gap-2">
+                    <Label htmlFor="signup-email" className="text-red-300 flex items-center gap-2">
                       <Mail className="w-4 h-4" />
                       Email Address
                     </Label>
@@ -291,12 +296,12 @@ const AdminLogin = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-purple-500"
+                      className="bg-red-900/20 border-red-700/50 text-white placeholder:text-red-400/70 focus:border-red-500 focus:ring-red-500/20"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-gray-300 flex items-center gap-2">
+                    <Label htmlFor="signup-password" className="text-red-300 flex items-center gap-2">
                       <Lock className="w-4 h-4" />
                       Password
                     </Label>
@@ -308,12 +313,12 @@ const AdminLogin = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 pr-10 focus:border-purple-500"
+                        className="bg-red-900/20 border-red-700/50 text-white placeholder:text-red-400/70 pr-10 focus:border-red-500 focus:ring-red-500/20"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-400 hover:text-red-300"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -321,7 +326,7 @@ const AdminLogin = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-gray-300 flex items-center gap-2">
+                    <Label htmlFor="confirm-password" className="text-red-300 flex items-center gap-2">
                       <Lock className="w-4 h-4" />
                       Confirm Password
                     </Label>
@@ -333,12 +338,12 @@ const AdminLogin = () => {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 pr-10 focus:border-purple-500"
+                        className="bg-red-900/20 border-red-700/50 text-white placeholder:text-red-400/70 pr-10 focus:border-red-500 focus:ring-red-500/20"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-400 hover:text-red-300"
                       >
                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -348,7 +353,7 @@ const AdminLogin = () => {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium h-11"
+                    className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium h-11 shadow-lg shadow-red-900/25"
                   >
                     {loading ? "Creating Account..." : "Create Admin Account"}
                   </Button>
@@ -360,7 +365,7 @@ const AdminLogin = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate('/auth')}
-                className="text-gray-400 hover:text-gray-300"
+                className="text-red-400 hover:text-red-300 hover:bg-red-950/30"
               >
                 ← Regular user login
               </Button>

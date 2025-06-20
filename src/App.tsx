@@ -57,6 +57,7 @@ function App() {
                 <Route path="home" element={<Home />} />
                 <Route path="auth" element={<Auth />} />
                 <Route path="admin-login" element={<AdminLogin />} />
+                <Route path="admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 <Route path="signup" element={<SignUp />} />
                 <Route path="reset-password" element={<ResetPassword />} />
                 <Route path="reset-password-otp" element={<ResetPasswordOTP />} />
