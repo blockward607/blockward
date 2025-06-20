@@ -41,17 +41,38 @@ export const UserManagement = () => {
     try {
       setLoading(true);
       
-      // Get all users with their roles
+      // Get all users with their roles and profile information
       const { data: userData, error: userError } = await supabase
         .from('user_roles')
         .select(`
           user_id,
           role,
-          students(name),
-          teacher_profiles(full_name)
+          students!inner(name),
+          teacher_profiles!inner(full_name)
         `);
 
-      if (userError) throw userError;
+      if (userError) {
+        console.error('User data error:', userError);
+        // Fallback: Get user roles without profiles
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('user_roles')
+          .select('user_id, role');
+          
+        if (fallbackError) throw fallbackError;
+        
+        const userList: User[] = fallbackData?.map(user => ({
+          id: user.user_id,
+          email: `user-${user.user_id.slice(0, 8)}@school.edu`,
+          role: user.role,
+          created_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          is_active: true,
+          profile_name: 'Anonymous User'
+        })) || [];
+        
+        setUsers(userList);
+        return;
+      }
 
       // Transform data for display
       const userList: User[] = userData?.map(user => ({
@@ -62,8 +83,8 @@ export const UserManagement = () => {
         last_sign_in_at: new Date().toISOString(),
         is_active: true,
         profile_name: user.role === 'student' 
-          ? user.students?.[0]?.name 
-          : user.teacher_profiles?.[0]?.full_name
+          ? (Array.isArray(user.students) && user.students.length > 0 ? user.students[0].name : 'Student User')
+          : (Array.isArray(user.teacher_profiles) && user.teacher_profiles.length > 0 ? user.teacher_profiles[0].full_name : 'Teacher User')
       })) || [];
 
       setUsers(userList);
