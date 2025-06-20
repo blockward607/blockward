@@ -24,9 +24,22 @@ const AdminLogin = () => {
     loading,
     activeTab,
     setActiveTab,
+    isInitializing,
     handleAdminLogin,
     handleAdminSignup
   } = useAdminAuth();
+
+  // Show loading state during initialization to prevent flickering
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/50 to-black flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-400 mx-auto mb-4"></div>
+          <p className="text-red-300 text-lg">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/50 to-black flex items-center justify-center p-4">

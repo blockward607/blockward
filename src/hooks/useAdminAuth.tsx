@@ -11,27 +11,46 @@ export const useAdminAuth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("signin");
+  const [isInitializing, setIsInitializing] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    checkAdminAuth();
-  }, []);
+    let mounted = true;
+    
+    const checkAdminAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (session) {
+          const { data: userRole } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .single();
 
-  const checkAdminAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (userRole?.role === 'admin') {
-        navigate('/admin-dashboard');
+          if (mounted && userRole?.role === 'admin') {
+            navigate('/admin-dashboard', { replace: true });
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      } finally {
+        if (mounted) {
+          setIsInitializing(false);
+        }
       }
-    }
-  };
+    };
+
+    checkAdminAuth();
+
+    return () => {
+      mounted = false;
+    };
+  }, [navigate]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +103,7 @@ export const useAdminAuth = () => {
           description: "Successfully authenticated as administrator",
         });
 
-        navigate('/admin-dashboard');
+        navigate('/admin-dashboard', { replace: true });
       }
     } catch (error) {
       toast({
@@ -168,6 +187,7 @@ export const useAdminAuth = () => {
     loading,
     activeTab,
     setActiveTab,
+    isInitializing,
     handleAdminLogin,
     handleAdminSignup
   };
