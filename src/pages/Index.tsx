@@ -58,7 +58,7 @@ const Index = () => {
               </Button>
               <Button 
                 type="button"
-                className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 cursor-pointer relative z-20"
+                className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 cursor-pointer relative z-20"
                 onClick={handleAdminPanel}
               >
                 <Shield className="h-4 w-4" />

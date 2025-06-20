@@ -110,7 +110,7 @@ export const NavBar = () => {
               type="button"
               onClick={handleAdminPanel}
               variant="outline"
-              className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white flex items-center gap-2 cursor-pointer"
+              className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white flex items-center gap-2 cursor-pointer"
             >
               <Shield className="h-4 w-4" />
               Admin Panel
@@ -181,7 +181,7 @@ export const NavBar = () => {
             <Button 
               type="button"
               onClick={handleAdminPanel}
-              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 cursor-pointer"
+              className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 cursor-pointer"
             >
               <Shield className="h-4 w-4" />
               Admin Panel
