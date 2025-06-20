@@ -1,8 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, 
@@ -15,10 +14,8 @@ import {
   Upload, 
   Shield, 
   Settings, 
-  BarChart3, 
-  Activity, 
-  TrendingUp,
-  Download
+  Download,
+  TrendingUp
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -126,12 +123,12 @@ const AdminDashboard = () => {
   };
 
   const quickStats = [
-    { label: "Students", value: stats.totalStudents, icon: GraduationCap, color: "text-green-400/from-green-500" },
-    { label: "Teachers", value: stats.totalTeachers, icon: Users, color: "text-blue-400/from-blue-500" },
-    { label: "Classes", value: stats.activeClasses, icon: School, color: "text-purple-400/from-purple-500" },
-    { label: "Assignments", value: stats.totalAssignments, icon: FileText, color: "text-orange-400/from-orange-500" },
-    { label: "NFTs", value: stats.nftsMinted, icon: Coins, color: "text-yellow-400/from-yellow-500" },
-    { label: "Activity", value: stats.recentActivity, icon: TrendingUp, color: "text-pink-400/from-pink-500" }
+    { label: "Students", value: stats.totalStudents, icon: GraduationCap, color: "bg-gradient-to-r from-green-500 to-green-600" },
+    { label: "Teachers", value: stats.totalTeachers, icon: Users, color: "bg-gradient-to-r from-blue-500 to-blue-600" },
+    { label: "Classes", value: stats.activeClasses, icon: School, color: "bg-gradient-to-r from-purple-500 to-purple-600" },
+    { label: "Assignments", value: stats.totalAssignments, icon: FileText, color: "bg-gradient-to-r from-orange-500 to-orange-600" },
+    { label: "NFTs", value: stats.nftsMinted, icon: Coins, color: "bg-gradient-to-r from-yellow-500 to-yellow-600" },
+    { label: "Activity", value: stats.recentActivity, icon: TrendingUp, color: "bg-gradient-to-r from-pink-500 to-pink-600" }
   ];
 
   const adminSections = [
@@ -240,7 +237,7 @@ const AdminDashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto mb-4"></div>
           <p className="text-white text-lg">Loading Admin Dashboard...</p>
         </div>
       </div>
@@ -248,8 +245,15 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="container mx-auto p-6 max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute -bottom-40 right-1/4 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      <div className="container mx-auto p-6 max-w-7xl relative z-10">
         <AdminHeader onLogout={handleLogout} />
         
         <motion.div 
@@ -262,17 +266,37 @@ const AdminDashboard = () => {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-6 gap-2 bg-slate-800 p-2 border border-slate-700">
+          <TabsList className="grid grid-cols-4 lg:grid-cols-6 gap-2 bg-slate-800/80 p-2 border border-slate-700/50 backdrop-blur-sm">
             <TabsTrigger 
               value="overview" 
-              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700"
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors"
             >
               Overview
             </TabsTrigger>
-            <TabsTrigger value="teachers" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700 text-xs">Teachers</TabsTrigger>
-            <TabsTrigger value="students" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700 text-xs">Students</TabsTrigger>
-            <TabsTrigger value="classes" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700 text-xs">Classes</TabsTrigger>
-            <TabsTrigger value="nfts" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700 text-xs">NFTs</TabsTrigger>
+            <TabsTrigger 
+              value="teachers" 
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors text-xs"
+            >
+              Teachers
+            </TabsTrigger>
+            <TabsTrigger 
+              value="students" 
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors text-xs"
+            >
+              Students
+            </TabsTrigger>
+            <TabsTrigger 
+              value="classes" 
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors text-xs"
+            >
+              Classes
+            </TabsTrigger>
+            <TabsTrigger 
+              value="nfts" 
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80 hover:text-white transition-colors text-xs"
+            >
+              NFTs
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -283,7 +307,6 @@ const AdminDashboard = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.02, y: -5 }}
                 >
                   <AdminStatsCard
                     title={section.title}

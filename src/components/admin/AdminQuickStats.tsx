@@ -31,8 +31,8 @@ export const AdminQuickStats = ({ stats }: AdminQuickStatsProps) => {
                   <p className="text-slate-400 text-sm font-medium">{stat.label}</p>
                   <p className="text-2xl font-bold text-white">{stat.value}</p>
                 </div>
-                <div className={`p-2 rounded-lg bg-gradient-to-r ${stat.color}/20`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color.split('/')[0]}`} />
+                <div className={`p-2 rounded-lg ${stat.color}`}>
+                  <stat.icon className="h-5 w-5 text-white" />
                 </div>
               </div>
             </CardContent>
