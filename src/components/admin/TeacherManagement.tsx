@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, Shield, Ban, Unlock, Search, UserPlus, Trash2, Key } from "lucide-react";
+import { CreateTeacherDialog } from "./CreateTeacherDialog";
 
 interface Teacher {
   id: string;
@@ -120,10 +121,7 @@ export const TeacherManagement = () => {
           <h2 className="text-2xl font-bold text-white">Teacher Management</h2>
           <p className="text-gray-400">Manage teacher accounts, passwords, and class assignments</p>
         </div>
-        <Button className="bg-green-600 hover:bg-green-700">
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add New Teacher
-        </Button>
+        <CreateTeacherDialog onTeacherCreated={loadTeachers} />
       </div>
 
       {/* Filters */}

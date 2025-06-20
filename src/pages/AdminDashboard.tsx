@@ -22,7 +22,9 @@ import {
   Lock,
   AlertTriangle,
   Database,
-  Palette
+  Palette,
+  Clock,
+  Building
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +38,9 @@ import { SystemMonitoring } from "@/components/admin/SystemMonitoring";
 import { SecurityControls } from "@/components/admin/SecurityControls";
 import { TechnicalSettings } from "@/components/admin/TechnicalSettings";
 import { TeacherManagement } from "@/components/admin/TeacherManagement";
+import { PendingUsersManagement } from "@/components/admin/PendingUsersManagement";
+import { AdminNotifications } from "@/components/admin/AdminNotifications";
+import { InstitutionCodeManager } from "@/components/admin/InstitutionCodeManager";
 
 interface AdminStats {
   totalStudents: number;
@@ -48,6 +53,7 @@ interface AdminStats {
   activeUsers: number;
   nftUsageCount: number;
   pendingReports: number;
+  pendingUsers: number;
 }
 
 const AdminDashboard = () => {
@@ -65,7 +71,8 @@ const AdminDashboard = () => {
     assignmentCompletionRate: 0,
     activeUsers: 0,
     nftUsageCount: 0,
-    pendingReports: 0
+    pendingReports: 0,
+    pendingUsers: 0
   });
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
@@ -167,14 +174,17 @@ const AdminDashboard = () => {
     
     try {
       const results = await Promise.allSettled([
-        supabase.from('students').select('id', { count: 'exact' }),
+        supabase.from('students').select('i
+
+d', { count: 'exact' }),
         supabase.from('teacher_profiles').select('id', { count: 'exact' }),
         supabase.from('classrooms').select('id', { count: 'exact' }),
         supabase.from('assignments').select('id', { count: 'exact' }),
         supabase.from('nfts').select('id', { count: 'exact' }),
         supabase.from('grades').select('id', { count: 'exact' }),
         supabase.from('classroom_codes').select('usage_count').eq('is_active', true),
-        supabase.from('behavior_records').select('id', { count: 'exact' }).eq('resolved', false)
+        supabase.from('behavior_records').select('id', { count: 'exact' }).eq('resolved', false),
+        supabase.from('pending_users').select('id', { count: 'exact' }).eq('status', 'pending')
       ]);
 
       console.log('AdminDashboard: Comprehensive query results:', results);
@@ -188,6 +198,7 @@ const AdminDashboard = () => {
       const codeUsage = results[6].status === 'fulfilled' ? 
         (results[6].value.data || []).reduce((sum, code) => sum + (code.usage_count || 0), 0) : 0;
       const pendingReports = results[7].status === 'fulfilled' ? results[7].value.count || 0 : 0;
+      const pendingUsers = results[8].status === 'fulfilled' ? results[8].value.count || 0 : 0;
 
       const completionRate = assignmentsCount > 0 ? Math.round((gradesCount / assignmentsCount) * 100) : 0;
 
@@ -201,7 +212,8 @@ const AdminDashboard = () => {
         assignmentCompletionRate: completionRate,
         activeUsers: studentsCount + teachersCount,
         nftUsageCount: codeUsage,
-        pendingReports: pendingReports
+        pendingReports: pendingReports,
+        pendingUsers: pendingUsers
       });
 
       console.log('AdminDashboard: Comprehensive stats updated successfully');
@@ -225,12 +237,21 @@ const AdminDashboard = () => {
     { label: "Students", value: stats.totalStudents, icon: GraduationCap, color: "bg-gradient-to-r from-green-500 to-green-600" },
     { label: "Teachers", value: stats.totalTeachers, icon: Users, color: "bg-gradient-to-r from-blue-500 to-blue-600" },
     { label: "Classes", value: stats.activeClasses, icon: School, color: "bg-gradient-to-r from-purple-500 to-purple-600" },
-    { label: "Assignments", value: stats.totalAssignments, icon: FileText, color: "bg-gradient-to-r from-orange-500 to-orange-600" },
+    { label: "Pending Requests", value: stats.pendingUsers, icon: Clock, color: "bg-gradient-to-r from-orange-500 to-orange-600" },
     { label: "NFTs Minted", value: stats.nftsMinted, icon: Coins, color: "bg-gradient-to-r from-yellow-500 to-yellow-600" },
     { label: "Completion Rate", value: stats.assignmentCompletionRate, icon: TrendingUp, color: "bg-gradient-to-r from-pink-500 to-pink-600" }
   ];
 
   const adminSections = [
+    {
+      id: "pending",
+      title: "Pending Requests",
+      description: "Review and approve new teacher and student signup requests.",
+      icon: Clock,
+      color: "from-orange-500 to-orange-600",
+      stats: stats.pendingUsers,
+      features: ["Review Signups", "Approve/Reject Users", "Institution Code Management", "Bulk Operations", "Auto-notifications"]
+    },
     {
       id: "teachers",
       title: "Manage Teachers",
@@ -250,6 +271,15 @@ const AdminDashboard = () => {
       features: ["Bulk CSV Upload", "Password Reset", "Manual Class Assignment", "Account Suspension", "Activity Monitoring"]
     },
     {
+      id: "institution",
+      title: "Institution Settings",
+      description: "Manage institution codes, school settings, and access controls.",
+      icon: Building,
+      color: "from-indigo-500 to-indigo-600",
+      stats: "Active",
+      features: ["Institution Code Management", "School Settings", "Access Controls", "Branding", "Integration Settings"]
+    },
+    {
       id: "classes",
       title: "Class Management", 
       description: "Create, edit classes, assign teachers, set subjects, and control visibility.",
@@ -259,15 +289,6 @@ const AdminDashboard = () => {
       features: ["Create/Edit Classes", "Teacher Assignment", "Subject Configuration", "Public/Private Control", "Code Lock System"]
     },
     {
-      id: "assignments",
-      title: "Assignment Control",
-      description: "Monitor all assignments, delete inappropriate content, and manage templates.",
-      icon: FileText,
-      color: "from-orange-500 to-orange-600", 
-      stats: stats.totalAssignments,
-      features: ["View All Assignments", "Content Moderation", "Template Management", "Cross-Class Cloning", "Bulk Operations"]
-    },
-    {
       id: "moderation",
       title: "Content Moderation",
       description: "AI-powered content filtering, chat monitoring, and report management.",
@@ -275,15 +296,6 @@ const AdminDashboard = () => {
       color: "from-red-500 to-red-600",
       stats: stats.pendingReports,
       features: ["Chat Monitoring", "AI Word Filtering", "Report Management", "Content Blocking", "User Sanctions"]
-    },
-    {
-      id: "nft-tracker",
-      title: "NFT & Code Tracker",
-      description: "Track NFT minting, class code usage, expiry control, and wallet mapping.",
-      icon: Coins,
-      color: "from-yellow-500 to-yellow-600",
-      stats: stats.nftUsageCount,
-      features: ["Minting Tracker", "Code Usage Analytics", "Expiry Management", "Wallet Mapping", "Blockchain Integration"]
     }
   ];
 
@@ -323,120 +335,126 @@ const AdminDashboard = () => {
           <AdminQuickStats stats={quickStats} />
         </motion.div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-3 lg:grid-cols-6 gap-2 bg-slate-800/80 p-2 border border-slate-700/50 backdrop-blur-sm">
-            <TabsTrigger value="overview" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="teachers" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-              Teachers
-            </TabsTrigger>
-            <TabsTrigger value="students" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-              Students
-            </TabsTrigger>
-            <TabsTrigger value="classes" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-              Classes
-            </TabsTrigger>
-            <TabsTrigger value="moderation" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-              Moderation
-            </TabsTrigger>
-            <TabsTrigger value="system" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
-              System
-            </TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          <div className="lg:col-span-3">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="grid grid-cols-3 lg:grid-cols-6 gap-2 bg-slate-800/80 p-2 border border-slate-700/50 backdrop-blur-sm">
+                <TabsTrigger value="overview" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
+                  Pending
+                  {stats.pendingUsers > 0 && (
+                    <span className="ml-1 bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                      {stats.pendingUsers}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="teachers" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
+                  Teachers
+                </TabsTrigger>
+                <TabsTrigger value="students" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
+                  Students
+                </TabsTrigger>
+                <TabsTrigger value="institution" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
+                  Institution
+                </TabsTrigger>
+                <TabsTrigger value="system" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-purple-600/80">
+                  System
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {adminSections.map((section, index) => (
-                <motion.div
-                  key={section.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <AdminStatsCard
-                    title={section.title}
-                    description={section.description}
-                    icon={section.icon}
-                    stats={section.stats}
-                    color={section.color}
-                    features={section.features}
-                    onClick={() => setActiveTab(section.id)}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </TabsContent>
+              <TabsContent value="overview" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {adminSections.map((section, index) => (
+                    <motion.div
+                      key={section.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <AdminStatsCard
+                        title={section.title}
+                        description={section.description}
+                        icon={section.icon}
+                        stats={section.stats}
+                        color={section.color}
+                        features={section.features}
+                        onClick={() => setActiveTab(section.id)}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </TabsContent>
 
-          <TabsContent value="teachers" className="space-y-6">
-            <TeacherManagement />
-          </TabsContent>
+              <TabsContent value="pending" className="space-y-6">
+                <PendingUsersManagement />
+              </TabsContent>
 
-          <TabsContent value="students" className="space-y-6">
-            <UserManagement />
-          </TabsContent>
+              <TabsContent value="teachers" className="space-y-6">
+                <TeacherManagement />
+              </TabsContent>
 
-          <TabsContent value="classes" className="space-y-6">
-            <div className="text-center text-white">
-              <h3 className="text-xl font-bold mb-4">Class Management</h3>
-              <p className="text-gray-400">Class management features coming soon...</p>
-            </div>
-          </TabsContent>
+              <TabsContent value="students" className="space-y-6">
+                <UserManagement />
+              </TabsContent>
 
-          <TabsContent value="assignments" className="space-y-6">
-            <div className="text-center text-white">
-              <h3 className="text-xl font-bold mb-4">Assignment Control</h3>
-              <p className="text-gray-400">Assignment control features coming soon...</p>
-            </div>
-          </TabsContent>
+              <TabsContent value="institution" className="space-y-6">
+                <InstitutionCodeManager />
+              </TabsContent>
 
-          <TabsContent value="moderation" className="space-y-6">
-            <div className="text-center text-white">
-              <h3 className="text-xl font-bold mb-4">Content Moderation</h3>
-              <p className="text-gray-400">Content moderation features coming soon...</p>
-            </div>
-          </TabsContent>
+              <TabsContent value="classes" className="space-y-6">
+                <div className="text-center text-white">
+                  <h3 className="text-xl font-bold mb-4">Class Management</h3>
+                  <p className="text-gray-400">Class management features coming soon...</p>
+                </div>
+              </TabsContent>
 
-          <TabsContent value="system" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <AdminStatsCard
-                  title="System Monitoring"
-                  description="Real-time system performance and health monitoring"
-                  icon={BarChart3}
-                  stats="Live"
-                  color="from-green-500 to-green-600"
-                  features={["Performance Metrics", "Database Health", "Error Tracking"]}
-                  onClick={() => setActiveTab("system-monitoring")}
-                />
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <AdminStatsCard
-                  title="Security Controls"
-                  description="Advanced security settings and access management"
-                  icon={Shield}
-                  stats="Protected"
-                  color="from-red-500 to-red-600"
-                  features={["Access Control", "Security Logs", "Threat Detection"]}
-                  onClick={() => setActiveTab("security-controls")}
-                />
-              </motion.div>
-            </div>
-            
-            <SystemMonitoring />
-            <SecurityControls />
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="system" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <AdminStatsCard
+                      title="System Monitoring"
+                      description="Real-time system performance and health monitoring"
+                      icon={BarChart3}
+                      stats="Live"
+                      color="from-green-500 to-green-600"
+                      features={["Performance Metrics", "Database Health", "Error Tracking"]}
+                      onClick={() => setActiveTab("system-monitoring")}
+                    />
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <AdminStatsCard
+                      title="Security Controls"
+                      description="Advanced security settings and access management"
+                      icon={Shield}
+                      stats="Protected"
+                      color="from-red-500 to-red-600"
+                      features={["Access Control", "Security Logs", "Threat Detection"]}
+                      onClick={() => setActiveTab("security-controls")}
+                    />
+                  </motion.div>
+                </div>
+                
+                <SystemMonitoring />
+                <SecurityControls />
+              </TabsContent>
+            </Tabs>
+          </div>
 
-        <AdminSystemStatus />
+          <div className="space-y-6">
+            <AdminNotifications />
+            <AdminSystemStatus />
+          </div>
+        </div>
       </div>
     </div>
   );

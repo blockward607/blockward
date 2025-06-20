@@ -11,7 +11,7 @@ export const useAdminAuth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("signin");
-  const [isInitializing, setIsInitializing] = useState(false); // Changed to false by default
+  const [isInitializing, setIsInitializing] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -34,23 +34,19 @@ export const useAdminAuth = () => {
 
           if (userRole?.role === 'admin') {
             console.log('useAdminAuth: User is admin, redirecting to dashboard');
-            toast({
-              title: "Welcome back!",
-              description: "Redirecting to admin dashboard..."
-            });
             navigate('/admin-dashboard', { replace: true });
             return;
-          } else {
-            console.log('useAdminAuth: User is not admin, staying on login page');
           }
         }
       } catch (error) {
         console.error('useAdminAuth: Error checking initial auth:', error);
+      } finally {
+        setIsInitializing(false);
       }
     };
 
     checkInitialAuth();
-  }, [navigate, toast]);
+  }, [navigate]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,10 +79,19 @@ export const useAdminAuth = () => {
           .eq('user_id', data.user.id)
           .single();
 
-        if (roleError || !userRole) {
-          console.log('useAdminAuth: No role found, checking if we can create admin role');
+        if (roleError && roleError.code !== 'PGRST116') {
+          console.error('useAdminAuth: Role check error:', roleError);
+          toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "Failed to verify admin privileges.",
+          });
+          return;
+        }
+
+        if (!userRole || userRole.role !== 'admin') {
+          console.log('useAdminAuth: User is not admin, attempting to promote...');
           
-          // Try to promote user to admin if no role exists
           try {
             const { error: promoteError } = await supabase.rpc('promote_user_to_admin', {
               target_user_id: data.user.id,
@@ -97,7 +102,7 @@ export const useAdminAuth = () => {
             if (!promoteError) {
               console.log('useAdminAuth: Successfully promoted user to admin');
               toast({
-                title: "Admin Account Created",
+                title: "Admin Access Granted",
                 description: "Welcome to the admin panel!",
               });
               navigate('/admin-dashboard', { replace: true });
@@ -107,17 +112,6 @@ export const useAdminAuth = () => {
             console.error('useAdminAuth: Failed to promote user:', promoteError);
           }
           
-          toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "Unable to verify admin privileges. Please contact support.",
-          });
-          await supabase.auth.signOut();
-          return;
-        }
-
-        if (userRole.role !== 'admin') {
-          console.log('useAdminAuth: User role is not admin:', userRole.role);
           toast({
             variant: "destructive",
             title: "Access Denied",
@@ -170,7 +164,8 @@ export const useAdminAuth = () => {
           data: {
             full_name: fullName,
             role: 'admin'
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/admin-dashboard`
         }
       });
 
@@ -199,7 +194,7 @@ export const useAdminAuth = () => {
             console.log('useAdminAuth: Successfully created admin account');
             toast({
               title: "Admin Account Created",
-              description: "Your admin account is ready! You can now sign in.",
+              description: "Your admin account is ready! Please verify your email and sign in.",
             });
           }
         } catch (promoteError) {

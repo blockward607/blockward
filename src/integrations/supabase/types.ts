@@ -87,6 +87,50 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notifications: {
+        Row: {
+          admin_id: string
+          created_at: string | null
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          school_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          school_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          school_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notifications_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_profiles: {
         Row: {
           access_level: Database["public"]["Enums"]["admin_access_level"] | null
@@ -1064,6 +1108,59 @@ export type Database = {
           },
         ]
       }
+      pending_users: {
+        Row: {
+          additional_info: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          institution_code: string
+          rejection_reason: string | null
+          role: string
+          school_id: string | null
+          status: string
+        }
+        Insert: {
+          additional_info?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          institution_code: string
+          rejection_reason?: string | null
+          role: string
+          school_id?: string | null
+          status?: string
+        }
+        Update: {
+          additional_info?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          institution_code?: string
+          rejection_reason?: string | null
+          role?: string
+          school_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_users_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_questions: {
         Row: {
           correct_answer: string | null
@@ -1237,6 +1334,7 @@ export type Database = {
           created_by: string | null
           domain: string | null
           id: string
+          institution_code: string | null
           logo_url: string | null
           name: string
           phone: string | null
@@ -1251,6 +1349,7 @@ export type Database = {
           created_by?: string | null
           domain?: string | null
           id?: string
+          institution_code?: string | null
           logo_url?: string | null
           name: string
           phone?: string | null
@@ -1265,6 +1364,7 @@ export type Database = {
           created_by?: string | null
           domain?: string | null
           id?: string
+          institution_code?: string | null
           logo_url?: string | null
           name?: string
           phone?: string | null
@@ -1774,6 +1874,16 @@ export type Database = {
         }
         Returns: string
       }
+      create_pending_user: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_role: string
+          p_institution_code: string
+          p_additional_info?: Json
+        }
+        Returns: Json
+      }
       enroll_student: {
         Args: { invitation_token: string; student_id: string }
         Returns: undefined
@@ -1793,6 +1903,10 @@ export type Database = {
         }[]
       }
       generate_classroom_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_institution_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
@@ -1834,6 +1948,14 @@ export type Database = {
         Args: { message_ids: string[]; user_id_param: string }
         Returns: undefined
       }
+      process_pending_user: {
+        Args: {
+          p_pending_user_id: string
+          p_action: string
+          p_rejection_reason?: string
+        }
+        Returns: Json
+      }
       promote_user_to_admin: {
         Args: {
           target_user_id: string
@@ -1855,6 +1977,10 @@ export type Database = {
       update_conversation_timestamp: {
         Args: { conversation_id_param: string }
         Returns: undefined
+      }
+      validate_institution_code: {
+        Args: { code: string }
+        Returns: Json
       }
     }
     Enums: {

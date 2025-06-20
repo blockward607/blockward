@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, User, GraduationCap, Shield } from "lucide-react";
+import { Eye, EyeOff, User, GraduationCap, Shield, Building } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,9 +34,51 @@ export const SignUpFormFields = ({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [school, setSchool] = useState("");
   const [subject, setSubject] = useState("");
+  const [institutionCode, setInstitutionCode] = useState("");
+  const [institutionValidation, setInstitutionValidation] = useState<{
+    valid: boolean;
+    schoolName?: string;
+    error?: string;
+  } | null>(null);
   const [loading, setLocalLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const validateInstitutionCode = async (code: string) => {
+    if (!code.trim()) {
+      setInstitutionValidation(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('validate_institution_code', {
+        code: code.trim()
+      });
+
+      if (error) {
+        console.error('Institution code validation error:', error);
+        setInstitutionValidation({ valid: false, error: 'Validation failed' });
+        return;
+      }
+
+      setInstitutionValidation(data);
+    } catch (error) {
+      console.error('Institution code validation error:', error);
+      setInstitutionValidation({ valid: false, error: 'Validation failed' });
+    }
+  };
+
+  const handleInstitutionCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const code = e.target.value;
+    setInstitutionCode(code);
+    
+    // Debounce validation
+    const timeoutId = setTimeout(() => {
+      validateInstitutionCode(code);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,46 +94,81 @@ export const SignUpFormFields = ({
       return;
     }
 
+    // For teacher and student roles, require institution code
+    if ((role === 'teacher' || role === 'student') && !institutionCode.trim()) {
+      setErrorMessage("Institution code is required");
+      setShowError(true);
+      setLocalLoading(false);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const signUpData = {
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: role,
+      if (role === 'teacher' || role === 'student') {
+        // Use pending user system for teachers and students
+        const { data, error } = await supabase.rpc('create_pending_user', {
+          p_email: email,
+          p_full_name: fullName,
+          p_role: role,
+          p_institution_code: institutionCode,
+          p_additional_info: {
             school: school,
-            ...(role === 'teacher' && { subject: subject }),
-          },
-          emailRedirectTo: `${window.location.origin}/dashboard`
+            subject: role === 'teacher' ? subject : undefined
+          }
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+          setShowError(true);
+          return;
         }
-      };
 
-      const { data, error } = await supabase.auth.signUp(signUpData);
-
-      if (error) {
-        setErrorMessage(error.message);
-        setShowError(true);
-        return;
-      }
-
-      if (data.user) {
-        // Create user role entry
-        await supabase.from('user_roles').insert({
-          user_id: data.user.id,
-          role: role
-        });
-
-        toast({
-          title: "Account Created!",
-          description: `Your ${role} account has been created. Please check your email to verify your account.`,
-        });
-
-        // Redirect based on role after successful signup
-        if (role === 'admin') {
-          navigate('/admin-dashboard');
+        if (data.valid) {
+          toast({
+            title: "Request Submitted!",
+            description: `Your ${role} account request has been submitted to ${data.school_name}. Please wait for admin approval.`,
+          });
+          navigate('/auth');
         } else {
-          navigate('/dashboard');
+          setErrorMessage(data.error);
+          setShowError(true);
+        }
+      } else {
+        // Direct signup for admin
+        const signUpData = {
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: role,
+              school: school,
+            },
+            emailRedirectTo: `${window.location.origin}/admin-dashboard`
+          }
+        };
+
+        const { data, error } = await supabase.auth.signUp(signUpData);
+
+        if (error) {
+          setErrorMessage(error.message);
+          setShowError(true);
+          return;
+        }
+
+        if (data.user) {
+          // Create user role entry
+          await supabase.from('user_roles').insert({
+            user_id: data.user.id,
+            role: role
+          });
+
+          toast({
+            title: "Account Created!",
+            description: `Your ${role} account has been created. Please check your email to verify your account.`,
+          });
+
+          navigate('/admin-login');
         }
       }
     } catch (error) {
@@ -168,6 +245,35 @@ export const SignUpFormFields = ({
           />
         </div>
 
+        {(role === 'teacher' || role === 'student') && (
+          <div className="space-y-2">
+            <Label htmlFor="institutionCode" className="text-gray-300 flex items-center gap-2">
+              <Building className="w-4 h-4" />
+              Institution Code
+            </Label>
+            <Input
+              id="institutionCode"
+              type="text"
+              placeholder="Enter your institution code"
+              value={institutionCode}
+              onChange={handleInstitutionCodeChange}
+              required
+              className={`bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 ${
+                institutionValidation?.valid === false ? 'border-red-500' : 
+                institutionValidation?.valid === true ? 'border-green-500' : ''
+              }`}
+            />
+            {institutionValidation && (
+              <div className={`text-sm ${institutionValidation.valid ? 'text-green-400' : 'text-red-400'}`}>
+                {institutionValidation.valid 
+                  ? `✓ Valid code for ${institutionValidation.schoolName}`
+                  : `✗ ${institutionValidation.error}`
+                }
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="school" className="text-gray-300">School/Institution</Label>
           <Input
@@ -234,7 +340,10 @@ export const SignUpFormFields = ({
           className={`w-full bg-gradient-to-r from-${roleColor}-600 to-${roleColor}-700 hover:from-${roleColor}-700 hover:to-${roleColor}-800 text-white`}
           disabled={loading}
         >
-          Create {role.charAt(0).toUpperCase() + role.slice(1)} Account
+          {(role === 'teacher' || role === 'student') 
+            ? `Request ${role.charAt(0).toUpperCase() + role.slice(1)} Account`
+            : `Create ${role.charAt(0).toUpperCase() + role.slice(1)} Account`
+          }
         </Button>
       </form>
     </div>
