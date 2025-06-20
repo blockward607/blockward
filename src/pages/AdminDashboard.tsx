@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -6,149 +5,56 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  School, 
   Users, 
   GraduationCap, 
+  School, 
+  FileText, 
+  MessageSquare, 
   Coins, 
-  Trophy, 
-  BarChart3, 
-  Settings, 
+  Bell, 
+  Upload, 
   Shield, 
-  FileText,
-  Bell,
-  Eye,
-  LogOut
+  Settings, 
+  BarChart3, 
+  Activity, 
+  TrendingUp,
+  Download
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminQuickStats } from "@/components/admin/AdminQuickStats";
+import { AdminStatsCard } from "@/components/admin/AdminStatsCard";
+import { AdminSystemStatus } from "@/components/admin/AdminSystemStatus";
 
-interface AdminSection {
-  id: string;
-  title: string;
-  description: string;
-  icon: any;
-  color: string;
-  features: string[];
+interface AdminStats {
+  totalStudents: number;
+  totalTeachers: number;
+  activeClasses: number;
+  totalAssignments: number;
+  nftsMinted: number;
+  recentActivity: number;
 }
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeSection, setActiveSection] = useState<string>("overview");
-
-  const adminSections: AdminSection[] = [
-    {
-      id: "schools",
-      title: "School / Institution Management",
-      description: "Manage schools, assign admins, and oversee institutional operations",
-      icon: School,
-      color: "from-red-600 to-red-700",
-      features: [
-        "Create / Manage Schools",
-        "Assign School Admins", 
-        "View All Classes by School",
-        "School-level NFT Analytics"
-      ]
-    },
-    {
-      id: "teachers",
-      title: "Teacher Management",
-      description: "Add, manage, and monitor teacher accounts and permissions",
-      icon: Users,
-      color: "from-red-500 to-red-600",
-      features: [
-        "Add / Remove Teachers",
-        "Assign Teachers to Classes",
-        "Set Permissions (NFT mint access)",
-        "Monitor Teacher Activity Logs",
-        "Suspend / Archive Teacher Accounts"
-      ]
-    },
-    {
-      id: "students",
-      title: "Student Oversight",
-      description: "Comprehensive student management across all classes",
-      icon: GraduationCap,
-      color: "from-red-600 to-red-800",
-      features: [
-        "View All Students (cross-class)",
-        "Filter by Class, Achievement Type, XP",
-        "Bulk Wallet Setup (for minors)",
-        "Reset Student Passwords or Logins"
-      ]
-    },
-    {
-      id: "blockchain",
-      title: "NFT Contract & Blockchain Settings",
-      description: "Manage smart contracts and blockchain configurations",
-      icon: Coins,
-      color: "from-red-700 to-red-900",
-      features: [
-        "View Smart Contract Details",
-        "Manage Contract Metadata Settings",
-        "Toggle Soulbound vs Transferable NFTs",
-        "Enable/Disable Wallet Requirements",
-        "Customize NFT Templates"
-      ]
-    },
-    {
-      id: "rules",
-      title: "Rules & Categories Configuration",
-      description: "Define achievement systems and gamification rules",
-      icon: Trophy,
-      color: "from-red-500 to-red-700",
-      features: [
-        "Define Achievement Categories",
-        "Set XP Values per Category",
-        "Create Custom Badges / Auto-Unlock Criteria",
-        "Define Leaderboard Rules"
-      ]
-    },
-    {
-      id: "analytics",
-      title: "Analytics & Reporting",
-      description: "Comprehensive insights and data export capabilities",
-      icon: BarChart3,
-      color: "from-red-600 to-red-800",
-      features: [
-        "Class-wise & School-wide XP Summary",
-        "NFT Minting Trends",
-        "Most Active Teachers / Students",
-        "Export Reports (PDF, Excel, JSON)"
-      ]
-    },
-    {
-      id: "system",
-      title: "System Settings",
-      description: "Platform configuration and customization options",
-      icon: Settings,
-      color: "from-red-700 to-red-900",
-      features: [
-        "Language & Regional Options",
-        "School Branding (logos, UI themes)",
-        "Notification Settings",
-        "Connected Integrations"
-      ]
-    },
-    {
-      id: "security",
-      title: "Audit & Security",
-      description: "Security monitoring and compliance management",
-      icon: Shield,
-      color: "from-red-800 to-red-900",
-      features: [
-        "Admin Access Logs",
-        "NFT Mint/Burn Logs",
-        "Data Protection (GDPR toggle)",
-        "Set Two-Factor Authentication (2FA)"
-      ]
-    }
-  ];
+  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [stats, setStats] = useState<AdminStats>({
+    totalStudents: 0,
+    totalTeachers: 0,
+    activeClasses: 0,
+    totalAssignments: 0,
+    nftsMinted: 0,
+    recentActivity: 0
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkAdminAuthentication();
+    fetchAdminStats();
   }, [user, navigate]);
 
   const checkAdminAuthentication = async () => {
@@ -178,6 +84,38 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAdminStats = async () => {
+    try {
+      setLoading(true);
+      
+      const [studentsRes, teachersRes, classesRes, assignmentsRes, nftsRes] = await Promise.all([
+        supabase.from('students').select('id', { count: 'exact' }),
+        supabase.from('teacher_profiles').select('id', { count: 'exact' }),
+        supabase.from('classrooms').select('id', { count: 'exact' }),
+        supabase.from('assignments').select('id', { count: 'exact' }),
+        supabase.from('nfts').select('id', { count: 'exact' })
+      ]);
+
+      setStats({
+        totalStudents: studentsRes.count || 0,
+        totalTeachers: teachersRes.count || 0,
+        activeClasses: classesRes.count || 0,
+        totalAssignments: assignmentsRes.count || 0,
+        nftsMinted: nftsRes.count || 0,
+        recentActivity: 12
+      });
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load dashboard statistics"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast({
@@ -187,199 +125,184 @@ const AdminDashboard = () => {
     navigate('/admin-login');
   };
 
-  const handleSectionClick = (sectionId: string) => {
-    setActiveSection(sectionId);
-    toast({
-      title: "Section Selected",
-      description: `Opening ${adminSections.find(s => s.id === sectionId)?.title}...`
-    });
-  };
+  const quickStats = [
+    { label: "Students", value: stats.totalStudents, icon: GraduationCap, color: "text-green-400/from-green-500" },
+    { label: "Teachers", value: stats.totalTeachers, icon: Users, color: "text-blue-400/from-blue-500" },
+    { label: "Classes", value: stats.activeClasses, icon: School, color: "text-purple-400/from-purple-500" },
+    { label: "Assignments", value: stats.totalAssignments, icon: FileText, color: "text-orange-400/from-orange-500" },
+    { label: "NFTs", value: stats.nftsMinted, icon: Coins, color: "text-yellow-400/from-yellow-500" },
+    { label: "Activity", value: stats.recentActivity, icon: TrendingUp, color: "text-pink-400/from-pink-500" }
+  ];
+
+  const adminSections = [
+    {
+      id: "teachers",
+      title: "Manage Teachers",
+      description: "View, add, edit teacher accounts and permissions",
+      icon: Users,
+      color: "from-blue-500 to-blue-600",
+      stats: stats.totalTeachers,
+      features: ["Add/Edit/Delete", "Reset Passwords", "Assign Classes", "Account Status"]
+    },
+    {
+      id: "students", 
+      title: "Manage Students",
+      description: "Student registration, bulk upload, and account management",
+      icon: GraduationCap,
+      color: "from-green-500 to-green-600",
+      stats: stats.totalStudents,
+      features: ["Bulk CSV Upload", "Password Reset", "Class Assignment", "Suspend/Ban"]
+    },
+    {
+      id: "classes",
+      title: "Class Management",
+      description: "Create, edit classes and manage visibility settings",
+      icon: School,
+      color: "from-purple-500 to-purple-600",
+      stats: stats.activeClasses,
+      features: ["Create/Edit Classes", "Assign Teachers", "Set Subjects", "Control Visibility"]
+    },
+    {
+      id: "assignments",
+      title: "Assignment Control",
+      description: "Monitor and manage all assignments across classes",
+      icon: FileText,
+      color: "from-orange-500 to-orange-600",
+      stats: stats.totalAssignments,
+      features: ["View All Tasks", "Delete Content", "Clone Assignments", "Add Templates"]
+    },
+    {
+      id: "moderation",
+      title: "Content Moderation",
+      description: "Monitor chats, messages and filter inappropriate content",
+      icon: MessageSquare,
+      color: "from-red-500 to-red-600",
+      stats: "24/7",
+      features: ["Monitor Chats", "AI Filtering", "Report Management", "Block Content"]
+    },
+    {
+      id: "nft-tracker",
+      title: "NFT & Code Tracker",
+      description: "Track NFT minting, class codes and blockchain activity",
+      icon: Coins,
+      color: "from-yellow-500 to-yellow-600",
+      stats: stats.nftsMinted,
+      features: ["Code Usage", "NFT Tracking", "Expiry Control", "Wallet Mapping"]
+    },
+    {
+      id: "uploads",
+      title: "Upload Center",
+      description: "Upload school-wide materials and resources",
+      icon: Upload,
+      color: "from-indigo-500 to-indigo-600",
+      stats: "∞",
+      features: ["Upload Materials", "Auto-Publish", "Video/PDF Support", "Bulk Upload"]
+    },
+    {
+      id: "notifications",
+      title: "Notifications",
+      description: "Send announcements and alerts to users",
+      icon: Bell,
+      color: "from-pink-500 to-pink-600",
+      stats: "Active",
+      features: ["Broadcast Messages", "Targeted Alerts", "Push Notifications", "Email Alerts"]
+    },
+    {
+      id: "backup",
+      title: "Backup & Export",
+      description: "Download database backups and export reports",
+      icon: Download,
+      color: "from-teal-500 to-teal-600",
+      stats: "Ready",
+      features: ["User Data Export", "Assignment Backup", "NFT Records", "CSV Reports"]
+    },
+    {
+      id: "security",
+      title: "Security & Logs",
+      description: "Monitor login history and access patterns",
+      icon: Shield,
+      color: "from-gray-500 to-gray-600",
+      stats: stats.recentActivity,
+      features: ["Login History", "Failed Attempts", "Access Logs", "IP Tracking"]
+    },
+    {
+      id: "settings",
+      title: "Site Settings",
+      description: "Configure school branding, themes and access control",
+      icon: Settings,
+      color: "from-slate-500 to-slate-600",
+      stats: "Config",
+      features: ["School Branding", "Color Themes", "Maintenance Mode", "Registration Control"]
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading Admin Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/20 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="container mx-auto p-6 max-w-7xl">
-        {/* Header */}
+        <AdminHeader onLogout={handleLogout} />
+        
         <motion.div 
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-red-400 via-red-300 to-red-500 bg-clip-text text-transparent">
-                BlockWard Admin Control Center
-              </h1>
-              <p className="text-red-300 mt-2">Comprehensive platform administration and management</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/dashboard')}
-                className="border-red-500/30 text-red-300 hover:bg-red-500/20 hover:border-red-400"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                View Dashboard
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleLogout}
-                className="border-red-500/30 text-red-300 hover:bg-red-500/20 hover:border-red-400"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
+          <AdminQuickStats stats={quickStats} />
         </motion.div>
 
-        {/* Main Content */}
-        <Tabs value={activeSection} onValueChange={setActiveSection} className="space-y-6">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 bg-red-900/30 p-2 border border-red-700/30">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid grid-cols-4 lg:grid-cols-6 gap-2 bg-slate-800 p-2 border border-slate-700">
             <TabsTrigger 
               value="overview" 
-              className="text-xs text-red-300 data-[state=active]:bg-red-600/40 data-[state=active]:text-white"
+              className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700"
             >
               Overview
             </TabsTrigger>
-            {adminSections.map(section => (
-              <TabsTrigger 
-                key={section.id} 
-                value={section.id}
-                className="text-xs text-red-300 data-[state=active]:bg-red-600/40 data-[state=active]:text-white"
-              >
-                {section.title.split(' ')[0]}
-              </TabsTrigger>
-            ))}
+            <TabsTrigger value="teachers" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700 text-xs">Teachers</TabsTrigger>
+            <TabsTrigger value="students" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700 text-xs">Students</TabsTrigger>
+            <TabsTrigger value="classes" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700 text-xs">Classes</TabsTrigger>
+            <TabsTrigger value="nfts" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-slate-700 text-xs">NFTs</TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {adminSections.map((section, index) => {
-                const Icon = section.icon;
-                return (
-                  <motion.div
-                    key={section.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02, y: -5 }}
-                    className="group cursor-pointer"
-                    onClick={() => handleSectionClick(section.id)}
-                  >
-                    <Card className={`h-full bg-gradient-to-br ${section.color}/10 border-red-700/30 hover:border-red-500/50 transition-all duration-300 shadow-lg shadow-red-900/10`}>
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`p-2 rounded-lg bg-gradient-to-r ${section.color}/30 border border-red-500/20`}>
-                            <Icon className="w-5 h-5 text-red-300" />
-                          </div>
-                        </div>
-                        <CardTitle className="text-lg text-white group-hover:text-red-200 transition-colors">
-                          {section.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-red-400 text-sm mb-4 group-hover:text-red-300 transition-colors">
-                          {section.description}
-                        </p>
-                        <div className="space-y-1">
-                          {section.features.slice(0, 3).map((feature, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-xs text-red-500">
-                              <div className="w-1 h-1 bg-red-400 rounded-full" />
-                              {feature}
-                            </div>
-                          ))}
-                          {section.features.length > 3 && (
-                            <div className="text-xs text-red-400 font-medium">
-                              +{section.features.length - 3} more features
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {adminSections.map((section, index) => (
+                <motion.div
+                  key={section.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02, y: -5 }}
+                >
+                  <AdminStatsCard
+                    title={section.title}
+                    description={section.description}
+                    icon={section.icon}
+                    stats={section.stats}
+                    color={section.color}
+                    features={section.features}
+                    onClick={() => setActiveTab(section.id)}
+                  />
+                </motion.div>
+              ))}
             </div>
           </TabsContent>
 
-          {/* Individual Section Tabs */}
-          {adminSections.map(section => (
-            <TabsContent key={section.id} value={section.id} className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="space-y-6"
-              >
-                <Card className="bg-red-900/20 border-red-700/30 shadow-lg shadow-red-900/10">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-lg bg-gradient-to-r ${section.color}/30 border border-red-500/30`}>
-                        <section.icon className="w-6 h-6 text-red-300" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl text-white">{section.title}</CardTitle>
-                        <p className="text-red-400">{section.description}</p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {section.features.map((feature, idx) => (
-                        <Button
-                          key={idx}
-                          variant="outline"
-                          className="justify-start h-auto p-4 border-red-600/30 hover:border-red-500/50 hover:bg-red-500/10 text-red-300 hover:text-red-200"
-                          onClick={() => toast({
-                            title: "Feature Coming Soon",
-                            description: `${feature} will be available in the next update.`
-                          })}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-red-400 rounded-full" />
-                            <span className="text-left">{feature}</span>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-          ))}
+          {/* Individual feature tabs would go here */}
         </Tabs>
 
-        {/* Future Features Section */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-12"
-        >
-          <Card className="bg-gradient-to-r from-red-900/20 to-red-800/20 border-red-500/30 shadow-lg shadow-red-900/10">
-            <CardHeader>
-              <CardTitle className="text-xl text-white flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Future Admin Features
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { name: "AI Auto-Flagging for Unusual Behaviour", icon: Eye },
-                  { name: "Attendance Sync with SIS", icon: Bell },
-                  { name: "District-wide Leaderboards", icon: Trophy },
-                  { name: "Multi-Admin Collaboration", icon: Users }
-                ].map((feature, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-red-800/20 border border-red-700/20">
-                    <feature.icon className="w-4 h-4 text-red-400" />
-                    <span className="text-sm text-red-300">{feature.name}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <AdminSystemStatus />
       </div>
     </div>
   );
