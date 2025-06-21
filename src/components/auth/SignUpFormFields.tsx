@@ -76,6 +76,9 @@ export const SignUpFormFields = ({
   useEffect(() => {
     if (showInstitutionCode && formData.institutionCode && formData.institutionCode.length >= 6) {
       validateInstitutionCode(formData.institutionCode);
+    } else if (showInstitutionCode && formData.institutionCode.length < 6) {
+      setValidationResult(null);
+      onInstitutionValidation?.(false);
     }
   }, [formData.institutionCode, showInstitutionCode]);
 
@@ -90,6 +93,7 @@ export const SignUpFormFields = ({
           onChange={(e) => handleInputChange('fullName', e.target.value)}
           placeholder="Enter your full name"
           className="bg-gray-700 border-gray-600 text-white"
+          required
         />
       </div>
 
@@ -102,6 +106,7 @@ export const SignUpFormFields = ({
           onChange={(e) => handleInputChange('email', e.target.value)}
           placeholder="Enter your email"
           className="bg-gray-700 border-gray-600 text-white"
+          required
         />
       </div>
 
@@ -117,6 +122,7 @@ export const SignUpFormFields = ({
               placeholder="Enter your school's institution code"
               className="bg-gray-700 border-gray-600 text-white uppercase"
               maxLength={6}
+              required
             />
             {validating && (
               <div className="absolute right-3 top-3">
@@ -149,6 +155,8 @@ export const SignUpFormFields = ({
           onChange={(e) => handleInputChange('password', e.target.value)}
           placeholder="Enter your password"
           className="bg-gray-700 border-gray-600 text-white"
+          required
+          minLength={6}
         />
       </div>
 
@@ -161,6 +169,7 @@ export const SignUpFormFields = ({
           onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
           placeholder="Confirm your password"
           className="bg-gray-700 border-gray-600 text-white"
+          required
         />
       </div>
     </div>
