@@ -25,7 +25,6 @@ import {
   Clock,
   Building
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -62,9 +61,9 @@ interface AdminStats {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<AdminStats>({
     totalStudents: 0,
     totalTeachers: 0,
@@ -79,102 +78,73 @@ const AdminDashboard = () => {
     pendingUsers: 0
   });
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     console.log('AdminDashboard: Starting initialization');
     
     const initializeDashboard = async () => {
       try {
-        const isAuthorized = await checkAdminAuthentication();
-        if (isAuthorized) {
-          await fetchAdminStats();
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log('AdminDashboard: No session found, redirecting to admin login');
+          navigate('/admin-login', { replace: true });
+          return;
         }
+
+        console.log('AdminDashboard: Session found for user:', session.user.id);
+        setUser(session.user);
+
+        // Check if user is admin
+        const { data: userRole, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (roleError && roleError.code !== 'PGRST116') {
+          console.error('AdminDashboard: Error checking user role:', roleError);
+          toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "Failed to verify admin privileges"
+          });
+          navigate('/admin-login', { replace: true });
+          return;
+        }
+
+        if (!userRole || userRole.role !== 'admin') {
+          console.log('AdminDashboard: User is not admin');
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: "Admin privileges required"
+          });
+          navigate('/admin-login', { replace: true });
+          return;
+        }
+
+        console.log('AdminDashboard: Admin access confirmed, loading stats');
+        await fetchAdminStats();
       } catch (error) {
         console.error('AdminDashboard: Initialization error:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to initialize admin dashboard"
+        });
+        navigate('/admin-login', { replace: true });
       } finally {
-        setAuthChecked(true);
         setLoading(false);
       }
     };
 
     initializeDashboard();
-  }, [user, navigate]);
-
-  const checkAdminAuthentication = async (): Promise<boolean> => {
-    console.log('AdminDashboard: Checking admin authentication for user:', user?.id);
-    
-    if (!user) {
-      console.log('AdminDashboard: No user found, redirecting to admin login');
-      navigate('/admin-login');
-      return false;
-    }
-
-    try {
-      const { data: userRole, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('AdminDashboard: Error fetching user role:', error);
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: "Failed to verify admin privileges. Contact support if this continues."
-        });
-        navigate('/admin-login');
-        return false;
-      }
-
-      if (!userRole || userRole.role !== 'admin') {
-        console.log('AdminDashboard: User is not admin, attempting to promote...');
-        
-        try {
-          const { error: promoteError } = await supabase.rpc('promote_user_to_admin', {
-            target_user_id: user.id,
-            admin_name: user.email?.split('@')[0] || 'Administrator',
-            admin_position: 'System Administrator'
-          });
-
-          if (!promoteError) {
-            console.log('AdminDashboard: Successfully promoted user to admin');
-            toast({
-              title: "Admin Access Granted",
-              description: "Welcome to the admin dashboard!"
-            });
-            return true;
-          }
-        } catch (promoteError) {
-          console.error('AdminDashboard: Failed to promote user:', promoteError);
-        }
-        
-        toast({
-          variant: "destructive",
-          title: "Access Denied",
-          description: "Admin privileges required to access this dashboard"
-        });
-        navigate('/admin-login');
-        return false;
-      }
-
-      console.log('AdminDashboard: Admin authentication successful');
-      return true;
-    } catch (error) {
-      console.error('AdminDashboard: Admin auth check error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Authentication check failed. Please try refreshing the page."
-      });
-      navigate('/admin-login');
-      return false;
-    }
-  };
+  }, [navigate, toast]);
 
   const fetchAdminStats = async () => {
-    console.log('AdminDashboard: Fetching comprehensive admin statistics');
+    console.log('AdminDashboard: Fetching admin statistics');
     
     try {
       const results = await Promise.allSettled([
@@ -188,8 +158,6 @@ const AdminDashboard = () => {
         supabase.from('behavior_records').select('id', { count: 'exact' }).eq('resolved', false),
         supabase.from('pending_users').select('id', { count: 'exact' }).eq('status', 'pending')
       ]);
-
-      console.log('AdminDashboard: Comprehensive query results:', results);
 
       const studentsCount = results[0].status === 'fulfilled' ? results[0].value.count || 0 : 0;
       const teachersCount = results[1].status === 'fulfilled' ? results[1].value.count || 0 : 0;
@@ -218,10 +186,9 @@ const AdminDashboard = () => {
         pendingUsers: pendingUsers
       });
 
-      console.log('AdminDashboard: Comprehensive stats updated successfully');
+      console.log('AdminDashboard: Stats updated successfully');
     } catch (error) {
-      console.error('AdminDashboard: Error fetching comprehensive stats:', error);
-      console.log('AdminDashboard: Using fallback stats due to fetch error');
+      console.error('AdminDashboard: Error fetching stats:', error);
     }
   };
 
@@ -232,7 +199,7 @@ const AdminDashboard = () => {
       title: "Logged Out",
       description: "Successfully logged out of admin panel"
     });
-    navigate('/admin-login');
+    navigate('/admin-login', { replace: true });
   };
 
   const quickStats = [
@@ -301,20 +268,17 @@ const AdminDashboard = () => {
     }
   ];
 
-  if (loading || !authChecked) {
-    console.log('AdminDashboard: Rendering loading state');
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto mb-4"></div>
           <p className="text-white text-lg">Loading Admin Dashboard...</p>
-          <p className="text-gray-400 text-sm mt-2">Preparing your comprehensive admin environment...</p>
+          <p className="text-gray-400 text-sm mt-2">Verifying admin access...</p>
         </div>
       </div>
     );
   }
-
-  console.log('AdminDashboard: Rendering comprehensive admin dashboard');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">

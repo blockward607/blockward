@@ -34,7 +34,7 @@ export const useAdminAuth = () => {
 
           if (userRole?.role === 'admin') {
             console.log('useAdminAuth: User is admin, redirecting to dashboard');
-            navigate('/admin-dashboard', { replace: true });
+            // Don't redirect here - let the parent component handle it
             return;
           }
         }
@@ -46,7 +46,7 @@ export const useAdminAuth = () => {
     };
 
     checkInitialAuth();
-  }, [navigate]);
+  }, []);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
