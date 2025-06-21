@@ -41,6 +41,10 @@ import { PendingUsersManagement } from "@/components/admin/PendingUsersManagemen
 import { AdminNotifications } from "@/components/admin/AdminNotifications";
 import { InstitutionCodeManager } from "@/components/admin/InstitutionCodeManager";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { ClassManagement } from "@/components/admin/ClassManagement";
+import { AnnouncementManagement } from "@/components/admin/AnnouncementManagement";
+import { ReportsAnalytics } from "@/components/admin/ReportsAnalytics";
+import { ContentModeration } from "@/components/admin/ContentModeration";
 
 interface AdminStats {
   totalStudents: number;
@@ -374,34 +378,10 @@ const AdminDashboard = () => {
                 {activeTab === "teachers" && <TeacherManagement />}
                 {activeTab === "students" && <UserManagement />}
                 {activeTab === "institution" && <InstitutionCodeManager />}
-                
-                {activeTab === "classes" && (
-                  <div className="text-center text-white">
-                    <h3 className="text-xl font-bold mb-4">Class Management</h3>
-                    <p className="text-gray-400">Class management features coming soon...</p>
-                  </div>
-                )}
-
-                {activeTab === "announcements" && (
-                  <div className="text-center text-white">
-                    <h3 className="text-xl font-bold mb-4">Announcements</h3>
-                    <p className="text-gray-400">Announcement management features coming soon...</p>
-                  </div>
-                )}
-
-                {activeTab === "reports" && (
-                  <div className="text-center text-white">
-                    <h3 className="text-xl font-bold mb-4">Reports & Analytics</h3>
-                    <p className="text-gray-400">Analytics and reporting features coming soon...</p>
-                  </div>
-                )}
-
-                {activeTab === "moderation" && (
-                  <div className="text-center text-white">
-                    <h3 className="text-xl font-bold mb-4">Content Moderation</h3>
-                    <p className="text-gray-400">Content moderation features coming soon...</p>
-                  </div>
-                )}
+                {activeTab === "classes" && <ClassManagement />}
+                {activeTab === "announcements" && <AnnouncementManagement />}
+                {activeTab === "reports" && <ReportsAnalytics />}
+                {activeTab === "moderation" && <ContentModeration />}
 
                 {activeTab === "system" && (
                   <div className="space-y-6">
