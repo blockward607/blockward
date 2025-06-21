@@ -15,6 +15,7 @@ interface SignUpFormProps {
   setErrorMessage: (message: string) => void;
   setShowError: (show: boolean) => void;
   setLoading: (loading: boolean) => void;
+  loading?: boolean;
 }
 
 export const SignUpForm = (props: SignUpFormProps) => {
