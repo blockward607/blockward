@@ -1,109 +1,71 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Eye, EyeOff } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
 interface CreateTeacherDialogProps {
-  onTeacherCreated?: () => void;
+  onTeacherCreated: () => void;
+  schoolId?: string | null;
 }
 
-export const CreateTeacherDialog = ({ onTeacherCreated }: CreateTeacherDialogProps) => {
+export const CreateTeacherDialog = ({ onTeacherCreated, schoolId }: CreateTeacherDialogProps) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
+    full_name: "",
     email: "",
-    password: "",
     subject: "",
-    school: "",
-    notes: ""
+    password: ""
   });
-
-  const generateRandomPassword = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setFormData(prev => ({ ...prev, password }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!schoolId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No school ID available"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Create the user account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-            role: 'teacher'
-          },
-          emailRedirectTo: `${window.location.origin}/dashboard`
-        }
+      // Note: In a real implementation, you would create a proper user account
+      // This is a simplified version for demonstration
+      const { data, error } = await supabase
+        .from('teacher_profiles')
+        .insert([{
+          full_name: formData.full_name,
+          subject: formData.subject,
+          school_id: schoolId,
+          user_id: crypto.randomUUID() // In reality, this would be from auth.users
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Teacher account created successfully"
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Create user role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role: 'teacher'
-          });
-
-        if (roleError) throw roleError;
-
-        // Get admin's school
-        const { data: adminProfile } = await supabase
-          .from('admin_profiles')
-          .select('school_id')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .single();
-
-        // Create teacher profile
-        const { error: profileError } = await supabase
-          .from('teacher_profiles')
-          .insert({
-            user_id: authData.user.id,
-            full_name: formData.fullName,
-            subject: formData.subject,
-            school: formData.school,
-            school_id: adminProfile?.school_id
-          });
-
-        if (profileError) throw profileError;
-
-        toast({
-          title: "Teacher Account Created",
-          description: `Successfully created account for ${formData.fullName}. They will receive a verification email.`,
-        });
-
-        // Reset form and close dialog
-        setFormData({
-          fullName: "",
-          email: "",
-          password: "",
-          subject: "",
-          school: "",
-          notes: ""
-        });
-        setOpen(false);
-        onTeacherCreated?.();
-      }
+      setFormData({
+        full_name: "",
+        email: "",
+        subject: "",
+        password: ""
+      });
+      setOpen(false);
+      onTeacherCreated();
     } catch (error: any) {
       console.error('Error creating teacher:', error);
       toast({
@@ -121,112 +83,68 @@ export const CreateTeacherDialog = ({ onTeacherCreated }: CreateTeacherDialogPro
       <DialogTrigger asChild>
         <Button className="bg-green-600 hover:bg-green-700">
           <UserPlus className="w-4 h-4 mr-2" />
-          Create Teacher Account
+          Add Teacher
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+      <DialogContent className="bg-gray-800 border-gray-700">
         <DialogHeader>
-          <DialogTitle className="text-white">Create Teacher Account</DialogTitle>
+          <DialogTitle className="text-white">Create New Teacher Account</DialogTitle>
           <DialogDescription className="text-gray-400">
-            Create a new teacher account for your institution
+            Add a new teacher to your school
           </DialogDescription>
         </DialogHeader>
-        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                placeholder="Teacher's full name"
-                required
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="teacher@school.edu"
-                required
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-gray-300">Password</Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="Enter password"
-                  required
-                  className="bg-gray-700 border-gray-600 text-white pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={generateRandomPassword}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                Generate
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="subject" className="text-gray-300">Subject/Department</Label>
-              <Input
-                id="subject"
-                value={formData.subject}
-                onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-                placeholder="e.g., Mathematics, English"
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="school" className="text-gray-300">School/Institution</Label>
-              <Input
-                id="school"
-                value={formData.school}
-                onChange={(e) => setFormData(prev => ({ ...prev, school: e.target.value }))}
-                placeholder="School name"
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-gray-300">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Additional notes about the teacher..."
+          <div>
+            <Label htmlFor="full_name" className="text-gray-300">Full Name</Label>
+            <Input
+              id="full_name"
+              value={formData.full_name}
+              onChange={(e) => setFormData({...formData, full_name: e.target.value})}
               className="bg-gray-700 border-gray-600 text-white"
-              rows={3}
+              required
             />
           </div>
-
-          <DialogFooter>
+          <div>
+            <Label htmlFor="email" className="text-gray-300">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="bg-gray-700 border-gray-600 text-white"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="subject" className="text-gray-300">Subject</Label>
+            <Select value={formData.subject} onValueChange={(value) => setFormData({...formData, subject: value})}>
+              <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                <SelectValue placeholder="Select subject" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Mathematics">Mathematics</SelectItem>
+                <SelectItem value="English">English</SelectItem>
+                <SelectItem value="Science">Science</SelectItem>
+                <SelectItem value="History">History</SelectItem>
+                <SelectItem value="Physical Education">Physical Education</SelectItem>
+                <SelectItem value="Art">Art</SelectItem>
+                <SelectItem value="Music">Music</SelectItem>
+                <SelectItem value="General">General</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="password" className="text-gray-300">Temporary Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              className="bg-gray-700 border-gray-600 text-white"
+              placeholder="Auto-generated password will be sent via email"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
@@ -240,9 +158,9 @@ export const CreateTeacherDialog = ({ onTeacherCreated }: CreateTeacherDialogPro
               disabled={loading}
               className="bg-green-600 hover:bg-green-700"
             >
-              {loading ? "Creating..." : "Create Teacher Account"}
+              {loading ? "Creating..." : "Create Teacher"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

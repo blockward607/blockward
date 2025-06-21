@@ -22,7 +22,11 @@ interface Teacher {
   is_active: boolean;
 }
 
-export const TeacherManagement = () => {
+interface TeacherManagementProps {
+  schoolId?: string | null;
+}
+
+export const TeacherManagement = ({ schoolId }: TeacherManagementProps) => {
   const { toast } = useToast();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,14 +34,25 @@ export const TeacherManagement = () => {
   const [subjectFilter, setSubjectFilter] = useState("all");
 
   useEffect(() => {
-    loadTeachers();
-  }, []);
+    if (schoolId) {
+      loadTeachers();
+    }
+  }, [schoolId]);
 
   const loadTeachers = async () => {
+    if (!schoolId) {
+      console.log('TeacherManagement: No school ID provided');
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log('TeacherManagement: Loading teachers for school:', schoolId);
+      
       const { data: teacherProfiles, error } = await supabase
         .from('teacher_profiles')
         .select('*')
+        .eq('school_id', schoolId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -47,11 +62,12 @@ export const TeacherManagement = () => {
         user_id: profile.user_id,
         full_name: profile.full_name || 'Unknown Teacher',
         subject: profile.subject || 'General',
-        school: profile.school || 'Default School',
+        school: profile.school || 'Current School',
         created_at: profile.created_at,
         is_active: true
       })) || [];
 
+      console.log('TeacherManagement: Loaded', teachersData.length, 'teachers for school');
       setTeachers(teachersData);
     } catch (error) {
       console.error('Error loading teachers:', error);
@@ -114,6 +130,16 @@ export const TeacherManagement = () => {
     );
   }
 
+  if (!schoolId) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center text-gray-400">
+          <p>No school assigned to admin account</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -121,7 +147,7 @@ export const TeacherManagement = () => {
           <h2 className="text-2xl font-bold text-white">Teacher Management</h2>
           <p className="text-gray-400">Manage teacher accounts, passwords, and class assignments</p>
         </div>
-        <CreateTeacherDialog onTeacherCreated={loadTeachers} />
+        <CreateTeacherDialog onTeacherCreated={loadTeachers} schoolId={schoolId} />
       </div>
 
       {/* Filters */}
@@ -165,67 +191,75 @@ export const TeacherManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-gray-300">Teacher</TableHead>
-                <TableHead className="text-gray-300">Subject</TableHead>
-                <TableHead className="text-gray-300">School</TableHead>
-                <TableHead className="text-gray-300">Status</TableHead>
-                <TableHead className="text-gray-300">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTeachers.map((teacher) => (
-                <TableRow key={teacher.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium text-white">{teacher.full_name}</div>
-                      <div className="text-sm text-gray-400">ID: {teacher.id.slice(0, 8)}...</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-blue-400 border-blue-400">
-                      {teacher.subject}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-gray-300">{teacher.school}</TableCell>
-                  <TableCell>
-                    <Badge variant={teacher.is_active ? 'default' : 'secondary'}>
-                      {teacher.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => resetTeacherPassword(teacher.id)}
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                      >
-                        <Key className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => toggleTeacherStatus(teacher.id, teacher.is_active)}
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                      >
-                        {teacher.is_active ? <Ban className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-red-600 text-red-400 hover:bg-red-600/20"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {filteredTeachers.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <GraduationCap className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No teachers found for your school</p>
+              <p className="text-sm mt-2">Add teachers to get started</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-300">Teacher</TableHead>
+                  <TableHead className="text-gray-300">Subject</TableHead>
+                  <TableHead className="text-gray-300">School</TableHead>
+                  <TableHead className="text-gray-300">Status</TableHead>
+                  <TableHead className="text-gray-300">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredTeachers.map((teacher) => (
+                  <TableRow key={teacher.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium text-white">{teacher.full_name}</div>
+                        <div className="text-sm text-gray-400">ID: {teacher.id.slice(0, 8)}...</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-blue-400 border-blue-400">
+                        {teacher.subject}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-gray-300">{teacher.school}</TableCell>
+                    <TableCell>
+                      <Badge variant={teacher.is_active ? 'default' : 'secondary'}>
+                        {teacher.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => resetTeacherPassword(teacher.id)}
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        >
+                          <Key className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleTeacherStatus(teacher.id, teacher.is_active)}
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        >
+                          {teacher.is_active ? <Ban className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-600 text-red-400 hover:bg-red-600/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

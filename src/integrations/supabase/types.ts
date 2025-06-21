@@ -635,7 +635,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          school_id: string | null
+          school_id: string
           section: string | null
           teacher_id: string | null
           updated_at: string | null
@@ -645,7 +645,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          school_id?: string | null
+          school_id: string
           section?: string | null
           teacher_id?: string | null
           updated_at?: string | null
@@ -655,7 +655,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          school_id?: string | null
+          school_id?: string
           section?: string | null
           teacher_id?: string | null
           updated_at?: string | null
@@ -1497,7 +1497,7 @@ export type Database = {
           name: string
           points: number | null
           school: string | null
-          school_id: string | null
+          school_id: string
           user_id: string | null
           year_group_id: string | null
         }
@@ -1507,7 +1507,7 @@ export type Database = {
           name: string
           points?: number | null
           school?: string | null
-          school_id?: string | null
+          school_id: string
           user_id?: string | null
           year_group_id?: string | null
         }
@@ -1517,7 +1517,7 @@ export type Database = {
           name?: string
           points?: number | null
           school?: string | null
-          school_id?: string | null
+          school_id?: string
           user_id?: string | null
           year_group_id?: string | null
         }
@@ -1629,7 +1629,7 @@ export type Database = {
           id: string
           remaining_credits: number | null
           school: string | null
-          school_id: string | null
+          school_id: string
           subject: string | null
           updated_at: string | null
           user_id: string | null
@@ -1641,7 +1641,7 @@ export type Database = {
           id?: string
           remaining_credits?: number | null
           school?: string | null
-          school_id?: string | null
+          school_id: string
           subject?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -1653,7 +1653,7 @@ export type Database = {
           id?: string
           remaining_credits?: number | null
           school?: string | null
-          school_id?: string | null
+          school_id?: string
           subject?: string | null
           updated_at?: string | null
           user_id?: string | null

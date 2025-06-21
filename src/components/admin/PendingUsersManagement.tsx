@@ -1,11 +1,14 @@
+
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, User, CheckCircle, X, Eye } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, GraduationCap, Eye } from "lucide-react";
 
 interface PendingUser {
   id: string;
@@ -15,33 +18,47 @@ interface PendingUser {
   institution_code: string;
   status: string;
   created_at: string;
-  additional_info: any;
+  additional_info?: any;
 }
 
-interface ApiResponse {
-  success: boolean;
-  error?: string;
-  message?: string;
+interface PendingUsersManagementProps {
+  schoolId?: string | null;
 }
 
-export const PendingUsersManagement = () => {
+export const PendingUsersManagement = ({ schoolId }: PendingUsersManagementProps) => {
   const { toast } = useToast();
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [processing, setProcessing] = useState<string | null>(null);
 
   useEffect(() => {
-    loadPendingUsers();
-  }, []);
+    if (schoolId) {
+      loadPendingUsers();
+    }
+  }, [schoolId]);
 
   const loadPendingUsers = async () => {
+    if (!schoolId) {
+      console.log('PendingUsersManagement: No school ID provided');
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log('PendingUsersManagement: Loading pending users for school:', schoolId);
+      
       const { data, error } = await supabase
         .from('pending_users')
         .select('*')
+        .eq('school_id', schoolId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      console.log('PendingUsersManagement: Loaded', data?.length || 0, 'pending users');
       setPendingUsers(data || []);
     } catch (error) {
       console.error('Error loading pending users:', error);
@@ -55,70 +72,40 @@ export const PendingUsersManagement = () => {
     }
   };
 
-  const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
+  const processUser = async (userId: string, action: 'approve' | 'reject', reason?: string) => {
     try {
+      setProcessing(userId);
+      
       const { data, error } = await supabase.rpc('process_pending_user', {
         p_pending_user_id: userId,
         p_action: action,
-        p_rejection_reason: action === 'reject' ? 'Manual rejection by admin' : null
+        p_rejection_reason: reason || null
       });
 
       if (error) throw error;
 
-      // Handle the response properly - data might be boolean or object
-      const success = data === true || (typeof data === 'object' && data !== null);
-      
-      if (success) {
+      if (data?.success) {
         toast({
           title: action === 'approve' ? "User Approved" : "User Rejected",
-          description: `User has been ${action}d successfully`
+          description: data.message
         });
         
         // Remove from pending list
-        setPendingUsers(pendingUsers.filter(user => user.id !== userId));
+        setPendingUsers(prev => prev.filter(user => user.id !== userId));
+        setSelectedUser(null);
+        setRejectionReason("");
       } else {
-        throw new Error('Operation failed');
+        throw new Error(data?.error || 'Unknown error occurred');
       }
     } catch (error: any) {
-      console.error(`Error ${action}ing user:`, error);
+      console.error('Error processing user:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || `Failed to ${action} user`
+        description: error.message || "Failed to process user request"
       });
-    }
-  };
-
-  const handleReject = async (userId: string) => {
-    try {
-      const { data, error } = await supabase.rpc('process_pending_user', {
-        p_pending_user_id: userId,
-        p_action: 'reject',
-        p_rejection_reason: 'Manual rejection by admin'
-      });
-
-      if (error) throw error;
-
-      // Handle the response properly - data might be boolean or object
-      const success = data === true || (typeof data === 'object' && data !== null);
-      
-      if (success) {
-        toast({
-          title: "User Rejected",
-          description: "User request has been rejected"
-        });
-        
-        setPendingUsers(pendingUsers.filter(user => user.id !== userId));
-      } else {
-        throw new Error('Operation failed');
-      }
-    } catch (error: any) {
-      console.error('Error rejecting user:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to reject user"
-      });
+    } finally {
+      setProcessing(null);
     }
   };
 
@@ -130,11 +117,23 @@ export const PendingUsersManagement = () => {
     );
   }
 
+  if (!schoolId) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center text-gray-400">
+          <p>No school assigned to admin account</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Pending User Requests</h2>
-        <p className="text-gray-400">Review and approve new teacher and student signup requests</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Pending User Requests</h2>
+          <p className="text-gray-400">Review and approve new teacher and student signup requests</p>
+        </div>
       </div>
 
       <Card className="bg-gray-800 border-gray-700">
@@ -143,15 +142,13 @@ export const PendingUsersManagement = () => {
             <Clock className="w-5 h-5" />
             Pending Requests ({pendingUsers.length})
           </CardTitle>
-          <CardDescription className="text-gray-400">
-            Users waiting for approval to join your institution
-          </CardDescription>
         </CardHeader>
         <CardContent>
           {pendingUsers.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No pending requests</p>
+              <p className="text-sm mt-2">All signup requests have been processed</p>
             </div>
           ) : (
             <Table>
@@ -175,7 +172,10 @@ export const PendingUsersManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.role === 'teacher' ? 'default' : 'secondary'}>
-                        {user.role}
+                        <div className="flex items-center gap-1">
+                          {user.role === 'teacher' ? <GraduationCap className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                          {user.role}
+                        </div>
                       </Badge>
                     </TableCell>
                     <TableCell className="text-gray-300">{user.institution_code}</TableCell>
@@ -184,22 +184,109 @@ export const PendingUsersManagement = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedUser(user)}
+                              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-gray-800 border-gray-700">
+                            <DialogHeader>
+                              <DialogTitle className="text-white">Review User Request</DialogTitle>
+                              <DialogDescription className="text-gray-400">
+                                Review the details and approve or reject this user request
+                              </DialogDescription>
+                            </DialogHeader>
+                            {selectedUser && (
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-300">Full Name</label>
+                                    <p className="text-white">{selectedUser.full_name}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-300">Email</label>
+                                    <p className="text-white">{selectedUser.email}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-300">Role</label>
+                                    <p className="text-white capitalize">{selectedUser.role}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-300">Institution Code</label>
+                                    <p className="text-white">{selectedUser.institution_code}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-300">Requested At</label>
+                                    <p className="text-white">{new Date(selectedUser.created_at).toLocaleString()}</p>
+                                  </div>
+                                </div>
+                                
+                                {selectedUser.additional_info && Object.keys(selectedUser.additional_info).length > 0 && (
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-300">Additional Information</label>
+                                    <pre className="text-white text-sm mt-1 bg-gray-700 p-2 rounded">
+                                      {JSON.stringify(selectedUser.additional_info, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                                
+                                <div className="pt-4 border-t border-gray-600">
+                                  <div className="space-y-3">
+                                    <Textarea
+                                      placeholder="Rejection reason (optional for rejection)"
+                                      value={rejectionReason}
+                                      onChange={(e) => setRejectionReason(e.target.value)}
+                                      className="bg-gray-700 border-gray-600 text-white"
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => processUser(selectedUser.id, 'reject', rejectionReason)}
+                                        disabled={processing === selectedUser.id}
+                                        className="border-red-600 text-red-400 hover:bg-red-600/20"
+                                      >
+                                        <XCircle className="w-4 h-4 mr-2" />
+                                        Reject
+                                      </Button>
+                                      <Button
+                                        onClick={() => processUser(selectedUser.id, 'approve')}
+                                        disabled={processing === selectedUser.id}
+                                        className="bg-green-600 hover:bg-green-700"
+                                      >
+                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                        Approve
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                        
                         <Button
                           size="sm"
-                          onClick={() => handleApproval(user.id, 'approve')}
+                          onClick={() => processUser(user.id, 'approve')}
+                          disabled={processing === user.id}
                           className="bg-green-600 hover:bg-green-700"
                         >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Approve
+                          <CheckCircle className="w-4 h-4" />
                         </Button>
+                        
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleReject(user.id)}
+                          onClick={() => processUser(user.id, 'reject')}
+                          disabled={processing === user.id}
                           className="border-red-600 text-red-400 hover:bg-red-600/20"
                         >
-                          <X className="w-4 h-4 mr-1" />
-                          Reject
+                          <XCircle className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>

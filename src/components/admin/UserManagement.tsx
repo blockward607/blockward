@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,107 +21,96 @@ interface User {
   profile_name?: string;
 }
 
-export const UserManagement = () => {
+interface UserManagementProps {
+  schoolId?: string | null;
+}
+
+export const UserManagement = ({ schoolId }: UserManagementProps) => {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading,0] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (schoolId) {
+      loadUsers();
+    }
+  }, [schoolId]);
 
   useEffect(() => {
     filterUsers();
   }, [users, searchTerm, roleFilter]);
 
   const loadUsers = async () => {
-    console.log('UserManagement: Loading users');
+    if (!schoolId) {
+      console.log('UserManagement: No school ID provided');
+      setLoading(false);
+      return;
+    }
+
+    console.log('UserManagement: Loading users for school:', schoolId);
     
     try {
       setLoading(true);
       
-      // First, get basic user roles
-      console.log('UserManagement: Fetching user roles');
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) {
-        console.error('UserManagement: Error fetching user roles:', rolesError);
-        throw rolesError;
+      // Get students for this school
+      console.log('UserManagement: Fetching students for school:', schoolId);
+      const { data: students, error: studentsError } = await supabase
+        .from('students')
+        .select('user_id, name')
+        .eq('school_id', schoolId);
+        
+      if (studentsError) {
+        console.warn('UserManagement: Error fetching students:', studentsError);
       }
 
-      console.log('UserManagement: Found user roles:', userRoles?.length);
-
-      if (!userRoles || userRoles.length === 0) {
-        console.log('UserManagement: No user roles found');
-        setUsers([]);
-        return;
-      }
-
-      // Get student profiles separately
-      const studentIds = userRoles.filter(ur => ur.role === 'student').map(ur => ur.user_id);
-      let studentProfiles: any[] = [];
-      
-      if (studentIds.length > 0) {
-        console.log('UserManagement: Fetching student profiles for', studentIds.length, 'students');
-        const { data: students, error: studentsError } = await supabase
-          .from('students')
-          .select('user_id, name')
-          .in('user_id', studentIds);
-          
-        if (studentsError) {
-          console.warn('UserManagement: Error fetching students:', studentsError);
-        } else {
-          studentProfiles = students || [];
-        }
-      }
-
-      // Get teacher profiles separately
-      const teacherIds = userRoles.filter(ur => ur.role === 'teacher' || ur.role === 'admin').map(ur => ur.user_id);
-      let teacherProfiles: any[] = [];
-      
-      if (teacherIds.length > 0) {
-        console.log('UserManagement: Fetching teacher profiles for', teacherIds.length, 'teachers');
-        const { data: teachers, error: teachersError } = await supabase
-          .from('teacher_profiles')
-          .select('user_id, full_name')
-          .in('user_id', teacherIds);
-          
-        if (teachersError) {
-          console.warn('UserManagement: Error fetching teachers:', teachersError);
-        } else {
-          teacherProfiles = teachers || [];
-        }
+      // Get teachers for this school
+      console.log('UserManagement: Fetching teachers for school:', schoolId);
+      const { data: teachers, error: teachersError } = await supabase
+        .from('teacher_profiles')
+        .select('user_id, full_name')
+        .eq('school_id', schoolId);
+        
+      if (teachersError) {
+        console.warn('UserManagement: Error fetching teachers:', teachersError);
       }
 
       // Combine data
-      const userList: User[] = userRoles.map(userRole => {
-        let profileName = 'Anonymous User';
-        
-        if (userRole.role === 'student') {
-          const studentProfile = studentProfiles.find(s => s.user_id === userRole.user_id);
-          profileName = studentProfile?.name || 'Student User';
-        } else {
-          const teacherProfile = teacherProfiles.find(t => t.user_id === userRole.user_id);
-          profileName = teacherProfile?.full_name || 'Teacher User';
-        }
+      const userList: User[] = [];
+      
+      // Add students
+      if (students && students.length > 0) {
+        students.forEach(student => {
+          userList.push({
+            id: student.user_id,
+            email: `student-${student.user_id.slice(0, 8)}@school.edu`,
+            role: 'student',
+            created_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+            is_active: true,
+            profile_name: student.name || 'Student User'
+          });
+        });
+      }
 
-        return {
-          id: userRole.user_id,
-          email: `user-${userRole.user_id.slice(0, 8)}@school.edu`,
-          role: userRole.role,
-          created_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString(),
-          is_active: true,
-          profile_name: profileName
-        };
-      });
+      // Add teachers
+      if (teachers && teachers.length > 0) {
+        teachers.forEach(teacher => {
+          userList.push({
+            id: teacher.user_id,
+            email: `teacher-${teacher.user_id.slice(0, 8)}@school.edu`,
+            role: 'teacher',
+            created_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+            is_active: true,
+            profile_name: teacher.full_name || 'Teacher User'
+          });
+        });
+      }
 
-      console.log('UserManagement: Successfully loaded', userList.length, 'users');
+      console.log('UserManagement: Successfully loaded', userList.length, 'users for school');
       setUsers(userList);
     } catch (error: any) {
       console.error('UserManagement: Error loading users:', error);
@@ -129,7 +119,6 @@ export const UserManagement = () => {
         title: "Error",
         description: "Failed to load users. Please try again."
       });
-      // Set empty array on error so UI can still render
       setUsers([]);
     } finally {
       console.log('UserManagement: Setting loading to false');
@@ -200,18 +189,28 @@ export const UserManagement = () => {
     );
   }
 
+  if (!schoolId) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center text-gray-400">
+          <p>No school assigned to admin account</p>
+        </div>
+      </div>
+    );
+  }
+
   console.log('UserManagement: Rendering user list with', filteredUsers.length, 'users');
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">User Management</h2>
-          <p className="text-gray-400">Manage all platform users and their permissions</p>
+          <h2 className="text-2xl font-bold text-white">Student Management</h2>
+          <p className="text-gray-400">Manage all students in your school</p>
         </div>
         <Button className="bg-green-600 hover:bg-green-700">
           <UserPlus className="w-4 h-4 mr-2" />
-          Add New User
+          Add New Student
         </Button>
       </div>
 
@@ -236,7 +235,6 @@ export const UserManagement = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="teacher">Teacher</SelectItem>
                 <SelectItem value="student">Student</SelectItem>
               </SelectContent>
@@ -254,74 +252,82 @@ export const UserManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-gray-300">User</TableHead>
-                <TableHead className="text-gray-300">Role</TableHead>
-                <TableHead className="text-gray-300">Status</TableHead>
-                <TableHead className="text-gray-300">Last Active</TableHead>
-                <TableHead className="text-gray-300">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium text-white">
-                        {user.profile_name || 'Anonymous User'}
-                      </div>
-                      <div className="text-sm text-gray-400">{user.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      user.role === 'admin' ? 'destructive' : 
-                      user.role === 'teacher' ? 'default' : 'secondary'
-                    }>
-                      {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                      {user.is_active ? 'Active' : 'Suspended'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-gray-300">
-                    {new Date(user.last_sign_in_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => toggleUserStatus(user.id, user.is_active)}
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                      >
-                        {user.is_active ? <Ban className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => resetUserPassword(user.id)}
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                      >
-                        <Shield className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-red-600 text-red-400 hover:bg-red-600/20"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No users found for your school</p>
+              <p className="text-sm mt-2">Add students and teachers to get started</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-300">User</TableHead>
+                  <TableHead className="text-gray-300">Role</TableHead>
+                  <TableHead className="text-gray-300">Status</TableHead>
+                  <TableHead className="text-gray-300">Last Active</TableHead>
+                  <TableHead className="text-gray-300">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium text-white">
+                          {user.profile_name || 'Anonymous User'}
+                        </div>
+                        <div className="text-sm text-gray-400">{user.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        user.role === 'admin' ? 'destructive' : 
+                        user.role === 'teacher' ? 'default' : 'secondary'
+                      }>
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                        {user.is_active ? 'Active' : 'Suspended'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      {new Date(user.last_sign_in_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleUserStatus(user.id, user.is_active)}
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        >
+                          {user.is_active ? <Ban className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => resetUserPassword(user.id)}
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        >
+                          <Shield className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-600 text-red-400 hover:bg-red-600/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

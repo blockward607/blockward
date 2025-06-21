@@ -30,7 +30,11 @@ interface Teacher {
   full_name: string;
 }
 
-export const ClassManagement = () => {
+interface ClassManagementProps {
+  schoolId?: string | null;
+}
+
+export const ClassManagement = ({ schoolId }: ClassManagementProps) => {
   const { toast } = useToast();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -39,32 +43,44 @@ export const ClassManagement = () => {
   const [editingClass, setEditingClass] = useState<Classroom | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
+    description: "",  
     section: "",
     teacher_id: ""
   });
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (schoolId) {
+      loadData();
+    }
+  }, [schoolId]);
 
   const loadData = async () => {
+    if (!schoolId) {
+      console.log('ClassManagement: No school ID provided');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Load classrooms with teacher info and student counts
+      console.log('ClassManagement: Loading data for school:', schoolId);
+      
+      // Load classrooms with teacher info and student counts for this school only
       const { data: classroomsData, error: classroomsError } = await supabase
         .from('classrooms')
         .select(`
           *,
           teacher_profiles!inner(full_name),
           classroom_students(count)
-        `);
+        `)
+        .eq('school_id', schoolId);
 
       if (classroomsError) throw classroomsError;
 
-      // Load teachers
+      // Load teachers for this school only
       const { data: teachersData, error: teachersError } = await supabase
         .from('teacher_profiles')
-        .select('*');
+        .select('*')
+        .eq('school_id', schoolId);
 
       if (teachersError) throw teachersError;
 
@@ -75,6 +91,7 @@ export const ClassManagement = () => {
       })) || []);
       
       setTeachers(teachersData || []);
+      console.log('ClassManagement: Loaded', classroomsData?.length || 0, 'classrooms and', teachersData?.length || 0, 'teachers');
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -90,11 +107,25 @@ export const ClassManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!schoolId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No school ID available"
+      });
+      return;
+    }
+    
     try {
+      const dataToSubmit = {
+        ...formData,
+        school_id: schoolId
+      };
+
       if (editingClass) {
         const { error } = await supabase
           .from('classrooms')
-          .update(formData)
+          .update(dataToSubmit)
           .eq('id', editingClass.id);
 
         if (error) throw error;
@@ -106,7 +137,7 @@ export const ClassManagement = () => {
       } else {
         const { error } = await supabase
           .from('classrooms')
-          .insert([formData]);
+          .insert([dataToSubmit]);
 
         if (error) throw error;
 
@@ -184,6 +215,16 @@ export const ClassManagement = () => {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (!schoolId) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center text-gray-400">
+          <p>No school assigned to admin account</p>
+        </div>
       </div>
     );
   }
@@ -287,7 +328,7 @@ export const ClassManagement = () => {
             Classrooms ({classrooms.length})
           </CardTitle>
           <CardDescription className="text-gray-400">
-            Manage all classrooms in your institution
+            Manage all classrooms in your school
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -295,6 +336,7 @@ export const ClassManagement = () => {
             <div className="text-center py-8 text-gray-400">
               <School className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No classrooms created yet</p>
+              <p className="text-sm mt-2">Create your first classroom to get started</p>
             </div>
           ) : (
             <Table>

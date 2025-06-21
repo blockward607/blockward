@@ -64,6 +64,7 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [user, setUser] = useState<any>(null);
+  const [adminSchoolId, setAdminSchoolId] = useState<string | null>(null);
   const [stats, setStats] = useState<AdminStats>({
     totalStudents: 0,
     totalTeachers: 0,
@@ -96,15 +97,15 @@ const AdminDashboard = () => {
         console.log('AdminDashboard: Session found for user:', session.user.id);
         setUser(session.user);
 
-        // Check if user is admin
-        const { data: userRole, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
+        // Check if user is admin and get their school_id
+        const { data: adminProfile, error: adminError } = await supabase
+          .from('admin_profiles')
+          .select('school_id, full_name')
           .eq('user_id', session.user.id)
           .single();
 
-        if (roleError && roleError.code !== 'PGRST116') {
-          console.error('AdminDashboard: Error checking user role:', roleError);
+        if (adminError && adminError.code !== 'PGRST116') {
+          console.error('AdminDashboard: Error checking admin profile:', adminError);
           toast({
             variant: "destructive",
             title: "Authentication Error",
@@ -114,7 +115,7 @@ const AdminDashboard = () => {
           return;
         }
 
-        if (!userRole || userRole.role !== 'admin') {
+        if (!adminProfile) {
           console.log('AdminDashboard: User is not admin');
           toast({
             variant: "destructive",
@@ -125,8 +126,9 @@ const AdminDashboard = () => {
           return;
         }
 
-        console.log('AdminDashboard: Admin access confirmed, loading stats');
-        await fetchAdminStats();
+        console.log('AdminDashboard: Admin access confirmed for school:', adminProfile.school_id);
+        setAdminSchoolId(adminProfile.school_id);
+        await fetchAdminStats(adminProfile.school_id);
       } catch (error) {
         console.error('AdminDashboard: Initialization error:', error);
         toast({
@@ -143,20 +145,20 @@ const AdminDashboard = () => {
     initializeDashboard();
   }, [navigate, toast]);
 
-  const fetchAdminStats = async () => {
-    console.log('AdminDashboard: Fetching admin statistics');
+  const fetchAdminStats = async (schoolId: string) => {
+    console.log('AdminDashboard: Fetching admin statistics for school:', schoolId);
     
     try {
       const results = await Promise.allSettled([
-        supabase.from('students').select('id', { count: 'exact' }),
-        supabase.from('teacher_profiles').select('id', { count: 'exact' }),
-        supabase.from('classrooms').select('id', { count: 'exact' }),
+        supabase.from('students').select('id', { count: 'exact' }).eq('school_id', schoolId),
+        supabase.from('teacher_profiles').select('id', { count: 'exact' }).eq('school_id', schoolId),
+        supabase.from('classrooms').select('id', { count: 'exact' }).eq('school_id', schoolId),
         supabase.from('assignments').select('id', { count: 'exact' }),
         supabase.from('nfts').select('id', { count: 'exact' }),
         supabase.from('grades').select('id', { count: 'exact' }),
         supabase.from('classroom_codes').select('usage_count').eq('is_active', true),
         supabase.from('behavior_records').select('id', { count: 'exact' }).eq('resolved', false),
-        supabase.from('pending_users').select('id', { count: 'exact' }).eq('status', 'pending')
+        supabase.from('pending_users').select('id', { count: 'exact' }).eq('status', 'pending').eq('school_id', schoolId)
       ]);
 
       const studentsCount = results[0].status === 'fulfilled' ? results[0].value.count || 0 : 0;
@@ -186,7 +188,7 @@ const AdminDashboard = () => {
         pendingUsers: pendingUsers
       });
 
-      console.log('AdminDashboard: Stats updated successfully');
+      console.log('AdminDashboard: Stats updated successfully for school-specific data');
     } catch (error) {
       console.error('AdminDashboard: Error fetching stats:', error);
     }
@@ -338,11 +340,11 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                {activeTab === "pending" && <PendingUsersManagement />}
-                {activeTab === "teachers" && <TeacherManagement />}
-                {activeTab === "students" && <UserManagement />}
+                {activeTab === "pending" && <PendingUsersManagement schoolId={adminSchoolId} />}
+                {activeTab === "teachers" && <TeacherManagement schoolId={adminSchoolId} />}
+                {activeTab === "students" && <UserManagement schoolId={adminSchoolId} />}
                 {activeTab === "institution" && <InstitutionCodeManager />}
-                {activeTab === "classes" && <ClassManagement />}
+                {activeTab === "classes" && <ClassManagement schoolId={adminSchoolId} />}
                 {activeTab === "announcements" && <AnnouncementManagement />}
                 {activeTab === "reports" && <ReportsAnalytics />}
                 {activeTab === "moderation" && <ContentModeration />}
