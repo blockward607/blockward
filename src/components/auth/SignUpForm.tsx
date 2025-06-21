@@ -29,6 +29,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
   });
   const [institutionValid, setInstitutionValid] = useState(false);
   const [validatedSchoolName, setValidatedSchoolName] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Update formData when props change
   useState(() => {
@@ -106,6 +107,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
       return;
     }
 
+    setLoading(true);
     props.setLoading(true);
     props.setShowError(false);
 
@@ -180,6 +182,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
       props.setErrorMessage(error.message || 'Failed to create account. Please try again.');
       props.setShowError(true);
     } finally {
+      setLoading(false);
       props.setLoading(false);
     }
   };
@@ -196,9 +199,9 @@ export const SignUpForm = (props: SignUpFormProps) => {
       <Button
         type="submit"
         className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-        disabled={props.loading || props.loading}
+        disabled={loading}
       >
-        {props.loading ? "Creating Account..." : `Sign Up as ${props.role.charAt(0).toUpperCase() + props.role.slice(1)}`}
+        {loading ? "Creating Account..." : `Sign Up as ${props.role.charAt(0).toUpperCase() + props.role.slice(1)}`}
       </Button>
     </form>
   );
