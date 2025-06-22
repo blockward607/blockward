@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Database } from "@/integrations/supabase/types";
@@ -32,7 +33,7 @@ const colorGradients = [
 ];
 
 export const ClassroomGrid = ({ classroom, onDelete = () => {}, userRole }: ClassroomGridProps) => {
-  const { userRole: detectedRole, studentCount } = useClassroomData(classroom.id);
+  const { studentCount } = useClassroomData(classroom.id);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -191,7 +192,7 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {}, userRole }: Clas
                 name={classroom.name}
                 description={classroom.description}
                 id={classroom.id}
-                userRole={userRole || detectedRole}
+                userRole={userRole}
                 onDelete={onDelete}
               />
               <div className="flex items-center gap-2 mb-1">
@@ -216,7 +217,7 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {}, userRole }: Clas
             <div className="mt-auto">
               <StudentCountIndicator count={studentCount} />
               <ClassroomActions 
-                userRole={userRole || detectedRole}
+                userRole={userRole}
                 classroomId={classroom.id}
               />
             </div>
@@ -260,13 +261,13 @@ export const ClassroomGrid = ({ classroom, onDelete = () => {}, userRole }: Clas
             name={classroom.name}
             description={classroom.description}
             id={classroom.id}
-            userRole={userRole || detectedRole}
+            userRole={userRole}
             onDelete={onDelete}
           />
           <div className="mt-auto">
             <StudentCountIndicator count={studentCount} />
             <ClassroomActions 
-              userRole={userRole || detectedRole}
+              userRole={userRole}
               classroomId={classroom.id}
             />
           </div>

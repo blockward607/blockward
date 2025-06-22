@@ -13,12 +13,15 @@ const Classes = () => {
   const { 
     classrooms, 
     loading, 
-    handleClassroomCreated, 
     handleDeleteClassroom,
     selectedClassroom,
     setSelectedClassroom,
     refreshClassrooms
   } = useClassroomManagement();
+
+  const handleClassroomCreated = () => {
+    refreshClassrooms();
+  };
 
   const handleClassroomJoined = () => {
     refreshClassrooms();
