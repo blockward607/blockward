@@ -1,19 +1,20 @@
+
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface CreateClassroomDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onClassroomCreated?: () => void;
 }
 
-export const CreateClassroomDialog = ({ onClassroomCreated }: CreateClassroomDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const CreateClassroomDialog = ({ open, onOpenChange, onClassroomCreated }: CreateClassroomDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -80,7 +81,7 @@ export const CreateClassroomDialog = ({ onClassroomCreated }: CreateClassroomDia
 
       setName("");
       setDescription("");
-      setOpen(false);
+      onOpenChange(false);
       onClassroomCreated?.();
     } catch (error: any) {
       console.error('Error creating classroom:', error);
@@ -95,13 +96,7 @@ export const CreateClassroomDialog = ({ onClassroomCreated }: CreateClassroomDia
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-green-600 hover:bg-green-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Create Classroom
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-gray-800 border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-white">Create New Classroom</DialogTitle>
@@ -134,7 +129,7 @@ export const CreateClassroomDialog = ({ onClassroomCreated }: CreateClassroomDia
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
               className="border-gray-600 text-gray-300"
             >
               Cancel

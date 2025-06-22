@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface Student {
+export interface Student {
   id: string;
   name: string;
   school?: string;
@@ -14,6 +14,8 @@ interface Student {
 export const useStudentManagement = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   const loadStudents = async () => {
@@ -119,6 +121,23 @@ export const useStudentManagement = () => {
     }
   };
 
+  const addNewStudent = async (name: string, school?: string) => {
+    await addStudent(name, school || '');
+  };
+
+  const initiateDeleteStudent = (id: string) => {
+    setStudentToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteStudent = async () => {
+    if (studentToDelete) {
+      await deleteStudent(studentToDelete);
+      setStudentToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
   useEffect(() => {
     loadStudents();
   }, []);
@@ -126,8 +145,13 @@ export const useStudentManagement = () => {
   return {
     students,
     loading,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
     addStudent,
+    addNewStudent,
     deleteStudent,
+    initiateDeleteStudent,
+    confirmDeleteStudent,
     refreshStudents: loadStudents,
   };
 };

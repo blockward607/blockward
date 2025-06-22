@@ -69,6 +69,39 @@ export const ProfileService = {
   },
 
   async saveTeacherProfile(userId: string, profile: UserProfile) {
+    // First get or create a default school for teachers without one
+    let schoolId = null;
+    
+    // Try to get existing teacher profile to see if they have a school_id
+    const { data: existingProfile } = await supabase
+      .from('teacher_profiles')
+      .select('school_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (existingProfile?.school_id) {
+      schoolId = existingProfile.school_id;
+    } else {
+      // Create a default school if none exists
+      const { data: defaultSchool, error: schoolError } = await supabase
+        .from('schools')
+        .insert({
+          name: profile.school || 'Default School',
+          contact_email: 'admin@school.edu',
+          institution_code: Math.random().toString(36).substring(2, 8).toUpperCase(),
+          created_by: userId
+        })
+        .select()
+        .single();
+      
+      if (schoolError) {
+        console.error('Error creating default school:', schoolError);
+        throw new Error('Failed to create school profile');
+      }
+      
+      schoolId = defaultSchool.id;
+    }
+
     const { error } = await supabase
       .from('teacher_profiles')
       .upsert({
@@ -77,6 +110,7 @@ export const ProfileService = {
         school: profile.school.trim() || null,
         subject: profile.subject.trim() || null,
         avatar_url: profile.avatarUrl,
+        school_id: schoolId,
         updated_at: new Date().toISOString()
       }, { 
         onConflict: 'user_id'
@@ -89,12 +123,45 @@ export const ProfileService = {
   },
 
   async saveStudentProfile(userId: string, profile: UserProfile) {
+    // First get or create a default school for students without one
+    let schoolId = null;
+    
+    // Try to get existing student profile to see if they have a school_id
+    const { data: existingProfile } = await supabase
+      .from('students')
+      .select('school_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (existingProfile?.school_id) {
+      schoolId = existingProfile.school_id;
+    } else {
+      // Create a default school if none exists
+      const { data: defaultSchool, error: schoolError } = await supabase
+        .from('schools')
+        .insert({
+          name: profile.school || 'Default School',
+          contact_email: 'admin@school.edu',
+          institution_code: Math.random().toString(36).substring(2, 8).toUpperCase()
+        })
+        .select()
+        .single();
+      
+      if (schoolError) {
+        console.error('Error creating default school:', schoolError);
+        throw new Error('Failed to create school profile');
+      }
+      
+      schoolId = defaultSchool.id;
+    }
+
     const { error } = await supabase
       .from('students')
       .upsert({
         user_id: userId,
         name: profile.fullName.trim(),
-        school: profile.school.trim() || null
+        school: profile.school.trim() || null,
+        school_id: schoolId
       }, { 
         onConflict: 'user_id'
       });

@@ -13,11 +13,28 @@ export const StudentProfileService = {
   
   // Create student profile
   async createStudentProfile(userId: string, name: string) {
+    // Create a default school if needed
+    const { data: defaultSchool, error: schoolError } = await supabase
+      .from('schools')
+      .insert({
+        name: 'Default School',
+        contact_email: 'admin@school.edu',
+        institution_code: Math.random().toString(36).substring(2, 8).toUpperCase()
+      })
+      .select()
+      .single();
+    
+    if (schoolError) {
+      console.error('Error creating default school:', schoolError);
+      throw new Error('Failed to create school profile');
+    }
+
     return await supabase
       .from('students')
       .insert({
         user_id: userId,
-        name: name || 'Student'
+        name: name || 'Student',
+        school_id: defaultSchool.id
       })
       .select()
       .single();
