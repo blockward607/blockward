@@ -16,21 +16,8 @@ const AdminLogin = () => {
     password,
     setPassword,
     loading,
-    isInitializing,
     handleAdminLogin,
   } = useAdminAuth();
-
-  // Show loading state during initialization
-  if (isInitializing) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/50 to-black flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-400 mx-auto mb-4"></div>
-          <p className="text-red-300 text-lg">Verifying credentials...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/50 to-black flex items-center justify-center p-4">
@@ -60,16 +47,6 @@ const AdminLogin = () => {
               loading={loading}
               onSubmit={handleAdminLogin}
             />
-
-            <div className="mt-6 text-center">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/auth')}
-                className="text-red-400 hover:text-red-300 hover:bg-red-950/30"
-              >
-                ← Regular user login
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </motion.div>

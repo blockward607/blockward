@@ -8,26 +8,16 @@ export const useAdminAuth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('useAdminAuth: Checking initial auth state');
-    
-    const checkInitialAuth = async () => {
+    // Check for existing admin session in background without showing loading
+    const checkExistingSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('useAdminAuth: Session error:', error);
-          setIsInitializing(false);
-          return;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          console.log('useAdminAuth: Found existing session for user:', session.user.id);
-          
           // Check if user is already admin
           const { data: userRole, error: roleError } = await supabase
             .from('user_roles')
@@ -36,19 +26,16 @@ export const useAdminAuth = () => {
             .single();
 
           if (!roleError && userRole?.role === 'admin') {
-            console.log('useAdminAuth: User is admin, redirecting to dashboard');
             navigate('/admin-dashboard', { replace: true });
-            return;
           }
         }
       } catch (error) {
-        console.error('useAdminAuth: Error checking initial auth:', error);
-      } finally {
-        setIsInitializing(false);
+        // Silently handle errors - don't block the UI
+        console.error('Background auth check error:', error);
       }
     };
 
-    checkInitialAuth();
+    checkExistingSession();
   }, [navigate]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -129,7 +116,6 @@ export const useAdminAuth = () => {
     password,
     setPassword,
     loading,
-    isInitializing,
     handleAdminLogin,
   };
 };
