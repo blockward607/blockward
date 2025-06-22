@@ -84,10 +84,13 @@ export const PendingUsersManagement = ({ schoolId }: PendingUsersManagementProps
 
       if (error) throw error;
 
-      if (data?.success) {
+      // Type cast the Json response to the expected object type
+      const result = data as { success?: boolean; message?: string; error?: string } | null;
+
+      if (result?.success) {
         toast({
           title: action === 'approve' ? "User Approved" : "User Rejected",
-          description: data.message
+          description: result.message || `User has been ${action}d successfully`
         });
         
         // Remove from pending list
@@ -95,7 +98,7 @@ export const PendingUsersManagement = ({ schoolId }: PendingUsersManagementProps
         setSelectedUser(null);
         setRejectionReason("");
       } else {
-        throw new Error(data?.error || 'Unknown error occurred');
+        throw new Error(result?.error || 'Unknown error occurred');
       }
     } catch (error: any) {
       console.error('Error processing user:', error);

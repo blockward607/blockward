@@ -34,6 +34,32 @@ export const ImportDataDialog = () => {
 
     setImporting(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "You must be logged in to import data"
+        });
+        return;
+      }
+
+      // Get teacher profile to get school_id
+      const { data: teacherProfile, error: profileError } = await supabase
+        .from('teacher_profiles')
+        .select('id, school_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (profileError || !teacherProfile) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Teacher profile not found"
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = async (e) => {
         if (e.target && e.target.result) {
@@ -61,6 +87,7 @@ export const ImportDataDialog = () => {
                   .insert({
                     name: studentData.name,
                     school: studentData.school || '',
+                    school_id: teacherProfile.school_id,
                     points: studentData.points ? parseInt(studentData.points) : 0
                   });
                   
@@ -88,6 +115,7 @@ export const ImportDataDialog = () => {
                 const { data: classrooms } = await supabase
                   .from('classrooms')
                   .select('id')
+                  .eq('school_id', teacherProfile.school_id)
                   .limit(1);
                   
                 const classroomId = classrooms && classrooms.length > 0 ? classrooms[0].id : null;

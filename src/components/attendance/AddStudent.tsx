@@ -29,11 +29,24 @@ export const AddStudent = ({ classroomId, onStudentAdded }: AddStudentProps) => 
     try {
       console.log('Creating new student:', newStudentName);
       
+      // Get the classroom to find its school_id
+      const { data: classroom, error: classroomError } = await supabase
+        .from('classrooms')
+        .select('school_id')
+        .eq('id', classroomId)
+        .single();
+
+      if (classroomError) {
+        console.error('Error fetching classroom:', classroomError);
+        throw classroomError;
+      }
+
       const { data: newStudent, error: studentError } = await supabase
         .from('students')
         .insert([{ 
           name: newStudentName.trim(),
-          points: 0
+          points: 0,
+          school_id: classroom.school_id
         }])
         .select()
         .single();
@@ -45,16 +58,16 @@ export const AddStudent = ({ classroomId, onStudentAdded }: AddStudentProps) => 
 
       console.log('Student created successfully:', newStudent);
 
-      const { error: classroomError } = await supabase
+      const { error: classroomError2 } = await supabase
         .from('classroom_students')
         .insert([{
           classroom_id: classroomId,
           student_id: newStudent.id,
         }]);
 
-      if (classroomError) {
-        console.error('Error adding student to classroom:', classroomError);
-        throw classroomError;
+      if (classroomError2) {
+        console.error('Error adding student to classroom:', classroomError2);
+        throw classroomError2;
       }
 
       toast({

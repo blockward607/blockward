@@ -61,7 +61,7 @@ export function useImportDialog(course: GoogleClassroom, onClose: () => void) {
       // Get user's teacher profile
       const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
-        .select('id')
+        .select('id, school_id')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
@@ -82,6 +82,7 @@ export function useImportDialog(course: GoogleClassroom, onClose: () => void) {
             name: course.name,
             description: course.description || `Imported classroom: ${course.name}`,
             teacher_id: teacherProfile.id,
+            school_id: teacherProfile.school_id,
             section: course.section || null
           }])
           .select()
