@@ -1,6 +1,5 @@
 
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -21,12 +20,7 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/50 to-black flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
+      <div className="w-full max-w-md">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/')}
@@ -49,7 +43,7 @@ const AdminLogin = () => {
             />
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 };

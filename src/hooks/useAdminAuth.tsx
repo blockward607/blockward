@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,33 +10,6 @@ export const useAdminAuth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Check for existing admin session in background without showing loading
-    const checkExistingSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          // Check if user is already admin
-          const { data: userRole, error: roleError } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
-
-          if (!roleError && userRole?.role === 'admin') {
-            navigate('/admin-dashboard', { replace: true });
-          }
-        }
-      } catch (error) {
-        // Silently handle errors - don't block the UI
-        console.error('Background auth check error:', error);
-      }
-    };
-
-    checkExistingSession();
-  }, [navigate]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
