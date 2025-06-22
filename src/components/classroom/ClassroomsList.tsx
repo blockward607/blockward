@@ -73,4 +73,3 @@ export const ClassroomsList = ({
     </motion.div>
   );
 };
-

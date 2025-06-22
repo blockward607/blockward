@@ -5,20 +5,23 @@ import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
 import { JoinClassSection } from "@/components/classroom/JoinClassSection";
 import { useAuth } from "@/hooks/use-auth";
-import { useClassroomData } from "@/components/classroom/useClassroomData";
+import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { JoinClassProvider } from "@/components/classroom/join/JoinClassContext";
 
 const Classes = () => {
   const { userRole } = useAuth();
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { classrooms, loading } = useClassroomData(refreshTrigger);
-
-  const handleClassroomCreated = () => {
-    setRefreshTrigger(prev => prev + 1);
-  };
+  const { 
+    classrooms, 
+    loading, 
+    handleClassroomCreated, 
+    handleDeleteClassroom,
+    selectedClassroom,
+    setSelectedClassroom,
+    refreshClassrooms
+  } = useClassroomManagement();
 
   const handleClassroomJoined = () => {
-    setRefreshTrigger(prev => prev + 1);
+    refreshClassrooms();
   };
 
   const containerVariants = {
@@ -45,13 +48,15 @@ const Classes = () => {
         />
         
         {userRole === 'student' && (
-          <JoinClassSection onClassroomJoined={handleClassroomJoined} />
+          <JoinClassSection />
         )}
         
         <ClassroomsList 
           classrooms={classrooms}
-          loading={loading}
           userRole={userRole}
+          onDelete={handleDeleteClassroom}
+          onSelect={setSelectedClassroom}
+          selectedClassroom={selectedClassroom}
         />
         
         {/* Decorative elements */}

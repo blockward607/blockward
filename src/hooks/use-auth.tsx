@@ -1,38 +1,42 @@
-
-import { useState, useEffect, createContext, useContext } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-
-type UserRole = 'student' | 'teacher' | 'admin';
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
-  session: Session | null;
   user: User | null;
-  userRole: UserRole | null;
+  session: Session | null;
+  userRole: string | null;
   loading: boolean;
+  setLoading: (loading: boolean) => void;
   signOut: () => Promise<void>;
-  refreshAuth: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  userRole: null,
+  loading: true,
+  setLoading: () => {},
+  signOut: async () => {},
+});
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const getUserRole = async (userId: string): Promise<UserRole | null> => {
+  const getUserRole = async (userId: string): Promise<string | null> => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -78,22 +82,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        toast({
-          variant: "destructive",
-          title: "Error signing out",
-          description: error.message
-        });
-      } else {
-        setSession(null);
-        setUser(null);
-        setUserRole(null);
-      }
-    } catch (error) {
-      console.error('Error in signOut:', error);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: error.message,
+      });
+    } else {
+      navigate('/');
     }
   };
 
@@ -158,13 +155,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const value: AuthContextType = {
-    session,
+  const value = {
     user,
+    session,
     userRole,
     loading,
+    setLoading,
     signOut,
-    refreshAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

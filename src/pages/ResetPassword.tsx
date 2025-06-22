@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
-import { useAuth } from "@/hooks/use-auth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,7 +14,7 @@ const ResetPassword = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, setLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showError, setShowError] = useState(false);

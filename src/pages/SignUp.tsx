@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { LoadingDialog } from "@/components/auth/LoadingDialog";
-import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import { Button } from "@/components/ui/button";
 const SignUp = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { loading, setLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<'teacher' | 'student'>('teacher');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
