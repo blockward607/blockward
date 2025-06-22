@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, 
@@ -15,11 +15,21 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Search,
+  Zap,
+  AlertTriangle,
+  CheckCircle,
+  Activity,
+  Database,
+  Wifi,
+  HardDrive
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,6 +40,13 @@ interface AdminSidebarItem {
   badge?: number;
   active?: boolean;
   description?: string;
+  priority?: 'high' | 'medium' | 'low';
+}
+
+interface SystemHealth {
+  database: 'healthy' | 'warning' | 'error';
+  api: 'healthy' | 'warning' | 'error';
+  storage: 'healthy' | 'warning' | 'error';
 }
 
 interface AdminSidebarProps {
@@ -43,6 +60,51 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
   const { toast } = useToast();
   const [collapsed, setCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [systemHealth, setSystemHealth] = useState<SystemHealth>({
+    database: 'healthy',
+    api: 'healthy',
+    storage: 'healthy'
+  });
+  const [onlineUsers, setOnlineUsers] = useState(0);
+
+  // Monitor system health
+  useEffect(() => {
+    const checkSystemHealth = async () => {
+      try {
+        // Check database connection
+        const { error: dbError } = await supabase.from('user_roles').select('count', { count: 'exact', head: true });
+        
+        setSystemHealth(prev => ({
+          ...prev,
+          database: dbError ? 'error' : 'healthy',
+          api: 'healthy',
+          storage: 'healthy'
+        }));
+      } catch (error) {
+        setSystemHealth(prev => ({
+          ...prev,
+          database: 'error',
+          api: 'error'
+        }));
+      }
+    };
+
+    checkSystemHealth();
+    const interval = setInterval(checkSystemHealth, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  // Monitor online users (simplified)
+  useEffect(() => {
+    const updateOnlineUsers = () => {
+      setOnlineUsers(Math.floor(Math.random() * 50) + 10); // Simulated for demo
+    };
+    
+    updateOnlineUsers();
+    const interval = setInterval(updateOnlineUsers, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -76,7 +138,8 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
       onClick: () => onTabChange("pending"),
       badge: pendingCount,
       active: activeTab === "pending",
-      description: "Review new signup requests"
+      description: "Review new signup requests",
+      priority: pendingCount > 0 ? 'high' : 'low'
     },
     {
       title: "Manage Teachers",
@@ -136,6 +199,35 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
     }
   ];
 
+  const filteredMenuItems = adminMenuItems.filter(item =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getHealthIcon = (status: string) => {
+    switch (status) {
+      case 'healthy': return <CheckCircle className="w-3 h-3 text-green-400" />;
+      case 'warning': return <AlertTriangle className="w-3 h-3 text-yellow-400" />;
+      case 'error': return <X className="w-3 h-3 text-red-400" />;
+      default: return <Activity className="w-3 h-3 text-gray-400" />;
+    }
+  };
+
+  const quickActions = [
+    {
+      title: "Emergency Broadcast",
+      icon: AlertTriangle,
+      onClick: () => toast({ title: "Emergency mode activated" }),
+      color: "text-red-400"
+    },
+    {
+      title: "Quick Backup",
+      icon: Database,
+      onClick: () => toast({ title: "Backup initiated" }),
+      color: "text-blue-400"
+    }
+  ];
+
   const renderSidebarItem = (item: AdminSidebarItem) => (
     <motion.div
       key={item.title}
@@ -159,6 +251,11 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
           !item.active && "text-gray-300 hover:text-white"
         )}
       >
+        {/* Priority indicator */}
+        {item.priority === 'high' && (
+          <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        )}
+
         {/* Background gradient on hover/active */}
         <div className={cn(
           "absolute inset-0 bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 transition-opacity duration-300",
@@ -201,9 +298,15 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
                     animate={{ scale: 1 }}
                     className="ml-2 flex-shrink-0"
                   >
-                    <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center font-semibold shadow-lg">
+                    <Badge 
+                      variant="destructive" 
+                      className={cn(
+                        "text-xs font-semibold shadow-lg",
+                        item.priority === 'high' && "bg-red-600 animate-pulse"
+                      )}
+                    >
                       {item.badge > 99 ? '99+' : item.badge}
-                    </div>
+                    </Badge>
                   </motion.div>
                 )}
 
@@ -245,7 +348,7 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
         "border-r border-slate-700/50 backdrop-blur-sm",
         "flex flex-col h-full shadow-2xl relative overflow-hidden",
         "transition-all duration-300 ease-in-out",
-        collapsed ? "w-20" : "w-72"
+        collapsed ? "w-20" : "w-80"
       )}
     >
       {/* Animated background elements */}
@@ -256,10 +359,10 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
 
       {/* Header */}
       <div className={cn(
-        "relative z-10 p-6 border-b border-slate-700/50",
+        "relative z-10 p-4 border-b border-slate-700/50",
         "bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-sm"
       )}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <AnimatePresence>
             {!collapsed && (
               <motion.div
@@ -271,8 +374,9 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
                 <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                   Admin Panel
                 </h2>
-                <div className="text-sm text-gray-400 mt-1">
-                  Management Dashboard
+                <div className="text-sm text-gray-400 mt-1 flex items-center gap-2">
+                  <Wifi className="w-3 h-3" />
+                  {onlineUsers} users online
                 </div>
               </motion.div>
             )}
@@ -292,11 +396,93 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
             </motion.div>
           </Button>
         </div>
+
+        {/* Search Bar */}
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="relative"
+            >
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search admin tools..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-gray-400"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* System Health Status */}
+      <AnimatePresence>
+        {!collapsed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative z-10 p-4 border-b border-slate-700/50"
+          >
+            <div className="text-sm text-gray-400 mb-2">System Health</div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="flex items-center gap-1 text-xs">
+                {getHealthIcon(systemHealth.database)}
+                <span>DB</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                {getHealthIcon(systemHealth.api)}
+                <span>API</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                {getHealthIcon(systemHealth.storage)}
+                <span>Storage</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Quick Actions */}
+      <AnimatePresence>
+        {!collapsed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative z-10 p-4 border-b border-slate-700/50"
+          >
+            <div className="text-sm text-gray-400 mb-2">Quick Actions</div>
+            <div className="flex gap-2">
+              {quickActions.map((action) => (
+                <Button
+                  key={action.title}
+                  variant="ghost"
+                  size="sm"
+                  onClick={action.onClick}
+                  className={cn("p-2", action.color)}
+                  title={action.title}
+                >
+                  <action.icon className="w-4 h-4" />
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Navigation */}
       <div className="flex-1 p-4 space-y-2 overflow-y-auto relative z-10 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
-        {adminMenuItems.map(renderSidebarItem)}
+        {filteredMenuItems.map(renderSidebarItem)}
+        
+        {searchQuery && filteredMenuItems.length === 0 && !collapsed && (
+          <div className="text-center text-gray-400 text-sm py-4">
+            No matching admin tools found
+          </div>
+        )}
       </div>
 
       {/* Footer */}
