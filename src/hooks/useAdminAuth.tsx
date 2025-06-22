@@ -34,7 +34,7 @@ export const useAdminAuth = () => {
 
           if (userRole?.role === 'admin') {
             console.log('useAdminAuth: User is admin, redirecting to dashboard');
-            // Don't redirect here - let the parent component handle it
+            navigate('/admin-dashboard', { replace: true });
             return;
           }
         }
@@ -46,7 +46,7 @@ export const useAdminAuth = () => {
     };
 
     checkInitialAuth();
-  }, []);
+  }, [navigate]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +157,7 @@ export const useAdminAuth = () => {
     setLoading(true);
 
     try {
+      // Create user account without email verification
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -165,7 +166,7 @@ export const useAdminAuth = () => {
             full_name: fullName,
             role: 'admin'
           },
-          emailRedirectTo: `${window.location.origin}/admin-dashboard`
+          // No emailRedirectTo - skip email verification
         }
       });
 
@@ -182,7 +183,36 @@ export const useAdminAuth = () => {
       if (data.user) {
         console.log('useAdminAuth: Signup successful for user:', data.user.id);
         
-        // Try to promote to admin immediately
+        // If user was created but not automatically signed in (due to email confirmation requirement),
+        // manually confirm the email and sign them in
+        if (!data.session) {
+          console.log('useAdminAuth: No session after signup, attempting to sign in...');
+          
+          // Try to sign in immediately
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (signInError) {
+            console.error('useAdminAuth: Auto sign-in failed:', signInError);
+            toast({
+              title: "Account Created",
+              description: "Please check your email to verify your account, then sign in.",
+            });
+            setActiveTab("signin");
+            return;
+          }
+
+          if (signInData.user) {
+            console.log('useAdminAuth: Auto sign-in successful');
+            // Continue with promotion logic below
+            data.user = signInData.user;
+            data.session = signInData.session;
+          }
+        }
+
+        // Promote to admin immediately
         try {
           const { error: promoteError } = await supabase.rpc('promote_user_to_admin', {
             target_user_id: data.user.id,
@@ -191,22 +221,31 @@ export const useAdminAuth = () => {
           });
 
           if (!promoteError) {
-            console.log('useAdminAuth: Successfully created admin account');
+            console.log('useAdminAuth: Successfully created and promoted admin account');
             toast({
               title: "Admin Account Created",
-              description: "Your admin account is ready! Please verify your email and sign in.",
+              description: "Welcome to the admin panel!",
             });
+            
+            // Navigate immediately to admin dashboard
+            navigate('/admin-dashboard', { replace: true });
+            return;
+          } else {
+            console.error('useAdminAuth: Failed to promote new user:', promoteError);
           }
         } catch (promoteError) {
-          console.error('useAdminAuth: Failed to promote new user:', promoteError);
+          console.error('useAdminAuth: Exception promoting new user:', promoteError);
         }
 
+        // If promotion failed but account was created, show success but ask to sign in
         toast({
           title: "Account Created",
-          description: "Please check your email to verify your account, then sign in.",
+          description: "Your account has been created. Please sign in to continue.",
         });
         
         setActiveTab("signin");
+        setPassword(""); // Clear password for security
+        setConfirmPassword("");
       }
     } catch (error) {
       console.error('useAdminAuth: Unexpected signup error:', error);

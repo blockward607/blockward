@@ -29,7 +29,7 @@ const AdminLogin = () => {
     handleAdminSignup
   } = useAdminAuth();
 
-  // Show loading state during initialization to prevent flickering
+  // Show loading state during initialization
   if (isInitializing) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-950 via-red-900/50 to-black flex items-center justify-center p-4">
