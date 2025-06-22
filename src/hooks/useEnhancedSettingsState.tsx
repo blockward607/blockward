@@ -242,10 +242,10 @@ export const useEnhancedSettingsState = () => {
 
       if (error) throw error;
 
-      // Type assertion for the response
-      const response = data as InstitutionCodeResponse;
+      // Safely handle the response data
+      const response = data as unknown as InstitutionCodeResponse;
 
-      if (response.success) {
+      if (response && response.success) {
         toast({
           title: "Institution Code Created",
           description: `New code: ${response.institution_code}`
@@ -253,7 +253,7 @@ export const useEnhancedSettingsState = () => {
         await loadInstitutionCodes();
         return response;
       } else {
-        throw new Error(response.error);
+        throw new Error(response?.error || "Failed to create institution code");
       }
     } catch (error: any) {
       console.error('Error creating institution code:', error);
