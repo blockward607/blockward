@@ -28,7 +28,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
     confirmPassword: "",
     institutionCode: ""
   });
-  const [institutionValid, setInstitutionValid] = useState(false);
+  const [institutionValid, setInstitutionValid] = useState(true); // Default to true since it's optional
   const [validatedSchoolName, setValidatedSchoolName] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -86,14 +86,9 @@ export const SignUpForm = (props: SignUpFormProps) => {
       return false;
     }
 
-    if ((props.role === 'teacher' || props.role === 'student') && !formData.institutionCode.trim()) {
-      props.setErrorMessage("Institution code is required");
-      props.setShowError(true);
-      return false;
-    }
-
-    if ((props.role === 'teacher' || props.role === 'student') && !institutionValid) {
-      props.setErrorMessage("Please enter a valid institution code");
+    // Institution code validation only if provided
+    if ((props.role === 'teacher' || props.role === 'student') && formData.institutionCode.trim() && !institutionValid) {
+      props.setErrorMessage("Please enter a valid institution code or leave it empty");
       props.setShowError(true);
       return false;
     }
@@ -147,10 +142,10 @@ export const SignUpForm = (props: SignUpFormProps) => {
           p_email: formData.email,
           p_full_name: formData.fullName,
           p_role: props.role,
-          p_institution_code: formData.institutionCode,
+          p_institution_code: formData.institutionCode.trim() || null, // Pass null if empty
           p_additional_info: {
             password: formData.password,
-            school_name: validatedSchoolName
+            school_name: validatedSchoolName || 'No specific school'
           }
         });
 
@@ -161,7 +156,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
         if (result.valid) {
           toast({
             title: "Registration Submitted",
-            description: result.message || "Your registration has been submitted for admin approval. You'll be notified when it's approved."
+            description: result.message || "Your registration has been submitted. You can now sign in!"
           });
           
           // Clear form

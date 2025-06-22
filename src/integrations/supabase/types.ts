@@ -1879,7 +1879,7 @@ export type Database = {
           p_email: string
           p_full_name: string
           p_role: string
-          p_institution_code: string
+          p_institution_code?: string
           p_additional_info?: Json
         }
         Returns: Json
