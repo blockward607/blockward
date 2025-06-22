@@ -39,6 +39,14 @@ interface SystemSettings {
   };
 }
 
+interface InstitutionCodeResponse {
+  success: boolean;
+  institution_code?: string;
+  school_id?: string;
+  school_name?: string;
+  error?: string;
+}
+
 export const useEnhancedSettingsState = () => {
   const { toast } = useToast();
   
@@ -234,15 +242,18 @@ export const useEnhancedSettingsState = () => {
 
       if (error) throw error;
 
-      if (data.success) {
+      // Type assertion for the response
+      const response = data as InstitutionCodeResponse;
+
+      if (response.success) {
         toast({
           title: "Institution Code Created",
-          description: `New code: ${data.institution_code}`
+          description: `New code: ${response.institution_code}`
         });
         await loadInstitutionCodes();
-        return data;
+        return response;
       } else {
-        throw new Error(data.error);
+        throw new Error(response.error);
       }
     } catch (error: any) {
       console.error('Error creating institution code:', error);
