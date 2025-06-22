@@ -1576,6 +1576,41 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          school_id: string | null
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          school_id?: string | null
+          setting_key: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          school_id?: string | null
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_settings_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teacher_class_assignments: {
         Row: {
           assigned_at: string | null
@@ -1849,6 +1884,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_institution_code: {
+        Args: {
+          p_school_name: string
+          p_contact_email?: string
+          p_admin_name?: string
+        }
+        Returns: Json
+      }
       assign_teacher_to_classroom: {
         Args: {
           p_teacher_id: string
@@ -1914,6 +1957,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_admin_institution_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          institution_code: string
+          contact_email: string
+          created_at: string
+          student_count: number
+          teacher_count: number
+        }[]
+      }
       get_conversation_messages: {
         Args: { conversation_id_param: string }
         Returns: {
@@ -1925,6 +1980,13 @@ export type Database = {
           created_at: string
           read: boolean
           sender_name: string
+        }[]
+      }
+      get_system_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          setting_key: string
+          setting_value: Json
         }[]
       }
       get_user_conversations: {
@@ -1977,6 +2039,10 @@ export type Database = {
       update_conversation_timestamp: {
         Args: { conversation_id_param: string }
         Returns: undefined
+      }
+      update_system_setting: {
+        Args: { p_setting_key: string; p_setting_value: Json }
+        Returns: boolean
       }
       validate_institution_code: {
         Args: { code: string }

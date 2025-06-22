@@ -1,11 +1,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
-import { useSettingsState } from "@/hooks/useSettingsState";
+import { useEnhancedSettingsState } from "@/hooks/useEnhancedSettingsState";
 import { useSettingsActions } from "@/hooks/useSettingsActions";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
-import { SettingsTabsList } from "@/components/settings/SettingsTabsList";
-import { SettingsContent } from "@/components/settings/SettingsContent";
+import { EnhancedSettingsTabsList } from "@/components/settings/EnhancedSettingsTabsList";
+import { EnhancedSettingsContent } from "@/components/settings/EnhancedSettingsContent";
 
 const SettingsPage = () => {
   const {
@@ -13,59 +13,41 @@ const SettingsPage = () => {
     loading,
     activeTab,
     setActiveTab,
-    autoGrading,
-    setAutoGrading,
-    emailNotifications,
-    setEmailNotifications,
-    studentRegistration,
-    setStudentRegistration,
-    classSize,
-    setClassSize,
-    sessionTimeout,
-    setSessionTimeout,
-    theme,
-    setTheme,
-    fontSize,
-    setFontSize,
-    compactMode,
-    setCompactMode,
-    twoFactorAuth,
-    setTwoFactorAuth,
-    passwordExpiry,
-    setPasswordExpiry,
-    loginAttempts,
-    setLoginAttempts,
+    systemSettings,
+    updateSystemSetting,
     adminName,
     setAdminName,
     adminPosition,
     setAdminPosition,
     adminPermissions,
-    setAdminPermissions
-  } = useSettingsState();
+    setAdminPermissions,
+    institutionCodes,
+    loadingCodes,
+    createInstitutionCode,
+    loadInstitutionCodes
+  } = useEnhancedSettingsState();
 
   const {
-    saveUserPreferences,
     saveAdminSettings,
-    saveSecuritySettings,
     handleResetSettings
   } = useSettingsActions({
-    theme,
-    compactMode,
+    theme: systemSettings.appearance.theme,
+    compactMode: systemSettings.appearance.compact_mode,
     adminName,
     adminPosition,
     adminPermissions,
     userRole,
-    setAutoGrading,
-    setEmailNotifications,
-    setStudentRegistration,
-    setClassSize,
-    setSessionTimeout,
-    setTheme,
-    setFontSize,
-    setCompactMode,
-    setTwoFactorAuth,
-    setPasswordExpiry,
-    setLoginAttempts
+    setAutoGrading: (value) => updateSystemSetting('academic', { ...systemSettings.academic, auto_grade_assignments: value }),
+    setEmailNotifications: (value) => updateSystemSetting('notifications', { ...systemSettings.notifications, email_enabled: value }),
+    setStudentRegistration: () => {},
+    setClassSize: () => {},
+    setSessionTimeout: (value) => updateSystemSetting('security', { ...systemSettings.security, session_timeout: value[0] }),
+    setTheme: (value) => updateSystemSetting('appearance', { ...systemSettings.appearance, theme: value }),
+    setFontSize: (value) => updateSystemSetting('appearance', { ...systemSettings.appearance, font_size: value[0] }),
+    setCompactMode: (value) => updateSystemSetting('appearance', { ...systemSettings.appearance, compact_mode: value }),
+    setTwoFactorAuth: (value) => updateSystemSetting('security', { ...systemSettings.security, require_2fa: value }),
+    setPasswordExpiry: () => {},
+    setLoginAttempts: (value) => updateSystemSetting('security', { ...systemSettings.security, max_login_attempts: value[0] })
   });
 
   if (loading) {
@@ -76,51 +58,28 @@ const SettingsPage = () => {
     );
   }
 
-  const isAdmin = userRole === 'admin';
-
-  console.log('Rendering settings page with role:', userRole, 'activeTab:', activeTab);
-
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <SettingsHeader userRole={userRole} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <SettingsTabsList isAdmin={isAdmin} />
+        <EnhancedSettingsTabsList userRole={userRole} />
 
-        <SettingsContent
+        <EnhancedSettingsContent
           userRole={userRole}
-          isAdmin={isAdmin}
-          autoGrading={autoGrading}
-          setAutoGrading={setAutoGrading}
-          emailNotifications={emailNotifications}
-          setEmailNotifications={setEmailNotifications}
-          classSize={classSize}
-          setClassSize={setClassSize}
-          sessionTimeout={sessionTimeout}
-          setSessionTimeout={setSessionTimeout}
-          twoFactorAuth={twoFactorAuth}
-          setTwoFactorAuth={setTwoFactorAuth}
-          passwordExpiry={passwordExpiry}
-          setPasswordExpiry={setPasswordExpiry}
-          loginAttempts={loginAttempts}
-          setLoginAttempts={setLoginAttempts}
-          theme={theme}
-          setTheme={setTheme}
-          fontSize={fontSize}
-          setFontSize={setFontSize}
-          compactMode={compactMode}
-          setCompactMode={setCompactMode}
-          studentRegistration={studentRegistration}
-          setStudentRegistration={setStudentRegistration}
+          systemSettings={systemSettings}
+          onUpdateSystemSetting={updateSystemSetting}
           adminName={adminName}
           setAdminName={setAdminName}
           adminPosition={adminPosition}
           setAdminPosition={setAdminPosition}
           adminPermissions={adminPermissions}
           setAdminPermissions={setAdminPermissions}
-          onSaveUserPreferences={saveUserPreferences}
-          onSaveSecuritySettings={saveSecuritySettings}
           onSaveAdminSettings={saveAdminSettings}
+          institutionCodes={institutionCodes}
+          loadingCodes={loadingCodes}
+          onCreateInstitutionCode={createInstitutionCode}
+          onRefreshCodes={loadInstitutionCodes}
         />
       </Tabs>
 
