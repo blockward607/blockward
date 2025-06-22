@@ -1,236 +1,171 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, createContext, useContext } from 'react';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { AuthService } from '@/services/AuthService';
 
-export function useAuth() {
-  const navigate = useNavigate();
+type UserRole = 'student' | 'teacher' | 'admin';
+
+interface AuthContextType {
+  session: Session | null;
+  user: User | null;
+  userRole: UserRole | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+  refreshAuth: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
 
-  const setupUserAccount = useCallback(async (session) => {
-    if (!session) return;
-    
+  const getUserRole = async (userId: string): Promise<UserRole | null> => {
     try {
-      console.log('Setting up user account for:', session.user.id);
-      console.log('Auth provider:', session.user.app_metadata?.provider);
-      console.log('User metadata:', session.user.user_metadata);
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return null;
+      }
+
+      return data?.role || null;
+    } catch (error) {
+      console.error('Error in getUserRole:', error);
+      return null;
+    }
+  };
+
+  const refreshAuth = async () => {
+    try {
+      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
       
-      const userId = session.user.id;
-      
-      // For auth providers, determine the role differently
-      // Check if we have role in user metadata, otherwise assume 'student'
-      let userRole;
-      let school = '';
-      let subject = '';
-      let fullName = '';
-      
-      if (session.user.app_metadata?.provider === 'google' || 
-          session.user.app_metadata?.provider === 'github' || 
-          session.user.app_metadata?.provider === 'facebook') {
-        // If coming from social login, check if a role was passed in the queryParams
-        // or metadata, otherwise use 'student' as default
-        userRole = session.user.user_metadata?.role || 
-                  session.user.app_metadata?.role || 
-                  'student';
-        
-        // Try to get additional profile data
-        school = session.user.user_metadata?.school || '';
-        subject = session.user.user_metadata?.subject || '';
-        fullName = session.user.user_metadata?.full_name || 
-                  session.user.user_metadata?.name || 
-                  session.user.email.split('@')[0];
-                  
-        console.log('Determined role for social auth user:', userRole);
+      if (error) {
+        console.error('Error getting session:', error);
+        return;
+      }
+
+      setSession(currentSession);
+      setUser(currentSession?.user || null);
+
+      if (currentSession?.user) {
+        const role = await getUserRole(currentSession.user.id);
+        setUserRole(role);
       } else {
-        // Regular email login
-        userRole = session.user.user_metadata?.role || 'student';
-        school = session.user.user_metadata?.school || '';
-        subject = session.user.user_metadata?.subject || '';
-        fullName = session.user.user_metadata?.full_name || 
-                  session.user.user_metadata?.name || 
-                  session.user.email.split('@')[0];
-        
-        console.log('Determined role for email auth user:', userRole);
-      }
-      
-      setUserRole(userRole);
-      
-      // Check if role exists
-      const { data: existingRole, error: roleError } = await AuthService.checkUserRole(userId);
-      
-      if (roleError) {
-        console.error('Error checking user role:', roleError);
-      }
-      
-      if (!existingRole) {
-        console.log('Creating new user role:', userRole);
-        // Create role
-        await AuthService.createUserRole(userId, userRole);
-      } else {
-        console.log('User role already exists:', existingRole);
-      }
-      
-      // Check if wallet exists
-      const { data: existingWallet, error: walletError } = await AuthService.checkUserWallet(userId);
-      
-      if (walletError) {
-        console.error('Error checking user wallet:', walletError);
-      }
-      
-      if (!existingWallet) {
-        // Create wallet based on role - teacher wallets are 'admin' type, student wallets are 'user' type
-        const walletType = userRole === 'teacher' ? 'admin' : 'user';
-        const walletAddress = `${Math.random().toString(16).slice(2, 10)}_${Math.random().toString(16).slice(2, 10)}`;
-        
-        console.log('Creating new wallet:', { type: walletType, address: walletAddress });
-        
-        // Create wallet
-        await AuthService.createUserWallet(userId, walletType, walletAddress);
-      } else {
-        console.log('User wallet already exists:', existingWallet);
-      }
-      
-      // Create profile based on role
-      if (userRole === 'teacher') {
-        const { data: existingProfile, error: profileError } = await AuthService.checkTeacherProfile(userId);
-        
-        if (profileError) {
-          console.error('Error checking teacher profile:', profileError);
-        }
-        
-        if (!existingProfile) {
-          console.log('Creating teacher profile with school and subject');
-          await AuthService.createTeacherProfile(userId, school, subject, fullName);
-          
-          // Generate a unique class code for teacher
-          const classCode = await AuthService.generateClassCode();
-          
-          // Create a default classroom for the teacher
-          const { data: teacherProfile } = await supabase
-            .from('teacher_profiles')
-            .select('id')
-            .eq('user_id', userId)
-            .single();
-            
-          if (teacherProfile) {
-            const className = subject ? `${subject} Class` : 'My First Class';
-            
-            await supabase
-              .from('classrooms')
-              .insert({
-                teacher_id: teacherProfile.id,
-                name: className,
-                description: 'Welcome to your first classroom!'
-              });
-          }
-        } else {
-          console.log('Teacher profile already exists');
-        }
-      } else {
-        // For students
-        const { data: existingStudent, error: studentError } = await AuthService.checkStudentProfile(userId);
-        
-        if (studentError) {
-          console.error('Error checking student profile:', studentError);
-        }
-        
-        if (!existingStudent) {
-          const email = session.user.email;
-          const name = fullName || email.split('@')[0];
-                      
-          console.log('Creating student profile with name and school:', name, school);
-          await AuthService.createStudentProfile(userId, email, name, school);
-        } else {
-          console.log('Student profile already exists');
-        }
-      }
-      
-      toast({
-        title: "Welcome!",
-        description: "You have successfully signed in.",
-      });
-      
-      // Instead of forcing redirect, allow the navigation to happen naturally
-      // We'll still redirect on first login
-      const currentPath = window.location.pathname;
-      if (currentPath === '/auth') {
-        navigate('/dashboard');
+        setUserRole(null);
       }
     } catch (error) {
-      console.error("Unexpected error during account setup:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Something went wrong during account setup. Please try again.",
-      });
+      console.error('Error refreshing auth:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [navigate, toast]);
+  };
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        toast({
+          variant: "destructive",
+          title: "Error signing out",
+          description: error.message
+        });
+      } else {
+        setSession(null);
+        setUser(null);
+        setUserRole(null);
+      }
+    } catch (error) {
+      console.error('Error in signOut:', error);
+    }
+  };
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setUser(session.user);
+    refreshAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         
-        // Get the user role
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data }) => {
-            if (data) {
-              setUserRole(data.role);
-            }
-          });
+        setSession(session);
+        setUser(session?.user || null);
+
+        if (session?.user) {
+          const role = await getUserRole(session.user.id);
+          setUserRole(role);
           
-        console.log('Found existing session, navigating to dashboard');
-        
-        // Don't automatically navigate to dashboard if we're already on another page
-        const currentPath = window.location.pathname;
-        if (currentPath === '/' || currentPath === '/auth') {
-          navigate('/dashboard');
+          // Create default classroom for new teachers
+          if (role === 'teacher' && event === 'SIGNED_IN') {
+            try {
+              // Get teacher profile
+              const { data: teacherProfile, error: profileError } = await supabase
+                .from('teacher_profiles')
+                .select('id, school_id')
+                .eq('user_id', session.user.id)
+                .single();
+
+              if (!profileError && teacherProfile) {
+                // Check if teacher already has classrooms
+                const { data: existingClassrooms } = await supabase
+                  .from('classrooms')
+                  .select('id')
+                  .eq('teacher_id', teacherProfile.id)
+                  .limit(1);
+
+                if (!existingClassrooms || existingClassrooms.length === 0) {
+                  // Create default classroom
+                  await supabase
+                    .from('classrooms')
+                    .insert([{
+                      teacher_id: teacherProfile.id,
+                      name: 'My First Classroom',
+                      description: 'Welcome to your first classroom!',
+                      school_id: teacherProfile.school_id
+                    }]);
+                  
+                  console.log('Created default classroom for new teacher');
+                }
+              }
+            } catch (error) {
+              console.error('Error creating default classroom:', error);
+            }
+          }
+        } else {
+          setUserRole(null);
         }
-      } else {
-        console.log('No existing session found');
-        setUser(null);
-        setUserRole(null);
+        
+        setLoading(false);
       }
-    });
+    );
 
-    // Handle auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change event:', event);
-      
-      if (event === 'SIGNED_IN') {
-        console.log('User signed in, setting up account');
-        setUser(session?.user || null);
-        await setupUserAccount(session);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setUserRole(null);
-      } else if (event === 'USER_UPDATED') {
-        console.log('User updated');
-        setUser(session?.user || null);
-      }
-    });
+    return () => subscription.unsubscribe();
+  }, []);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, setupUserAccount]);
-
-  return { 
-    loading, 
-    setLoading, 
-    user, 
-    userRole, 
-    isTeacher: userRole === 'teacher',
-    isStudent: userRole === 'student'
+  const value: AuthContextType = {
+    session,
+    user,
+    userRole,
+    loading,
+    signOut,
+    refreshAuth,
   };
-}
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

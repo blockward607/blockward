@@ -24,6 +24,32 @@ export const ImportStudentsDialog = () => {
 
     setImporting(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "You must be logged in to import students"
+        });
+        return;
+      }
+
+      // Get teacher profile to get school_id
+      const { data: teacherProfile, error: profileError } = await supabase
+        .from('teacher_profiles')
+        .select('id, school_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (profileError || !teacherProfile) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Teacher profile not found"
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = async (e) => {
         if (e.target && e.target.result) {
@@ -45,25 +71,13 @@ export const ImportStudentsDialog = () => {
             });
             
             if (studentData.name) {
-              // Get current session
-              const { data: { session } } = await supabase.auth.getSession();
-              if (!session) continue;
-              
-              // Get teacher profile to link students to teacher's classrooms
-              const { data: teacherProfile } = await supabase
-                .from('teacher_profiles')
-                .select('id')
-                .eq('user_id', session.user.id)
-                .single();
-                
-              if (!teacherProfile) continue;
-              
               // Create student
               const { data: newStudent, error } = await supabase
                 .from('students')
                 .insert({
                   name: studentData.name,
                   school: studentData.school || '',
+                  school_id: teacherProfile.school_id,
                   points: studentData.points ? parseInt(studentData.points) : 0
                 })
                 .select()

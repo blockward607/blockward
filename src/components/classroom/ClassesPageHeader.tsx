@@ -6,7 +6,7 @@ import { CreateClassroomDialog } from "./CreateClassroomDialog";
 
 interface ClassesPageHeaderProps {
   userRole: string | null;
-  onClassroomCreated: (classroom: any) => void;
+  onClassroomCreated: () => void;
 }
 
 export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageHeaderProps) => {
@@ -27,6 +27,11 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
   const handleDialogClose = (open: boolean) => {
     console.log("Dialog state changing to:", open);
     setShowCreateDialog(open);
+  };
+
+  const handleClassroomCreated = () => {
+    onClassroomCreated();
+    setShowCreateDialog(false);
   };
 
   return (
@@ -59,7 +64,7 @@ export const ClassesPageHeader = ({ userRole, onClassroomCreated }: ClassesPageH
       <CreateClassroomDialog 
         open={showCreateDialog}
         onOpenChange={handleDialogClose}
-        onClassroomCreated={onClassroomCreated}
+        onClassroomCreated={handleClassroomCreated}
       />
     </div>
   );

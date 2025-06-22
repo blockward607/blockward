@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { useJoinClassroomCode } from './hooks/useJoinClassroomCode';
 
 // Define the context type
@@ -35,8 +35,45 @@ export const useJoinClassContext = () => useContext(JoinClassContext);
 
 // Export the provider component
 export const JoinClassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Use the hook to get all the implementation
-  const contextValue = useJoinClassroomCode();
+  const [classroomCode, setClassroomCode] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [autoJoinInProgress, setAutoJoinInProgress] = useState(false);
+  
+  // Use the hook to get join functionality
+  const { joinWithCode, isJoining } = useJoinClassroomCode();
+  
+  const joinClassWithCode = async (code: string) => {
+    setLoading(true);
+    setError(null);
+    setAutoJoinInProgress(true);
+    
+    try {
+      const success = await joinWithCode(code);
+      if (!success) {
+        setError('Failed to join classroom');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to join classroom');
+    } finally {
+      setLoading(false);
+      setAutoJoinInProgress(false);
+    }
+  };
+  
+  const contextValue: JoinClassContextType = {
+    classroomCode,
+    setClassroomCode,
+    scannerOpen,
+    setScannerOpen,
+    loading: loading || isJoining,
+    setLoading,
+    error,
+    setError,
+    joinClassWithCode,
+    autoJoinInProgress,
+  };
   
   return (
     <JoinClassContext.Provider value={contextValue}>

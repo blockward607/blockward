@@ -1,54 +1,90 @@
 
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useStudents } from "@/hooks/use-students";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-export interface Student {
+interface Student {
   id: string;
   name: string;
+  school?: string;
   points: number;
   created_at: string;
-  school?: string;
-  user_id?: string;
 }
 
 export const useStudentManagement = () => {
-  const { students, loading } = useStudents();
-  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const addNewStudent = async (name: string, school: string): Promise<void> => {
-    if (!name.trim()) {
+  const loadStudents = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Get teacher profile to filter by school
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('school_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!teacherProfile) return;
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('school_id', teacherProfile.school_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setStudents(data || []);
+    } catch (error) {
+      console.error('Error loading students:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please enter a student name"
+        description: "Failed to load students"
       });
-      return;
+    } finally {
+      setLoading(false);
     }
+  };
 
+  const addStudent = async (name: string, school: string = '') => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Get teacher profile to get school_id
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('school_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!teacherProfile) {
+        throw new Error('Teacher profile not found');
+      }
+
       const { data, error } = await supabase
         .from('students')
-        .insert([
-          { 
-            name: name.trim(),
-            school: school.trim() || undefined,
-            points: 0
-          }
-        ])
+        .insert([{ 
+          name, 
+          school, 
+          points: 0,
+          school_id: teacherProfile.school_id
+        }])
         .select();
 
       if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Student added successfully"
-      });
-      
-      // Return void instead of data
+
+      if (data && data.length > 0) {
+        setStudents(prev => [data[0], ...prev]);
+        toast({
+          title: "Success",
+          description: "Student added successfully"
+        });
+      }
     } catch (error) {
       console.error('Error adding student:', error);
       toast({
@@ -59,34 +95,16 @@ export const useStudentManagement = () => {
     }
   };
 
-  const initiateDeleteStudent = (id: string) => {
-    setStudentToDelete(id);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteStudent = async () => {
-    if (!studentToDelete) return;
-    
+  const deleteStudent = async (id: string) => {
     try {
-      // First delete any classroom_students associations
-      const { error: relError } = await supabase
-        .from('classroom_students')
-        .delete()
-        .eq('student_id', studentToDelete);
-
-      if (relError) {
-        console.error('Error deleting classroom associations:', relError);
-        // Continue anyway
-      }
-
-      // Then delete the student
       const { error } = await supabase
         .from('students')
         .delete()
-        .eq('id', studentToDelete);
+        .eq('id', id);
 
       if (error) throw error;
-      
+
+      setStudents(prev => prev.filter(student => student.id !== id));
       toast({
         title: "Success",
         description: "Student deleted successfully"
@@ -98,20 +116,18 @@ export const useStudentManagement = () => {
         title: "Error",
         description: "Failed to delete student"
       });
-    } finally {
-      setStudentToDelete(null);
-      setIsDeleteDialogOpen(false);
     }
   };
+
+  useEffect(() => {
+    loadStudents();
+  }, []);
 
   return {
     students,
     loading,
-    studentToDelete,
-    isDeleteDialogOpen,
-    setIsDeleteDialogOpen,
-    addNewStudent,
-    initiateDeleteStudent,
-    confirmDeleteStudent
+    addStudent,
+    deleteStudent,
+    refreshStudents: loadStudents,
   };
 };

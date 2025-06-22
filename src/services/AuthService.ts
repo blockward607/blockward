@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const AuthService = {
@@ -94,8 +93,21 @@ export const AuthService = {
   },
   
   // Create a teacher profile
-  createTeacherProfile: async (userId: string, school?: string, subject?: string, fullName?: string) => {
+  createTeacherProfile: async (userId: string, school?: string, subject?: string, fullName?: string, schoolId?: string) => {
     console.log('Creating teacher profile for:', userId);
+    
+    // If no schoolId provided, try to get or create a default school
+    let finalSchoolId = schoolId;
+    if (!finalSchoolId) {
+      const { data: defaultSchool } = await supabase
+        .from('schools')
+        .select('id')
+        .eq('institution_code', 'LEGACY')
+        .single();
+      
+      finalSchoolId = defaultSchool?.id;
+    }
+    
     const { data, error } = await supabase
       .from('teacher_profiles')
       .insert({ 
@@ -103,7 +115,8 @@ export const AuthService = {
         school: school || '',
         subject: subject || '',
         full_name: fullName || '',
-        remaining_credits: 1000
+        remaining_credits: 1000,
+        school_id: finalSchoolId || ''
       })
       .select()
       .single();
@@ -135,9 +148,21 @@ export const AuthService = {
   },
   
   // Create a student profile
-  createStudentProfile: async (userId: string, email: string, name?: string, school?: string) => {
+  createStudentProfile: async (userId: string, email: string, name?: string, school?: string, schoolId?: string) => {
     const username = name || email.split('@')[0];
     console.log('Creating student profile:', { userId, username, school });
+    
+    // If no schoolId provided, try to get or create a default school
+    let finalSchoolId = schoolId;
+    if (!finalSchoolId) {
+      const { data: defaultSchool } = await supabase
+        .from('schools')
+        .select('id')
+        .eq('institution_code', 'LEGACY')
+        .single();
+      
+      finalSchoolId = defaultSchool?.id;
+    }
     
     const { data, error } = await supabase
       .from('students')
@@ -145,7 +170,8 @@ export const AuthService = {
         user_id: userId,
         name: username,
         school: school || '',
-        points: 0
+        points: 0,
+        school_id: finalSchoolId || ''
       })
       .select()
       .single();
