@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -113,7 +112,7 @@ export const AdminSidebar = ({ activeTab, onTabChange, pendingCount = 0 }: Admin
         title: "Signed out",
         description: "Successfully logged out from admin panel"
       });
-      navigate('/admin-login');
+      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
       toast({

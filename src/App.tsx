@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +12,6 @@ import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
-import AdminLogin from "./pages/AdminLogin";
 import Dashboard from "./pages/Dashboard";
 import Classes from "./pages/Classes";
 import Students from "./pages/Students";
@@ -56,8 +56,6 @@ function App() {
                 <Route index element={<Index />} />
                 <Route path="home" element={<Home />} />
                 <Route path="auth" element={<Auth />} />
-                <Route path="admin-login" element={<AdminLogin />} />
-                <Route path="admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 <Route path="signup" element={<SignUp />} />
                 <Route path="reset-password" element={<ResetPassword />} />
                 <Route path="reset-password-otp" element={<ResetPasswordOTP />} />

@@ -89,8 +89,8 @@ const AdminDashboard = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          console.log('AdminDashboard: No session found, redirecting to admin login');
-          navigate('/admin-login', { replace: true });
+          console.log('AdminDashboard: No session found, redirecting to auth');
+          navigate('/auth', { replace: true });
           return;
         }
 
@@ -111,7 +111,7 @@ const AdminDashboard = () => {
             title: "Authentication Error",
             description: "Failed to verify admin privileges"
           });
-          navigate('/admin-login', { replace: true });
+          navigate('/', { replace: true });
           return;
         }
 
@@ -122,7 +122,7 @@ const AdminDashboard = () => {
             title: "Access Denied",
             description: "Admin privileges required"
           });
-          navigate('/admin-login', { replace: true });
+          navigate('/', { replace: true });
           return;
         }
 
@@ -136,7 +136,7 @@ const AdminDashboard = () => {
           title: "Error",
           description: "Failed to initialize admin dashboard"
         });
-        navigate('/admin-login', { replace: true });
+        navigate('/', { replace: true });
       } finally {
         setLoading(false);
       }
@@ -201,7 +201,7 @@ const AdminDashboard = () => {
       title: "Logged Out",
       description: "Successfully logged out of admin panel"
     });
-    navigate('/admin-login', { replace: true });
+    navigate('/', { replace: true });
   };
 
   const quickStats = [

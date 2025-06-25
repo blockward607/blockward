@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, User, BookOpen, Phone, Menu, X, Shield } from "lucide-react";
@@ -20,9 +19,9 @@ export const NavBar = () => {
   const handleAdminPanel = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔥 Admin Panel button clicked (NavBar) - navigating to /admin-login');
+    console.log('🔥 Admin Panel button clicked (NavBar) - navigating to /admin');
     setMobileMenuOpen(false);
-    navigate('/admin-login');
+    navigate('/admin');
   };
   
   const handleHome = (e: React.MouseEvent) => {
