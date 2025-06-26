@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, User, BookOpen, Phone, Menu, X, Shield } from "lucide-react";
+import { Home, User, BookOpen, Phone, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiamondLogo } from "@/components/logo/DiamondLogo";
 
@@ -14,14 +15,6 @@ export const NavBar = () => {
     console.log('🔥 Sign In button clicked (NavBar) - navigating to /auth');
     setMobileMenuOpen(false);
     navigate('/auth');
-  };
-  
-  const handleAdminPanel = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('🔥 Admin Panel button clicked (NavBar) - navigating to /admin');
-    setMobileMenuOpen(false);
-    navigate('/admin');
   };
   
   const handleHome = (e: React.MouseEvent) => {
@@ -104,16 +97,6 @@ export const NavBar = () => {
             >
               Sign In
             </Button>
-            
-            <Button 
-              type="button"
-              onClick={handleAdminPanel}
-              variant="outline"
-              className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white flex items-center gap-2 cursor-pointer"
-            >
-              <Shield className="h-4 w-4" />
-              Admin Panel
-            </Button>
           </div>
         </nav>
         
@@ -175,15 +158,6 @@ export const NavBar = () => {
               className="text-purple-400 hover:text-purple-300 justify-start cursor-pointer"
             >
               Sign In
-            </Button>
-            
-            <Button 
-              type="button"
-              onClick={handleAdminPanel}
-              className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 cursor-pointer"
-            >
-              <Shield className="h-4 w-4" />
-              Admin Panel
             </Button>
           </div>
         </div>
