@@ -1117,7 +1117,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
-          institution_code: string
+          institution_code: string | null
           rejection_reason: string | null
           role: string
           school_id: string | null
@@ -1131,7 +1131,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
-          institution_code: string
+          institution_code?: string | null
           rejection_reason?: string | null
           role: string
           school_id?: string | null
@@ -1145,7 +1145,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
-          institution_code?: string
+          institution_code?: string | null
           rejection_reason?: string | null
           role?: string
           school_id?: string | null

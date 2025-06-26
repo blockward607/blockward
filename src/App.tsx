@@ -7,8 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
-import AdminLayout from "@/components/admin/AdminLayout";
-import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
@@ -35,11 +33,8 @@ import ViewTeacherDashboard from "./pages/ViewTeacherDashboard";
 import IntroPage from "./pages/IntroPage";
 import TutorialPage from "./pages/TutorialPage";
 import WalletVerify from "./pages/WalletVerify";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminSetup from "./pages/AdminSetup";
 import SchoolSetup from "./pages/SchoolSetup";
 import Behavior from "./pages/Behavior";
-import { TeacherAdminFeatures } from "@/components/admin/TeacherAdminFeatures";
 
 function App() {
   const queryClient = new QueryClient();
@@ -63,9 +58,8 @@ function App() {
                 <Route path="tutorial" element={<TutorialPage />} />
                 <Route path="auth/wallet-verify" element={<WalletVerify />} />
                 <Route path="school-setup" element={<ProtectedRoute><SchoolSetup /></ProtectedRoute>} />
-                <Route path="admin-setup" element={<ProtectedRoute><AdminSetup /></ProtectedRoute>} />
                 
-                {/* Protected Student/Teacher Routes */}
+                {/* Protected Routes for all authenticated users */}
                 <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
                 <Route path="students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
@@ -80,38 +74,12 @@ function App() {
                 <Route path="student-dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
                 <Route path="view-teacher-dashboard" element={<ProtectedRoute><ViewTeacherDashboard /></ProtectedRoute>} />
                 <Route path="behavior" element={<ProtectedRoute><Behavior /></ProtectedRoute>} />
-                <Route path="teacher-admin" element={<ProtectedRoute><TeacherAdminFeatures /></ProtectedRoute>} />
                 
                 {/* Class-specific routes */}
                 <Route path="class/:id" element={<ProtectedRoute><ClassDetails /></ProtectedRoute>} />
                 <Route path="class/:id/attendance" element={<ProtectedRoute><ClassroomAttendance /></ProtectedRoute>} />
                 <Route path="class/:id/seating" element={<ProtectedRoute><ClassroomSeating /></ProtectedRoute>} />
                 <Route path="classroom/:id/invite" element={<ProtectedRoute><ClassroomInvite /></ProtectedRoute>} />
-                
-                {/* Super Admin Routes */}
-                <Route path="super-admin" element={<AdminLayout />}>
-                  <Route index element={<SuperAdminDashboard />} />
-                  <Route path="schools" element={<div className="p-6 text-white">School Management - Coming Soon</div>} />
-                  <Route path="teachers" element={<div className="p-6 text-white">Teacher Management - Coming Soon</div>} />
-                  <Route path="students" element={<div className="p-6 text-white">Student Oversight - Coming Soon</div>} />
-                  <Route path="blockchain" element={<div className="p-6 text-white">Blockchain Settings - Coming Soon</div>} />
-                  <Route path="rules" element={<div className="p-6 text-white">Rules & Categories - Coming Soon</div>} />
-                  <Route path="analytics" element={<div className="p-6 text-white">Analytics & Reporting - Coming Soon</div>} />
-                  <Route path="system" element={<div className="p-6 text-white">System Settings - Coming Soon</div>} />
-                  <Route path="security" element={<div className="p-6 text-white">Audit & Security - Coming Soon</div>} />
-                </Route>
-                
-                {/* Regular Admin Routes */}
-                <Route path="admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="teachers" element={<div className="p-6 text-white">Admin Teachers Management - Coming Soon</div>} />
-                  <Route path="students" element={<div className="p-6 text-white">Admin Students Management - Coming Soon</div>} />
-                  <Route path="settings" element={<div className="p-6 text-white">Admin School Settings - Coming Soon</div>} />
-                  <Route path="announcements" element={<div className="p-6 text-white">Admin Announcements - Coming Soon</div>} />
-                  <Route path="analytics" element={<div className="p-6 text-white">Admin Analytics - Coming Soon</div>} />
-                  <Route path="rewards" element={<div className="p-6 text-white">Admin NFT Management - Coming Soon</div>} />
-                  <Route path="classes" element={<div className="p-6 text-white">Admin Classes Management - Coming Soon</div>} />
-                </Route>
               </Route>
             </Routes>
           </BrowserRouter>

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -15,7 +16,12 @@ import {
   ChevronRight,
   Home,
   LogOut,
-  Shield
+  Shield,
+  Settings,
+  Database,
+  Building,
+  Clock,
+  GraduationCap
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -24,7 +30,6 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AdminAccessButton } from "@/components/admin/AdminAccessButton";
 
 interface SidebarItem {
   title: string;
@@ -32,13 +37,14 @@ interface SidebarItem {
   href: string;
   badge?: number;
   children?: SidebarItem[];
+  adminOnly?: boolean;
 }
 
 export const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const [userRole, setUserRole] = useState<'teacher' | 'student' | null>(null);
+  const [userRole, setUserRole] = useState<'teacher' | 'student' | 'admin' | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -57,7 +63,7 @@ export const AppSidebar = () => {
         .eq('user_id', session.user.id)
         .single();
 
-      setUserRole(roleData?.role as 'teacher' | 'student');
+      setUserRole(roleData?.role as 'teacher' | 'student' | 'admin');
     } catch (error) {
       console.error('Error checking user role:', error);
     } finally {
@@ -83,27 +89,42 @@ export const AppSidebar = () => {
     }
   };
 
-  const teacherItems: SidebarItem[] = [
-    { title: "Dashboard", icon: Home, href: "/dashboard" },
+  const baseItems: SidebarItem[] = [
+    { title: "Dashboard", icon: Home, href: userRole === 'student' ? "/student-dashboard" : "/dashboard" },
     { title: "Classes", icon: BookOpen, href: "/classes" },
+    { title: "BlockWards & NFTs", icon: Award, href: "/wallet" },
+    { title: "Notifications", icon: Bell, href: "/notifications" }
+  ];
+
+  const teacherItems: SidebarItem[] = [
     { title: "Students", icon: Users, href: "/students" },
     { title: "Attendance", icon: UserCheck, href: "/attendance" },
     { title: "Behavior", icon: BarChart3, href: "/behavior" },
     { title: "Assignments", icon: FileText, href: "/assignments" },
     { title: "Grades", icon: BarChart3, href: "/grades" },
-    { title: "Resources", icon: BookOpen, href: "/resources" },
-    { title: "BlockWards & NFTs", icon: Award, href: "/wallet" },
-    { title: "Notifications", icon: Bell, href: "/notifications" }
+    { title: "Resources", icon: BookOpen, href: "/resources" }
   ];
 
   const studentItems: SidebarItem[] = [
-    { title: "Dashboard", icon: Home, href: "/student-dashboard" },
-    { title: "Classes", icon: BookOpen, href: "/classes" },
     { title: "Assignments", icon: FileText, href: "/assignments" },
     { title: "Grades", icon: BarChart3, href: "/grades" },
-    { title: "Progress", icon: TrendingUp, href: "/progress" },
-    { title: "My BlockWards", icon: Award, href: "/wallet" },
-    { title: "Notifications", icon: Bell, href: "/notifications" }
+    { title: "Progress", icon: TrendingUp, href: "/progress" }
+  ];
+
+  const adminItems: SidebarItem[] = [
+    { 
+      title: "Admin Panel", 
+      icon: Shield, 
+      href: "#",
+      adminOnly: true,
+      children: [
+        { title: "Pending Requests", icon: Clock, href: "/admin/pending" },
+        { title: "Manage Teachers", icon: GraduationCap, href: "/admin/teachers" },
+        { title: "Manage Students", icon: Users, href: "/admin/students" },
+        { title: "Institution Settings", icon: Building, href: "/admin/institution" },
+        { title: "System Settings", icon: Settings, href: "/admin/system" }
+      ]
+    }
   ];
 
   const toggleExpanded = (title: string) => {
@@ -115,6 +136,8 @@ export const AppSidebar = () => {
   };
 
   const renderSidebarItem = (item: SidebarItem) => {
+    if (item.adminOnly && userRole !== 'admin') return null;
+    
     const isActive = location.pathname === item.href;
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.title);
@@ -143,7 +166,7 @@ export const AppSidebar = () => {
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="ml-4 mt-1 space-y-1">
-            {item.children.map((child) => renderSidebarItem(child))}
+            {item.children?.map((child) => renderSidebarItem(child))}
           </CollapsibleContent>
         </Collapsible>
       );
@@ -185,7 +208,18 @@ export const AppSidebar = () => {
     );
   }
 
-  const sidebarItems = userRole === 'student' ? studentItems : teacherItems;
+  // Build sidebar items based on role
+  let sidebarItems = [...baseItems];
+  
+  if (userRole === 'teacher') {
+    sidebarItems = [...sidebarItems, ...teacherItems];
+  } else if (userRole === 'student') {
+    sidebarItems = [...sidebarItems, ...studentItems];
+  }
+  
+  if (userRole === 'admin') {
+    sidebarItems = [...sidebarItems, ...teacherItems, ...adminItems];
+  }
 
   return (
     <motion.div
@@ -196,7 +230,8 @@ export const AppSidebar = () => {
       <div className="p-4 flex-1">
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-white mb-2">
-            {userRole === 'student' ? 'Student Portal' : 'Teacher Portal'}
+            {userRole === 'admin' ? 'Admin Portal' : 
+             userRole === 'student' ? 'Student Portal' : 'Teacher Portal'}
           </h2>
           <div className="text-sm text-gray-400 capitalize">
             {userRole} Dashboard
@@ -206,12 +241,6 @@ export const AppSidebar = () => {
         <nav className="space-y-1">
           {sidebarItems.map(renderSidebarItem)}
         </nav>
-
-        <Separator className="my-6 bg-gray-700" />
-
-        <div className="space-y-2">
-          <AdminAccessButton />
-        </div>
       </div>
 
       <div className="p-4 border-t border-gray-800">

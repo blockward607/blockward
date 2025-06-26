@@ -28,18 +28,9 @@ export const SignUpForm = (props: SignUpFormProps) => {
     confirmPassword: "",
     institutionCode: ""
   });
-  const [institutionValid, setInstitutionValid] = useState(true); // Default to true since it's optional
+  const [institutionValid, setInstitutionValid] = useState(true);
   const [validatedSchoolName, setValidatedSchoolName] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Update formData when props change
-  useState(() => {
-    setFormData(prev => ({
-      ...prev,
-      email: props.email,
-      password: props.password
-    }));
-  });
 
   const handleValidation = (isValid: boolean, message?: string) => {
     setInstitutionValid(isValid);
@@ -87,7 +78,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
     }
 
     // Institution code validation only if provided
-    if ((props.role === 'teacher' || props.role === 'student') && formData.institutionCode.trim() && !institutionValid) {
+    if (formData.institutionCode.trim() && !institutionValid) {
       props.setErrorMessage("Please enter a valid institution code or leave it empty");
       props.setShowError(true);
       return false;
@@ -108,70 +99,43 @@ export const SignUpForm = (props: SignUpFormProps) => {
     props.setShowError(false);
 
     try {
-      if (props.role === 'admin') {
-        // For admin, use regular Supabase auth signup
-        const { data, error } = await supabase.auth.signUp({
-          email: formData.email,
+      // All users (including admins) now go through the pending users system
+      const { data, error } = await supabase.rpc('create_pending_user', {
+        p_email: formData.email,
+        p_full_name: formData.fullName,
+        p_role: props.role,
+        p_institution_code: formData.institutionCode.trim() || null,
+        p_additional_info: {
           password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/admin-dashboard`,
-            data: {
-              full_name: formData.fullName,
-              role: 'admin'
-            }
-          }
-        });
-
-        if (error) throw error;
-
-        if (data.user && !data.session) {
-          toast({
-            title: "Check your email",
-            description: "We've sent you a confirmation link to complete your registration."
-          });
-        } else {
-          toast({
-            title: "Account created",
-            description: "Your admin account has been created successfully."
-          });
-          navigate('/admin-dashboard');
+          school_name: validatedSchoolName || 'No specific school'
         }
-      } else {
-        // For teacher/student, use the pending users system
-        const { data, error } = await supabase.rpc('create_pending_user', {
-          p_email: formData.email,
-          p_full_name: formData.fullName,
-          p_role: props.role,
-          p_institution_code: formData.institutionCode.trim() || null, // Pass null if empty
-          p_additional_info: {
-            password: formData.password,
-            school_name: validatedSchoolName || 'No specific school'
-          }
+      });
+
+      if (error) throw error;
+
+      const result = data as { valid: boolean; message?: string; error?: string };
+      
+      if (result.valid) {
+        toast({
+          title: "Registration Submitted",
+          description: result.message || "Your registration has been submitted. Admin approval may be required."
         });
-
-        if (error) throw error;
-
-        const result = data as { valid: boolean; message?: string; error?: string };
         
-        if (result.valid) {
-          toast({
-            title: "Registration Submitted",
-            description: result.message || "Your registration has been submitted. You can now sign in!"
-          });
-          
-          // Clear form
-          setFormData({
-            fullName: "",
-            email: "",
-            password: "",
-            confirmPassword: "",
-            institutionCode: ""
-          });
-          props.setEmail("");
-          props.setPassword("");
-        } else {
-          throw new Error(result.error || 'Registration failed');
-        }
+        // Clear form
+        setFormData({
+          fullName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          institutionCode: ""
+        });
+        props.setEmail("");
+        props.setPassword("");
+        
+        // Navigate back to auth page
+        navigate('/auth');
+      } else {
+        throw new Error(result.error || 'Registration failed');
       }
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -188,7 +152,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
       <SignUpFormFields
         formData={formData}
         setFormData={setFormData}
-        showInstitutionCode={props.role === 'teacher' || props.role === 'student'}
+        showInstitutionCode={true}
         onInstitutionValidation={handleValidation}
       />
       
