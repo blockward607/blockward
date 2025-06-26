@@ -13,7 +13,7 @@ const SignUp = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<'teacher' | 'student'>('teacher');
+  const [role, setRole] = useState<'teacher' | 'student' | 'admin'>('teacher');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showError, setShowError] = useState(false);
@@ -74,6 +74,16 @@ const SignUp = () => {
                 onClick={() => setRole('student')}
               >
                 Student
+              </button>
+              <button
+                className={`flex-1 py-3 text-center font-medium transition-all ${
+                  role === 'admin'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setRole('admin')}
+              >
+                Admin
               </button>
             </div>
 
