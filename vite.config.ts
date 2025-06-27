@@ -9,9 +9,27 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    watch: {
+      // Reduce file watching to prevent EMFILE errors
+      usePolling: false,
+      interval: 1000,
+      ignored: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/.git/**',
+        '**/coverage/**',
+        '**/build/**',
+        '**/public/**',
+        '**/.next/**',
+        '**/.nuxt/**',
+        '**/.vuepress/**',
+        '**/.serverless/**',
+        '**/.nyc_output/**',
+        '**/.cache/**'
+      ]
+    }
   },
   build: {
-    // Remove the problematic manual chunks configuration that was causing the build error
     rollupOptions: {
       output: {
         manualChunks: {
