@@ -75,7 +75,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
     props.setShowError(false);
 
     try {
-      // Direct signup with Supabase Auth - no admin approval needed
+      // Direct signup with Supabase Auth - immediate access
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -91,8 +91,8 @@ export const SignUpForm = (props: SignUpFormProps) => {
 
       if (data.user) {
         toast({
-          title: "Account Created Successfully!",
-          description: "You can now sign in with your credentials."
+          title: "Welcome to BlockWard!",
+          description: "Your account has been created successfully. You can now sign in and start using all features immediately."
         });
         
         // Clear form
@@ -105,7 +105,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
         props.setEmail("");
         props.setPassword("");
         
-        // Navigate directly to sign in - no approval needed
+        // Navigate to sign in
         navigate('/auth');
       }
     } catch (error: any) {
@@ -131,7 +131,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
         className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
         disabled={loading}
       >
-        {loading ? "Creating Account..." : `Sign Up as ${props.role.charAt(0).toUpperCase() + props.role.slice(1)}`}
+        {loading ? "Creating Account..." : `Create ${props.role.charAt(0).toUpperCase() + props.role.slice(1)} Account`}
       </Button>
     </form>
   );
