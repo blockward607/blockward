@@ -75,7 +75,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
     props.setShowError(false);
 
     try {
-      // Sign up the user directly
+      // Direct signup with Supabase Auth - no admin approval needed
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -105,7 +105,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
         props.setEmail("");
         props.setPassword("");
         
-        // Navigate to sign in
+        // Navigate directly to sign in - no approval needed
         navigate('/auth');
       }
     } catch (error: any) {
