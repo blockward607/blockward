@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,8 @@ import {
 import { StudentSelect } from "@/components/nft/StudentSelect";
 import { useToast } from "@/hooks/use-toast";
 import { useStudents } from "@/hooks/use-students";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Assignment {
   id: string;
@@ -40,8 +41,11 @@ interface Assignment {
 const Assignments = () => {
   const { toast } = useToast();
   const { students } = useStudents();
+  const { userRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState("");
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [studentAssignments, setStudentAssignments] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -51,8 +55,61 @@ const Assignments = () => {
     points: 100
   });
 
-  // Remove pre-populated assignments - start with empty array
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  useEffect(() => {
+    if (userRole === 'student') {
+      fetchStudentAssignments();
+    }
+  }, [userRole]);
+
+  const fetchStudentAssignments = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Get student profile
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!studentData) return;
+
+      // Get assignments for student's classrooms
+      const { data: classroomStudents } = await supabase
+        .from('classroom_students')
+        .select('classroom_id')
+        .eq('student_id', studentData.id);
+
+      if (!classroomStudents || classroomStudents.length === 0) return;
+
+      const classroomIds = classroomStudents.map(cs => cs.classroom_id);
+
+      const { data: assignments, error } = await supabase
+        .from('assignments')
+        .select(`
+          *,
+          classrooms (
+            name,
+            teacher_profiles (
+              full_name
+            )
+          )
+        `)
+        .in('classroom_id', classroomIds)
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+      setStudentAssignments(assignments || []);
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load assignments"
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +192,57 @@ const Assignments = () => {
     }
   };
 
+  // Student view
+  if (userRole === 'student') {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">My Assignments</h1>
+        
+        {studentAssignments.length === 0 ? (
+          <Card className="p-8 glass-card text-center">
+            <div className="text-gray-300 space-y-4">
+              <FileText className="w-16 h-16 mx-auto text-purple-400 opacity-50" />
+              <p className="text-xl">No assignments yet</p>
+              <p className="text-gray-400">Your teachers will assign work here</p>
+            </div>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {studentAssignments.map((assignment) => (
+              <Card key={assignment.id} className="p-6 glass-card">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      {assignment.title}
+                    </h3>
+                    <p className="text-gray-400 mb-3">{assignment.description}</p>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1 text-gray-400">
+                        <Calendar className="w-4 h-4" />
+                        Due: {assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : 'No due date'}
+                      </div>
+                      <div className="flex items-center gap-1 text-purple-400">
+                        <Sparkles className="w-4 h-4" />
+                        {assignment.points_possible} Points
+                      </div>
+                      <div className="text-gray-400">
+                        Class: {assignment.classrooms?.name}
+                      </div>
+                      <div className="text-gray-400">
+                        Teacher: {assignment.classrooms?.teacher_profiles?.full_name}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Teacher view
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Assignments & Activities</h1>

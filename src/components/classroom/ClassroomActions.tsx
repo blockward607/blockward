@@ -82,6 +82,7 @@ export const ClassroomActions = ({
     );
   }
   
+  // Student view - limited actions
   return (
     <div className="grid grid-cols-2 gap-2">
       <Button 

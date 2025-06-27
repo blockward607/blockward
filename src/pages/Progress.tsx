@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ChartBar, Trophy, Star, Loader2 } from "lucide-react";
 import { Progress as ProgressBar } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { StudentFeedbackView } from "@/components/student/StudentFeedbackView";
 
 const ProgressPage = () => {
   const [loading, setLoading] = useState(true);
@@ -91,25 +92,11 @@ const ProgressPage = () => {
     );
   }
 
-  // Empty state - show blank page as requested
-  if (!hasData) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">My Progress</h1>
-        <Card className="p-8 text-center">
-          <p className="text-gray-400">No progress data available yet.</p>
-          <p className="text-gray-500 text-sm mt-2">
-            Your teacher will assign tasks and provide feedback.
-          </p>
-        </Card>
-      </div>
-    );
-  }
-
-  // Data available state
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">My Progress</h1>
+      
+      {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="p-6">
           <div className="flex items-center gap-4">
@@ -145,6 +132,15 @@ const ProgressPage = () => {
           </div>
         </Card>
       </div>
+
+      {/* Teacher Feedback Section */}
+      <StudentFeedbackView />
+      
+      {!hasData && (
+        <Card className="p-8 text-center">
+          <p className="text-gray-400">More progress data will appear as you complete assignments and participate in class.</p>
+        </Card>
+      )}
     </div>
   );
 };

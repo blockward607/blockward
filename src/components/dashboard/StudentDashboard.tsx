@@ -5,6 +5,7 @@ import { Award, Book, ChartBar, Grid, Mail, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { StudentAttendanceView } from "@/components/student/StudentAttendanceView";
 
 export const StudentDashboard = () => {
   const [studentEmail, setStudentEmail] = useState<string | null>(null);
@@ -66,7 +67,7 @@ export const StudentDashboard = () => {
         </div>
       </Card>
 
-      {/* Dashboard Cards */}
+      {/* Quick Navigation Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="p-6 glass-card hover:bg-purple-900/10 transition-all">
           <div className="flex flex-col h-full">
@@ -76,7 +77,7 @@ export const StudentDashboard = () => {
               </div>
               <h3 className="text-lg font-semibold">My Classes</h3>
             </div>
-            <p className="text-sm text-gray-400 mb-4">View your enrolled classes and assignments</p>
+            <p className="text-sm text-gray-400 mb-4">View your enrolled classes and join new ones</p>
             <Link to="/classes" className="mt-auto text-purple-400 hover:text-purple-300">
               View classes →
             </Link>
@@ -89,11 +90,11 @@ export const StudentDashboard = () => {
               <div className="p-3 rounded-full bg-purple-600/20">
                 <ChartBar className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold">Behavior Points</h3>
+              <h3 className="text-lg font-semibold">My Progress</h3>
             </div>
-            <p className="text-sm text-gray-400 mb-4">Track your behavior points and achievements</p>
-            <Link to="/behavior" className="mt-auto text-purple-400 hover:text-purple-300">
-              View points →
+            <p className="text-sm text-gray-400 mb-4">Track your academic progress and feedback</p>
+            <Link to="/progress" className="mt-auto text-purple-400 hover:text-purple-300">
+              View progress →
             </Link>
           </div>
         </Card>
@@ -117,50 +118,20 @@ export const StudentDashboard = () => {
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-full bg-purple-600/20">
-                <Grid className="w-6 h-6 text-purple-400" />
-              </div>
-              <h3 className="text-lg font-semibold">Seating Plans</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">View your class seating arrangements</p>
-            <Link to="/seating" className="mt-auto text-purple-400 hover:text-purple-300">
-              View seating →
-            </Link>
-          </div>
-        </Card>
-      </div>
-
-      {/* NFTs and Wallet */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="p-6 glass-card hover:bg-purple-900/10 transition-all">
-          <div className="flex flex-col h-full">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-full bg-purple-600/20">
-                <Award className="w-6 h-6 text-purple-400" />
-              </div>
-              <h3 className="text-lg font-semibold">My NFTs</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">View your collected achievement NFTs</p>
-            <Link to="/wallet" className="mt-auto text-purple-400 hover:text-purple-300">
-              View wallet →
-            </Link>
-          </div>
-        </Card>
-
-        <Card className="p-6 glass-card hover:bg-purple-900/10 transition-all">
-          <div className="flex flex-col h-full">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-full bg-purple-600/20">
                 <Mail className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold">Messages</h3>
+              <h3 className="text-lg font-semibold">Assignments</h3>
             </div>
-            <p className="text-sm text-gray-400 mb-4">Check messages from your teachers</p>
-            <Link to="/messages" className="mt-auto text-purple-400 hover:text-purple-300">
-              View messages →
+            <p className="text-sm text-gray-400 mb-4">View your assignments and submissions</p>
+            <Link to="/assignments" className="mt-auto text-purple-400 hover:text-purple-300">
+              View assignments →
             </Link>
           </div>
         </Card>
       </div>
+
+      {/* Attendance Section */}
+      <StudentAttendanceView />
     </div>
   );
 };

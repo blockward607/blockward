@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ClassroomsList } from "@/components/classroom/ClassroomsList";
 import { ClassesPageHeader } from "@/components/classroom/ClassesPageHeader";
 import { JoinClassSection } from "@/components/classroom/JoinClassSection";
+import { JoinClassButton } from "@/components/student/JoinClassButton";
 import { useAuth } from "@/hooks/use-auth";
 import { useClassroomManagement } from "@/hooks/use-classroom-management";
 import { JoinClassProvider } from "@/components/classroom/join/JoinClassContext";
@@ -45,11 +46,23 @@ const Classes = () => {
         variants={containerVariants}
         className="space-y-8 relative z-10"
       >
-        <ClassesPageHeader 
-          userRole={userRole} 
-          onClassroomCreated={handleClassroomCreated}
-        />
+        {/* Header - different for students vs teachers */}
+        {userRole === 'student' ? (
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold gradient-text">My Classes</h1>
+              <p className="text-gray-400 mt-2">View your enrolled classes and join new ones</p>
+            </div>
+            <JoinClassButton onClassJoined={handleClassroomJoined} />
+          </div>
+        ) : (
+          <ClassesPageHeader 
+            userRole={userRole} 
+            onClassroomCreated={handleClassroomCreated}
+          />
+        )}
         
+        {/* Legacy join class section for backward compatibility */}
         {userRole === 'student' && (
           <JoinClassSection />
         )}
@@ -57,7 +70,7 @@ const Classes = () => {
         <ClassroomsList 
           classrooms={classrooms}
           userRole={userRole}
-          onDelete={handleDeleteClassroom}
+          onDelete={userRole === 'teacher' ? handleDeleteClassroom : undefined}
           onSelect={setSelectedClassroom}
           selectedClassroom={selectedClassroom}
         />
