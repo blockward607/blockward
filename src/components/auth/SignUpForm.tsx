@@ -25,26 +25,9 @@ export const SignUpForm = (props: SignUpFormProps) => {
     fullName: "",
     email: props.email,
     password: props.password,
-    confirmPassword: "",
-    institutionCode: ""
+    confirmPassword: ""
   });
-  const [institutionValid, setInstitutionValid] = useState(true);
-  const [validatedSchoolName, setValidatedSchoolName] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const handleValidation = (isValid: boolean, message?: string) => {
-    setInstitutionValid(isValid);
-    if (isValid && message) {
-      setValidatedSchoolName(message);
-    }
-    
-    if (!isValid && message) {
-      props.setErrorMessage(message);
-      props.setShowError(true);
-    } else {
-      props.setShowError(false);
-    }
-  };
 
   const validateForm = () => {
     if (!formData.fullName.trim()) {
@@ -77,7 +60,6 @@ export const SignUpForm = (props: SignUpFormProps) => {
       return false;
     }
 
-    // Institution code is now optional - no validation needed
     return true;
   };
 
@@ -93,26 +75,24 @@ export const SignUpForm = (props: SignUpFormProps) => {
     props.setShowError(false);
 
     try {
-      // All users now go through the pending users system with optional institution code
-      const { data, error } = await supabase.rpc('create_pending_user', {
-        p_email: formData.email,
-        p_full_name: formData.fullName,
-        p_role: props.role,
-        p_institution_code: formData.institutionCode.trim() || null,
-        p_additional_info: {
-          password: formData.password,
-          school_name: validatedSchoolName || 'General School'
+      // Sign up the user directly
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            role: props.role
+          }
         }
       });
 
       if (error) throw error;
 
-      const result = data as { valid: boolean; message?: string; error?: string };
-      
-      if (result.valid) {
+      if (data.user) {
         toast({
-          title: "Registration Submitted",
-          description: result.message || "Your registration has been submitted successfully."
+          title: "Account Created Successfully!",
+          description: "You can now sign in with your credentials."
         });
         
         // Clear form
@@ -120,16 +100,13 @@ export const SignUpForm = (props: SignUpFormProps) => {
           fullName: "",
           email: "",
           password: "",
-          confirmPassword: "",
-          institutionCode: ""
+          confirmPassword: ""
         });
         props.setEmail("");
         props.setPassword("");
         
-        // Navigate back to auth page
+        // Navigate to sign in
         navigate('/auth');
-      } else {
-        throw new Error(result.error || 'Registration failed');
       }
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -147,7 +124,6 @@ export const SignUpForm = (props: SignUpFormProps) => {
         formData={formData}
         setFormData={setFormData}
         showInstitutionCode={false}
-        onInstitutionValidation={handleValidation}
       />
       
       <Button
