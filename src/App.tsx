@@ -35,6 +35,7 @@ import TutorialPage from "./pages/TutorialPage";
 import WalletVerify from "./pages/WalletVerify";
 import SchoolSetup from "./pages/SchoolSetup";
 import Behavior from "./pages/Behavior";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   const queryClient = new QueryClient();
@@ -58,6 +59,9 @@ function App() {
                 <Route path="tutorial" element={<TutorialPage />} />
                 <Route path="auth/wallet-verify" element={<WalletVerify />} />
                 <Route path="school-setup" element={<ProtectedRoute><SchoolSetup /></ProtectedRoute>} />
+                
+                {/* Admin Dashboard Route */}
+                <Route path="admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 
                 {/* Protected Routes for all authenticated users */}
                 <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

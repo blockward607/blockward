@@ -77,13 +77,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
       return false;
     }
 
-    // Institution code validation only if provided
-    if (formData.institutionCode.trim() && !institutionValid) {
-      props.setErrorMessage("Please enter a valid institution code or leave it empty");
-      props.setShowError(true);
-      return false;
-    }
-
+    // Institution code is now optional - no validation needed
     return true;
   };
 
@@ -99,7 +93,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
     props.setShowError(false);
 
     try {
-      // All users (including admins) now go through the pending users system
+      // All users now go through the pending users system with optional institution code
       const { data, error } = await supabase.rpc('create_pending_user', {
         p_email: formData.email,
         p_full_name: formData.fullName,
@@ -107,7 +101,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
         p_institution_code: formData.institutionCode.trim() || null,
         p_additional_info: {
           password: formData.password,
-          school_name: validatedSchoolName || 'No specific school'
+          school_name: validatedSchoolName || 'General School'
         }
       });
 
@@ -118,7 +112,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
       if (result.valid) {
         toast({
           title: "Registration Submitted",
-          description: result.message || "Your registration has been submitted. Admin approval may be required."
+          description: result.message || "Your registration has been submitted successfully."
         });
         
         // Clear form
@@ -152,7 +146,7 @@ export const SignUpForm = (props: SignUpFormProps) => {
       <SignUpFormFields
         formData={formData}
         setFormData={setFormData}
-        showInstitutionCode={true}
+        showInstitutionCode={false}
         onInstitutionValidation={handleValidation}
       />
       

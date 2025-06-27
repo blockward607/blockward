@@ -55,7 +55,7 @@ export const SignInForm = ({
       }
 
       if (data.user) {
-        // Check if user role matches selected role
+        // Check if user role matches selected role (but don't block admin access)
         const { data: userRole } = await supabase
           .from('user_roles')
           .select('role')
@@ -63,26 +63,20 @@ export const SignInForm = ({
           .single();
 
         if (userRole?.role !== role) {
-          if (role === 'admin') {
-            setErrorMessage("Admin access denied. Please use the Admin Panel login.");
-            setShowError(true);
-            await supabase.auth.signOut();
-            return;
-          } else {
-            setErrorMessage(`Please select the correct role: ${userRole?.role || 'unknown'}`);
-            setShowError(true);
-            await supabase.auth.signOut();
-            return;
-          }
+          // Only show warning, don't block access
+          toast({
+            title: `Signed in as ${userRole?.role || 'user'}`,
+            description: `Note: You selected ${role} but your account role is ${userRole?.role || 'unknown'}`,
+          });
+        } else {
+          toast({
+            title: `Welcome ${role}!`,
+            description: "You have successfully signed in.",
+          });
         }
 
-        toast({
-          title: `Welcome ${role}!`,
-          description: "You have successfully signed in.",
-        });
-
-        // Redirect based on role
-        if (role === 'admin') {
+        // Navigate based on actual user role, not selected role
+        if (userRole?.role === 'admin') {
           navigate('/admin-dashboard');
         } else {
           navigate('/dashboard');

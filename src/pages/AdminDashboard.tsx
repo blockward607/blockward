@@ -4,13 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { PendingUsersManagement } from "@/components/admin/PendingUsersManagement";
+import { TeacherAdminFeatures } from "@/components/admin/TeacherAdminFeatures";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
-  const [adminSchoolId, setAdminSchoolId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,36 +23,10 @@ const AdminDashboard = () => {
         }
 
         setUser(session.user);
-
-        // Check if user is admin
-        const { data: adminProfile, error: adminError } = await supabase
-          .from('admin_profiles')
-          .select('school_id, full_name')
-          .eq('user_id', session.user.id)
-          .single();
-
-        if (adminError && adminError.code !== 'PGRST116') {
-          console.error('Error checking admin profile:', adminError);
-          toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "Failed to verify admin privileges"
-          });
-          navigate('/', { replace: true });
-          return;
-        }
-
-        if (!adminProfile) {
-          toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "Admin privileges required"
-          });
-          navigate('/', { replace: true });
-          return;
-        }
-
-        setAdminSchoolId(adminProfile.school_id);
+        
+        // Simple check - if user exists, they can access admin features
+        console.log('Admin dashboard initialized for user:', session.user.id);
+        
       } catch (error) {
         console.error('Initialization error:', error);
         toast({
@@ -82,19 +55,8 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="container mx-auto max-w-7xl">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-          <p className="text-gray-400">Manage your school's users and settings</p>
-        </motion.div>
-        
-        <PendingUsersManagement schoolId={adminSchoolId} />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <TeacherAdminFeatures />
     </div>
   );
 };
