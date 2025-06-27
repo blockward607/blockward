@@ -1445,6 +1445,57 @@ export type Database = {
           },
         ]
       }
+      student_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          feedback_text: string
+          id: string
+          rating: number | null
+          student_id: string
+          teacher_id: string
+          teacher_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          feedback_text: string
+          id?: string
+          rating?: number | null
+          student_id: string
+          teacher_id: string
+          teacher_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          feedback_text?: string
+          id?: string
+          rating?: number | null
+          student_id?: string
+          teacher_id?: string
+          teacher_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_feedback_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_feedback_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_homeroom_assignments: {
         Row: {
           academic_year: string
