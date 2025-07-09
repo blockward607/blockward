@@ -53,10 +53,12 @@ export const JoinClassButton = ({ onClassJoined }: { onClassJoined?: () => void 
 
       if (error) throw error;
 
-      if (result.success) {
+      const joinResult = result as { success: boolean; classroom_name?: string; error?: string };
+
+      if (joinResult.success) {
         toast({
           title: "Success!",
-          description: `Successfully joined ${result.classroom_name}`
+          description: `Successfully joined ${joinResult.classroom_name || 'the class'}`
         });
         setClassCode("");
         setIsOpen(false);
@@ -65,7 +67,7 @@ export const JoinClassButton = ({ onClassJoined }: { onClassJoined?: () => void 
         toast({
           variant: "destructive",
           title: "Failed to join class",
-          description: result.error
+          description: joinResult.error || "Unknown error occurred"
         });
       }
     } catch (error: any) {

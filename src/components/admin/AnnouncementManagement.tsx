@@ -94,6 +94,17 @@ export const AnnouncementManagement = () => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error('User not authenticated');
 
+      // Verify user is admin or teacher
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (roleError || (userRole?.role !== 'admin' && userRole?.role !== 'teacher')) {
+        throw new Error("Only admins and teachers can create announcements");
+      }
+
       const announcementData = {
         title: formData.title,
         message: formData.message,

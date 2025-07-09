@@ -63,6 +63,16 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    
+    if (!isTeacher) {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "Only teachers can create announcements",
+      });
+      return;
+    }
+    
     if (!form.title.trim() || !form.message.trim()) {
       toast({
         variant: "destructive",
@@ -71,6 +81,7 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
       });
       return;
     }
+    
     try {
       setSubmitting(true);
       console.log("Fetching session for posting announcement...");
@@ -84,6 +95,19 @@ export const AnnouncementStream: React.FC<AnnouncementStreamProps> = ({
         setErrorMessage("You are not logged in. Please refresh the page and login again.");
         throw new Error("Not authenticated");
       }
+      
+      // Verify user is a teacher
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (roleError || userRole?.role !== 'teacher') {
+        setErrorMessage("Only teachers can create announcements");
+        throw new Error("Unauthorized");
+      }
+      
       console.log("Session found:", session);
       
       const payload = {

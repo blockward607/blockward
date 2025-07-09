@@ -23,8 +23,8 @@ const Index = () => {
   const handleAdminPanel = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔥 Admin Panel button clicked (Index) - navigating to /admin-login');
-    navigate('/admin-login');
+    console.log('🔥 Admin Panel button clicked (Index) - navigating to /auth');
+    navigate('/auth');
   };
 
   const handleLogoClick = (e: React.MouseEvent) => {

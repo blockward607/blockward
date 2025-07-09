@@ -78,6 +78,17 @@ export const TeacherAnnouncementForm = ({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
+      // Verify user is a teacher
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (roleError || userRole?.role !== 'teacher') {
+        throw new Error("Only teachers can create announcements");
+      }
+
       const { error } = await supabase.from('notifications').insert({
         title,
         message,
