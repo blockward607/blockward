@@ -8,12 +8,14 @@ interface SeatItemProps {
   seat: Seat;
   onRemoveSeat: (seatId: string) => void;
   onRemoveStudentFromSeat: (seatId: string) => void;
+  onDropOnSeat?: (e: React.DragEvent, seatId: string) => void;
 }
 
 export const SeatItem: React.FC<SeatItemProps> = ({
   seat,
   onRemoveSeat,
-  onRemoveStudentFromSeat
+  onRemoveStudentFromSeat,
+  onDropOnSeat
 }) => {
   const {
     isEditing,
@@ -59,6 +61,11 @@ export const SeatItem: React.FC<SeatItemProps> = ({
     
     const studentId = e.dataTransfer.getData('text/plain');
     if (!studentId) return;
+    
+    // Call the onDropOnSeat prop if provided
+    if (onDropOnSeat) {
+      onDropOnSeat(e, seat.id);
+    }
   };
 
   return (
