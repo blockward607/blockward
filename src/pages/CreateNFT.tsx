@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, Upload, Wallet, ExternalLink } from 'lucide-react';
+import { AlertCircle, Upload, Wallet, ExternalLink, CheckCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { NFTStorageService } from '@/services/NFTStorageService';
 import { blockchainService } from '@/blockchain/services/BlockchainService';
@@ -22,9 +23,32 @@ interface MintResult {
   success: boolean;
   tokenId?: string;
   transactionHash?: string;
+  contractAddress: string;
   openseaUrl?: string;
+  polygonScanUrl?: string;
   error?: string;
 }
+
+interface ChainInfo {
+  chainId: number;
+  name: string;
+  blockExplorerUrl: string;
+}
+
+const SUPPORTED_CHAINS: ChainInfo[] = [
+  {
+    chainId: 80001,
+    name: 'Polygon Mumbai',
+    blockExplorerUrl: 'https://mumbai.polygonscan.com'
+  },
+  {
+    chainId: 84532,
+    name: 'Base Sepolia',
+    blockExplorerUrl: 'https://sepolia.basescan.org'
+  }
+];
+
+const CONTRACT_ADDRESS = '0x4f05A50AF9aCd968A31605c59C376B35EF352aC1';
 
 export default function CreateNFT() {
   const [formData, setFormData] = useState<NFTFormData>({
@@ -34,13 +58,63 @@ export default function CreateNFT() {
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [currentChain, setCurrentChain] = useState<ChainInfo | null>(null);
+  const [isCorrectChain, setIsCorrectChain] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isUploadingMetadata, setIsUploadingMetadata] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
+  const [metadataCid, setMetadataCid] = useState<string | null>(null);
+  const [imageCid, setImageCid] = useState<string | null>(null);
   const [mintResult, setMintResult] = useState<MintResult | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [nftStorageKeyAvailable, setNftStorageKeyAvailable] = useState(false);
   const { toast } = useToast();
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Check if NFT_STORAGE_API_KEY is available
+  useEffect(() => {
+    const checkNftStorageKey = async () => {
+      try {
+        const response = await fetch('https://vuwowvhoiyzmnjuoawqz.supabase.co/functions/v1/get-nft-storage-key');
+        if (response.ok) {
+          const { apiKey } = await response.json();
+          setNftStorageKeyAvailable(!!apiKey);
+        }
+      } catch (error) {
+        console.error('Error checking NFT storage key:', error);
+        setNftStorageKeyAvailable(false);
+      }
+    };
+    checkNftStorageKey();
+  }, []);
+
+  // Check current network when wallet is connected
+  useEffect(() => {
+    const checkNetwork = async () => {
+      if (window.ethereum && walletAddress) {
+        try {
+          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+          const chainIdNumber = parseInt(chainId, 16);
+          const supportedChain = SUPPORTED_CHAINS.find(chain => chain.chainId === chainIdNumber);
+          
+          setCurrentChain(supportedChain || { chainId: chainIdNumber, name: 'Unknown', blockExplorerUrl: '' });
+          setIsCorrectChain(!!supportedChain);
+        } catch (error) {
+          console.error('Error checking network:', error);
+        }
+      }
+    };
+    
+    checkNetwork();
+    
+    // Listen for network changes
+    if (window.ethereum) {
+      window.ethereum.on('chainChanged', checkNetwork);
+      return () => window.ethereum.removeListener('chainChanged', checkNetwork);
+    }
+  }, [walletAddress]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
@@ -60,6 +134,33 @@ export default function CreateNFT() {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Auto-upload image to IPFS
+      if (nftStorageKeyAvailable) {
+        await uploadImageToIPFS(file);
+      }
+    }
+  };
+
+  const uploadImageToIPFS = async (file: File) => {
+    setIsUploadingImage(true);
+    try {
+      const imageUri = await NFTStorageService.uploadImage(file);
+      const cid = imageUri.replace('ipfs://', '');
+      setImageCid(cid);
+      
+      toast({
+        title: "Image uploaded to IPFS",
+        description: `CID: ${cid.substring(0, 8)}...`
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message
+      });
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -88,27 +189,49 @@ export default function CreateNFT() {
     }
   };
 
-  const uploadToIPFS = async (): Promise<string> => {
-    if (!formData.image || !formData.title) {
-      throw new Error('Image and title are required');
+  const switchToSupportedChain = async () => {
+    if (!window.ethereum) return;
+    
+    try {
+      await blockchainService.switchToPolygonMumbai();
+      toast({
+        title: "Network switched",
+        description: "Switched to Polygon Mumbai"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Network switch failed",
+        description: error.message
+      });
+    }
+  };
+
+  const uploadMetadataToIPFS = async (): Promise<string> => {
+    if (!imageCid || !formData.title) {
+      throw new Error('Image must be uploaded and title is required');
     }
 
-    setIsUploading(true);
+    setIsUploadingMetadata(true);
     try {
-      const result = await NFTStorageService.uploadNFT({
-        title: formData.title,
+      const metadata = {
+        name: formData.title,
         description: formData.description,
-        image: formData.image
-      });
+        image: `ipfs://${imageCid}`
+      };
+
+      const metadataUri = await NFTStorageService.uploadMetadata(metadata);
+      const cid = metadataUri.replace('ipfs://', '');
+      setMetadataCid(cid);
 
       toast({
-        title: "Uploaded to IPFS",
-        description: "Metadata stored successfully"
+        title: "Metadata uploaded to IPFS",
+        description: `CID: ${cid.substring(0, 8)}...`
       });
 
-      return result.metadataUri;
+      return metadataUri;
     } finally {
-      setIsUploading(false);
+      setIsUploadingMetadata(false);
     }
   };
 
@@ -122,19 +245,28 @@ export default function CreateNFT() {
       return;
     }
 
-    if (!formData.image || !formData.title) {
+    if (!isCorrectChain) {
+      toast({
+        variant: "destructive",
+        title: "Wrong Network",
+        description: "Please switch to a supported network"
+      });
+      return;
+    }
+
+    if (!imageCid || !formData.title) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill in all fields and upload an image"
+        description: "Please upload an image and fill in all fields"
       });
       return;
     }
 
     setIsMinting(true);
     try {
-      // Upload to IPFS first
-      const metadataUri = await uploadToIPFS();
+      // Upload metadata to IPFS if not already done
+      let metadataUri = metadataCid ? `ipfs://${metadataCid}` : await uploadMetadataToIPFS();
 
       // Mint the NFT
       const result = await blockchainService.mintBlockWard(walletAddress, {
@@ -143,14 +275,20 @@ export default function CreateNFT() {
         image: metadataUri
       });
 
-      const openseaUrl = `https://testnets.opensea.io/assets/mumbai/0x4f05A50AF9aCd968A31605c59C376B35EF352aC1/${result.tokenId}`;
+      const blockExplorer = currentChain?.blockExplorerUrl || 'https://mumbai.polygonscan.com';
+      const openseaUrl = `https://testnets.opensea.io/assets/mumbai/${CONTRACT_ADDRESS}/${result.tokenId}`;
+      const polygonScanUrl = `${blockExplorer}/tx/${(result as any).transactionHash || 'simulated'}`;
 
       setMintResult({
         success: true,
         tokenId: result.tokenId,
         transactionHash: (result as any).transactionHash || 'simulated',
-        openseaUrl
+        contractAddress: CONTRACT_ADDRESS,
+        openseaUrl,
+        polygonScanUrl
       });
+
+      setShowSuccessModal(true);
 
       toast({
         title: "NFT Minted Successfully!",
@@ -160,10 +298,13 @@ export default function CreateNFT() {
       // Reset form
       setFormData({ title: '', description: '', image: null });
       setImagePreview(null);
+      setImageCid(null);
+      setMetadataCid(null);
 
     } catch (error: any) {
       setMintResult({
         success: false,
+        contractAddress: CONTRACT_ADDRESS,
         error: error.message
       });
       toast({
@@ -176,6 +317,16 @@ export default function CreateNFT() {
     }
   };
 
+  const canMint = walletAddress && 
+                 isCorrectChain && 
+                 imageCid && 
+                 formData.title.trim() && 
+                 formData.description.trim() && 
+                 nftStorageKeyAvailable &&
+                 !isMinting && 
+                 !isUploadingImage && 
+                 !isUploadingMetadata;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="text-center mb-8">
@@ -187,6 +338,17 @@ export default function CreateNFT() {
         </p>
       </div>
 
+      {/* NFT Storage Key Check */}
+      {!nftStorageKeyAvailable && (
+        <Alert className="mb-6">
+          <AlertCircle className="w-4 h-4" />
+          <AlertDescription>
+            NFT.storage API key is not configured. Please add it in Supabase secrets to enable IPFS uploads.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Wallet Connection */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -201,17 +363,43 @@ export default function CreateNFT() {
               disabled={isConnecting}
               className="w-full"
             >
-              {isConnecting ? 'Connecting...' : 'Connect MetaMask'}
+              {isConnecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                'Connect MetaMask'
+              )}
             </Button>
           ) : (
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <span className="text-sm">Connected: {truncateAddress(walletAddress)}</span>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="text-sm">Connected: {truncateAddress(walletAddress)}</span>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              </div>
+              
+              {/* Network Status */}
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">Network:</span>
+                  <span className={`text-sm font-medium ${isCorrectChain ? 'text-green-600' : 'text-orange-600'}`}>
+                    {currentChain?.name || 'Unknown'}
+                  </span>
+                  {isCorrectChain && <CheckCircle className="w-4 h-4 text-green-600" />}
+                </div>
+                {!isCorrectChain && (
+                  <Button onClick={switchToSupportedChain} size="sm" variant="outline">
+                    Switch Network
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* NFT Creation Form */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -230,27 +418,46 @@ export default function CreateNFT() {
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="hidden"
+                disabled={!nftStorageKeyAvailable}
               />
               <Button
                 variant="outline"
                 onClick={() => document.getElementById('image')?.click()}
                 className="w-full h-32 border-dashed"
+                disabled={!nftStorageKeyAvailable || isUploadingImage}
               >
                 {imagePreview ? (
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="max-h-28 max-w-full object-contain"
-                  />
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="max-h-28 max-w-full object-contain"
+                    />
+                    {isUploadingImage && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="text-center">
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    {isUploadingImage ? (
+                      <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                    ) : (
+                      <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    )}
                     <span className="text-sm text-muted-foreground">
-                      Click to upload image (Max 10MB)
+                      {isUploadingImage ? 'Uploading to IPFS...' : 'Click to upload image (Max 10MB)'}
                     </span>
                   </div>
                 )}
               </Button>
+              {imageCid && (
+                <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Uploaded to IPFS: {imageCid.substring(0, 8)}...
+                </p>
+              )}
             </div>
           </div>
 
@@ -284,59 +491,101 @@ export default function CreateNFT() {
           {/* Mint Button */}
           <Button
             onClick={mintNFT}
-            disabled={!walletAddress || !formData.image || !formData.title || isMinting || isUploading}
+            disabled={!canMint}
             className="w-full"
             size="lg"
           >
-            {isMinting ? 'Minting NFT...' : isUploading ? 'Uploading to IPFS...' : 'Mint NFT'}
+            {isMinting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Minting NFT...
+              </>
+            ) : isUploadingMetadata ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Uploading metadata...
+              </>
+            ) : (
+              'Mint NFT'
+            )}
           </Button>
         </CardContent>
       </Card>
 
-      {/* Mint Result */}
-      {mintResult && (
-        <Card>
-          <CardHeader>
-            <CardTitle className={mintResult.success ? "text-green-600" : "text-red-600"}>
-              {mintResult.success ? "NFT Minted Successfully!" : "Minting Failed"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {mintResult.success ? (
-              <div className="space-y-4">
-                <div>
-                  <Label>Token ID</Label>
-                  <p className="font-mono text-sm bg-muted p-2 rounded">
-                    {mintResult.tokenId}
-                  </p>
-                </div>
-                
-                <div>
-                  <Label>Transaction Hash</Label>
-                  <p className="font-mono text-sm bg-muted p-2 rounded break-all">
-                    {mintResult.transactionHash}
-                  </p>
-                </div>
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-green-600 flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              NFT Minted Successfully!
+            </DialogTitle>
+          </DialogHeader>
+          
+          {mintResult?.success && (
+            <div className="space-y-4">
+              <div>
+                <Label>Token ID</Label>
+                <p className="font-mono text-sm bg-muted p-2 rounded">
+                  {mintResult.tokenId}
+                </p>
+              </div>
+              
+              <div>
+                <Label>Contract Address</Label>
+                <p className="font-mono text-sm bg-muted p-2 rounded break-all">
+                  {mintResult.contractAddress}
+                </p>
+              </div>
+              
+              <div>
+                <Label>Transaction Hash</Label>
+                <p className="font-mono text-sm bg-muted p-2 rounded break-all">
+                  {mintResult.transactionHash}
+                </p>
+              </div>
 
+              <div className="flex gap-2">
+                {mintResult.polygonScanUrl && (
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(mintResult.polygonScanUrl, '_blank')}
+                    className="flex-1"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View on {currentChain?.name || 'Explorer'}
+                  </Button>
+                )}
+                
                 {mintResult.openseaUrl && (
                   <Button
                     variant="outline"
                     onClick={() => window.open(mintResult.openseaUrl, '_blank')}
-                    className="w-full"
+                    className="flex-1"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View on OpenSea
                   </Button>
                 )}
               </div>
-            ) : (
-              <Alert variant="destructive">
-                <AlertCircle className="w-4 h-4" />
-                <AlertDescription>
-                  {mintResult.error}
-                </AlertDescription>
-              </Alert>
-            )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Error Display */}
+      {mintResult && !mintResult.success && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-red-600">Minting Failed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive">
+              <AlertCircle className="w-4 h-4" />
+              <AlertDescription>
+                {mintResult.error}
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       )}
