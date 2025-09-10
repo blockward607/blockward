@@ -8,7 +8,7 @@ import { NFTShowcase } from '@/components/NFTShowcase';
 import { CTA } from '@/components/CTA';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { Shield } from 'lucide-react';
+import { Shield, Zap } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -25,6 +25,13 @@ const Index = () => {
     e.stopPropagation();
     console.log('🔥 Admin Panel button clicked (Index) - navigating to /auth');
     navigate('/auth');
+  };
+
+  const handleCreateNFT = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🔥 Create NFT button clicked (Index) - navigating to /create-nft');
+    navigate('/create-nft');
   };
 
   const handleLogoClick = (e: React.MouseEvent) => {
@@ -48,6 +55,15 @@ const Index = () => {
               BlockWard
             </button>
             <div className="flex items-center gap-4">
+              <Button 
+                type="button"
+                variant="ghost" 
+                className="text-purple-400 hover:text-white hover:bg-purple-500/20 cursor-pointer relative z-20"
+                onClick={handleCreateNFT}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Create NFT
+              </Button>
               <Button 
                 type="button"
                 variant="outline" 

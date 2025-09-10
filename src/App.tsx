@@ -36,6 +36,7 @@ import WalletVerify from "./pages/WalletVerify";
 import SchoolSetup from "./pages/SchoolSetup";
 import Behavior from "./pages/Behavior";
 import AdminDashboard from "./pages/AdminDashboard";
+import CreateNFT from "./pages/CreateNFT";
 
 function App() {
   const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ function App() {
                 <Route path="student-dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
                 <Route path="view-teacher-dashboard" element={<ProtectedRoute><ViewTeacherDashboard /></ProtectedRoute>} />
                 <Route path="behavior" element={<ProtectedRoute><Behavior /></ProtectedRoute>} />
+                <Route path="create-nft" element={<ProtectedRoute><CreateNFT /></ProtectedRoute>} />
                 
                 {/* Class-specific routes */}
                 <Route path="class/:id" element={<ProtectedRoute><ClassDetails /></ProtectedRoute>} />

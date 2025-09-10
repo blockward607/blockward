@@ -21,7 +21,8 @@ import {
   Database,
   Building,
   Clock,
-  GraduationCap
+  GraduationCap,
+  Zap
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -102,7 +103,8 @@ export const AppSidebar = () => {
     { title: "Behavior", icon: BarChart3, href: "/behavior" },
     { title: "Assignments", icon: FileText, href: "/assignments" },
     { title: "Grades", icon: BarChart3, href: "/grades" },
-    { title: "Resources", icon: BookOpen, href: "/resources" }
+    { title: "Resources", icon: BookOpen, href: "/resources" },
+    { title: "Create NFT", icon: Zap, href: "/create-nft" }
   ];
 
   const studentItems: SidebarItem[] = [
