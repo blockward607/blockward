@@ -135,9 +135,15 @@ export default function CreateNFT() {
       };
       reader.readAsDataURL(file);
 
-      // Auto-upload image to IPFS
+      // Auto-upload image to IPFS if API key is available
       if (nftStorageKeyAvailable) {
         await uploadImageToIPFS(file);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "NFT Storage not configured",
+          description: "Add NFT_STORAGE_API_KEY to enable IPFS uploads"
+        });
       }
     }
   };
@@ -418,16 +424,18 @@ export default function CreateNFT() {
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="hidden"
-                disabled={!nftStorageKeyAvailable}
+                tabIndex={-1}
               />
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => document.getElementById('image')?.click()}
-                className="w-full h-32 border-dashed"
-                disabled={!nftStorageKeyAvailable || isUploadingImage}
+                className="w-full h-32 border-dashed pointer-events-auto cursor-pointer focus:ring-2 focus:ring-primary"
+                disabled={isUploadingImage}
+                tabIndex={0}
               >
                 {imagePreview ? (
-                  <div className="relative">
+                  <div className="relative pointer-events-none">
                     <img 
                       src={imagePreview} 
                       alt="Preview" 
@@ -440,7 +448,7 @@ export default function CreateNFT() {
                     )}
                   </div>
                 ) : (
-                  <div className="text-center">
+                  <div className="text-center pointer-events-none">
                     {isUploadingImage ? (
                       <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
                     ) : (
@@ -465,35 +473,75 @@ export default function CreateNFT() {
 
           {/* Title */}
           <div>
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
+              name="title"
+              type="text"
               placeholder="Enter NFT title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="mt-2"
+              className="mt-2 pointer-events-auto"
+              required
+              tabIndex={0}
             />
           </div>
 
           {/* Description */}
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
+              name="description"
               placeholder="Describe your NFT..."
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="mt-2"
+              className="mt-2 pointer-events-auto"
               rows={4}
+              required
+              tabIndex={0}
             />
+          </div>
+
+          {/* Requirements List */}
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <h4 className="text-sm font-medium mb-2">Requirements to mint:</h4>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <div className={`flex items-center gap-2 ${walletAddress ? 'text-green-600' : ''}`}>
+                {walletAddress ? <CheckCircle className="w-3 h-3" /> : <div className="w-3 h-3 border rounded-full" />}
+                Wallet connected
+              </div>
+              <div className={`flex items-center gap-2 ${isCorrectChain ? 'text-green-600' : ''}`}>
+                {isCorrectChain ? <CheckCircle className="w-3 h-3" /> : <div className="w-3 h-3 border rounded-full" />}
+                Correct network (Polygon/Base)
+              </div>
+              <div className={`flex items-center gap-2 ${imageCid ? 'text-green-600' : ''}`}>
+                {imageCid ? <CheckCircle className="w-3 h-3" /> : <div className="w-3 h-3 border rounded-full" />}
+                Image uploaded
+              </div>
+              <div className={`flex items-center gap-2 ${formData.title.trim() ? 'text-green-600' : ''}`}>
+                {formData.title.trim() ? <CheckCircle className="w-3 h-3" /> : <div className="w-3 h-3 border rounded-full" />}
+                Title filled
+              </div>
+              <div className={`flex items-center gap-2 ${formData.description.trim() ? 'text-green-600' : ''}`}>
+                {formData.description.trim() ? <CheckCircle className="w-3 h-3" /> : <div className="w-3 h-3 border rounded-full" />}
+                Description filled
+              </div>
+              <div className={`flex items-center gap-2 ${nftStorageKeyAvailable ? 'text-green-600' : ''}`}>
+                {nftStorageKeyAvailable ? <CheckCircle className="w-3 h-3" /> : <div className="w-3 h-3 border rounded-full" />}
+                NFT Storage API key available
+              </div>
+            </div>
           </div>
 
           {/* Mint Button */}
           <Button
+            type="button"
             onClick={mintNFT}
             disabled={!canMint}
-            className="w-full"
+            className="w-full pointer-events-auto"
             size="lg"
+            tabIndex={0}
           >
             {isMinting ? (
               <>
@@ -509,6 +557,12 @@ export default function CreateNFT() {
               'Mint NFT'
             )}
           </Button>
+          
+          {!canMint && (
+            <p className="text-xs text-muted-foreground text-center">
+              Complete all requirements above to enable minting
+            </p>
+          )}
         </CardContent>
       </Card>
 

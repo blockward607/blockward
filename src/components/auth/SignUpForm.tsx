@@ -42,14 +42,20 @@ export const SignUpForm = (props: SignUpFormProps) => {
       return false;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      props.setErrorMessage("Please enter a valid email address");
+      props.setShowError(true);
+      return false;
+    }
+
     if (!formData.password) {
       props.setErrorMessage("Password is required");
       props.setShowError(true);
       return false;
     }
 
-    if (formData.password.length < 6) {
-      props.setErrorMessage("Password must be at least 6 characters");
+    if (formData.password.length < 8) {
+      props.setErrorMessage("Password must be at least 8 characters");
       props.setShowError(true);
       return false;
     }
@@ -75,11 +81,13 @@ export const SignUpForm = (props: SignUpFormProps) => {
     props.setShowError(false);
 
     try {
-      // Direct signup with Supabase Auth - immediate access
+      const redirectUrl = `${window.location.origin}/dashboard`;
+      
       const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             full_name: formData.fullName,
             role: props.role
@@ -87,12 +95,21 @@ export const SignUpForm = (props: SignUpFormProps) => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        props.setErrorMessage(error.message);
+        props.setShowError(true);
+        toast({
+          variant: "destructive",
+          title: "Sign up failed",
+          description: error.message,
+        });
+        return;
+      }
 
       if (data.user) {
         toast({
-          title: "Welcome to BlockWard!",
-          description: "Your account has been created successfully. You can now sign in and start using all features immediately."
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
         });
         
         // Clear form
@@ -105,13 +122,23 @@ export const SignUpForm = (props: SignUpFormProps) => {
         props.setEmail("");
         props.setPassword("");
         
-        // Navigate to sign in
-        navigate('/auth');
+        // Navigate based on email confirmation status
+        if (data.user.email_confirmed_at) {
+          navigate('/dashboard');
+        } else {
+          navigate('/auth');
+        }
       }
     } catch (error: any) {
       console.error('Sign up error:', error);
-      props.setErrorMessage(error.message || 'Failed to create account. Please try again.');
+      const errorMessage = error.message || 'Failed to create account. Please try again.';
+      props.setErrorMessage(errorMessage);
       props.setShowError(true);
+      toast({
+        variant: "destructive",
+        title: "Sign up failed",
+        description: errorMessage,
+      });
     } finally {
       setLoading(false);
       props.setLoading(false);

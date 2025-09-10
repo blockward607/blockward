@@ -95,55 +95,58 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    refreshAuth();
-
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
         setSession(session);
         setUser(session?.user || null);
 
         if (session?.user) {
-          const role = await getUserRole(session.user.id);
-          setUserRole(role);
-          
-          // Create default classroom for new teachers
-          if (role === 'teacher' && event === 'SIGNED_IN') {
+          // Defer async operations to prevent deadlock
+          setTimeout(async () => {
             try {
-              // Get teacher profile
-              const { data: teacherProfile, error: profileError } = await supabase
-                .from('teacher_profiles')
-                .select('id, school_id')
-                .eq('user_id', session.user.id)
-                .single();
+              const role = await getUserRole(session.user.id);
+              setUserRole(role);
+              
+              // Create default classroom for new teachers
+              if (role === 'teacher' && event === 'SIGNED_IN') {
+                try {
+                  const { data: teacherProfile, error: profileError } = await supabase
+                    .from('teacher_profiles')
+                    .select('id, school_id')
+                    .eq('user_id', session.user.id)
+                    .single();
 
-              if (!profileError && teacherProfile) {
-                // Check if teacher already has classrooms
-                const { data: existingClassrooms } = await supabase
-                  .from('classrooms')
-                  .select('id')
-                  .eq('teacher_id', teacherProfile.id)
-                  .limit(1);
+                  if (!profileError && teacherProfile) {
+                    const { data: existingClassrooms } = await supabase
+                      .from('classrooms')
+                      .select('id')
+                      .eq('teacher_id', teacherProfile.id)
+                      .limit(1);
 
-                if (!existingClassrooms || existingClassrooms.length === 0) {
-                  // Create default classroom
-                  await supabase
-                    .from('classrooms')
-                    .insert([{
-                      teacher_id: teacherProfile.id,
-                      name: 'My First Classroom',
-                      description: 'Welcome to your first classroom!',
-                      school_id: teacherProfile.school_id
-                    }]);
-                  
-                  console.log('Created default classroom for new teacher');
+                    if (!existingClassrooms || existingClassrooms.length === 0) {
+                      await supabase
+                        .from('classrooms')
+                        .insert([{
+                          teacher_id: teacherProfile.id,
+                          name: 'My First Classroom',
+                          description: 'Welcome to your first classroom!',
+                          school_id: teacherProfile.school_id
+                        }]);
+                      
+                      console.log('Created default classroom for new teacher');
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error creating default classroom:', error);
                 }
               }
             } catch (error) {
-              console.error('Error creating default classroom:', error);
+              console.error('Error in auth state change handler:', error);
             }
-          }
+          }, 0);
         } else {
           setUserRole(null);
         }
@@ -151,6 +154,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setLoading(false);
       }
     );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        getUserRole(session.user.id).then(setUserRole);
+      }
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);

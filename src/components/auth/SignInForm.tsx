@@ -38,19 +38,44 @@ export const SignInForm = ({
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!email.trim()) {
+      setErrorMessage("Email is required");
+      setShowError(true);
+      return;
+    }
+    
+    if (!password.trim()) {
+      setErrorMessage("Password is required");
+      setShowError(true);
+      return;
+    }
+    
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrorMessage("Please enter a valid email address");
+      setShowError(true);
+      return;
+    }
+    
     setLocalLoading(true);
     setLoading(true);
     setShowError(false);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
       if (error) {
         setErrorMessage(error.message);
         setShowError(true);
+        toast({
+          variant: "destructive",
+          title: "Sign in failed",
+          description: error.message,
+        });
         return;
       }
 
@@ -70,8 +95,8 @@ export const SignInForm = ({
           });
         } else {
           toast({
-            title: `Welcome ${role}!`,
-            description: "You have successfully signed in.",
+            title: "Sign in successful",
+            description: `Welcome back, ${role}!`,
           });
         }
 
@@ -84,8 +109,14 @@ export const SignInForm = ({
       }
     } catch (error) {
       console.error('Sign in error:', error);
-      setErrorMessage("An unexpected error occurred");
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      setErrorMessage(errorMessage);
       setShowError(true);
+      toast({
+        variant: "destructive",
+        title: "Sign in failed",
+        description: errorMessage,
+      });
     } finally {
       setLocalLoading(false);
       setLoading(false);
