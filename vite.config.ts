@@ -38,6 +38,12 @@ export default defineConfig(({ mode }) => ({
       }
     }
   },
+  define: {
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    include: ['buffer']
+  },
   plugins: [
     react(),
     mode === 'development' &&
